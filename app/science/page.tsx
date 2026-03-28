@@ -101,8 +101,11 @@ export default function SciencePage() {
 
       {/* Four Dimensions */}
       <section style={{ borderTop: '1px solid var(--p-b0)', padding: '56px var(--p-sp) 56px' }}>
-        <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.16em', color: 'var(--p-t3)', textTransform: 'uppercase', marginBottom: 32 }}>
-          The Four Dimensions
+        <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.16em', color: 'var(--p-t3)', textTransform: 'uppercase', marginBottom: 16 }}>
+          The Four Measured Dimensions
+        </p>
+        <p style={{ fontSize: 14, color: 'var(--p-t2)', lineHeight: 1.7, maxWidth: 560, marginBottom: 32 }}>
+          The assessment directly measures four dimensions. In reports, these are displayed as five role-relevant composites (Execution, Ownership, Adaptability, Collaboration, Decision Speed) — each a weighted combination of the four measured dimensions optimized for workforce prediction.
         </p>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           {DIMENSIONS.map((dim, i) => (
@@ -132,8 +135,11 @@ export default function SciencePage() {
             <p style={{ fontSize: 13, color: '#888', marginTop: 8, margin: 0, marginBlockStart: 8 }}>Cross-Validated Total</p>
           </div>
         </div>
-        <p style={{ fontSize: 15, color: 'var(--p-t1)', lineHeight: 1.8, maxWidth: 560 }}>
+        <p style={{ fontSize: 15, color: 'var(--p-t1)', lineHeight: 1.8, maxWidth: 560, marginBottom: 12 }}>
           Percentile tables built from actual sorted distributions across 8 independent datasets. Binary search lookup against real rank-order data. Not parametric approximations.
+        </p>
+        <p style={{ fontSize: 13, color: 'var(--p-t3)', lineHeight: 1.7, maxWidth: 560 }}>
+          These norms reflect a general adult population across 8 public-domain datasets, not a job-applicant sample. The cross-validated total of 2.2M includes all sources; the 1.2M primary population is what drives dimension scoring.
         </p>
       </section>
 

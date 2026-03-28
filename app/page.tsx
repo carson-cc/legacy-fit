@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { FitModel } from '@/app/components/FitModel'
+import FitModelDual from '@/app/components/FitModelDual'
 import SignalTrace from '@/app/components/SignalTrace'
 import SearchProcessTimeline from '@/app/components/SearchProcessTimeline'
 
@@ -347,7 +348,7 @@ export default function HomePage() {
         {/* Bottom fade */}
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 200, zIndex: 1, background: `linear-gradient(transparent, ${BG})`, pointerEvents: 'none' }} />
 
-        <div className="hero-grid" style={{ maxWidth: MAX, margin: '0 auto', padding: '80px 40px', width: '100%', display: 'grid', gap: 72, alignItems: 'center', position: 'relative', zIndex: 2 }}>
+        <div className="hero-grid" style={{ maxWidth: MAX, margin: '0 auto', padding: '80px 40px', width: '100%', display: 'grid', gridTemplateColumns: '1fr 480px', gap: 72, alignItems: 'center', position: 'relative', zIndex: 2 }}>
 
           {/* Left */}
           <div>
@@ -357,12 +358,12 @@ export default function HomePage() {
             </div>
 
             <h1 style={{ fontSize: 60, lineHeight: 1.04, fontWeight: 700, letterSpacing: '-0.035em', marginBottom: 24, color: '#FFF' }}>
-              <span style={{ color: 'rgba(255,255,255,0.45)' }}>Your gut is right.</span><br />
-              Now prove it.
+              <span style={{ color: 'rgba(255,255,255,0.72)' }}>Your gut is right.</span><br />
+              Now show it.
             </h1>
 
             <p style={{ fontSize: 18, lineHeight: 1.75, color: 'rgba(255,255,255,0.55)', maxWidth: 460, marginBottom: 40 }}>
-              Veltro, a scoring platform for retained search, turns your behavioral read into a scored report your client can&rsquo;t argue with — without changing how you run a search.
+              Turn your behavioral read into a scored report your client acts on. No change to how you run a search.
             </p>
 
             <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 52 }}>
@@ -597,29 +598,27 @@ export default function HomePage() {
               transition: 'all 500ms ease-out 150ms',
             }}>
               <div style={{ background: SF, border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, padding: 32 }}>
-                <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' as const, marginBottom: 24 }}>Team Compatibility Analysis</p>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24 }}>
-                  {[
-                    { name: 'Marcus Thompson', role: 'Candidate', scores: { dominance: 0.88, extraversion: 0.62, patience: 0.18, formality: 0.45 } },
-                    { name: 'David Mercer', role: 'Hiring Manager', scores: { dominance: 0.55, extraversion: 0.70, patience: 0.72, formality: 0.65 } },
-                  ].map(person => (
-                    <div key={person.name} style={{ textAlign: 'center' }}>
-                      <p style={{ fontSize: 12, fontWeight: 600, color: '#FFF', marginBottom: 2 }}>{person.name}</p>
-                      <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginBottom: 12 }}>{person.role}</p>
-                      <div style={{ display: 'flex', justifyContent: 'center' }}>
-                        <FitModel scores={person.scores} size={164} variant="dark" animated={hmSection.visible} />
-                      </div>
-                    </div>
-                  ))}
+                <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' as const, marginBottom: 20 }}>Candidate · Hiring Manager Overlay</p>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
+                  <FitModelDual
+                    candidateScores={{ dominance: 0.88, extraversion: 0.62, patience: 0.18, formality: 0.45 }}
+                    benchmarkScores={{ dominance: 0.55, extraversion: 0.70, patience: 0.72, formality: 0.65 }}
+                    candidateLabel="Marcus Thompson"
+                    benchmarkLabel="David Mercer (HM)"
+                    size={240}
+                    variant="dark"
+                    showDeltas={true}
+                    animated={hmSection.visible}
+                  />
                 </div>
                 <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '8px 12px', background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.15)', borderRadius: 8 }}>
                     <span style={{ width: 5, height: 5, borderRadius: '50%', background: G, flexShrink: 0 }} />
-                    <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)' }}><strong style={{ color: '#FFF', fontWeight: 600 }}>Works well with:</strong> Collaboration · Decision Speed</span>
+                    <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)' }}><strong style={{ color: '#FFF', fontWeight: 600 }}>Strong overlap:</strong> Collaboration · Decision Speed</span>
                   </div>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '8px 12px', background: 'rgba(234,179,8,0.06)', border: '1px solid rgba(234,179,8,0.15)', borderRadius: 8 }}>
                     <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#EAB308', flexShrink: 0 }} />
-                    <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)' }}><strong style={{ color: '#FFF', fontWeight: 600 }}>Watch for:</strong> Adaptability gap · Pace mismatch</span>
+                    <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)' }}><strong style={{ color: '#FFF', fontWeight: 600 }}>Gap to probe:</strong> Adaptability · Pace mismatch</span>
                   </div>
                 </div>
               </div>
@@ -661,10 +660,10 @@ export default function HomePage() {
             }}>
               <p style={{ fontSize: 11, color: B, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase' as const, marginBottom: 20 }}>The Model</p>
               <h2 style={{ fontSize: 38, fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.1, marginBottom: 20 }}>
-                94 signals.<br />Five dimensions.<br />One number that closes the room.
+                80 signals.<br />Five dimensions.<br />One number that closes the room.
               </h2>
               <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.5)', lineHeight: 1.8, marginBottom: 20 }}>
-                Candidates complete two forced-choice word lists — one describing how they work in a role, one describing their natural self — in about six minutes. 94 behavioral signals extracted, mapped across five dimensions that predict performance in the role — not personality in the abstract. The score tells you where a candidate fits, where they strain, and why.
+                Candidates complete two forced-choice word lists — one describing how they work in a role, one describing their natural self — in about six minutes. 80 behavioral signals extracted, mapped across five dimensions that predict performance in the role — not personality in the abstract. The score tells you where a candidate fits, where they strain, and why.
               </p>
               <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.5)', lineHeight: 1.8, marginBottom: 32 }}>
                 The benchmark is role-specific — field leadership, executive, sales, technical — normed against 2.2 million respondents across eight peer-reviewed validation studies. Not a proprietary black box. Published science.
@@ -763,7 +762,7 @@ export default function HomePage() {
         </div>
 
         <footer style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '20px 40px', borderTop: '1px solid rgba(255,255,255,0.04)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.15)' }}>© 2025 Veltro</p>
+          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.15)' }}>© 2026 Veltro</p>
           <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.15)' }}>veltro.ai · team@veltro.ai</p>
         </footer>
       </section>

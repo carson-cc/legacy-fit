@@ -139,8 +139,15 @@ export default function RoleBenchmarkPage() {
   const [aiLoading, setAiLoading] = useState(false)
   const [aiRationale, setAiRationale] = useState('')
   const [aiConfidence, setAiConfidence] = useState('')
+  const [aiApplied, setAiApplied] = useState(false)
 
   const benchmark = averageDims(respondents)
+
+  // Detect divergence: any dimension where respondents disagree by more than 1 option
+  const divergentDims: string[] = respondents.length > 1 ? DIMS.filter(d => {
+    const vals = respondents.map(r => r.picks[d.key])
+    return Math.max(...vals) - Math.min(...vals) > 1
+  }).map(d => d.label) : []
 
   const fetchJob = useCallback(() => {
     setLoading(true)
@@ -172,12 +179,12 @@ export default function RoleBenchmarkPage() {
       const data = await res.json()
       if (data.data) {
         const s = data.data
-        setRespondents([{
-          id: uid(), name: 'AI suggestion',
-          picks: valuesToPicks({ dominance: s.dominance, extraversion: s.extraversion, patience: s.patience, formality: s.formality }),
-        }])
+        const aiPicks = valuesToPicks({ dominance: s.dominance, extraversion: s.extraversion, patience: s.patience, formality: s.formality })
+        // Seed the first respondent's picks with AI values — don't add a separate AI respondent
+        setRespondents(prev => prev.map((r, i) => i === 0 ? { ...r, picks: aiPicks } : r))
         setAiRationale(s.rationale)
         setAiConfidence(s.confidence)
+        setAiApplied(true)
       }
     } catch { /* silent */ }
     finally { setAiLoading(false) }
@@ -264,19 +271,29 @@ export default function RoleBenchmarkPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
           {/* AI rationale banner */}
-          {aiRationale && (
+          {aiApplied && aiRationale && (
             <div style={{
               padding: '12px 16px',
               background: 'rgba(37,99,235,0.04)', border: '1px solid rgba(37,99,235,0.15)',
-              borderRadius: 10, display: 'flex', alignItems: 'flex-start', gap: 10,
+              borderRadius: 10, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10,
             }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, marginTop: 1 }}>
-                <circle cx="12" cy="12" r="10" stroke="#2563EB" strokeWidth="1.5"/>
-                <path d="M12 8v4M12 16h.01" stroke="#2563EB" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
-              <p style={{ margin: 0, fontSize: 13, color: '#374151', lineHeight: 1.6 }}>
-                <strong style={{ color: '#1D4ED8' }}>AI suggestion:</strong> {aiRationale}
-              </p>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, marginTop: 1 }}>
+                  <circle cx="12" cy="12" r="10" stroke="#2563EB" strokeWidth="1.5"/>
+                  <path d="M12 8v4M12 16h.01" stroke="#2563EB" strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
+                <p style={{ margin: 0, fontSize: 13, color: '#374151', lineHeight: 1.6 }}>
+                  <strong style={{ color: '#1D4ED8' }}>AI starting point applied.</strong> Adjust to match your intake call. {aiRationale}
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setRespondents(prev => prev.map((r, i) => i === 0 ? { ...r, picks: defaultPicks() } : r))
+                  setAiApplied(false)
+                  setAiRationale('')
+                }}
+                style={{ fontSize: 11, color: '#9CA3AF', background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0, padding: '2px 4px' }}
+              >Reset</button>
             </div>
           )}
 
@@ -393,6 +410,15 @@ export default function RoleBenchmarkPage() {
               onBlur={e => (e.target.style.borderColor = '#D1D5DB')}
             />
           </div>
+
+          {/* Divergence warning */}
+          {divergentDims.length > 0 && (
+            <div style={{ padding: '10px 14px', background: 'rgba(234,179,8,0.06)', border: '1px solid rgba(234,179,8,0.25)', borderRadius: 8 }}>
+              <p style={{ margin: 0, fontSize: 13, color: '#92400E', lineHeight: 1.5 }}>
+                <strong>Input divergence on {divergentDims.join(', ')}.</strong> Respondents disagree — review before saving. The benchmark will average conflicting inputs.
+              </p>
+            </div>
+          )}
 
           {/* Save */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>

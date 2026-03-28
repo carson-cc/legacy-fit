@@ -72,6 +72,7 @@ function FitModelBase({
   const [progress, setProgress] = useState(animated ? 0 : 1)
   const [deltaVisible, setDeltaVisible] = useState(!animated)
   const rafRef = useRef<number>(0)
+  const hasAnimated = useRef(false)
 
   useEffect(() => {
     if (!animated) {
@@ -79,6 +80,10 @@ function FitModelBase({
       setDeltaVisible(true)
       return
     }
+    // Only animate once per component lifecycle — prevents re-triggering on scroll re-renders
+    if (hasAnimated.current) return
+    hasAnimated.current = true
+
     setProgress(0)
     setDeltaVisible(false)
     const start = performance.now()

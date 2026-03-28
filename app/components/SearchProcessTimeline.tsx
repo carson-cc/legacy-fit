@@ -58,7 +58,6 @@ export default function SearchProcessTimeline() {
     <div>
       {/* Mode toggle */}
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 40 }}>
-        <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)', marginRight: 4 }}>Mode:</span>
         {(['a', 'b'] as const).map(m => (
           <button
             key={m}
@@ -72,7 +71,7 @@ export default function SearchProcessTimeline() {
               transition: 'all 180ms ease',
             }}
           >
-            {m === 'a' ? 'Candidate only' : '+ Hiring Manager'}
+            {m === 'a' ? 'Standard' : 'With HM Pairing'}
           </button>
         ))}
       </div>
@@ -168,73 +167,37 @@ export default function SearchProcessTimeline() {
             })}
           </div>
 
-          {/* Cards */}
-          <div style={{ position: 'relative', marginTop: 20, height: 88 }}>
-
-            {/* Candidate evaluation card — between Shortlist (3) and Presentation (4) */}
-            <div style={{
-              position: 'absolute',
-              left: `${(4 / N) * 100}%`,
-              top: 0,
-              opacity: phase >= 4 ? 1 : 0,
-              transform: phase >= 4 ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(-10px)',
-              transition: 'opacity 400ms ease, transform 400ms ease',
-              width: 200,
-              zIndex: 5,
-            }}>
-              <div style={{
-                background: 'rgba(37,99,235,0.1)',
-                border: '1px solid rgba(37,99,235,0.25)',
-                borderRadius: 10, padding: '10px 14px',
-              }}>
-                <p style={{ fontSize: 9, color: B, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>Veltro</p>
-                <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.72)', lineHeight: 1.5 }}>
-                  Evaluation sent. Report generated. Ready to present.
-                </p>
-              </div>
-            </div>
-
-            {/* Hiring manager card — at Kickoff (0), mode B only */}
-            <div style={{
-              position: 'absolute',
-              left: cx(0),
-              top: 0,
-              opacity: phase >= 4 && mode === 'b' ? 1 : 0,
-              transform: phase >= 4 && mode === 'b' ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(-10px)',
-              transition: 'opacity 400ms ease 180ms, transform 400ms ease 180ms',
-              width: 190,
-              zIndex: 5,
-            }}>
-              <div style={{
-                background: 'rgba(37,99,235,0.1)',
-                border: '1px solid rgba(37,99,235,0.25)',
-                borderRadius: 10, padding: '10px 14px',
-              }}>
-                <p style={{ fontSize: 9, color: B, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>Veltro</p>
-                <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.72)', lineHeight: 1.5 }}>
-                  Hiring manager profiled. Active on every candidate.
-                </p>
-              </div>
-            </div>
-
-            {/* "Compatibility active" dotted connector label, mode B */}
-            <div style={{
-              position: 'absolute',
-              left: `${((0.5 + 4.5) / 2 / N) * 100}%`,
-              top: 68,
-              opacity: phase >= 4 && mode === 'b' ? 1 : 0,
-              transform: 'translateX(-50%)',
-              transition: 'opacity 400ms ease 300ms',
-              pointerEvents: 'none',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <div style={{ flex: 1, borderTop: `1px dashed rgba(37,99,235,0.35)`, width: 48 }} />
-                <span style={{ fontSize: 9, color: 'rgba(37,99,235,0.6)', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
-                  Compatibility active
-                </span>
-                <div style={{ flex: 1, borderTop: `1px dashed rgba(37,99,235,0.35)`, width: 48 }} />
-              </div>
-            </div>
+          {/* Cards — flex row aligned with stage columns */}
+          <div style={{ display: 'flex', marginTop: 16 }}>
+            {STAGES.map((label, i) => {
+              const isShortlist = i === 3
+              const isKickoff = i === 0
+              const showShortlist = isShortlist && phase >= 4
+              const showKickoff = isKickoff && phase >= 4 && mode === 'b'
+              if (!showShortlist && !showKickoff) return <div key={label} style={{ flex: 1 }} />
+              return (
+                <div key={label} style={{
+                  flex: 1,
+                  opacity: 1,
+                  transform: 'none',
+                  transition: 'opacity 400ms ease, transform 400ms ease',
+                  padding: '0 4px',
+                }}>
+                  <div style={{
+                    background: 'rgba(37,99,235,0.1)',
+                    border: '1px solid rgba(37,99,235,0.25)',
+                    borderRadius: 10, padding: '10px 14px',
+                  }}>
+                    <p style={{ fontSize: 9, color: B, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' as const, marginBottom: 4 }}>Veltro</p>
+                    <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.72)', lineHeight: 1.5, margin: 0 }}>
+                      {isKickoff
+                        ? 'HM profiled. Active on every candidate.'
+                        : 'Evaluation sent. Report ready to present.'}
+                    </p>
+                  </div>
+                </div>
+              )
+            })}
           </div>
 
         </div>

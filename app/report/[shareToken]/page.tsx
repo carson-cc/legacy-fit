@@ -118,18 +118,16 @@ function decisionLabel(pct: number): 'Strong Hire' | 'Proceed with Caution' | 'D
   return 'Do Not Hire'
 }
 
-function confidenceLabel(pct: number): 'High' | 'Medium' | 'Low' {
+function fitStrengthLabel(pct: number): 'High' | 'Medium' | 'Low' {
   if (pct >= 80) return 'High'
   if (pct >= 60) return 'Medium'
   return 'Low'
 }
 
-function percentileLabel(pct: number): string {
-  if (pct >= 90) return 'Top 10%'
-  if (pct >= 82) return 'Top 18%'
-  if (pct >= 75) return 'Top 25%'
-  if (pct >= 65) return 'Top 40%'
-  return 'Below top 40%'
+function fitTierLabel(pct: number): string {
+  if (pct >= 85) return 'Strong Fit'
+  if (pct >= 70) return 'Moderate Fit'
+  return 'Low Fit'
 }
 
 function topStrengths(profile: Profile): string[] {
@@ -170,10 +168,9 @@ function benchmarkComparison(title: string, pct: number): string {
   return `Significant misalignment against the current benchmark for ${role} roles.`
 }
 
-function roleImplication(title: string, strengths: string[], risks: string[]): string {
+function roleImplication(title: string): string {
   const role = title.toLowerCase()
-  const risk = risks[0]?.toLowerCase() || 'lower fit in process-heavy environments'
-  return `This pattern supports success in ${role} environments that reward decisive execution and visible ownership. The primary watchout is ${risk}. The recommendation is strongest when the role values pace, accountability, and forward motion.`
+  return `Best fit: a hiring manager who gives clear mandates and is comfortable with a high-agency direct report. Lowest-risk environment: autonomous scope with visible accountability. Highest-risk environment: consensus-driven leadership or a manager who expects to be consulted before direction changes. The interview probes below are designed to surface this boundary directly.`
 }
 
 function executiveSummary(name: string, title: string, pct: number, strengths: string[], risks: string[]): string {
@@ -377,7 +374,7 @@ export default function SharedReportPage() {
     }
     const fitModel = toFitModel(mappedScores)
     const benchmark = toFitBenchmark(data.job.target)
-    const totalSignals = 94
+    const totalSignals = 80
     const roleType = data.job.roleType || data.job.title
     const dimensions = [
       { label: 'Execution', score: fitModel.execution, target: benchmark?.execution ?? null },
@@ -390,14 +387,14 @@ export default function SharedReportPage() {
       fitScore,
       color: decisionColor(fitScore),
       recommendation: decisionLabel(fitScore),
-      confidence: data.confidence || confidenceLabel(fitScore),
-      percentile: data.percentile || percentileLabel(fitScore),
+      confidence: data.confidence || fitStrengthLabel(fitScore),
+      percentile: data.percentile || fitTierLabel(fitScore),
       strengths,
       risks,
       fitModel,
       benchmark,
       benchmarkNote: data.benchmarkComparison || benchmarkComparison(roleType, fitScore),
-      roleImplicationText: roleImplication(roleType, strengths, risks),
+      roleImplicationText: roleImplication(roleType),
       executiveSummaryText: executiveSummary(data.name, roleType, fitScore, strengths, risks),
       rationale: data.rationale || 'Strong signal alignment with role benchmark requirements.',
       dimensions,
@@ -521,18 +518,25 @@ export default function SharedReportPage() {
                 </div>
                 <div className="rpt-two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                   <div>
-                    <Label text="Confidence" />
+                    <Label text="Fit Strength" />
                     <p style={{ margin: '8px 0 0', fontSize: 16, fontWeight: 600, color: derived.color }}>
                       {derived.confidence}
                     </p>
                   </div>
                   <div>
-                    <Label text="Percentile" />
+                    <Label text="Fit Tier" />
                     <p style={{ margin: '8px 0 0', fontSize: 16, fontWeight: 600, color: TEXT }}>
                       {derived.percentile}
                     </p>
                   </div>
                 </div>
+                {c.rushed && (
+                  <div style={{ marginTop: 4, padding: '8px 12px', background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.25)', borderRadius: 8 }}>
+                    <p style={{ margin: 0, fontSize: 12, color: YELLOW, lineHeight: 1.5 }}>
+                      Assessment completed quickly — treat results as directional, not definitive.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -635,38 +639,33 @@ export default function SharedReportPage() {
             </div>
           </section>
 
-          {/* D. RECOMMENDATION RATIONALE + AI SUMMARY */}
-          <section className="rpt-two-col" style={{
-            display: 'grid', gridTemplateColumns: '1fr 1fr',
-            gap: 24, marginBottom: 24,
-          }}>
-            <div style={surf}>
-              <Label text="Recommendation Rationale" />
-              <div style={{ marginTop: 20, display: 'grid', gap: 20 }}>
-                <div>
-                  <p style={{ margin: '0 0 8px', fontSize: 16, fontWeight: 700, color: TEXT }}>Benchmark alignment</p>
-                  <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: SUBTLE }}>{derived.benchmarkNote}</p>
-                </div>
-                <div style={{ borderTop: `1px solid ${DIVIDER}`, paddingTop: 16 }}>
-                  <p style={{ margin: '0 0 8px', fontSize: 16, fontWeight: 700, color: TEXT }}>Observed strengths</p>
-                  <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: SUBTLE }}>{derived.strengths.join('. ')}.</p>
-                </div>
-                <div style={{ borderTop: `1px solid ${DIVIDER}`, paddingTop: 16 }}>
-                  <p style={{ margin: '0 0 8px', fontSize: 16, fontWeight: 700, color: TEXT }}>Risk conditions</p>
-                  <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: SUBTLE }}>{derived.risks.join('. ')}.</p>
-                </div>
-              </div>
-            </div>
-
-            {/* AI Summary — visually subordinate */}
-            <div style={{ ...surf, background: '#0D1117', border: `1px solid ${DIVIDER}`, opacity: 0.85 }}>
-              <Label text="AI-Assisted Executive Summary" />
-              <p style={{ margin: '8px 0 20px', fontSize: 11, lineHeight: 1.5, color: FAINT }}>
-                AI-assisted interpretation based on observed signal patterns
-              </p>
-              <p style={{ margin: 0, fontSize: 14, lineHeight: 1.8, color: SUBTLE }}>
-                {derived.executiveSummaryText}
-              </p>
+          {/* D. DIMENSIONAL READ */}
+          <section style={{ ...surf, marginBottom: 24 }}>
+            <Label text="Dimensional Read" />
+            <div style={{ marginTop: 20, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 0 }}>
+              {derived.dimensions.map((dim, i) => {
+                const delta = dim.target == null ? null : dim.score - dim.target
+                if (delta == null) return null
+                const dc = delta > 2 ? GREEN : delta < -2 ? RED : SUBTLE
+                const interpretation = delta > 10
+                  ? `${Math.abs(delta)} points above benchmark — notable strength for this role.`
+                  : delta > 2
+                    ? `${Math.abs(delta)} points above benchmark.`
+                    : delta < -10
+                      ? `${Math.abs(delta)} points below benchmark — worth probing in the interview.`
+                      : delta < -2
+                        ? `${Math.abs(delta)} points below benchmark.`
+                        : `Within 2 points of benchmark.`
+                return (
+                  <div key={dim.label} style={{ padding: '16px 0', borderTop: i > 0 ? `1px solid ${DIVIDER}` : 'none' }}>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 4 }}>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: TEXT }}>{dim.label}</span>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: dc }}>{delta > 0 ? `+${delta}` : delta}</span>
+                    </div>
+                    <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: SUBTLE }}>{interpretation}</p>
+                  </div>
+                )
+              })}
             </div>
           </section>
 
@@ -718,7 +717,7 @@ export default function SharedReportPage() {
               {[
                 `Based on ${derived.totalSignals} behavioral signals`,
                 'Recommendation generated from calibrated signal analysis',
-                `Benchmark confidence: ${derived.confidence}`,
+                `Fit strength: ${derived.confidence}`,
                 'Use alongside structured interviews and reference checks',
               ].map((item) => (
                 <p key={item} style={{ margin: 0, fontSize: 12, color: SUBTLE }}>{item}</p>

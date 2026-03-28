@@ -211,7 +211,7 @@ export default function MethodPage() {
             { label: 'Product', href: '/#how-it-works' },
             { label: 'Method', href: '/profiles' },
             { label: 'Archetypes', href: '/archetypes' },
-            { label: 'Sample Report', href: '/dashboard/candidates/invite-marcus' },
+            { label: 'Sample Report', href: '/sample-report' },
           ].map(l => (
             <Link key={l.label} href={l.href}
               style={{
@@ -270,7 +270,7 @@ export default function MethodPage() {
             </p>
 
             <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
-              <Link href="/dashboard/candidates/invite-marcus" style={{
+              <Link href="/sample-report" style={{
                 height: 46, padding: '0 24px', borderRadius: 10,
                 background: T.t0, color: T.bg,
                 fontSize: 14, fontWeight: 600, display: 'inline-flex', alignItems: 'center',
@@ -662,7 +662,7 @@ export default function MethodPage() {
             </div>
 
             <div style={{ marginTop: 28 }}>
-              <Link href="/dashboard/candidates/invite-marcus" style={{
+              <Link href="/sample-report" style={{
                 fontSize: 13, fontWeight: 600, color: T.t2,
                 textDecoration: 'none', transition: 'color 160ms ease',
                 display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -698,7 +698,7 @@ export default function MethodPage() {
             Every piece of the model exists to support that conversation. The score. The benchmark. The rationale. The structured evidence. It&rsquo;s not a personality profile. It&rsquo;s a recommendation with evidence behind it.
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-            <Link href="/dashboard/candidates/invite-marcus" style={{
+            <Link href="/sample-report" style={{
               height: 44, padding: '0 22px', borderRadius: 10,
               background: T.t0, color: T.bg,
               fontSize: 14, fontWeight: 600, display: 'inline-flex', alignItems: 'center',

@@ -255,7 +255,7 @@ export default function ArchetypesPage() {
               { label: 'Product', href: '/#how-it-works' },
               { label: 'Method', href: '/profiles' },
               { label: 'Archetypes', href: '/archetypes' },
-              { label: 'Sample Report', href: '/dashboard/candidates/invite-marcus' },
+              { label: 'Sample Report', href: '/sample-report' },
             ].map(l => (
               <Link key={l.label} href={l.href}
                 style={{
@@ -364,21 +364,27 @@ export default function ArchetypesPage() {
                 <line x1={CENTER_X} y1={M.top} x2={CENTER_X} y2={M.top + PH} stroke="rgba(255,255,255,0.07)" strokeWidth={0.5} strokeDasharray="4 4" />
                 <line x1={M.left} y1={CENTER_Y} x2={M.left + PW} y2={CENTER_Y} stroke="rgba(255,255,255,0.07)" strokeWidth={0.5} strokeDasharray="4 4" />
 
-                {/* Quadrant labels — large, very faint */}
+                {/* Quadrant labels */}
                 {[
-                  { label: 'FIELD\nCOMMAND',        x: M.left + 0.75 * PW, y: M.top + 0.75 * PH },
-                  { label: 'BRIDGE\nBUILDERS',       x: M.left + 0.75 * PW, y: M.top + 0.25 * PH },
-                  { label: 'STEADY\nOPERATORS',      x: M.left + 0.25 * PW, y: M.top + 0.75 * PH },
-                  { label: 'RELATIONSHIP\nBUILDERS', x: M.left + 0.25 * PW, y: M.top + 0.25 * PH },
+                  { label: 'FIELD\nCOMMAND',        x: M.left + 0.75 * PW, y: M.top + 0.75 * PH, group: 'field_command' },
+                  { label: 'BRIDGE\nBUILDERS',       x: M.left + 0.75 * PW, y: M.top + 0.25 * PH, group: 'strategic_drive' },
+                  { label: 'STEADY\nOPERATORS',      x: M.left + 0.25 * PW, y: M.top + 0.75 * PH, group: 'process_structure' },
+                  { label: 'RELATIONSHIP\nBUILDERS', x: M.left + 0.25 * PW, y: M.top + 0.25 * PH, group: 'people_influence' },
                 ].map(q => q.label.split('\n').map((line, li) => (
                   <text
                     key={`${q.label}-${li}`}
-                    x={q.x} y={q.y + (li - 0.5) * 58}
+                    x={q.x} y={q.y + (li - 0.5) * 42}
                     textAnchor="middle" dominantBaseline="middle"
-                    fill="rgba(255,255,255,0.055)"
-                    fontSize={48} fontWeight={800}
+                    fill={
+                      activeGroup === q.group
+                        ? 'rgba(37,99,235,0.35)'
+                        : activeGroup !== null
+                          ? 'rgba(255,255,255,0.04)'
+                          : 'rgba(255,255,255,0.10)'
+                    }
+                    fontSize={32} fontWeight={700}
                     letterSpacing="0.06em"
-                    style={{ pointerEvents: 'none', userSelect: 'none' }}
+                    style={{ pointerEvents: 'none', userSelect: 'none', transition: 'fill 250ms ease' }}
                   >{line}</text>
                 )))}
 

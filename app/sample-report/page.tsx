@@ -270,12 +270,12 @@ export default function SampleReportPage() {
                 </div>
                 <div className="rpt-two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                   <div>
-                    <Label text="Confidence" />
+                    <Label text="Fit Strength" />
                     <p style={{ margin: '8px 0 0', fontSize: 16, fontWeight: 600, color: GREEN }}>High</p>
                   </div>
                   <div>
-                    <Label text="Percentile" />
-                    <p style={{ margin: '8px 0 0', fontSize: 16, fontWeight: 600, color: TEXT }}>Top 10%</p>
+                    <Label text="Fit Tier" />
+                    <p style={{ margin: '8px 0 0', fontSize: 16, fontWeight: 600, color: TEXT }}>Strong Fit</p>
                   </div>
                 </div>
               </div>
@@ -295,7 +295,7 @@ export default function SampleReportPage() {
                 </p>
               </div>
               <div style={{ borderTop: `1px solid ${DIVIDER}`, paddingTop: 16, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {['Based on 94 behavioral signals', 'Role benchmark active', 'IPIP-NEO validated'].map((item, i) => (
+                {['Based on 80 behavioral signals', 'Role benchmark active', 'IPIP-NEO validated'].map((item, i) => (
                   <span key={item} style={{ fontSize: 11, color: SUBTLE }}>
                     {i > 0 && <span style={{ margin: '0 8px', color: DIVIDER }}>·</span>}
                     {item}
@@ -383,13 +383,10 @@ export default function SampleReportPage() {
                 ))}
               </div>
             </div>
-            <div style={{ ...surf, background: '#0D1117', border: `1px solid ${DIVIDER}`, opacity: 0.85 }}>
-              <Label text="AI-Assisted Executive Summary" />
-              <p style={{ margin: '8px 0 20px', fontSize: 11, lineHeight: 1.5, color: FAINT }}>
-                AI-assisted interpretation based on observed signal patterns
-              </p>
-              <p style={{ margin: 0, fontSize: 14, lineHeight: 1.8, color: SUBTLE }}>
-                Marcus receives a strong hire recommendation for superintendent based on observed signal patterns strongest in taking immediate ownership and decisive execution under pressure. The recommendation is best supported in environments that value visible ownership, pace, and independent decision-making. The principal caution is a tendency to move before full input is gathered and underinvestment in process documentation.
+            <div style={surf}>
+              <Label text="Executive Summary" />
+              <p style={{ margin: '20px 0 0', fontSize: 14, lineHeight: 1.8, color: SUBTLE }}>
+                Marcus receives a <strong style={{ color: TEXT }}>Strong Hire</strong> recommendation for Superintendent. Signal patterns are strongest on ownership and decisiveness under pressure — the behavioral demands most predictive of success in field leadership. The one dimension below benchmark (Collaboration, −3) is within tolerance and should be probed in the client debrief, not treated as a gate. Overall pattern is well-matched to roles that require forward motion over consensus.
               </p>
             </div>
           </section>
