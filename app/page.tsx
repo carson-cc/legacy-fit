@@ -45,59 +45,73 @@ function useCursorGlow(ref: React.RefObject<HTMLElement | null>) {
 ───────────────────────────────────────────────────────────── */
 
 function LiveReportPanel() {
-  const [step, setStep] = useState(0)
-  const [score, setScore] = useState(0)
-  const [showRecommendation, setShowRecommendation] = useState(false)
+  const [benchmarkVisible, setBenchmarkVisible] = useState(false)
+  const [insightVisible, setInsightVisible] = useState(false)
+  const [strengthsLabelVisible, setStrengthsLabelVisible] = useState(false)
+  const [str0, setStr0] = useState(false)
+  const [str1, setStr1] = useState(false)
+  const [str2, setStr2] = useState(false)
+  const [divVis, setDivVis] = useState(false)
+  const [hmLabelVis, setHmLabelVis] = useState(false)
+  const [hmSignalVis, setHmSignalVis] = useState(false)
+  const [fitVis, setFitVis] = useState(false)
+  const [panelHovered, setPanelHovered] = useState(false)
+  const [isMobilePanel, setIsMobilePanel] = useState(false)
 
   useEffect(() => {
-    const t0 = performance.now()
-    const from = 0, to = 93, duration = 600
-    let raf = 0
-    const tick = (now: number) => {
-      const p = Math.min((now - t0) / duration, 1)
-      const eased = 1 - Math.pow(1 - p, 3)
-      const currentScore = Math.round(from + eased * (to - from))
-      setScore(currentScore)
-      if (currentScore >= 85) setShowRecommendation(true)
-      if (p < 1) raf = requestAnimationFrame(tick)
-      else {
-        // After score settles, animate remaining steps
-        setTimeout(() => setStep(13), 200)
-        setTimeout(() => setStep(14), 400)
-        setTimeout(() => setStep(15), 580)
-        setTimeout(() => setStep(16), 760)
-        setTimeout(() => setStep(17), 1000)
-        setTimeout(() => setStep(18), 1200)
-        setTimeout(() => setStep(19), 1500)
-        setTimeout(() => setStep(20), 1900)
-      }
-    }
-    raf = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(raf)
+    const check = () => setIsMobilePanel(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
   }, [])
 
-  const show = (s: number) => step >= s
-  const fade = (s: number): React.CSSProperties => ({
-    opacity: show(s) ? 1 : 0,
-    transform: show(s) ? 'none' : 'translateY(5px)',
-    transition: 'all 220ms ease-out',
-  })
+  useEffect(() => {
+    const timers = [
+      setTimeout(() => setBenchmarkVisible(true), 300),
+      setTimeout(() => setInsightVisible(true), 500),
+      setTimeout(() => setStrengthsLabelVisible(true), 700),
+      setTimeout(() => setStr0(true), 820),
+      setTimeout(() => setStr1(true), 940),
+      setTimeout(() => setStr2(true), 1060),
+      setTimeout(() => setDivVis(true), 1200),
+      setTimeout(() => setHmLabelVis(true), 1350),
+      setTimeout(() => setHmSignalVis(true), 1500),
+      setTimeout(() => setFitVis(true), 1800),
+    ]
+    return () => timers.forEach(clearTimeout)
+  }, [])
 
   const G = '#22C55E', R = '#EF4444', B = '#2563EB'
   const DIVIDER: React.CSSProperties = {
     height: 1, background: 'rgba(255,255,255,0.07)', margin: '12px 0',
   }
 
+  const panelTransform = isMobilePanel
+    ? 'none'
+    : panelHovered
+      ? 'perspective(1200px) rotateY(0deg) rotateX(0deg)'
+      : 'perspective(1200px) rotateY(-2deg) rotateX(1deg)'
+  const panelShadow = isMobilePanel
+    ? '0 0 0 1px rgba(255,255,255,0.04), 0 4px 6px rgba(0,0,0,0.4), 0 12px 24px rgba(0,0,0,0.5), 0 16px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06)'
+    : '0 0 0 1px rgba(255,255,255,0.04), 0 4px 6px rgba(0,0,0,0.4), 0 12px 24px rgba(0,0,0,0.5), 0 32px 64px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06)'
+
   return (
-    <div style={{
-      background: '#0D1421',
-      border: '1px solid rgba(255,255,255,0.08)',
-      borderRadius: 14,
-      padding: '24px 24px 20px',
-      position: 'relative',
-      overflow: 'hidden',
-      boxShadow: '0 32px 64px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04)',
-    }}>
+    <div
+      onMouseEnter={() => setPanelHovered(true)}
+      onMouseLeave={() => setPanelHovered(false)}
+      style={{
+        background: 'rgba(13,20,33,0.97)',
+        border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: 16,
+        padding: '28px 28px 24px',
+        boxShadow: panelShadow,
+        transform: panelTransform,
+        transition: 'transform 400ms ease-out',
+        transformOrigin: 'center center',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
       {/* Top scan line — system processing indicator */}
       <div style={{
         position: 'absolute', top: 0, left: 0, right: 0, height: 2,
@@ -105,17 +119,38 @@ function LiveReportPanel() {
         animation: 'scanPulse 2.4s ease-in-out infinite',
       }} />
 
-      {/* Eyebrow */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: G, boxShadow: `0 0 8px ${G}` }} />
-          <span style={{ fontSize: 10, color: B, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase' as const }}>Scoring Active</span>
+      {/* Context strip */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 16,
+        paddingBottom: 12,
+        borderBottom: '1px solid rgba(255,255,255,0.06)'
+      }}>
+        <div style={{display:'flex',alignItems:'center',gap:6}}>
+          <div style={{
+            width: 6,
+            height: 6,
+            borderRadius: '50%',
+            background: '#22C55E',
+            boxShadow: '0 0 6px rgba(34,197,94,0.6)'
+          }}/>
+          <span style={{
+            fontSize: 10,
+            color: 'rgba(255,255,255,0.35)',
+            letterSpacing: '0.08em'
+          }}>
+            FINAL RECOMMENDATION
+          </span>
+        </div>
+        <span style={{fontSize:10,color:'rgba(255,255,255,0.2)'}}>
+          Gilbane Construction · Mar 2026
         </span>
-        <span style={{ marginLeft: 'auto', fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>80 signals</span>
       </div>
 
       {/* Candidate */}
-      <p style={{ fontSize: 18, fontWeight: 700, color: '#FFF', marginBottom: 2, letterSpacing: '-0.01em' }}>Marcus Thompson</p>
+      <p style={{ fontSize: 22, fontWeight: 700, color: '#FFF', marginBottom: 2, letterSpacing: '-0.01em' }}>Marcus Thompson</p>
       <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 0 }}>Superintendent · Chicago · Gilbane Construction</p>
 
       <div style={DIVIDER} />
@@ -309,6 +344,14 @@ export default function HomePage() {
   const signalSection = useInView(0.05)
   const sciSection = useInView(0.05)
   const close = useInView(0.05)
+
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check, { passive: true })
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
   const [processMode, setProcessMode] = useState<'a' | 'b'>('a')
   const processStep2Ref = useRef<HTMLDivElement>(null)
