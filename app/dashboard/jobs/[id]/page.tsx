@@ -64,10 +64,10 @@ function formatDate(iso: string): string {
 }
 
 const GROUP_LABELS: Record<string, string> = {
-  field_command: 'Field Command',
-  people_influence: 'People Influence',
-  process_structure: 'Process Structure',
-  strategic_drive: 'Strategic Drive',
+  field_command: 'Drivers',
+  people_influence: 'Catalysts',
+  process_structure: 'Operators',
+  strategic_drive: 'Stabilizers',
 }
 
 type SortKey = 'fit' | 'name' | 'date'

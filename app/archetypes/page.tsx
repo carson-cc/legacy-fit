@@ -21,11 +21,11 @@ const PH = SVG_H - M.top - M.bottom   // 504
 ───────────────────────────────────────────────────────────── */
 
 const QUADRANT_GROUPS = [
-  { label: 'All', group: null },
-  { label: 'High-Drive Independent',    group: 'field_command' },
-  { label: 'People-First Collaborative', group: 'people_influence' },
-  { label: 'Process-First Independent', group: 'process_structure' },
-  { label: 'High-Drive Collaborative',  group: 'strategic_drive' },
+  { label: 'All',         group: null },
+  { label: 'Drivers',     group: 'field_command' },
+  { label: 'Catalysts',   group: 'people_influence' },
+  { label: 'Operators',   group: 'process_structure' },
+  { label: 'Stabilizers', group: 'strategic_drive' },
 ] as const
 
 /* ─────────────────────────────────────────────────────────────
@@ -90,9 +90,6 @@ function HoverCard({ profile }: { profile: ReferenceProfile }) {
       </div>
       <p style={{ fontSize: 15, fontWeight: 700, color: '#FFF', marginBottom: 3, letterSpacing: '-0.01em' }}>{profile.name}</p>
       <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 14, lineHeight: 1.4 }}>{profile.tagline}</p>
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
-        <FitModel scores={profile.coords} size={120} variant="dark" animated={false} />
-      </div>
       {profile.strengths.slice(0, 2).map(s => (
         <div key={s} style={{ display: 'flex', gap: 6, alignItems: 'flex-start', marginBottom: 5 }}>
           <span style={{ width: 4, height: 4, borderRadius: '50%', background: G, flexShrink: 0, marginTop: 4 }} />
@@ -364,37 +361,13 @@ export default function ArchetypesPage() {
                 <line x1={CENTER_X} y1={M.top} x2={CENTER_X} y2={M.top + PH} stroke="rgba(255,255,255,0.07)" strokeWidth={0.5} strokeDasharray="4 4" />
                 <line x1={M.left} y1={CENTER_Y} x2={M.left + PW} y2={CENTER_Y} stroke="rgba(255,255,255,0.07)" strokeWidth={0.5} strokeDasharray="4 4" />
 
-                {/* Quadrant labels */}
-                {[
-                  { label: 'HIGH-DRIVE\nINDEPENDENT',    x: M.left + 0.75 * PW, y: M.top + 0.75 * PH, group: 'field_command' },
-                  { label: 'HIGH-DRIVE\nCOLLABORATIVE', x: M.left + 0.75 * PW, y: M.top + 0.25 * PH, group: 'strategic_drive' },
-                  { label: 'PROCESS-FIRST\nINDEPENDENT', x: M.left + 0.25 * PW, y: M.top + 0.75 * PH, group: 'process_structure' },
-                  { label: 'PEOPLE-FIRST\nCOLLABORATIVE', x: M.left + 0.25 * PW, y: M.top + 0.25 * PH, group: 'people_influence' },
-                ].map(q => q.label.split('\n').map((line, li) => (
-                  <text
-                    key={`${q.label}-${li}`}
-                    x={q.x} y={q.y + (li - 0.5) * 42}
-                    textAnchor="middle" dominantBaseline="middle"
-                    fill={
-                      activeGroup === q.group
-                        ? 'rgba(37,99,235,0.35)'
-                        : activeGroup !== null
-                          ? 'rgba(255,255,255,0.04)'
-                          : 'rgba(255,255,255,0.10)'
-                    }
-                    fontSize={32} fontWeight={700}
-                    letterSpacing="0.06em"
-                    style={{ pointerEvents: 'none', userSelect: 'none', transition: 'fill 250ms ease' }}
-                  >{line}</text>
-                )))}
-
                 {/* Axis labels */}
                 <text x={M.left + PW + 12} y={CENTER_Y} dominantBaseline="middle"
                   fill="rgba(255,255,255,0.22)" fontSize={9} fontWeight={600} letterSpacing="0.1em"
-                >HIGH EXECUTION →</text>
+                >Pace →</text>
                 <text x={CENTER_X} y={M.top - 16} textAnchor="middle"
                   fill="rgba(255,255,255,0.22)" fontSize={9} fontWeight={600} letterSpacing="0.1em"
-                >↑ HIGH COLLABORATION</text>
+                >↑ People</text>
 
                 {/* Profile dots */}
                 {enriched.map((p, i) => {

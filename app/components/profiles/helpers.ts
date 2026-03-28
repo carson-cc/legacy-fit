@@ -1,19 +1,19 @@
 export function getGroupColor(group: string): string {
   switch (group) {
-    case 'field_command': case 'Field Command': return 'var(--p-fc)'
-    case 'people_influence': case 'People Influence': return 'var(--p-pc)'
-    case 'process_structure': case 'Process Structure': return 'var(--p-sc)'
-    case 'strategic_drive': case 'Strategic Drive': return 'var(--p-dc)'
+    case 'field_command': case 'Drivers': return 'var(--p-fc)'
+    case 'people_influence': case 'Catalysts': return 'var(--p-pc)'
+    case 'process_structure': case 'Operators': return 'var(--p-sc)'
+    case 'strategic_drive': case 'Stabilizers': return 'var(--p-dc)'
     default: return 'var(--p-t2)'
   }
 }
 
 export function getGroupHex(group: string): string {
   switch (group) {
-    case 'field_command': case 'Field Command': return '#b83838'
-    case 'people_influence': case 'People Influence': return '#9a7418'
-    case 'process_structure': case 'Process Structure': return '#2d7248'
-    case 'strategic_drive': case 'Strategic Drive': return '#2458b8'
+    case 'field_command': case 'Drivers': return '#b83838'
+    case 'people_influence': case 'Catalysts': return '#9a7418'
+    case 'process_structure': case 'Operators': return '#2d7248'
+    case 'strategic_drive': case 'Stabilizers': return '#2458b8'
     default: return '#888888'
   }
 }
