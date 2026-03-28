@@ -404,6 +404,52 @@ button, a, input, select, textarea {
   .process-step--purple-active { border-color: rgba(124,58,237,0.3) !important; }
 }
 
+/* ================================================================
+   HOMEPAGE — SCROLL NARRATIVE
+   ================================================================ */
+
+.beat {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 100px 48px;
+  position: relative;
+}
+
+@media (max-width: 768px) {
+  .beat {
+    padding: 80px 24px;
+  }
+}
+
+.report-body-grid {
+  /* two-col by default; overridden on mobile below */
+}
+
+.contrast-grid {
+  /* two-col by default; overridden on mobile below */
+}
+
+@media (max-width: 768px) {
+  .report-body-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .contrast-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  nav {
+    padding: 16px 20px !important;
+  }
+
+  .nav-links-desktop {
+    display: none !important;
+  }
+}
+
 /* Kill dev artifacts */
 [data-nextjs-dialog-overlay],
 [data-next-badge],

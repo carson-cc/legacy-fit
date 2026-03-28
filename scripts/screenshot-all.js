@@ -97,6 +97,22 @@ async function login(browser) {
     await p.close();
   }
 
+  // Homepage animation timing shots
+  console.log('\nCapturing homepage animation states...\n');
+  for (const [label, waitMs] of [['t1500', 1500], ['t3500', 3500], ['t8000', 8000]]) {
+    const p2 = await browser.newPage();
+    await p2.setViewport({ width: 1440, height: 900, deviceScaleFactor: 2 });
+    try {
+      await p2.goto(BASE + '/', { waitUntil: 'networkidle0', timeout: 15000 });
+      await new Promise(r => setTimeout(r, waitMs));
+      await p2.screenshot({ path: path.join(OUT, `01-homepage-${label}.png`), fullPage: false });
+      console.log(`  ✓ homepage-${label}`);
+    } catch (e) {
+      console.log(`  ✗ homepage-${label}: ${e.message.slice(0, 80)}`);
+    }
+    await p2.close();
+  }
+
   // Try shared report
   const p = await browser.newPage();
   if (cookies.length) await p.setCookie(...cookies);

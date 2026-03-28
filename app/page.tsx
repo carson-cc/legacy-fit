@@ -1,1467 +1,830 @@
 'use client'
-
-import { useEffect, useRef, useState } from 'react'
-import Link from 'next/link'
-import { FitModel } from '@/app/components/FitModel'
-import FitModelDual from '@/app/components/FitModelDual'
-import SignalTrace from '@/app/components/SignalTrace'
-
-
-/* ─────────────────────────────────────────────────────────────
-   HOOKS
-───────────────────────────────────────────────────────────── */
-
-function useInView(threshold = 0.15) {
-  const ref = useRef<HTMLDivElement>(null)
-  const [visible, setVisible] = useState(false)
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const obs = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) setVisible(true) },
-      { threshold }
-    )
-    obs.observe(el)
-    return () => obs.disconnect()
-  }, [threshold])
-  return { ref, visible }
-}
-
-function useCursorGlow(ref: React.RefObject<HTMLElement | null>) {
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const h = (e: MouseEvent) => {
-      el.style.setProperty('--cx', e.clientX + 'px')
-      el.style.setProperty('--cy', e.clientY + 'px')
-    }
-    el.addEventListener('mousemove', h, { passive: true })
-    return () => el.removeEventListener('mousemove', h)
-  }, [ref])
-}
-
-/* ─────────────────────────────────────────────────────────────
-   STAT COUNTER
-───────────────────────────────────────────────────────────── */
-
-function StatCounter({ value, suffix = '', label }: { value: number; suffix?: string; label: string }) {
-  const { ref, visible } = useInView(0.5)
-  const [count, setCount] = useState(0)
-  useEffect(() => {
-    if (!visible) return
-    const t0 = performance.now(), duration = 1200
-    let raf = 0
-    const tick = (now: number) => {
-      const p = Math.min((now - t0) / duration, 1)
-      const eased = 1 - Math.pow(1 - p, 3)
-      setCount(Math.round(eased * value))
-      if (p < 1) raf = requestAnimationFrame(tick)
-    }
-    raf = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(raf)
-  }, [visible, value])
-
-  return (
-    <div ref={ref} style={{ textAlign: 'center' }}>
-      <div style={{ fontSize: 44, fontWeight: 700, color: '#FFF', letterSpacing: '-0.03em', lineHeight: 1 }}>
-        {count.toLocaleString()}{suffix}
-      </div>
-      <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginTop: 6, letterSpacing: '0.01em' }}>{label}</div>
-    </div>
-  )
-}
-
-/* ─────────────────────────────────────────────────────────────
-   SIGNAL TRACE DEMO — for the method section
-───────────────────────────────────────────────────────────── */
-
-function SignalTraceDemo({ visible }: { visible: boolean }) {
-  const wrapRef = useRef<HTMLDivElement>(null)
-  const [traceWidth, setTraceWidth] = useState(448)
-  useEffect(() => {
-    const el = wrapRef.current
-    if (!el) return
-    const obs = new ResizeObserver(([e]) => {
-      setTraceWidth(Math.min(448, Math.floor(e.contentRect.width - 48)))
-    })
-    obs.observe(el)
-    return () => obs.disconnect()
-  }, [])
-  return (
-    <div ref={wrapRef} style={{
-      background: '#0D1421',
-      border: '1px solid rgba(255,255,255,0.07)',
-      borderRadius: 12,
-      padding: '20px 24px',
-      opacity: visible ? 1 : 0,
-      transform: visible ? 'none' : 'translateY(12px)',
-      transition: 'all 500ms ease-out',
-    }}>
-      <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' as const, marginBottom: 12 }}>Signal Pattern vs. Benchmark</p>
-      <SignalTrace
-        candidateScores={{ dominance: 0.88, extraversion: 0.62, patience: 0.18, formality: 0.45 }}
-        benchmarkScores={{ dominance: 0.74, extraversion: 0.54, patience: 0.46, formality: 0.56 }}
-        width={traceWidth}
-        variant="dark"
-        animated={visible}
-      />
-    </div>
-  )
-}
-
-/* ─────────────────────────────────────────────────────────────
-   HOMEPAGE
-───────────────────────────────────────────────────────────── */
+import { useEffect, useState } from 'react'
 
 export default function HomePage() {
-  const heroRef = useRef<HTMLDivElement>(null)
-  const closeRef = useRef<HTMLDivElement>(null)
-  useCursorGlow(heroRef as React.RefObject<HTMLElement | null>)
-  useCursorGlow(closeRef as React.RefObject<HTMLElement | null>)
-
-  const [scrolled, setScrolled] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
-
-  // Hero computation sequence state
-  const [scanLine, setScanLine] = useState(false)
-  const [headerVisible, setHeaderVisible] = useState(false)
-  const [candidateVisible, setCandidateVisible] = useState(false)
-  const [benchmarkLoading, setBenchmarkLoading] = useState(false)
-  const [benchmarkActive, setBenchmarkActive] = useState(false)
-  const [signalBarVisible, setSignalBarVisible] = useState(false)
-  const [signalBarComplete, setSignalBarComplete] = useState(false)
-  const [visibleDimensions, setVisibleDimensions] = useState<number[]>([])
-  const [fitModelVisible, setFitModelVisible] = useState(false)
-  const [scoreRingFilling, setScoreRingFilling] = useState(false)
-  const [scoreValue, setScoreValue] = useState(0)
-  const [recommendationVisible, setRecommendationVisible] = useState(false)
-  const [insightVisible, setInsightVisible] = useState(false)
-  const [benchmarkNoteVisible, setBenchmarkNoteVisible] = useState(false)
-  const [visibleStrengths, setVisibleStrengths] = useState<number[]>([])
-  const [visibleRisks, setVisibleRisks] = useState<number[]>([])
-  const [hmSignalVisible, setHmSignalVisible] = useState(false)
-  const [metadataVisible, setMetadataVisible] = useState(false)
-  const [copyVisible, setCopyVisible] = useState(false)
+  const [navLight, setNavLight] = useState(false)
 
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768)
-    check()
-    window.addEventListener('resize', check)
-    return () => window.removeEventListener('resize', check)
+    const lightBeats = document.querySelectorAll(
+      '#beat-light-start, #beat-light-end'
+    )
+    const obs = new IntersectionObserver(
+      (entries) => {
+        const anyVisible = entries.some(e => e.isIntersecting)
+        setNavLight(anyVisible)
+      },
+      { threshold: 0.1 }
+    )
+    lightBeats.forEach(el => obs.observe(el))
+    return () => obs.disconnect()
   }, [])
-
-  useEffect(() => {
-    const h = () => setScrolled(window.scrollY > 40)
-    window.addEventListener('scroll', h, { passive: true })
-    return () => window.removeEventListener('scroll', h)
-  }, [])
-
-  // Hero computation sequence
-  useEffect(() => {
-    const timers: ReturnType<typeof setTimeout>[] = []
-    const t = (ms: number, fn: () => void) => {
-      timers.push(setTimeout(fn, ms))
-    }
-
-    t(200,  () => setScanLine(true))
-    t(500,  () => setHeaderVisible(true))
-    t(800,  () => setCandidateVisible(true))
-    t(1100, () => setBenchmarkLoading(true))
-    t(1450, () => { setBenchmarkLoading(false); setBenchmarkActive(true) })
-    t(1700, () => setSignalBarVisible(true))
-    t(2500, () => setSignalBarComplete(true))
-
-    t(2650, () => setVisibleDimensions([1]))
-    t(2880, () => setVisibleDimensions([1,2]))
-    t(3120, () => setVisibleDimensions([1,2,3]))
-    t(3410, () => setVisibleDimensions([1,2,3,4]))
-    t(3720, () => setVisibleDimensions([1,2,3,4,5]))
-
-    t(3900, () => setFitModelVisible(true))
-    t(4400, () => setScoreRingFilling(true))
-
-    t(4400, () => {
-      const start = performance.now()
-      const duration = 700
-      const target = 93
-      const animate = (now: number) => {
-        const elapsed = now - start
-        const progress = Math.min(elapsed / duration, 1)
-        const eased = 1 - Math.pow(1 - progress, 3)
-        setScoreValue(Math.round(eased * target))
-        if (progress < 1) requestAnimationFrame(animate)
-      }
-      requestAnimationFrame(animate)
-    })
-
-    t(5300, () => setRecommendationVisible(true))
-    t(5500, () => setInsightVisible(true))
-    t(5700, () => setBenchmarkNoteVisible(true))
-
-    t(5950, () => setVisibleStrengths([0]))
-    t(6070, () => setVisibleStrengths([0,1]))
-    t(6190, () => setVisibleStrengths([0,1,2]))
-
-    t(6400, () => setVisibleRisks([0]))
-    t(6520, () => setVisibleRisks([0,1]))
-
-    t(6730, () => setHmSignalVisible(true))
-    t(6950, () => setMetadataVisible(true))
-    t(7300, () => setCopyVisible(true))
-
-    return () => timers.forEach(clearTimeout)
-  }, [])
-
-  const [sceneTriggered, setSceneTriggered] = useState(false)
-  const sceneRef = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    const el = sceneRef.current
-    if (!el) return
-    let fired = false
-    const check = () => {
-      if (fired) return
-      const rect = el.getBoundingClientRect()
-      // Trigger when the top of the section enters the bottom 30% of the viewport
-      // This ensures the user has scrolled TO it, not just loaded the page
-      if (rect.top < window.innerHeight * 0.85 && rect.bottom > 0) {
-        // Only fire if the user has actually scrolled (not on initial load)
-        if (window.scrollY > 100) {
-          fired = true
-          setSceneTriggered(true)
-          window.removeEventListener('scroll', check)
-        }
-      }
-    }
-    window.addEventListener('scroll', check, { passive: true })
-    return () => window.removeEventListener('scroll', check)
-  }, [])
-
-  const output = useInView(0.05)
-  const howWorks = useInView(0.05)
-  const hmSection = useInView(0.05)
-  const signalSection = useInView(0.05)
-  const sciSection = useInView(0.05)
-  const close = useInView(0.05)
-
-  const [processMode, setProcessMode] = useState<'a' | 'b'>('a')
-  const processStep2Ref = useRef<HTMLDivElement>(null)
-  const processStep5Ref = useRef<HTMLDivElement>(null)
-  const processStepsRef = useRef<HTMLDivElement>(null)
-  const [connLine, setConnLine] = useState<{ top: number; height: number } | null>(null)
-  useEffect(() => {
-    if (processMode !== 'b') { setConnLine(null); return }
-    const measure = () => {
-      const container = processStepsRef.current
-      const s2 = processStep2Ref.current
-      const s5 = processStep5Ref.current
-      if (!container || !s2 || !s5) return
-      const cRect = container.getBoundingClientRect()
-      const s2Rect = s2.getBoundingClientRect()
-      const s5Rect = s5.getBoundingClientRect()
-      setConnLine({ top: s2Rect.bottom - cRect.top, height: Math.max(0, s5Rect.top - s2Rect.bottom) })
-    }
-    const t = setTimeout(measure, 350)
-    window.addEventListener('resize', measure)
-    return () => { clearTimeout(t); window.removeEventListener('resize', measure) }
-  }, [processMode])
-
-  const BG = '#060B14'
-  const SF = '#0D1421'
-  const B = '#2563EB'
-  const G = '#22C55E'
-  const MAX = 1280
 
   return (
-    <main style={{ background: BG, color: '#FFF', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif', overflowX: 'hidden' }}>
-
-      {/* ----------------------------------------------
-          NAV
-      ---------------------------------------------- */}
+    <>
+      {/* ── FIXED NAV ─────────────────────────────────────────── */}
       <nav style={{
-        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, height: 64,
-        background: scrolled ? 'rgba(6,11,20,0.95)' : 'transparent',
-        backdropFilter: scrolled ? 'blur(20px)' : 'none',
-        borderBottom: scrolled ? '1px solid rgba(255,255,255,0.05)' : '1px solid transparent',
-        transition: 'all 240ms ease-out',
+        position: 'fixed',
+        top: 0, left: 0, right: 0,
+        zIndex: 100,
+        padding: '18px 48px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        background: navLight
+          ? 'rgba(245,245,240,0.96)'
+          : 'transparent',
+        backdropFilter: navLight ? 'blur(12px)' : 'none',
+        WebkitBackdropFilter: navLight ? 'blur(12px)' : 'none',
+        transition: 'all 300ms ease'
       }}>
-        <div style={{ maxWidth: MAX, margin: '0 auto', padding: '0 40px', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }} className="nav-inner">
-          <Link href="/" style={{ fontSize: 15, fontWeight: 700, color: '#FFF', textDecoration: 'none', letterSpacing: '-0.02em' }}>Veltro</Link>
-          <div className="nav-links-group" style={{ display: 'flex', gap: 36, alignItems: 'center' }}>
-            {[
-              { label: 'Sample Report', href: '/sample-report' },
-              { label: 'Method', href: '/profiles' },
-            ].map(l => (
-              <Link key={l.label} href={l.href}
-                style={{ fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,0.5)', textDecoration: 'none', transition: 'color 160ms ease' }}
-                onMouseEnter={e => (e.currentTarget.style.color = '#FFF')}
-                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.5)')}
-              >{l.label}</Link>
-            ))}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <Link href="/login" className="nav-signin" style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', textDecoration: 'none', transition: 'color 160ms ease' }}
-              onMouseEnter={e => (e.currentTarget.style.color = '#FFF')}
-              onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.45)')}
-            >Sign in</Link>
-            <a href="mailto:team@veltro.ai?subject=Veltro%20Walkthrough%20Request" className="nav-cta" style={{
-              height: 34, padding: '0 20px', borderRadius: 8, background: '#FFF', color: '#060B14',
-              fontSize: 13, fontWeight: 600, display: 'inline-flex', alignItems: 'center',
-              textDecoration: 'none', transition: 'all 160ms ease',
-              letterSpacing: '-0.01em',
-            }}
-              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(255,255,255,0.12)' }}
-              onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '' }}
-            ><span className="nav-cta-desktop">Request a walkthrough</span><span className="nav-cta-mobile">Talk to us</span></a>
-          </div>
+        <span style={{
+          fontSize: 15,
+          fontWeight: 700,
+          color: navLight ? '#000' : '#fff',
+          letterSpacing: '-0.01em',
+          transition: 'color 300ms ease'
+        }}>
+          Veltro
+        </span>
+
+        <div className="nav-links-desktop" style={{
+          display: 'flex',
+          gap: 24,
+          alignItems: 'center'
+        }}>
+          <a href="/sample-report" style={{
+            fontSize: 13,
+            color: navLight
+              ? 'rgba(0,0,0,0.4)'
+              : 'rgba(255,255,255,0.4)',
+            textDecoration: 'none',
+            transition: 'color 300ms ease'
+          }}>
+            Sample Report
+          </a>
+          <a href="/profiles" style={{
+            fontSize: 13,
+            color: navLight
+              ? 'rgba(0,0,0,0.4)'
+              : 'rgba(255,255,255,0.4)',
+            textDecoration: 'none',
+            transition: 'color 300ms ease'
+          }}>
+            Method
+          </a>
+          <a href="/login" style={{
+            fontSize: 13,
+            color: navLight
+              ? 'rgba(0,0,0,0.4)'
+              : 'rgba(255,255,255,0.4)',
+            textDecoration: 'none',
+            transition: 'color 300ms ease'
+          }}>
+            Sign in
+          </a>
         </div>
+
+        <a href="/sample-report" style={{
+          fontSize: 13,
+          fontWeight: 600,
+          color: navLight ? '#000' : '#fff',
+          background: navLight
+            ? 'rgba(0,0,0,0.06)'
+            : 'rgba(255,255,255,0.1)',
+          border: `1px solid ${navLight
+            ? 'rgba(0,0,0,0.12)'
+            : 'rgba(255,255,255,0.15)'}`,
+          padding: '7px 14px',
+          borderRadius: 6,
+          textDecoration: 'none',
+          transition: 'all 300ms ease'
+        }}>
+          See the report →
+        </a>
       </nav>
 
-      {/* ----------------------------------------------
-          HERO
-      ---------------------------------------------- */}
-      <section ref={heroRef} style={{
-        position: 'relative', minHeight: '100vh', paddingTop: 64,
-        display: 'flex', alignItems: 'center', overflow: 'hidden',
-      }}>
-        {/* Dot grid */}
-        <div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', backgroundImage: 'radial-gradient(rgba(255,255,255,0.015) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
-        {/* Cursor glow */}
-        <div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', background: 'radial-gradient(700px circle at var(--cx, 40%) var(--cy, 50%), rgba(37,99,235,0.04), transparent 50%)' }} />
-        {/* Bottom fade */}
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 200, zIndex: 1, background: `linear-gradient(transparent, ${BG})`, pointerEvents: 'none' }} />
+      {/* ── BEAT 1 — The Recognition ──────────────────────────── */}
+      <section className="beat" style={{ background: '#000' }}>
+        <p style={{
+          fontSize: 'clamp(32px, 5vw, 52px)',
+          fontWeight: 600,
+          color: 'rgba(255,255,255,0.88)',
+          letterSpacing: '-0.03em',
+          lineHeight: 1.1,
+          textAlign: 'center',
+          maxWidth: 620
+        }}>
+          You already know<br />
+          who&apos;s right for the role.
+        </p>
 
-        <div className="hero-grid" style={{ maxWidth: MAX, margin: '0 auto', padding: '32px 32px 0', width: '100%', display: 'grid', gap: 72, alignItems: 'center', position: 'relative', zIndex: 2 }}>
-
-          {/* Left — invisible until computation completes */}
+        {/* Scroll indicator */}
+        <div style={{
+          position: 'absolute',
+          bottom: 36,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 6,
+          opacity: 0.35
+        }}>
           <div style={{
-            opacity: copyVisible ? 1 : 0,
-            transform: copyVisible ? 'translateY(0)' : 'translateY(12px)',
-            transition: 'opacity 700ms ease-out, transform 700ms ease-out'
+            width: 1,
+            height: 32,
+            background: 'linear-gradient(180deg, rgba(255,255,255,0.6), transparent)'
+          }} />
+          <span style={{
+            fontSize: 9,
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            color: 'rgba(255,255,255,0.5)'
+          }}>Scroll</span>
+        </div>
+      </section>
+
+      {/* ── BEAT 2 — The Shift ────────────────────────────────── */}
+      <section className="beat" style={{ background: '#000' }}>
+        <div style={{ textAlign: 'center' }}>
+          <p style={{
+            fontSize: 'clamp(28px, 4.5vw, 48px)',
+            fontWeight: 600,
+            color: 'rgba(255,255,255,0.28)',
+            letterSpacing: '-0.03em',
+            lineHeight: 1.1,
+            marginBottom: 18
           }}>
-            <h1 style={{ fontSize: 60, lineHeight: 1.04, fontWeight: 700, letterSpacing: '-0.035em', marginBottom: 24, color: '#FFF' }}>
-              <span style={{ color: 'rgba(255,255,255,0.72)' }}>Your gut is right.</span><br />
-              Now show it.
-            </h1>
+            You already know<br />
+            who&apos;s right for the role.
+          </p>
+          <p style={{
+            fontSize: 'clamp(28px, 4.5vw, 48px)',
+            fontWeight: 700,
+            color: '#FFFFFF',
+            letterSpacing: '-0.03em',
+            lineHeight: 1.1
+          }}>
+            Now show your client why.
+          </p>
+        </div>
+      </section>
 
-            <p style={{ fontSize: 18, lineHeight: 1.75, color: 'rgba(255,255,255,0.55)', maxWidth: 460, marginBottom: 40 }}>
-              No change to how you run a search. One additional step at shortlist. A report your client acts on.
-            </p>
+      {/* ── BEAT 3 — The Object ───────────────────────────────── */}
+      <section className="beat" style={{ background: '#000', gap: 24 }}>
+        <p style={{
+          fontSize: 11,
+          fontWeight: 600,
+          color: 'rgba(255,255,255,0.25)',
+          letterSpacing: '0.12em',
+          textTransform: 'uppercase'
+        }}>
+          What your client sees
+        </p>
 
-            <div className="hero-ctas" style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 52 }}>
-              <Link href="/sample-report" style={{
-                height: 44, padding: '0 24px', borderRadius: 8, background: '#FFF', color: '#111827',
-                fontSize: 14, fontWeight: 600, display: 'inline-flex', alignItems: 'center',
-                textDecoration: 'none', transition: 'all 180ms ease', letterSpacing: '-0.01em',
-              }}
-                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(255,255,255,0.15)' }}
-                onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '' }}
-              >See what your client sees &rarr;</Link>
-              <a href="mailto:team@veltro.ai?subject=Veltro%20Walkthrough%20Request" style={{
-                height: 44, padding: '0 24px', borderRadius: 8,
-                background: 'transparent',
-                border: '1px solid rgba(255,255,255,0.2)',
-                color: 'rgba(255,255,255,0.6)',
-                fontSize: 14, fontWeight: 500, display: 'inline-flex', alignItems: 'center',
-                textDecoration: 'none', transition: 'all 180ms ease',
-              }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.35)'; e.currentTarget.style.color = '#FFF' }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)' }}
-              >Request a walkthrough</a>
-            </div>
+        <div style={{
+          width: '100%',
+          maxWidth: 640,
+          background: '#0D1421',
+          border: '1px solid rgba(255,255,255,0.09)',
+          borderRadius: 14,
+          overflow: 'hidden'
+        }}>
+          {/* Top gradient bar */}
+          <div style={{
+            height: 2,
+            background: 'linear-gradient(90deg, #2563EB, #22C55E)'
+          }} />
 
-            <p className="hero-italic-line" style={{
-              fontSize: 13,
-              color: 'rgba(255,255,255,0.35)',
-              fontStyle: 'italic',
-              marginTop: 16,
-              marginBottom: 0,
-              letterSpacing: '-0.01em'
+          {/* Report header */}
+          <div style={{
+            padding: '14px 22px',
+            borderBottom: '1px solid rgba(255,255,255,0.06)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            <span style={{
+              fontSize: 9,
+              fontWeight: 600,
+              color: 'rgba(255,255,255,0.22)',
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase'
             }}>
-              So you don&rsquo;t hear &ldquo;let&rsquo;s see more candidates.&rdquo;
-            </p>
-
-            {/* Trust strip */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 0, flexWrap: 'wrap', marginTop: 8 }}>
-              {[
-                '80 behavioral signals',
-                'Role-specific benchmark',
-                'Hiring manager compatibility'
-              ].map((item, i) => (
-                <span key={item} style={{ fontSize: 12, color: 'rgba(255,255,255,0.28)', display: 'flex', alignItems: 'center', gap: 0 }}>
-                  {i > 0 && <span style={{margin: '0 10px', color: 'rgba(255,255,255,0.15)'}}>·</span>}
-                  {item}
-                </span>
-              ))}
-            </div>
+              Candidate Recommendation Report
+            </span>
+            <span style={{
+              fontSize: 11,
+              color: '#2563EB',
+              fontWeight: 500
+            }}>
+              Share report →
+            </span>
           </div>
 
-          {/* Right — live computation panel */}
-          <div style={{
-            background: 'rgba(13,20,33,0.97)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            borderRadius: 16,
-            padding: '24px 24px 20px',
-            boxShadow: isMobile
-              ? '0 0 0 1px rgba(255,255,255,0.04), 0 4px 6px rgba(0,0,0,0.4), 0 12px 24px rgba(0,0,0,0.5), 0 16px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06)'
-              : '0 0 0 1px rgba(255,255,255,0.04), 0 4px 6px rgba(0,0,0,0.4), 0 12px 24px rgba(0,0,0,0.5), 0 32px 64px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06)',
-            transform: isMobile ? 'none' : 'perspective(1200px) rotateY(-2deg) rotateX(1deg)',
-            transformOrigin: 'center center',
-            position: 'relative' as const,
-            overflow: 'hidden',
-          }}>
-
-            {/* Scan line */}
-            <div style={{
-              position: 'absolute',
-              top: 0, left: 0, right: 0,
-              height: 1,
-              background: 'linear-gradient(90deg, transparent, rgba(37,99,235,0.6), transparent)',
-              transformOrigin: 'left',
-              transform: scanLine ? 'scaleX(1)' : 'scaleX(0)',
-              transition: scanLine ? 'transform 600ms ease-out' : 'none'
-            }}/>
-
-            {/* System header */}
-            <div style={{
-              opacity: headerVisible ? 1 : 0,
-              transition: 'opacity 300ms ease-out',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: 14,
-              paddingBottom: 12,
-              borderBottom: '1px solid rgba(255,255,255,0.06)'
-            }}>
-              <span style={{ fontSize: 10, color: '#2563EB', fontWeight: 600, letterSpacing: '0.1em' }}>
-                VELTRO DECISION ENGINE
-              </span>
-              <span style={{fontSize: 10, color: 'rgba(255,255,255,0.2)'}}>
-                Gilbane Construction &middot; Mar 2026
-              </span>
-            </div>
-
-            {/* Candidate identity */}
-            <div style={{
-              opacity: candidateVisible ? 1 : 0,
-              transform: candidateVisible ? 'translateY(0)' : 'translateY(6px)',
-              transition: 'all 220ms ease-out',
-              marginBottom: 14
-            }}>
-              <p style={{ fontSize: 20, fontWeight: 700, color: '#FFFFFF', marginBottom: 3, letterSpacing: '-0.01em' }}>
+          {/* Report body — two columns desktop, single mobile */}
+          <div
+            className="report-body-grid"
+            style={{
+              padding: 22,
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: 20
+            }}
+          >
+            {/* Left column */}
+            <div>
+              <p style={{
+                fontSize: 20,
+                fontWeight: 700,
+                color: '#FFFFFF',
+                letterSpacing: '-0.01em',
+                marginBottom: 2
+              }}>
                 Marcus Thompson
               </p>
-              <p style={{fontSize: 13, color: 'rgba(255,255,255,0.45)'}}>
-                Superintendent &mdash; Chicago &middot; Gilbane Construction
+              <p style={{
+                fontSize: 12,
+                color: 'rgba(255,255,255,0.35)',
+                marginBottom: 16
+              }}>
+                Superintendent · Chicago · Gilbane Construction
               </p>
-            </div>
 
-            {/* Benchmark status */}
-            <div style={{
-              minHeight: 20, marginBottom: 12,
-              display: 'flex', alignItems: 'center', gap: 7,
-              opacity: benchmarkLoading || benchmarkActive ? 1 : 0,
-              transition: 'opacity 200ms ease-out'
-            }}>
-              {benchmarkLoading && !benchmarkActive && (
-                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.06em' }}>
-                  BENCHMARK LOADING...
-                </span>
-              )}
-              {benchmarkActive && (
-                <>
-                  <div style={{
-                    width: 6, height: 6, borderRadius: '50%',
-                    background: '#22C55E',
-                    boxShadow: '0 0 8px rgba(34,197,94,0.7)',
-                    flexShrink: 0
-                  }}/>
-                  <span style={{ fontSize: 10, color: '#22C55E', fontWeight: 600, letterSpacing: '0.06em' }}>
-                    BENCHMARK ACTIVE &mdash; FIELD LEADERSHIP
-                  </span>
-                </>
-              )}
-            </div>
-
-            {/* Signal processing bar */}
-            {signalBarVisible && (
-              <div style={{marginBottom: 14}}>
-                <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.28)', letterSpacing: '0.08em', marginBottom: 6 }}>
-                  PROCESSING BEHAVIORAL SIGNALS
-                </p>
-                <div style={{ height: 2, background: 'rgba(255,255,255,0.07)', borderRadius: 1, overflow: 'hidden' }}>
-                  <div style={{
-                    height: '100%',
-                    background: 'linear-gradient(90deg, #2563EB, #22C55E)',
-                    borderRadius: 1,
-                    width: signalBarComplete ? '100%' : '3%',
-                    transition: signalBarComplete
-                      ? 'width 900ms cubic-bezier(0.25, 0.46, 0.45, 0.94)'
-                      : 'width 300ms ease-out'
-                  }}/>
+              {/* Verdict row */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 14,
+                padding: '12px 0',
+                borderTop: '1px solid rgba(255,255,255,0.06)',
+                borderBottom: '1px solid rgba(255,255,255,0.06)',
+                marginBottom: 12
+              }}>
+                <span style={{
+                  fontSize: 38,
+                  fontWeight: 800,
+                  color: '#FFFFFF',
+                  letterSpacing: '-0.03em',
+                  lineHeight: 1
+                }}>93</span>
+                <div>
+                  <p style={{
+                    fontSize: 20,
+                    fontWeight: 700,
+                    color: '#22C55E',
+                    letterSpacing: '-0.02em',
+                    marginBottom: 3
+                  }}>
+                    Strong Hire
+                  </p>
+                  <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>
+                    High confidence · Top 12% · Role benchmark active
+                  </p>
                 </div>
               </div>
-            )}
 
-            {/* Dimensions resolving */}
-            <div style={{marginBottom: 12}}>
+              <p style={{
+                fontSize: 12,
+                color: 'rgba(255,255,255,0.45)',
+                fontStyle: 'italic',
+                lineHeight: 1.65,
+                marginBottom: 12
+              }}>
+                Aligned with high-performing candidates in comparable
+                field leadership roles. Decisive under pressure, built
+                for environments where someone has to own the outcome.
+              </p>
+
+              {/* Decision Frame */}
+              <div style={{
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                borderRadius: 7,
+                padding: '12px 14px'
+              }}>
+                {[
+                  {
+                    label: 'HIRE IF',
+                    color: '#22C55E',
+                    text: 'The role requires independent execution and fast decisions without waiting for consensus.'
+                  },
+                  {
+                    label: 'DO NOT HIRE IF',
+                    color: '#EF4444',
+                    text: 'Success depends on consensus-driven decisions or cross-functional alignment before action.'
+                  }
+                ].map((row, i) => (
+                  <div key={i} style={{
+                    display: 'flex',
+                    gap: 10,
+                    padding: '5px 0',
+                    borderTop: i > 0 ? '1px solid rgba(255,255,255,0.05)' : 'none'
+                  }}>
+                    <span style={{
+                      fontSize: 9,
+                      fontWeight: 600,
+                      color: row.color,
+                      letterSpacing: '0.07em',
+                      textTransform: 'uppercase',
+                      width: 76,
+                      flexShrink: 0,
+                      marginTop: 2
+                    }}>
+                      {row.label}
+                    </span>
+                    <span style={{
+                      fontSize: 11,
+                      color: 'rgba(255,255,255,0.5)',
+                      lineHeight: 1.6
+                    }}>
+                      {row.text}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Right column */}
+            <div>
+              <p style={{
+                fontSize: 9,
+                color: 'rgba(255,255,255,0.2)',
+                fontWeight: 600,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                marginBottom: 8
+              }}>
+                Benchmark Alignment
+              </p>
+
               {[
-                { label: 'EXECUTION', value: 72, delta: '+8', color: '#22C55E', warn: false, bold: false },
-                { label: 'OWNERSHIP', value: 67, delta: '+1', color: '#22C55E', warn: false, bold: false },
-                { label: 'ADAPTABILITY', value: 65, delta: '+15', color: '#22C55E', warn: false, bold: false },
-                { label: 'COLLABORATION', value: 49, delta: '\u22123', color: '#EF4444', warn: true, bold: false },
-                { label: 'DECISION SPEED', value: 85, delta: '+21', color: '#22C55E', warn: false, bold: true },
+                { label: 'EXECUTION',      value: 72, delta: '+8',  color: '#22C55E', warn: false },
+                { label: 'OWNERSHIP',      value: 67, delta: '+1',  color: '#22C55E', warn: false },
+                { label: 'ADAPTABILITY',   value: 65, delta: '+15', color: '#22C55E', warn: false },
+                { label: 'COLLABORATION',  value: 49, delta: '−3',  color: '#EF4444', warn: true  },
+                { label: 'DECISION SPEED', value: 85, delta: '+21', color: '#22C55E', warn: false },
               ].map((dim, i) => (
-                <div key={dim.label} style={{
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  opacity: visibleDimensions.includes(i + 1) ? 1 : 0,
-                  transform: visibleDimensions.includes(i + 1) ? 'translateY(0)' : 'translateY(4px)',
-                  transition: 'all 220ms ease-out',
-                  paddingBottom: 5, marginBottom: 5,
+                <div key={i} style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '4px 0',
                   borderBottom: i < 4 ? '1px solid rgba(255,255,255,0.04)' : 'none'
                 }}>
                   <span style={{
                     fontSize: 10,
-                    color: dim.warn ? 'rgba(239,68,68,0.7)' : 'rgba(255,255,255,0.32)',
-                    letterSpacing: '0.07em', fontWeight: 600
+                    color: dim.warn
+                      ? 'rgba(239,68,68,0.6)'
+                      : 'rgba(255,255,255,0.28)',
+                    letterSpacing: '0.06em',
+                    fontWeight: 600
                   }}>
-                    {dim.warn ? '\u26A0 ' : ''}{dim.label}
+                    {dim.warn ? '⚠ ' : ''}{dim.label}
                   </span>
-                  <div style={{display: 'flex', alignItems: 'center', gap: 8}}>
-                    <span style={{ fontSize: 13, fontWeight: dim.bold ? 700 : 600, color: '#FFFFFF' }}>{dim.value}</span>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: dim.color }}>{dim.delta}</span>
+                  <div style={{ display: 'flex', gap: 7, alignItems: 'center' }}>
+                    <span style={{
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: 'rgba(255,255,255,0.6)'
+                    }}>
+                      {dim.value}
+                    </span>
+                    <span style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: dim.color
+                    }}>
+                      {dim.delta}
+                    </span>
                   </div>
                 </div>
               ))}
+
+              <p style={{
+                fontSize: 9,
+                color: 'rgba(255,255,255,0.2)',
+                fontWeight: 600,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                margin: '14px 0 8px'
+              }}>
+                Interview Probes
+              </p>
+
+              {[
+                'Tell me about a time you committed to a direction before your team was aligned. What happened?',
+                'Describe a situation where you had to slow down for stakeholder input. How did you handle it?'
+              ].map((probe, i) => (
+                <p key={i} style={{
+                  fontSize: 11,
+                  color: 'rgba(255,255,255,0.42)',
+                  lineHeight: 1.6,
+                  marginBottom: 6,
+                  paddingLeft: 8,
+                  borderLeft: '2px solid rgba(37,99,235,0.3)'
+                }}>
+                  {probe}
+                </p>
+              ))}
             </div>
-
-            {/* FitModel */}
-            <div style={{
-              opacity: fitModelVisible ? 1 : 0,
-              transition: 'opacity 500ms ease-out',
-              display: 'flex', justifyContent: 'center',
-              margin: '10px 0'
-            }}>
-              <FitModel
-                scores={{ dominance: 0.88, extraversion: 0.62, patience: 0.18, formality: 0.45 }}
-                size={140}
-                variant="dark"
-                animated={fitModelVisible}
-              />
-            </div>
-
-            {/* Score ring + recommendation */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 10 }}>
-              <svg width={64} height={64} viewBox="0 0 64 64" style={{flexShrink: 0}}>
-                <circle cx={32} cy={32} r={29} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={3} />
-                <circle cx={32} cy={32} r={29} fill="none" stroke="#22C55E" strokeWidth={3}
-                  strokeLinecap="round"
-                  strokeDasharray={`${2 * Math.PI * 29}`}
-                  strokeDashoffset={scoreRingFilling ? `${2 * Math.PI * 29 * (1 - scoreValue / 100)}` : `${2 * Math.PI * 29}`}
-                  style={{ transition: 'stroke-dashoffset 100ms linear', transform: 'rotate(-90deg)', transformOrigin: '32px 32px' }}
-                />
-                {scoreValue > 0 && (
-                  <text x={32} y={32} textAnchor="middle" dominantBaseline="middle"
-                    fill="white" fontSize={20} fontWeight={700} fontFamily="-apple-system, sans-serif">{scoreValue}</text>
-                )}
-              </svg>
-              <div>
-                <p style={{
-                  fontSize: 17, fontWeight: 700, color: '#22C55E', marginBottom: 3,
-                  visibility: recommendationVisible ? 'visible' : 'hidden'
-                }}>Strong Hire</p>
-                <p style={{
-                  fontSize: 12,
-                  color: insightVisible ? 'rgba(255,255,255,0.45)' : 'transparent',
-                  transition: 'color 300ms ease-out'
-                }}>High confidence &middot; Top 12%</p>
-              </div>
-            </div>
-
-            {/* Benchmark note */}
-            <p style={{
-              fontSize: 12, lineHeight: 1.6, fontStyle: 'italic', marginBottom: 12,
-              color: benchmarkNoteVisible ? 'rgba(255,255,255,0.55)' : 'transparent',
-              transition: 'color 300ms ease-out'
-            }}>
-              Aligned with high-performing candidates in comparable field leadership roles.
-            </p>
-
-            {/* Divider */}
-            <div style={{
-              height: 1, background: 'rgba(255,255,255,0.07)', marginBottom: 10,
-              opacity: benchmarkNoteVisible ? 1 : 0, transition: 'opacity 300ms ease-out'
-            }}/>
-
-            {/* Strengths */}
-            {visibleStrengths.length > 0 && (
-              <div style={{marginBottom: 10}}>
-                <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', fontWeight: 600, letterSpacing: '0.12em', marginBottom: 7 }}>TOP STRENGTHS</p>
-                {['Takes immediate ownership without being asked', 'Makes clear decisions under pressure', 'Drives stalled teams forward'].map((s, i) => (
-                  <div key={i} style={{
-                    display: 'flex', alignItems: 'flex-start', gap: 7, marginBottom: 5,
-                    opacity: visibleStrengths.includes(i) ? 1 : 0,
-                    transform: visibleStrengths.includes(i) ? 'translateY(0)' : 'translateY(4px)',
-                    transition: 'all 200ms ease-out'
-                  }}>
-                    <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#22C55E', flexShrink: 0, marginTop: 5 }}/>
-                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)', lineHeight: 1.5 }}>{s}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Primary risks */}
-            {visibleRisks.length > 0 && (
-              <div style={{marginBottom: 10}}>
-                <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', fontWeight: 600, letterSpacing: '0.12em', marginBottom: 7 }}>PRIMARY RISKS</p>
-                {['May outrun process in structured environments', 'Can force alignment before full input'].map((s, i) => (
-                  <div key={i} style={{
-                    display: 'flex', alignItems: 'flex-start', gap: 7, marginBottom: 5,
-                    opacity: visibleRisks.includes(i) ? 1 : 0,
-                    transform: visibleRisks.includes(i) ? 'translateY(0)' : 'translateY(4px)',
-                    transition: 'all 200ms ease-out'
-                  }}>
-                    <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#EF4444', flexShrink: 0, marginTop: 5 }}/>
-                    <span style={{ fontSize: 11, color: 'rgba(252,165,165,0.8)', lineHeight: 1.5 }}>{s}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Hiring manager signal */}
-            <div style={{
-              opacity: hmSignalVisible ? 1 : 0,
-              transition: 'opacity 300ms ease-out',
-              paddingTop: 10,
-              borderTop: '1px solid rgba(255,255,255,0.06)'
-            }}>
-              <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', fontWeight: 600, letterSpacing: '0.12em', marginBottom: 6 }}>HIRING MANAGER SIGNAL</p>
-              <div style={{display: 'flex', alignItems: 'center', gap: 7}}>
-                <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#22C55E', flexShrink: 0 }}/>
-                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.72)', fontWeight: 500 }}>
-                  Compatible &middot; High collaboration alignment
-                </span>
-              </div>
-            </div>
-
-            {/* Metadata strip */}
-            <p style={{
-              fontSize: 9, marginTop: 14, paddingTop: 10,
-              borderTop: '1px solid rgba(255,255,255,0.06)',
-              textAlign: 'center', letterSpacing: '0.03em',
-              color: metadataVisible ? 'rgba(255,255,255,0.18)' : 'transparent',
-              transition: 'color 300ms ease-out'
-            }}>
-              Signal processing complete &middot; 94 signals &middot;
-              Benchmark confidence: High &middot; Scoring v2.0
-            </p>
-
           </div>
         </div>
       </section>
 
-      {/* ----------------------------------------------
-          THE PAUSE — reframe
-      ---------------------------------------------- */}
-      <section style={{
-        background: '#0B0F14',
-        padding: '56px 32px',
-        textAlign: 'center',
-      }}>
+      {/* ── BEAT 4 — The Consequence ──────────────────────────── */}
+      <section className="beat" style={{ background: '#000' }}>
         <p style={{
-          fontSize: 22,
-          color: 'rgba(255,255,255,0.9)',
-          fontWeight: 500,
-          lineHeight: 1.5,
-          maxWidth: 640,
-          margin: '0 auto',
-          letterSpacing: '-0.01em',
-        }}>
-          This doesn&rsquo;t measure personality.
-          <br />
-          It helps you make the call.
-        </p>
-        <p style={{
-          fontSize: 15,
-          color: 'rgba(255,255,255,0.35)',
-          lineHeight: 1.6,
-          maxWidth: 480,
-          margin: '16px auto 0',
+          fontSize: 'clamp(22px, 3.5vw, 32px)',
+          fontWeight: 400,
+          color: 'rgba(255,255,255,0.5)',
+          letterSpacing: '-0.02em',
+          fontStyle: 'italic',
+          maxWidth: 560,
           textAlign: 'center',
-          letterSpacing: '-0.01em'
+          lineHeight: 1.5
         }}>
-          The resume tells you what they&rsquo;ve done.
+          <strong style={{
+            color: 'rgba(255,255,255,0.85)',
+            fontWeight: 600,
+            fontStyle: 'normal'
+          }}>
+            So you don&apos;t hear
+          </strong>
           <br />
-          This tells you how they work.
+          &ldquo;let&apos;s see more candidates.&rdquo;
         </p>
       </section>
 
-      {/* ----------------------------------------------
-          THE SCENE — emotional anchor
-      ---------------------------------------------- */}
+      {/* ── BEAT 5 — The Break ────────────────────────────────── */}
+      <section className="beat" id="beat-light-start" style={{ background: '#F5F5F0' }}>
+        <div style={{ textAlign: 'center' }}>
+          <p style={{
+            fontSize: 'clamp(28px, 4vw, 44px)',
+            fontWeight: 600,
+            color: 'rgba(0,0,0,0.25)',
+            letterSpacing: '-0.03em',
+            marginBottom: 14
+          }}>
+            This isn&apos;t an assessment.
+          </p>
+          <p style={{
+            fontSize: 'clamp(28px, 4vw, 44px)',
+            fontWeight: 700,
+            color: '#000000',
+            letterSpacing: '-0.03em'
+          }}>
+            It&apos;s how you make the call.
+          </p>
+        </div>
+      </section>
+
+      {/* ── BEAT 6 — The Moment ───────────────────────────────── */}
       <section
-        ref={sceneRef}
+        className="beat"
+        id="beat-light-end"
         style={{
-          padding: '48px 32px 80px',
-          background: '#0B0F14'
+          background: '#F5F5F0',
+          alignItems: 'flex-start',
+          padding: '80px 15%',
+          textAlign: 'left'
         }}
       >
-        <div style={{ maxWidth: 600, margin: '0 auto' }}>
+        <div style={{ maxWidth: 640 }}>
           {[
-            { text: 'Eight weeks in.', pause: 0, size: 'normal' as const },
-            { text: 'Your candidate is right for the role.', pause: 120, size: 'normal' as const },
-            { text: 'The client met someone internally.', pause: 240, size: 'normal' as const },
-            { text: "Now they\u2019re not sure.", pause: 360, size: 'normal' as const },
-            { text: 'BREAK', pause: 0, size: 'break' as const },
-            { text: 'This is where most searches break.', pause: 560, size: 'normal' as const },
-            { text: 'Not because the candidate is wrong.', pause: 680, size: 'normal' as const },
-            { text: "Because they can\u2019t show why the candidate is right.", pause: 800, size: 'normal' as const },
-            { text: 'BREAK', pause: 0, size: 'break' as const },
-            { text: 'Veltro is built for that moment.', pause: 1100, size: 'verdict' as const },
-          ].map((sentence, i) => {
-            if (sentence.size === 'break') {
-              return <div key={i} style={{ height: 20 }} />
-            }
-            const isVerdict = sentence.size === 'verdict'
+            { text: 'Eight weeks in. Your candidate is right for the role.', muted: false, strong: false },
+            { text: 'The client met someone internally.',                    muted: false, strong: false },
+            { text: "Now they're not sure.",                                  muted: false, strong: false },
+            { text: 'SPACER',                                                 muted: false, strong: false },
+            { text: 'This is where most searches break.',                    muted: true,  strong: false },
+            { text: 'Not because the candidate is wrong.',                   muted: true,  strong: false },
+            { text: "Because the case isn't clear.",                          muted: true,  strong: false },
+            { text: 'SPACER',                                                 muted: false, strong: false },
+            { text: 'This is what Veltro is for.',                          muted: false, strong: true  },
+          ].map((line, i) => {
+            if (line.text === 'SPACER') return <div key={i} style={{ height: 28 }} />
             return (
-              <span
-                key={i}
-                style={{
-                  display: 'block',
-                  fontSize: isVerdict ? 20 : 17,
-                  fontWeight: isVerdict ? 600 : 400,
-                  color: isVerdict ? '#FFFFFF' : 'rgba(255,255,255,0.62)',
-                  lineHeight: 1.8,
-                  letterSpacing: isVerdict ? '-0.02em' : '-0.01em',
-                  marginBottom: isVerdict ? 0 : 2,
-                  opacity: sceneTriggered ? 1 : 0,
-                  transform: sceneTriggered ? 'translateY(0px)' : 'translateY(8px)',
-                  transition: sceneTriggered
-                    ? `opacity 320ms ease-out ${sentence.pause}ms, transform 320ms ease-out ${sentence.pause}ms`
-                    : 'none',
-                }}
-              >
-                {sentence.text}
-              </span>
+              <p key={i} style={{
+                fontSize: 'clamp(17px, 2.2vw, 22px)',
+                color: line.strong
+                  ? '#000000'
+                  : line.muted
+                    ? 'rgba(0,0,0,0.35)'
+                    : 'rgba(0,0,0,0.7)',
+                fontWeight: line.strong ? 700 : 400,
+                lineHeight: 1.85,
+                letterSpacing: '-0.01em'
+              }}>
+                {line.text}
+              </p>
             )
           })}
         </div>
       </section>
 
-      {/* ----------------------------------------------
-          THE DIFFERENCE — what changes
-      ---------------------------------------------- */}
-      <section style={{ padding: '72px 32px' }}>
-        <div style={{ maxWidth: MAX, margin: '0 auto' }}>
-          <div className="difference-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
-
-            {/* Left — what they hear today */}
-            <div style={{
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              borderRadius: 16,
-              padding: 40,
+      {/* ── BEAT 7 — The Contrast ─────────────────────────────── */}
+      <section className="beat" style={{ background: '#000' }}>
+        <div
+          className="contrast-grid"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: 1,
+            background: 'rgba(255,255,255,0.07)',
+            borderRadius: 12,
+            overflow: 'hidden',
+            width: '100%',
+            maxWidth: 700
+          }}
+        >
+          {/* Left — what they hear today */}
+          <div style={{ background: '#0A0A0A', padding: 28 }}>
+            <p style={{
+              fontSize: 10,
+              fontWeight: 600,
+              color: 'rgba(255,255,255,0.2)',
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              marginBottom: 20
             }}>
-              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' as const, marginBottom: 24 }}>What your clients hear today</p>
-              {[
-                '"Strong background for the role."',
-                '"Good operating fit, we think."',
-                '"We\'re confident in this recommendation."',
-                '"We think he can do the job."'
-              ].map((line, i) => (
-                <p key={i} style={{
-                  fontSize: 15,
-                  color: 'rgba(255,255,255,0.35)',
-                  lineHeight: 1.7,
-                  fontStyle: 'italic',
-                  marginBottom: 8
-                }}>
-                  {line}
-                </p>
-              ))}
-              <p style={{
-                fontSize: 12,
-                color: 'rgba(255,255,255,0.2)',
-                marginTop: 20,
-                fontStyle: 'italic'
-              }}>
-                Sounds fine. Doesn&rsquo;t hold up when the client gets nervous.
-              </p>
-            </div>
-
-            {/* Right — what they see with Veltro */}
-            <div style={{
-              background: 'rgba(37,99,235,0.08)',
-              border: '1px solid rgba(37,99,235,0.25)',
-              boxShadow: '0 0 40px rgba(37,99,235,0.06)',
-              borderRadius: 16,
-              padding: 40,
-            }}>
-              <p style={{ fontSize: 11, color: B, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' as const, marginBottom: 24 }}>What they see with Veltro</p>
-              {[
-                { label: '93 — Strong Hire', desc: 'Top performers in field leadership score 85+. Marcus is at 93.' },
-                { label: 'Compatible with the hiring team', desc: 'High overlap on collaboration and decision speed. One friction point on pace — addressable in onboarding.' },
-                { label: '3 interview probes, ready to use', desc: 'Targeted questions tied directly to the risk areas. Walk into the debrief prepared.' },
-              ].map((item, i) => (
-                <div key={i} style={{ marginBottom: 20 }}>
-                  <p style={{ fontSize: 14, fontWeight: 600, color: '#FFFFFF', marginBottom: 4 }}>{item.label}</p>
-                  <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>{item.desc}</p>
-                </div>
-              ))}
-              <p style={{
-                fontSize: 13,
-                color: 'rgba(255,255,255,0.3)',
+              What they hear today
+            </p>
+            {[
+              '\u201cStrong background for the role.\u201d',
+              '\u201cGood operating fit, we think.\u201d',
+              '\u201cWe\u2019re confident in this one.\u201d',
+              '\u201cWe think he can do the job.\u201d'
+            ].map((q, i) => (
+              <p key={i} style={{
+                fontSize: 14,
+                color: 'rgba(255,255,255,0.28)',
                 fontStyle: 'italic',
-                marginTop: 24,
-                paddingTop: 16,
-                borderTop: '1px solid rgba(255,255,255,0.06)'
+                lineHeight: 1.7,
+                marginBottom: 6
               }}>
-                The resume got you to this meeting.
-                This gets you out of it with a yes.
+                {q}
               </p>
-            </div>
-
+            ))}
+            <p style={{
+              fontSize: 12,
+              color: 'rgba(255,255,255,0.16)',
+              fontStyle: 'italic',
+              marginTop: 16,
+              paddingTop: 14,
+              borderTop: '1px solid rgba(255,255,255,0.06)'
+            }}>
+              Sounds fine. Doesn&apos;t hold up when the client gets nervous.
+            </p>
           </div>
-        </div>
-      </section>
 
-      {/* ----------------------------------------------
-          THE OUTPUT — show before explaining
-      ---------------------------------------------- */}
-      <section id="output" style={{ padding: '72px 32px' }}>
-        <div ref={output.ref} style={{ maxWidth: MAX, margin: '0 auto' }}>
-
+          {/* Right — what they see with Veltro */}
           <div style={{
-            opacity: output.visible ? 1 : 0,
-            transform: output.visible ? 'none' : 'translateY(20px)',
-            transition: 'all 500ms ease-out',
+            background: '#0D1421',
+            padding: 28,
+            borderLeft: '1px solid rgba(37,99,235,0.2)'
           }}>
-            {/* Section header */}
-            <div style={{ marginBottom: 48 }}>
-              <p style={{ fontSize: 11, color: B, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase' as const, marginBottom: 14 }}>The Deliverable</p>
-              <h2 style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em', color: '#FFF', marginBottom: 0, lineHeight: 1.1 }}>
-                The deliverable your client actually sees.
-              </h2>
-            </div>
-
-            {/* Report preview + quotes side by side */}
-            <div className="output-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, alignItems: 'start' }}>
-
-              {/* Report card */}
-              <div style={{ position: 'relative', maxHeight: 520, overflow: 'hidden' }}>
-                <div style={{
-                  background: SF, border: '1px solid rgba(255,255,255,0.07)',
-                  borderRadius: 16, overflow: 'hidden',
-                  boxShadow: '0 24px 64px rgba(0,0,0,0.4)',
-                }}>
-                  <div style={{ padding: '28px 28px 0' }}>
-                  {/* Report header */}
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
-                    <div>
-                      <p style={{ fontSize: 16, fontWeight: 700, color: '#FFF', marginBottom: 3 }}>Marcus Thompson</p>
-                      <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>Superintendent · Chicago · Gilbane</p>
-                    </div>
-                    <div style={{ textAlign: 'center' }}>
-                      <svg width={68} height={68} viewBox="0 0 68 68">
-                        <circle cx={34} cy={34} r={31} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={2.5} />
-                        <circle cx={34} cy={34} r={31} fill="none" stroke={G} strokeWidth={2.5}
-                          strokeDasharray={`${2 * Math.PI * 31 * 0.93}`} strokeDashoffset={0}
-                          strokeLinecap="round" transform="rotate(-90 34 34)"
-                        />
-                        <text x={34} y={36} textAnchor="middle" dominantBaseline="middle" fill="white" fontSize={24} fontWeight={700}>93</text>
-                      </svg>
-                      <p style={{ fontSize: 11, color: G, fontWeight: 600, marginTop: 4 }}>Strong Hire</p>
-                    </div>
-                  </div>
-
-                  {/* Benchmark */}
-                  <div style={{ background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.12)', borderRadius: 8, padding: '10px 14px', marginBottom: 20 }}>
-                    <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', lineHeight: 1.5, fontStyle: 'italic' }}>
-                      Aligned with high-performing candidates in comparable field leadership roles.
-                    </p>
-                  </div>
-
-                  {/* FitModel */}
-                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
-                    <FitModel
-                      scores={{ dominance: 0.88, extraversion: 0.62, patience: 0.18, formality: 0.45 }}
-                      target={{ dominance: 0.74, extraversion: 0.54, patience: 0.46, formality: 0.56 }}
-                      size={220}
-                      variant="dark"
-                      animated={false}
-                      showLabels={false}
-                    />
-                  </div>
-                  <p style={{
-                    fontSize: 11,
-                    color: 'rgba(255,255,255,0.3)',
-                    letterSpacing: '0.04em',
-                    textAlign: 'center',
-                    marginTop: 8
-                  }}>
-                    Execution · Ownership · Adaptability · Collaboration · Decision Speed
-                  </p>
-
-                  {/* Strengths + Risks inline */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
-                    <div>
-                      <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' as const, marginBottom: 8 }}>Top Strengths</p>
-                      {['Takes immediate ownership', 'Decisive under pressure', 'Drives team momentum'].map(s => (
-                        <div key={s} style={{ display: 'flex', gap: 6, alignItems: 'flex-start', marginBottom: 4 }}>
-                          <span style={{ width: 4, height: 4, borderRadius: '50%', background: G, flexShrink: 0, marginTop: 4 }} />
-                          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>{s}</span>
-                        </div>
-                      ))}
-                    </div>
-                    <div>
-                      <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' as const, marginBottom: 8 }}>Primary Risks</p>
-                      {['May outrun process', 'Can force alignment early'].map(r => (
-                        <div key={r} style={{ display: 'flex', gap: 6, alignItems: 'flex-start', marginBottom: 4 }}>
-                          <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'rgba(239,68,68,0.6)', flexShrink: 0, marginTop: 4 }} />
-                          <span style={{ fontSize: 11, color: 'rgba(252,165,165,0.7)' }}>{r}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Footer */}
-                <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 28px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>80 signals · Role benchmark active</span>
-                  <span style={{ fontSize: 10, color: B, fontWeight: 500, cursor: 'pointer' }}>Share report →</span>
-                </div>
-              </div>
-                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 80, background: 'linear-gradient(transparent, #0B0F14)', pointerEvents: 'none' }}></div>
-              </div>
-
-              {/* Positioning */}
-              <div style={{ paddingTop: 16 }}>
+            <p style={{
+              fontSize: 10,
+              fontWeight: 600,
+              color: '#2563EB',
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              marginBottom: 20
+            }}>
+              What they see with Veltro
+            </p>
+            {[
+              {
+                title: '93 \u2014 Strong Hire',
+                sub: 'Top performers score 85+. Marcus is at 93.'
+              },
+              {
+                title: 'Compatible with the team',
+                sub: 'High overlap on collaboration. One friction point \u2014 addressable in onboarding.'
+              },
+              {
+                title: '3 interview probes, ready',
+                sub: 'Targeted questions tied to specific risks.'
+              }
+            ].map((item, i) => (
+              <div key={i} style={{ marginBottom: 16 }}>
                 <p style={{
-                  fontSize: 15,
-                  color: 'rgba(255,255,255,0.5)',
-                  lineHeight: 1.7,
-                  marginBottom: 32
-                }}>
-                  Search and staffing firms placing candidates in field leadership,
-                  finance, sales, and operations — where a wrong placement costs
-                  the client a year and costs you the relationship.
-                </p>
-                <Link href="/sample-report" style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  background: '#FFFFFF',
-                  color: '#111827',
                   fontSize: 14,
                   fontWeight: 600,
-                  padding: '12px 24px',
-                  borderRadius: 8,
-                  textDecoration: 'none',
-                  marginBottom: 12,
-                  transition: 'all 180ms ease',
-                }}
-                  onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(255,255,255,0.12)' }}
-                  onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '' }}
-                >Open sample report &rarr;</Link>
-                <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', marginTop: 10 }}>
-                  Used in client meetings to make the final call.
+                  color: '#FFFFFF',
+                  marginBottom: 3
+                }}>
+                  {item.title}
+                </p>
+                <p style={{
+                  fontSize: 12,
+                  color: 'rgba(255,255,255,0.45)',
+                  lineHeight: 1.55
+                }}>
+                  {item.sub}
                 </p>
               </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ----------------------------------------------
-          HOW IT WORKS — interactive process timeline
-      ---------------------------------------------- */}
-      <section id="how-it-works" style={{ padding: '72px 32px', background: '#080E1A', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-        <div ref={howWorks.ref} style={{ maxWidth: 960, margin: '0 auto' }}>
-
-          {/* Eyebrow */}
-          <p style={{ fontSize: 11, color: B, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase' as const, marginBottom: 14, textAlign: 'center' }}>The Process</p>
-          {/* Headline */}
-          <h2 style={{ fontSize: 38, fontWeight: 700, letterSpacing: '-0.03em', color: '#FFF', marginBottom: 12, lineHeight: 1.1, textAlign: 'center' }}>Your search, unchanged. Your presentation, decisive.</h2>
-          {/* Subhead */}
-          <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.5)', maxWidth: 560, lineHeight: 1.7, margin: '0 auto 48px', textAlign: 'center' }}>
-            Start with candidates only. Add hiring manager profiling when you&rsquo;re ready.
-          </p>
-
-          {/* Mode toggle */}
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 56 }}>
-            <div style={{ display: 'inline-flex', background: 'rgba(255,255,255,0.06)', borderRadius: 999, padding: 4, gap: 4 }}>
-              <button
-                onClick={() => setProcessMode('a')}
-                style={{
-                  height: 36, padding: '0 20px', borderRadius: 999, fontSize: 13, border: 'none', cursor: 'pointer',
-                  transition: 'all 180ms ease-out',
-                  background: processMode === 'a' ? 'white' : 'transparent',
-                  color: processMode === 'a' ? '#111827' : 'rgba(255,255,255,0.45)',
-                  fontWeight: processMode === 'a' ? 600 : 400,
-                }}
-              >Candidates only</button>
-              <button
-                onClick={() => setProcessMode('b')}
-                style={{
-                  height: 36, padding: '0 20px', borderRadius: 999, fontSize: 13, border: 'none', cursor: 'pointer',
-                  transition: 'all 180ms ease-out',
-                  background: processMode === 'b' ? 'white' : 'transparent',
-                  color: processMode === 'b' ? '#111827' : 'rgba(255,255,255,0.45)',
-                  fontWeight: processMode === 'b' ? 600 : 400,
-                }}
-              >+ Hiring Manager</button>
-            </div>
-          </div>
-
-          {/* ── MODE A TIMELINE ── */}
-          {processMode === 'a' && (
-            <div style={{ position: 'relative' }}>
-              {/* Spine */}
-              <div style={{ display: isMobile ? 'none' : undefined, position: 'absolute', left: 0, top: 8, bottom: 0, width: 1, background: 'rgba(255,255,255,0.1)' }} />
-
-              {/* Step 1 — KICKOFF */}
-              <div style={{ position: 'relative', paddingLeft: isMobile ? 16 : 32, marginBottom: isMobile ? 10 : 48, animation: 'fadeSlideUp 200ms ease-out forwards', animationDelay: '0ms', opacity: 0, ...(isMobile ? { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10 } : {}) }}>
-                <div style={{ display: isMobile ? 'none' : undefined, position: 'absolute', left: -5, top: 6, width: 10, height: 10, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)' }} />
-                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.1em', display: 'block', marginBottom: 5 }}>Kickoff</span>
-                <p style={{ fontSize: 17, color: 'white', fontWeight: 600, marginBottom: 6 }}>Define the role benchmark.</p>
-                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6, maxWidth: 480, margin: 0 }}>Veltro suggests a behavioral target based on role type. Adjust and confirm in 60 seconds. The benchmark drives every candidate score.</p>
-              </div>
-
-              {/* Step 2 — SHORTLIST */}
-              <div style={{ position: 'relative', paddingLeft: isMobile ? 16 : 32, marginBottom: isMobile ? 10 : 48, animation: 'fadeSlideUp 200ms ease-out forwards', animationDelay: '80ms', opacity: 0, ...(isMobile ? { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(37,99,235,0.3)', borderRadius: 10 } : {}) }}>
-                <div style={{ display: isMobile ? 'none' : undefined, position: 'absolute', left: -5, top: 6, width: 10, height: 10, borderRadius: '50%', background: '#2563EB', border: '1px solid #2563EB', boxShadow: '0 0 8px rgba(37,99,235,0.5)' }} />
-                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.1em', display: 'block', marginBottom: 5 }}>Shortlist</span>
-                <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', marginBottom: 6 }}>
-                  <span style={{ fontSize: 17, color: 'white', fontWeight: 600 }}>Send each candidate a single link.</span>
-                  <span style={{ display: 'inline-block', fontSize: 10, fontWeight: 600, color: '#2563EB', background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.25)', borderRadius: 4, padding: '2px 7px', marginLeft: 10, letterSpacing: '0.04em' }}>Veltro active</span>
-                </div>
-                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6, maxWidth: 480, margin: 0 }}>No login. Any device. Six minutes per candidate. They complete the evaluation independently.</p>
-                <div style={{ marginTop: 12, background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.15)', borderRadius: 8, padding: '10px 14px', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>Candidate receives:</span>
-                  <span style={{ fontSize: 11, color: 'white', fontWeight: 500 }}>Evaluation link via email</span>
-                </div>
-              </div>
-
-              {/* Step 3 — EVALUATION */}
-              <div style={{ position: 'relative', paddingLeft: isMobile ? 16 : 32, marginBottom: isMobile ? 10 : 48, animation: 'fadeSlideUp 200ms ease-out forwards', animationDelay: '160ms', opacity: 0, ...(isMobile ? { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(37,99,235,0.3)', borderRadius: 10 } : {}) }}>
-                <div style={{ display: isMobile ? 'none' : undefined, position: 'absolute', left: -5, top: 6, width: 10, height: 10, borderRadius: '50%', background: '#2563EB', border: '1px solid #2563EB', boxShadow: '0 0 8px rgba(37,99,235,0.5)' }} />
-                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.1em', display: 'block', marginBottom: 5 }}>Evaluation</span>
-                <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', marginBottom: 6 }}>
-                  <span style={{ fontSize: 17, color: 'white', fontWeight: 600 }}>Scores are generated automatically.</span>
-                  <span style={{ display: 'inline-block', fontSize: 10, fontWeight: 600, color: '#2563EB', background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.25)', borderRadius: 4, padding: '2px 7px', marginLeft: 10, letterSpacing: '0.04em' }}>Veltro active</span>
-                </div>
-                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6, maxWidth: 480, margin: 0 }}>94 behavioral signals processed against your active role benchmark. Fit score, recommendation, and confidence level produced immediately on completion.</p>
-              </div>
-
-              {/* Step 4 — PRESENTATION */}
-              <div style={{ position: 'relative', paddingLeft: isMobile ? 16 : 32, animation: 'fadeSlideUp 200ms ease-out forwards', animationDelay: '240ms', opacity: 0, ...(isMobile ? { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(37,99,235,0.3)', borderRadius: 10 } : {}) }}>
-                <div style={{ display: isMobile ? 'none' : undefined, position: 'absolute', left: -5, top: 6, width: 10, height: 10, borderRadius: '50%', background: '#2563EB', border: '1px solid #2563EB', boxShadow: '0 0 8px rgba(37,99,235,0.5)' }} />
-                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.1em', display: 'block', marginBottom: 5 }}>Presentation</span>
-                <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', marginBottom: 6 }}>
-                  <span style={{ fontSize: 17, color: 'white', fontWeight: 600 }}>Open the report in the client meeting.</span>
-                  <span style={{ display: 'inline-block', fontSize: 10, fontWeight: 600, color: '#2563EB', background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.25)', borderRadius: 4, padding: '2px 7px', marginLeft: 10, letterSpacing: '0.04em' }}>Veltro active</span>
-                </div>
-                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6, maxWidth: 480, margin: 0 }}>Score, fit, risks, and interview probes. The meeting ends in a decision.</p>
-                <div style={{ marginTop: 12, background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.15)', borderRadius: 8, padding: '10px 14px', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>Client receives:</span>
-                  <span style={{ fontSize: 11, color: '#22C55E', fontWeight: 500 }}>Scored recommendation report</span>
-                </div>
-              </div>
-
-              {/* Bottom CTA — Mode A */}
-              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', textAlign: 'center', marginTop: 48 }}>
-                Want richer reports?{' '}
-                <button
-                  onClick={() => setProcessMode('b')}
-                  style={{ background: 'none', border: 'none', color: '#2563EB', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}
-                >See how Mode B works</button>
-              </p>
-            </div>
-          )}
-
-          {/* ── MODE B TIMELINE ── */}
-          {processMode === 'b' && (
-            <div ref={processStepsRef} style={{ position: 'relative' }}>
-              {/* Spine */}
-              <div style={{ display: isMobile ? 'none' : undefined, position: 'absolute', left: 0, top: 8, bottom: 0, width: 1, background: 'rgba(255,255,255,0.1)' }} />
-
-              {/* Connecting line — measured after render */}
-              {connLine && !isMobile && (
-                <div style={{
-                  position: 'absolute',
-                  left: 16,
-                  top: connLine.top,
-                  height: connLine.height,
-                  borderLeft: '1px dashed rgba(124,58,237,0.3)',
-                  pointerEvents: 'none',
-                }} />
-              )}
-
-              {/* Step 1 — KICKOFF */}
-              <div style={{ position: 'relative', paddingLeft: isMobile ? 16 : 32, marginBottom: isMobile ? 10 : 48, animation: 'fadeSlideUp 200ms ease-out forwards', animationDelay: '0ms', opacity: 0, ...(isMobile ? { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10 } : {}) }}>
-                <div style={{ display: isMobile ? 'none' : undefined, position: 'absolute', left: -5, top: 6, width: 10, height: 10, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)' }} />
-                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.1em', display: 'block', marginBottom: 5 }}>Kickoff</span>
-                <p style={{ fontSize: 17, color: 'white', fontWeight: 600, marginBottom: 6 }}>Define the role benchmark.</p>
-                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6, maxWidth: 480, margin: 0 }}>Veltro suggests a behavioral target based on role type. Adjust and confirm in 60 seconds. The benchmark drives every candidate score.</p>
-              </div>
-
-              {/* Step 2 — KICKOFF HIRING MANAGER — purple */}
-              <div ref={processStep2Ref} style={{ position: 'relative', paddingLeft: isMobile ? 16 : 32, marginBottom: isMobile ? 10 : 48, animation: 'fadeSlideUp 200ms ease-out forwards', animationDelay: '80ms', opacity: 0, ...(isMobile ? { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(124,58,237,0.3)', borderRadius: 10 } : {}) }}>
-                <div style={{ display: isMobile ? 'none' : undefined, position: 'absolute', left: -5, top: 6, width: 10, height: 10, borderRadius: '50%', background: '#7C3AED', border: '1px solid #7C3AED', boxShadow: '0 0 8px rgba(124,58,237,0.5)' }} />
-                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.1em', display: 'block', marginBottom: 5 }}>Kickoff — Hiring Manager</span>
-                <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', marginBottom: 6 }}>
-                  <span style={{ fontSize: 17, color: 'white', fontWeight: 600 }}>Profile the hiring manager once.</span>
-                  <span style={{ display: 'inline-block', fontSize: 10, fontWeight: 600, color: '#7C3AED', background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.25)', borderRadius: 4, padding: '2px 7px', marginLeft: 10, letterSpacing: '0.04em' }}>One time per client</span>
-                </div>
-                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6, maxWidth: 480, margin: 0 }}>The hiring manager completes the same six-minute evaluation. Their profile is stored against the client account automatically.</p>
-                <div style={{ marginTop: 12, background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.15)', borderRadius: 8, padding: '10px 14px', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>Stored per client.</span>
-                  <span style={{ fontSize: 11, color: '#A78BFA', fontWeight: 500 }}>Active on every future candidate, forever.</span>
-                </div>
-              </div>
-
-              {/* Step 3 — SHORTLIST CANDIDATES */}
-              <div style={{ position: 'relative', paddingLeft: isMobile ? 16 : 32, marginBottom: isMobile ? 10 : 48, animation: 'fadeSlideUp 200ms ease-out forwards', animationDelay: '160ms', opacity: 0, ...(isMobile ? { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(37,99,235,0.3)', borderRadius: 10 } : {}) }}>
-                <div style={{ display: isMobile ? 'none' : undefined, position: 'absolute', left: -5, top: 6, width: 10, height: 10, borderRadius: '50%', background: '#2563EB', border: '1px solid #2563EB', boxShadow: '0 0 8px rgba(37,99,235,0.5)' }} />
-                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.1em', display: 'block', marginBottom: 5 }}>Shortlist — Candidates</span>
-                <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', marginBottom: 6 }}>
-                  <span style={{ fontSize: 17, color: 'white', fontWeight: 600 }}>Send each candidate a single link.</span>
-                  <span style={{ display: 'inline-block', fontSize: 10, fontWeight: 600, color: '#2563EB', background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.25)', borderRadius: 4, padding: '2px 7px', marginLeft: 10, letterSpacing: '0.04em' }}>Veltro active</span>
-                </div>
-                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6, maxWidth: 480, margin: 0 }}>Same process as Candidates only. The hiring manager profile is already active — no extra steps.</p>
-              </div>
-
-              {/* Step 4 — EVALUATION */}
-              <div style={{ position: 'relative', paddingLeft: isMobile ? 16 : 32, marginBottom: isMobile ? 10 : 48, animation: 'fadeSlideUp 200ms ease-out forwards', animationDelay: '240ms', opacity: 0, ...(isMobile ? { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(37,99,235,0.3)', borderRadius: 10 } : {}) }}>
-                <div style={{ display: isMobile ? 'none' : undefined, position: 'absolute', left: -5, top: 6, width: 10, height: 10, borderRadius: '50%', background: '#2563EB', border: '1px solid #2563EB', boxShadow: '0 0 8px rgba(37,99,235,0.5)' }} />
-                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.1em', display: 'block', marginBottom: 5 }}>Evaluation</span>
-                <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', marginBottom: 6 }}>
-                  <span style={{ fontSize: 17, color: 'white', fontWeight: 600 }}>Scores are generated automatically.</span>
-                  <span style={{ display: 'inline-block', fontSize: 10, fontWeight: 600, color: '#2563EB', background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.25)', borderRadius: 4, padding: '2px 7px', marginLeft: 10, letterSpacing: '0.04em' }}>Veltro active</span>
-                </div>
-                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6, maxWidth: 480, margin: 0 }}>94 behavioral signals processed against your active role benchmark. Fit score, recommendation, and confidence level produced immediately on completion.</p>
-              </div>
-
-              {/* Step 5 — PRESENTATION enhanced */}
-              <div ref={processStep5Ref} style={{ position: 'relative', paddingLeft: isMobile ? 16 : 32, animation: 'fadeSlideUp 200ms ease-out forwards', animationDelay: '320ms', opacity: 0, ...(isMobile ? { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(37,99,235,0.3)', borderRadius: 10 } : {}) }}>
-                <div style={{ display: isMobile ? 'none' : undefined, position: 'absolute', left: -5, top: 6, width: 10, height: 10, borderRadius: '50%', background: '#2563EB', border: '1px solid #2563EB', boxShadow: '0 0 8px rgba(37,99,235,0.5)' }} />
-                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.1em', display: 'block', marginBottom: 5 }}>Presentation</span>
-                <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', marginBottom: 6 }}>
-                  <span style={{ fontSize: 17, color: 'white', fontWeight: 600 }}>Open the report. It already includes the hiring manager.</span>
-                  <span style={{ display: 'inline-block', fontSize: 10, fontWeight: 600, color: '#2563EB', background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.25)', borderRadius: 4, padding: '2px 7px', marginLeft: 10, letterSpacing: '0.04em' }}>Veltro active</span>
-                </div>
-                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6, maxWidth: 480, margin: 0 }}>Every report now shows candidate fit AND hiring manager compatibility — who they work well with, where friction may emerge, what to address in onboarding.</p>
-                <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  <div style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.15)', borderRadius: 8, padding: '10px 14px' }}>
-                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>Role fit: </span>
-                    <span style={{ fontSize: 11, color: '#22C55E', fontWeight: 500 }}>Scored vs benchmark</span>
-                  </div>
-                  <div style={{ background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.15)', borderRadius: 8, padding: '10px 14px' }}>
-                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>Team fit: </span>
-                    <span style={{ fontSize: 11, color: '#A78BFA', fontWeight: 500 }}>Scored vs hiring manager</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Bottom CTA — Mode B */}
-              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', textAlign: 'center', marginTop: 48 }}>
-                Already using Mode A?{' '}
-                <button
-                  onClick={() => setProcessMode('a')}
-                  style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}
-                >View candidate-only flow</button>
-              </p>
-            </div>
-          )}
-
-        </div>
-      </section>
-
-      {/* ----------------------------------------------
-          HIRING MANAGER — the differentiator
-      ---------------------------------------------- */}
-      <section style={{ padding: '72px 32px' }}>
-        <div ref={hmSection.ref} style={{ maxWidth: MAX, margin: '0 auto' }}>
-          <div className="two-col-grid" style={{ display: 'grid', gap: 80, alignItems: 'center' }}>
-
-            {/* Left — copy */}
-            <div style={{
-              opacity: hmSection.visible ? 1 : 0,
-              transform: hmSection.visible ? 'none' : 'translateY(16px)',
-              transition: 'all 400ms ease-out',
-            }}>
-              <span style={{ fontSize: 11, fontWeight: 600, color: '#A78BFA', letterSpacing: '0.1em', textTransform: 'uppercase' as const, display: 'block', marginBottom: 12 }}>Mode B</span>
-              <p style={{ fontSize: 11, color: B, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase' as const, marginBottom: 20 }}>The Differentiator</p>
-              <h2 style={{ fontSize: 38, fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.1, marginBottom: 20 }}>
-                One profile per client.<br />Active on every candidate, forever.
-              </h2>
-              <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.55)', lineHeight: 1.8, marginBottom: 28 }}>
-                Profile your client&rsquo;s hiring manager once. Every candidate report that follows is automatically scored against that pattern — no extra work, no separate process. Takes fifteen minutes. Same intake format as the candidate.
-              </p>
-              <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.55)', lineHeight: 1.8, marginBottom: 40 }}>
-                You stop presenting a name. You present a fit: &ldquo;Marcus scores 93. He aligns with David on collaboration and decision speed — with a known friction point on pace you can address in onboarding.&rdquo;
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {[
-                  { label: 'Works well with', desc: 'Where candidate and HM behavioral patterns align', color: G },
-                  { label: 'Watch for', desc: 'Where friction may emerge under pressure', color: '#EAB308' },
-                ].map(item => (
-                  <div key={item.label} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: item.color, flexShrink: 0, marginTop: 6 }} />
-                    <div>
-                      <span style={{ fontSize: 14, fontWeight: 600, color: '#FFF' }}>{item.label} </span>
-                      <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)' }}>{item.desc}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', marginTop: 28 }}>One profile per client. Active on every candidate, forever.</p>
-            </div>
-
-            {/* Right — dual FitModel visual */}
-            <div style={{
-              opacity: hmSection.visible ? 1 : 0,
-              transform: hmSection.visible ? 'none' : 'translateY(16px)',
-              transition: 'all 500ms ease-out 150ms',
-            }}>
-              <div style={{ background: SF, border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, padding: 32 }}>
-                <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' as const, marginBottom: 20 }}>Candidate · Hiring Manager Overlay</p>
-                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
-                  <FitModelDual
-                    candidateScores={{ dominance: 0.88, extraversion: 0.62, patience: 0.18, formality: 0.45 }}
-                    benchmarkScores={{ dominance: 0.55, extraversion: 0.70, patience: 0.72, formality: 0.65 }}
-                    candidateLabel="Marcus Thompson"
-                    benchmarkLabel="David Mercer (HM)"
-                    size={isMobile ? 180 : 240}
-                    variant="dark"
-                    showDeltas={!isMobile}
-                    animated={hmSection.visible}
-                  />
-                </div>
-                <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '8px 12px', background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.15)', borderRadius: 8 }}>
-                    <span style={{ width: 5, height: 5, borderRadius: '50%', background: G, flexShrink: 0 }} />
-                    <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)' }}><strong style={{ color: '#FFF', fontWeight: 600 }}>Strong overlap:</strong> Collaboration · Decision Speed</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '8px 12px', background: 'rgba(234,179,8,0.06)', border: '1px solid rgba(234,179,8,0.15)', borderRadius: 8 }}>
-                    <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#EAB308', flexShrink: 0 }} />
-                    <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)' }}><strong style={{ color: '#FFF', fontWeight: 600 }}>Gap to probe:</strong> Adaptability · Pace mismatch</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ----------------------------------------------
-          MID-PAGE CTA
-      ---------------------------------------------- */}
-      <div style={{ textAlign: 'center', padding: '56px 32px 0' }}>
-        <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>
-          Ready to see this on a real search?{' '}
-          <a
-            href="mailto:team@veltro.ai?subject=Veltro%20Walkthrough%20Request"
-            style={{ color: 'rgba(255,255,255,0.3)', textDecoration: 'none', transition: 'color 160ms ease' }}
-            onMouseEnter={e => (e.currentTarget.style.color = '#FFF')}
-            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.3)')}
-          >Request a walkthrough &rarr;</a>
-        </span>
-      </div>
-
-      {/* ----------------------------------------------
-          SIGNAL TRACE — the science in a visual
-      ---------------------------------------------- */}
-      <section style={{ padding: '72px 32px', background: '#080E1A', borderTop: '1px solid rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-        <div ref={signalSection.ref} style={{ maxWidth: MAX, margin: '0 auto' }}>
-          <div className="signal-grid" style={{ display: 'grid', gap: 80, alignItems: 'center' }}>
-
-            {/* Left — Signal Trace */}
-            <SignalTraceDemo visible={signalSection.visible} />
-
-            {/* Right — copy */}
-            <div style={{
-              opacity: signalSection.visible ? 1 : 0,
-              transform: signalSection.visible ? 'none' : 'translateY(16px)',
-              transition: 'all 400ms ease-out 150ms',
-            }}>
-              <p style={{ fontSize: 11, color: B, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase' as const, marginBottom: 20 }}>The Model</p>
-              <h2 style={{ fontSize: 38, fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.1, marginBottom: 20 }}>
-                80 signals.<br />Five dimensions.<br />One number that closes the room.
-              </h2>
-              <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.5)', lineHeight: 1.8, marginBottom: 20 }}>
-                Six minutes. Two structured word lists. The candidate describes how they work — not who they are. 80 signals extracted, scored against a benchmark built for the specific role you&rsquo;re filling. The score tells you where they fit, where they strain, and why.
-              </p>
-              <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.5)', lineHeight: 1.8, marginBottom: 32 }}>
-                The benchmark is role-specific — field leadership, executive, sales, technical — built on 2.2 million people across eight research studies. Not a black box. Published science.
-              </p>
-              <Link href="/profiles" style={{
-                fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.5)',
-                textDecoration: 'none', transition: 'color 160ms ease',
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-              }}
-                onMouseEnter={e => (e.currentTarget.style.color = '#FFF')}
-                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.5)')}
-              >Read the methodology →</Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ----------------------------------------------
-          SCIENCE CREDIBILITY STRIP
-      ---------------------------------------------- */}
-      <section style={{ padding: '56px 32px', borderTop: '1px solid rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-        <div ref={sciSection.ref} style={{ maxWidth: MAX, margin: '0 auto' }}>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', textAlign: 'center', marginBottom: 40 }}>
-            Built on real behavioral data — so the recommendation holds up in the room.
-          </p>
-          <div className="stats-grid" style={{ display: 'grid', gap: 40 }}>
-            {[
-              { n: '2.2M', label: 'People in the norm dataset', detail: null, smallDetail: 'Published norm data across 8 research studies' },
-              { n: '94', label: 'Behavioral signals per evaluation', detail: null, smallDetail: null },
-              { n: '5', label: 'Role-relevant dimensions scored', detail: 'Execution · Ownership · Adaptability · Collaboration · Decision Speed', smallDetail: null },
-              { n: '6 min', label: 'Time per candidate', detail: null, smallDetail: null },
-            ].map((item, i) => (
-              <div key={i} style={{
-                opacity: sciSection.visible ? 1 : 0,
-                transform: sciSection.visible ? 'none' : 'translateY(8px)',
-                transition: `all 280ms ease-out ${i * 60}ms`,
-              }}>
-                <div style={{ fontSize: 32, fontWeight: 700, color: '#FFF', letterSpacing: '-0.02em', marginBottom: 4 }}>{item.n}</div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.55)', marginBottom: 4 }}>{item.label}</div>
-                {item.detail && <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', lineHeight: 1.5 }}>{item.detail}</div>}
-                {item.smallDetail && <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', lineHeight: 1.5 }}>{item.smallDetail}</div>}
-              </div>
             ))}
+            <p style={{
+              fontSize: 12,
+              color: 'rgba(255,255,255,0.25)',
+              fontStyle: 'italic',
+              marginTop: 16,
+              paddingTop: 14,
+              borderTop: '1px solid rgba(255,255,255,0.06)'
+            }}>
+              The resume got you to this meeting.<br />
+              This gets you out of it with a yes.
+            </p>
           </div>
         </div>
       </section>
 
-      {/* ----------------------------------------------
-          CLOSE
-      ---------------------------------------------- */}
-      <section ref={closeRef} style={{
-        position: 'relative', minHeight: '90vh',
-        display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center',
-        padding: '128px 40px', overflow: 'hidden',
-      }}>
-        {/* Backgrounds */}
-        <div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', backgroundImage: 'radial-gradient(rgba(255,255,255,0.012) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
-        <div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', background: 'radial-gradient(700px circle at var(--cx, 50%) var(--cy, 50%), rgba(37,99,235,0.04), transparent 50%)' }} />
-
-        <div ref={close.ref} style={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: 720 }}>
+      {/* ── BEAT 8 — The Simplicity ───────────────────────────── */}
+      <section className="beat" style={{ background: '#000', gap: 28 }}>
+        <p style={{
+          fontSize: 'clamp(26px, 3.5vw, 38px)',
+          fontWeight: 700,
+          color: '#FFFFFF',
+          letterSpacing: '-0.03em',
+          textAlign: 'center'
+        }}>
+          It fits inside your search.
+        </p>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 10,
+          maxWidth: 500,
+          textAlign: 'center'
+        }}>
           {[
-            { text: 'You already know who\'s right for the role.', color: '#FFF' },
-            { text: 'Now you can show your client', color: '#FFF' },
-            { text: 'exactly why.', color: B },
-          ].map((line, i) => (
-            <div key={i} style={{
-              display: 'block',
-              fontSize: 52,
-              fontWeight: 700,
-              lineHeight: 1.06,
-              letterSpacing: '-0.035em',
-              color: line.color,
-              opacity: close.visible ? 1 : 0,
-              transform: close.visible ? 'none' : 'translateY(16px)',
-              transition: `all 300ms ease-out ${180 + i * 120}ms`,
-            }}>{line.text}</div>
+            { strong: 'Send the candidate a link.', rest: ' Six minutes. No login.' },
+            { strong: 'Get the scored result.',     rest: ' Automatically.' },
+            { strong: 'Open it in the meeting.',    rest: ' The room decides.' }
+          ].map((step, i) => (
+            <p key={i} style={{
+              fontSize: 'clamp(16px, 2vw, 19px)',
+              color: 'rgba(255,255,255,0.45)',
+              lineHeight: 1.6
+            }}>
+              <strong style={{
+                color: 'rgba(255,255,255,0.82)',
+                fontWeight: 500
+              }}>
+                {step.strong}
+              </strong>
+              {step.rest}
+            </p>
           ))}
-
-          <div style={{ marginTop: 56, display: 'flex', gap: 14, justifyContent: 'center' }}>
-            <Link href="/sample-report" style={{
-              height: 48, padding: '0 28px', borderRadius: 10, background: '#FFF', color: BG,
-              fontSize: 15, fontWeight: 600, display: 'inline-flex', alignItems: 'center',
-              textDecoration: 'none', transition: 'all 180ms ease', letterSpacing: '-0.01em',
-            }}
-              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(255,255,255,0.15)' }}
-              onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '' }}
-            >See what your client sees</Link>
-            <a href="mailto:team@veltro.ai?subject=Veltro%20Walkthrough%20Request" style={{
-              height: 48, padding: '0 28px', borderRadius: 10,
-              border: '1px solid rgba(255,255,255,0.15)',
-              color: 'rgba(255,255,255,0.6)',
-              fontSize: 15, fontWeight: 500, display: 'inline-flex', alignItems: 'center',
-              textDecoration: 'none', transition: 'all 180ms ease',
-            }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)'; e.currentTarget.style.color = '#FFF' }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)' }}
-            >Request a walkthrough &rarr;</a>
-          </div>
         </div>
-
-        <footer style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '20px 40px', borderTop: '1px solid rgba(255,255,255,0.04)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.15)' }}>Veltro · veltro.ai · team@veltro.ai · © 2026</p>
-        </footer>
       </section>
 
-      <style>{`
-        @keyframes scanPulse {
-          0%, 100% { opacity: 0.4; }
-          50% { opacity: 1; }
-        }
+      {/* ── BEAT 9 — The Depth ────────────────────────────────── */}
+      <section className="beat" style={{ background: '#000', gap: 16 }}>
+        <p style={{
+          fontSize: 'clamp(20px, 2.8vw, 26px)',
+          fontWeight: 500,
+          color: 'rgba(255,255,255,0.78)',
+          letterSpacing: '-0.02em',
+          maxWidth: 540,
+          lineHeight: 1.5,
+          textAlign: 'center',
+          marginBottom: 8
+        }}>
+          Add the people they&apos;ll work with.
+          <br />
+          Every report shows who they fit &mdash;
+          <br />
+          and where friction may show up.
+        </p>
+        <p style={{
+          fontSize: 14,
+          color: 'rgba(255,255,255,0.3)',
+          maxWidth: 440,
+          lineHeight: 1.65,
+          textAlign: 'center'
+        }}>
+          Capture the hiring manager once.
+          Active on every candidate for that client, forever.
+        </p>
+      </section>
 
-        /* ── Grid definitions ── */
-        .hero-grid   { grid-template-columns: 1fr 480px; }
-        .output-grid { grid-template-columns: 1fr 400px; }
-        .two-col-grid { grid-template-columns: 1fr 1fr; }
-        .signal-grid  { grid-template-columns: 500px 1fr; }
-        .stats-grid   { grid-template-columns: repeat(4, 1fr); }
+      {/* ── BEAT 10 — The Proof ───────────────────────────────── */}
+      <section className="beat" style={{ background: '#000', gap: 24 }}>
+        <p style={{
+          fontSize: 14,
+          color: 'rgba(255,255,255,0.3)',
+          fontStyle: 'italic'
+        }}>
+          Built on real behavioral data.
+        </p>
+        <div style={{
+          display: 'flex',
+          gap: 'clamp(24px, 5vw, 64px)',
+          alignItems: 'flex-end',
+          flexWrap: 'wrap',
+          justifyContent: 'center'
+        }}>
+          {[
+            { val: '2.2M',  label: 'People in the dataset' },
+            { val: '94',    label: 'Signals per candidate' },
+            { val: '5',     label: 'Dimensions scored' },
+            { val: '6 min', label: 'Per evaluation' }
+          ].map((stat, i) => (
+            <div key={i} style={{ textAlign: 'center' }}>
+              <p style={{
+                fontSize: 'clamp(36px, 5vw, 56px)',
+                fontWeight: 800,
+                color: '#FFFFFF',
+                letterSpacing: '-0.04em',
+                lineHeight: 1
+              }}>
+                {stat.val}
+              </p>
+              <p style={{
+                fontSize: 12,
+                color: 'rgba(255,255,255,0.3)',
+                marginTop: 6
+              }}>
+                {stat.label}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
 
-        /* ── Breakpoint: collapse side-by-side wide layouts ── */
-        @media (max-width: 1100px) {
-          .hero-grid   { grid-template-columns: 1fr !important; }
-          .signal-grid { grid-template-columns: 1fr !important; }
-        }
+      {/* ── BEAT 11 — The CTA ─────────────────────────────────── */}
+      <section className="beat" style={{ background: '#000', gap: 16 }}>
+        <p style={{
+          fontSize: 11,
+          fontWeight: 600,
+          color: 'rgba(255,255,255,0.25)',
+          letterSpacing: '0.12em',
+          textTransform: 'uppercase'
+        }}>
+          The deliverable
+        </p>
+        <p style={{
+          fontSize: 'clamp(24px, 3.5vw, 34px)',
+          fontWeight: 700,
+          color: '#FFFFFF',
+          letterSpacing: '-0.02em',
+          textAlign: 'center',
+          marginBottom: 8
+        }}>
+          The report your client sees.
+        </p>
+        <a
+          href="/sample-report"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            background: '#FFFFFF',
+            color: '#000000',
+            fontSize: 16,
+            fontWeight: 700,
+            padding: '15px 36px',
+            borderRadius: 9,
+            textDecoration: 'none',
+            letterSpacing: '-0.01em',
+            marginBottom: 12
+          }}
+        >
+          Open sample report →
+        </a>
+        <p style={{
+          fontSize: 12,
+          color: 'rgba(255,255,255,0.22)'
+        }}>
+          Used in real client meetings to make the final call.
+        </p>
+      </section>
 
-        /* ── Breakpoint: collapse standard two-column layouts ── */
-        @media (max-width: 900px) {
-          .two-col-grid  { grid-template-columns: 1fr; }
-          .output-grid   { grid-template-columns: 1fr; }
-          .stats-grid    { grid-template-columns: 1fr 1fr; }
-          .difference-grid { grid-template-columns: 1fr !important; gap: 20px !important; }
-        }
-
-        /* ── Breakpoint: mobile type scale ── */
-        @media (max-width: 768px) {
-          .hero-grid { padding: 48px 24px !important; gap: 40px !important; }
-          h1 { font-size: 40px !important; }
-          h2 { font-size: 28px !important; }
-          .stats-grid { grid-template-columns: 1fr 1fr; }
-          .scene-paragraph { font-size: 15px !important; }
-          .scene-conclusion { font-size: 18px !important; }
-          .difference-grid { grid-template-columns: 1fr !important; gap: 20px !important; }
-        }
-
-        /* ── Breakpoint: very small screens ── */
-        @media (max-width: 480px) {
-          .stats-grid { grid-template-columns: 1fr; }
-        }
-
-        /* ── Breakpoint: italic line wrap protection ── */
-        @media (max-width: 375px) {
-          .hero-italic-line { display: none !important; }
-        }
-
-        /* ── Mobile nav: wordmark + CTA only ── */
-        .nav-cta-mobile { display: none; }
-        @media (max-width: 767px) {
-          .nav-links-group { display: none !important; }
-          .nav-signin      { display: none !important; }
-          .nav-inner       { padding: 0 20px !important; }
-          .nav-cta         { height: 36px !important; padding: 0 14px !important; font-size: 13px !important; }
-          .nav-cta-desktop { display: none !important; }
-          .nav-cta-mobile  { display: inline !important; }
-          .hero-grid       { gap: 32px !important; padding: 40px 20px !important; }
-          .signal-grid     { gap: 40px !important; }
-          .two-col-grid    { grid-template-columns: 1fr !important; gap: 40px !important; }
-          section          { padding-left: 20px !important; padding-right: 20px !important; }
-          .hero-ctas       { flex-direction: column !important; align-items: stretch !important; }
-          .hero-ctas > *   { justify-content: center !important; text-align: center !important; }
-        }
-      `}</style>
-    </main>
+      {/* ── BEAT 12 — The Close ───────────────────────────────── */}
+      <section className="beat" style={{ background: '#000' }}>
+        <div style={{ textAlign: 'center' }}>
+          <p style={{
+            fontSize: 'clamp(32px, 5vw, 52px)',
+            fontWeight: 700,
+            color: 'rgba(255,255,255,0.88)',
+            letterSpacing: '-0.03em',
+            lineHeight: 1.1,
+            marginBottom: 14
+          }}>
+            You already know.
+          </p>
+          <p style={{
+            fontSize: 'clamp(32px, 5vw, 52px)',
+            fontWeight: 700,
+            color: 'rgba(255,255,255,0.28)',
+            letterSpacing: '-0.03em',
+            lineHeight: 1.1
+          }}>
+            Now show them.
+          </p>
+        </div>
+      </section>
+    </>
   )
 }

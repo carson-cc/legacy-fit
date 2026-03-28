@@ -868,26 +868,25 @@ export default function SharedReportPage() {
           </section>
 
           {/* F. DECISION SUMMARY + INTERVIEW PROBES */}
-          {c.interviewGuide?.length > 0 && (
-            <section className="rpt-two-col" style={{
-              ...surf,
-              display: 'grid', gridTemplateColumns: '1fr 1fr',
-              gap: 32, marginBottom: 24,
-            }}>
-              <div>
-                <Label text="Decision Summary" />
-                <div style={{ marginTop: 16, display: 'grid', gap: 10 }}>
-                  {[
-                    ...derived.strengths.map((item) => item),
-                    ...derived.risks.slice(0, 1).map((item) => `Watchout: ${item}`),
-                  ].map((item) => (
-                    <div key={item} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                      <span style={{ color: SUBTLE, flexShrink: 0, marginTop: 2 }}>—</span>
-                      <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: SUBTLE }}>{item}</p>
-                    </div>
-                  ))}
-                </div>
+          <section className="rpt-two-col" style={{
+            ...surf,
+            display: 'grid', gridTemplateColumns: '1fr 1fr',
+            gap: 32, marginBottom: 24,
+          }}>
+            <div>
+              <Label text="Decision Summary" />
+              <div style={{ marginTop: 16, display: 'grid', gap: 10 }}>
+                {[
+                  ...derived.strengths.map((item) => item),
+                  ...derived.risks.slice(0, 1).map((item) => `Watchout: ${item}`),
+                ].map((item) => (
+                  <div key={item} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                    <span style={{ color: SUBTLE, flexShrink: 0, marginTop: 2 }}>—</span>
+                    <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: SUBTLE }}>{item}</p>
+                  </div>
+                ))}
               </div>
+            </div>
               {/* Fix 5: Interview probes with risk labels */}
               <div>
                 <Label text="Recommended Interview Probes" />
@@ -932,8 +931,7 @@ export default function SharedReportPage() {
                   ))}
                 </div>
               </div>
-            </section>
-          )}
+          </section>
 
           {/* Benchmark footer */}
           <section style={{ ...surf, marginBottom: 24 }}>
