@@ -41,23 +41,24 @@ function useCursorGlow(ref: React.RefObject<HTMLElement | null>) {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   LIVE REPORT PANEL — starts mid-animation, not from zero
+   LIVE REPORT PANEL
 ───────────────────────────────────────────────────────────── */
 
 function LiveReportPanel() {
-  // Start at step 12 — visitor arrives to a system already running
-  const [step, setStep] = useState(12)
-  const [score, setScore] = useState(71)
+  const [step, setStep] = useState(0)
+  const [score, setScore] = useState(0)
+  const [showRecommendation, setShowRecommendation] = useState(false)
 
   useEffect(() => {
-    // Count up from 71 to 93 on mount
     const t0 = performance.now()
-    const from = 71, to = 93, duration = 900
+    const from = 0, to = 93, duration = 600
     let raf = 0
     const tick = (now: number) => {
       const p = Math.min((now - t0) / duration, 1)
       const eased = 1 - Math.pow(1 - p, 3)
-      setScore(Math.round(from + eased * (to - from)))
+      const currentScore = Math.round(from + eased * (to - from))
+      setScore(currentScore)
+      if (currentScore >= 85) setShowRecommendation(true)
       if (p < 1) raf = requestAnimationFrame(tick)
       else {
         // After score settles, animate remaining steps
@@ -110,7 +111,7 @@ function LiveReportPanel() {
           <span style={{ width: 6, height: 6, borderRadius: '50%', background: G, boxShadow: `0 0 8px ${G}` }} />
           <span style={{ fontSize: 10, color: B, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase' as const }}>Scoring Active</span>
         </span>
-        <span style={{ marginLeft: 'auto', fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>80 signals · IPIP-NEO</span>
+        <span style={{ marginLeft: 'auto', fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>80 signals</span>
       </div>
 
       {/* Candidate */}
@@ -134,8 +135,8 @@ function LiveReportPanel() {
             fill="white" fontSize={26} fontWeight={700} fontFamily="system-ui">{score}</text>
         </svg>
         <div>
-          <p style={{ fontSize: 17, fontWeight: 700, color: G, marginBottom: 3 }}>Strong Hire</p>
-          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginBottom: 2 }}>Fit strength: High · Strong Fit</p>
+          <p style={{ fontSize: 17, fontWeight: 700, color: G, marginBottom: 3, opacity: showRecommendation ? 1 : 0, transition: 'opacity 300ms ease-out' }}>Strong Hire</p>
+          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginBottom: 2, opacity: showRecommendation ? 1 : 0, transition: 'opacity 300ms ease-out', transitionDelay: '150ms' }}>High confidence</p>
           <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)' }}>Role benchmark active</p>
         </div>
       </div>
@@ -191,9 +192,18 @@ function LiveReportPanel() {
           size={200}
           variant="dark"
           animated={step >= 20}
+          showLabels={false}
         />
       </div>
-      <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.2)', textAlign: 'center' as const, marginTop: 6, letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>Dominance · Extraversion · Patience · Formality</div>
+      <p style={{
+        fontSize: 11,
+        color: 'rgba(255,255,255,0.3)',
+        letterSpacing: '0.04em',
+        textAlign: 'center',
+        marginTop: 8
+      }}>
+        Execution · Ownership · Adaptability · Collaboration · Decision Speed
+      </p>
     </div>
   )
 }
@@ -278,6 +288,14 @@ export default function HomePage() {
   useCursorGlow(closeRef as React.RefObject<HTMLElement | null>)
 
   const [scrolled, setScrolled] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
   useEffect(() => {
     const h = () => setScrolled(window.scrollY > 40)
@@ -377,7 +395,7 @@ export default function HomePage() {
               Turn your behavioral read into a scored report your client acts on. No change to how you run a search.
             </p>
 
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 52 }}>
+            <div className="hero-ctas" style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 52 }}>
               <a href="mailto:team@veltro.ai?subject=Veltro%20Walkthrough%20Request" style={{
                 height: 46, padding: '0 24px', borderRadius: 10, background: '#FFF', color: '#060B14',
                 fontSize: 14, fontWeight: 600, display: 'inline-flex', alignItems: 'center',
@@ -473,7 +491,7 @@ export default function HomePage() {
                   {/* Benchmark */}
                   <div style={{ background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.12)', borderRadius: 8, padding: '10px 14px', marginBottom: 20 }}>
                     <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', lineHeight: 1.5, fontStyle: 'italic' }}>
-                      Aligned with high-performing candidates in comparable field leadership roles. Strong Fit.
+                      Aligned with high-performing candidates in comparable field leadership roles.
                     </p>
                   </div>
 
@@ -485,9 +503,18 @@ export default function HomePage() {
                       size={220}
                       variant="dark"
                       animated={false}
+                      showLabels={false}
                     />
                   </div>
-                  <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.2)', textAlign: 'center' as const, marginBottom: 16, letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>Dominance · Extraversion · Patience · Formality</div>
+                  <p style={{
+                    fontSize: 11,
+                    color: 'rgba(255,255,255,0.3)',
+                    letterSpacing: '0.04em',
+                    textAlign: 'center',
+                    marginTop: 8
+                  }}>
+                    Execution · Ownership · Adaptability · Collaboration · Decision Speed
+                  </p>
 
                   {/* Strengths + Risks inline */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
@@ -514,7 +541,7 @@ export default function HomePage() {
 
                 {/* Footer */}
                 <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 28px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>80 signals · Role benchmark active · IPIP-NEO</span>
+                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>80 signals · Role benchmark active</span>
                   <span style={{ fontSize: 10, color: B, fontWeight: 500, cursor: 'pointer' }}>Share report →</span>
                 </div>
               </div>
@@ -616,9 +643,9 @@ export default function HomePage() {
                     benchmarkScores={{ dominance: 0.55, extraversion: 0.70, patience: 0.72, formality: 0.65 }}
                     candidateLabel="Marcus Thompson"
                     benchmarkLabel="David Mercer (HM)"
-                    size={240}
+                    size={isMobile ? 180 : 240}
                     variant="dark"
-                    showDeltas={true}
+                    showDeltas={!isMobile}
                     animated={hmSection.visible}
                   />
                 </div>
@@ -699,10 +726,10 @@ export default function HomePage() {
         <div ref={sciSection.ref} style={{ maxWidth: MAX, margin: '0 auto' }}>
           <div className="stats-grid" style={{ display: 'grid', gap: 40 }}>
             {[
-              { n: '2.2M', label: 'People in the norm dataset', detail: 'IPIP-NEO · 16PF · 8 peer-reviewed studies' },
+              { n: '2.2M', label: 'People in the norm dataset', detail: '16PF · 8 peer-reviewed studies' },
               { n: '94', label: 'Behavioral signals per evaluation', detail: '80 adjective inputs · 2 structured lists' },
               { n: '5', label: 'Role-relevant dimensions scored', detail: 'Execution · Ownership · Adaptability · Collaboration · Decision Speed' },
-              { n: '6 min', label: 'Candidate assessment time', detail: 'Forced-choice adjective instrument · IPIP-NEO based' },
+              { n: '6 min', label: 'Candidate assessment time', detail: 'Forced-choice adjective instrument' },
             ].map((item, i) => (
               <div key={i} style={{
                 opacity: sciSection.visible ? 1 : 0,
