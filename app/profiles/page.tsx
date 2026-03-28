@@ -362,7 +362,7 @@ export default function MethodPage() {
       {/* Trust rail */}
       <div style={{ borderBottom: `1px solid ${T.b}`, padding: '14px 40px', background: T.card }}>
         <p style={{ fontSize: 12, color: T.t3, textAlign: 'center', letterSpacing: '0.02em' }}>
-          Based on 94 behavioral signals &middot; IPIP-NEO &amp; 16PF validated &middot; 2,245,096-person norm dataset &middot; Role-specific benchmark comparison &middot; Model confidence included
+          Based on 80 behavioral signals &middot; IPIP-NEO &amp; 16PF validated &middot; 2,245,096-person norm dataset &middot; Role-specific benchmark comparison &middot; Fit Strength included
         </p>
       </div>
 
@@ -430,10 +430,10 @@ export default function MethodPage() {
                 Benchmarks calibrated against 2.2 million people.
               </h2>
               <p style={{ fontSize: 15, color: T.t2, lineHeight: 1.8, marginBottom: 20 }}>
-                Percentile rankings and role benchmarks are computed from a combined 2,245,096-person dataset drawn from eight independent validated psychometric studies, including the IPIP-NEO 120-item instrument and the 16PF Questionnaire.
+                Percentile rankings and role benchmarks are computed from a combined 2,245,096-person dataset drawn from three primary psychometric instruments (IPIP-NEO 120-item, IPIP-FFM 50-item, 16PF) and four cross-validation datasets. These are general adult population norms — not job-applicant samples — which is standard for instruments of this type.
               </p>
               <p style={{ fontSize: 15, color: T.t2, lineHeight: 1.8, marginBottom: 32 }}>
-                This means when Veltro says a candidate is in the &ldquo;Top 12%&rdquo; on Execution, that percentile is drawn from a real population distribution — not a proprietary black box.
+                Fit scores are distances from a role-specific benchmark — not population percentiles. Fit Tier labels (Strong / Moderate / Low) reflect alignment with the benchmark, not a rank against other candidates.
               </p>
 
               {/* Dataset breakdown */}
@@ -578,8 +578,8 @@ export default function MethodPage() {
               opacity: reco.visible ? 1 : 0,
               transition: 'opacity 400ms ease 500ms',
             }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: T.green, background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)', padding: '5px 12px', borderRadius: 999 }}>High confidence</span>
-              <span style={{ fontSize: 12, fontWeight: 600, color: T.t0, background: 'rgba(255,255,255,0.06)', border: `1px solid ${T.b}`, padding: '5px 12px', borderRadius: 999 }}>Top 12%</span>
+              <span style={{ fontSize: 12, fontWeight: 600, color: T.green, background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)', padding: '5px 12px', borderRadius: 999 }}>Fit Strength: High</span>
+              <span style={{ fontSize: 12, fontWeight: 600, color: T.t0, background: 'rgba(255,255,255,0.06)', border: `1px solid ${T.b}`, padding: '5px 12px', borderRadius: 999 }}>Strong Fit</span>
               <span style={{ fontSize: 12, fontWeight: 600, color: T.t2, background: 'rgba(255,255,255,0.04)', border: `1px solid ${T.b}`, padding: '5px 12px', borderRadius: 999 }}>Role benchmark active</span>
             </div>
 
@@ -623,25 +623,25 @@ export default function MethodPage() {
             </div>
 
             <p style={{ fontSize: 11, color: T.t4, borderTop: `1px solid ${T.b}`, paddingTop: 16 }}>
-              Based on 94 behavioral signals &middot; Role benchmark active &middot; IPIP-NEO validated
+              Based on 80 behavioral signals &middot; Role benchmark active &middot; IPIP-NEO validated
             </p>
           </div>
 
           {/* Right: defensibility copy */}
           <div style={{ padding: 40, borderLeft: `1px solid ${T.b}`, background: 'linear-gradient(180deg, rgba(10,17,32,0.5), transparent)' }}>
             <h3 style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.025em', color: T.t0, marginBottom: 16, lineHeight: 1.25 }}>
-              Why this recommendation holds up in the room.
+              What makes this recommendation something your client acts on.
             </h3>
             <p style={{ fontSize: 14, lineHeight: 1.8, color: T.t1, marginBottom: 28 }}>
               Veltro doesn&rsquo;t rely on a single trait score or a personality label. The recommendation is built from observed signal patterns, compared against a role-calibrated benchmark, with every input visible in the report.
             </p>
             <p style={{ fontSize: 14, lineHeight: 1.8, color: T.t1, marginBottom: 32 }}>
-              When a client asks &ldquo;why Marcus over the other two&rdquo; — the answer isn&rsquo;t your gut. It&rsquo;s the benchmark comparison. It&rsquo;s the fit score. It&rsquo;s the three specific strengths and the one risk condition worth watching.
+              When a client asks &ldquo;why Marcus over the other two&rdquo; — the answer is the benchmark comparison. The fit score. The three specific strengths and the one condition worth watching in onboarding.
             </p>
             <div style={{ borderTop: `1px solid ${T.b}` }}>
               {[
                 'Fit score derived from role-calibrated benchmark',
-                'Confidence level flags low-signal evaluations',
+                'Fit Strength flags low-signal evaluations',
                 'Strengths and risks surfaced from signal pattern',
                 'AI interpretation is secondary to structured evidence',
                 'Full signal data retained — nothing is a black box',

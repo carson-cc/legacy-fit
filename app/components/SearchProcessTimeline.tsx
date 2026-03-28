@@ -14,17 +14,20 @@ const STAGES = [
 
 const N = STAGES.length
 
-// Veltro-active stage indices per mode
-const VELTRO: Record<'a' | 'b', Set<number>> = {
-  a: new Set([3, 4]),        // Shortlist, Presentation
-  b: new Set([0, 3, 4]),     // Kickoff, Shortlist, Presentation
-}
+// Veltro-active stage indices — always shown, no toggle
+const VELTRO = new Set([0, 2, 3, 6])
 
 // Center x position of stage i as a percentage of container width
 const cx = (i: number) => `${((i + 0.5) / N) * 100}%`
 
+const CARDS: Record<number, string> = {
+  0: 'Benchmark set. HM profiled. Active from day one.',
+  2: 'Hidden fits surface before the shortlist.',
+  3: 'Evaluation sent. Report ready to present.',
+  6: 'Fit score on record. Guarantee period covered.',
+}
+
 export default function SearchProcessTimeline() {
-  const [mode, setMode] = useState<'a' | 'b'>('a')
   const [phase, setPhase] = useState(0)
   const fired = useRef(false)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -44,7 +47,6 @@ export default function SearchProcessTimeline() {
         const t2 = window.setTimeout(() => setPhase(2), 880)
         const t3 = window.setTimeout(() => setPhase(3), 1360)
         const t4 = window.setTimeout(() => setPhase(4), 1760)
-        // cleanup handled by obs.disconnect above
       },
       { threshold: 0.1 }
     )
@@ -52,30 +54,8 @@ export default function SearchProcessTimeline() {
     return () => obs.disconnect()
   }, [])
 
-  const veltro = VELTRO[mode]
-
   return (
     <div>
-      {/* Mode toggle */}
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 40 }}>
-        {(['a', 'b'] as const).map(m => (
-          <button
-            key={m}
-            onClick={() => setMode(m)}
-            style={{
-              height: 32, padding: '0 16px', borderRadius: 999, fontSize: 12, cursor: 'pointer',
-              fontWeight: mode === m ? 600 : 400,
-              color: mode === m ? '#FFF' : 'rgba(255,255,255,0.4)',
-              background: mode === m ? 'rgba(255,255,255,0.1)' : 'transparent',
-              border: `1px solid ${mode === m ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)'}`,
-              transition: 'all 180ms ease',
-            }}
-          >
-            {m === 'a' ? 'Standard' : 'With HM Pairing'}
-          </button>
-        ))}
-      </div>
-
       {/* Timeline */}
       <div ref={containerRef} style={{ overflowX: 'auto', paddingBottom: 8 }}>
         <div style={{ minWidth: 640, position: 'relative' }}>
@@ -85,7 +65,6 @@ export default function SearchProcessTimeline() {
             position: 'absolute', top: 20, left: cx(0), right: `calc(100% - ${cx(N - 1)})`,
             height: 1, background: 'rgba(255,255,255,0.07)',
           }}>
-            {/* Draw animation */}
             <div style={{
               position: 'absolute', inset: 0,
               background: 'rgba(255,255,255,0.07)',
@@ -95,12 +74,25 @@ export default function SearchProcessTimeline() {
             }} />
           </div>
 
-          {/* Blue segment: Shortlist → Presentation (modes A & B) */}
+          {/* Blue segment: Kickoff → Screening */}
+          <div style={{
+            position: 'absolute',
+            top: 18,
+            left: cx(0),
+            right: `calc(100% - ${cx(2)})`,
+            height: 4, borderRadius: 2,
+            background: `linear-gradient(90deg, ${B}, ${B}88)`,
+            opacity: phase >= 4 ? 0.8 : 0,
+            transition: 'opacity 400ms ease 100ms',
+            animation: phase >= 4 ? 'sptSegPulse 2.5s ease-in-out infinite 0.2s' : 'none',
+          }} />
+
+          {/* Blue segment: Shortlist → Placement */}
           <div style={{
             position: 'absolute',
             top: 18,
             left: cx(3),
-            right: `calc(100% - ${cx(4)})`,
+            right: `calc(100% - ${cx(6)})`,
             height: 4, borderRadius: 2,
             background: `linear-gradient(90deg, ${B}88, ${B})`,
             opacity: phase >= 4 ? 0.8 : 0,
@@ -108,23 +100,10 @@ export default function SearchProcessTimeline() {
             animation: phase >= 4 ? 'sptSegPulse 2.5s ease-in-out infinite' : 'none',
           }} />
 
-          {/* Blue segment: Kickoff → Sourcing (mode B only) */}
-          <div style={{
-            position: 'absolute',
-            top: 18,
-            left: cx(0),
-            right: `calc(100% - ${cx(1)})`,
-            height: 4, borderRadius: 2,
-            background: `linear-gradient(90deg, ${B}, ${B}88)`,
-            opacity: phase >= 4 && mode === 'b' ? 0.8 : 0,
-            transition: 'opacity 400ms ease 100ms',
-            animation: phase >= 4 && mode === 'b' ? 'sptSegPulse 2.5s ease-in-out infinite 0.4s' : 'none',
-          }} />
-
           {/* Stage circles + labels */}
           <div style={{ display: 'flex', position: 'relative' }}>
             {STAGES.map((label, i) => {
-              const isV = veltro.has(i)
+              const isV = VELTRO.has(i)
               const muted = phase >= 3 && !isV
               const active = phase >= 4 && isV
 
@@ -170,16 +149,12 @@ export default function SearchProcessTimeline() {
           {/* Cards — flex row aligned with stage columns */}
           <div style={{ display: 'flex', marginTop: 16 }}>
             {STAGES.map((label, i) => {
-              const isShortlist = i === 3
-              const isKickoff = i === 0
-              const showShortlist = isShortlist && phase >= 4
-              const showKickoff = isKickoff && phase >= 4 && mode === 'b'
-              if (!showShortlist && !showKickoff) return <div key={label} style={{ flex: 1 }} />
+              const showCard = VELTRO.has(i) && phase >= 4
+              if (!showCard) return <div key={label} style={{ flex: 1 }} />
               return (
                 <div key={label} style={{
                   flex: 1,
                   opacity: 1,
-                  transform: 'none',
                   transition: 'opacity 400ms ease, transform 400ms ease',
                   padding: '0 4px',
                 }}>
@@ -190,9 +165,7 @@ export default function SearchProcessTimeline() {
                   }}>
                     <p style={{ fontSize: 9, color: B, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' as const, marginBottom: 4 }}>Veltro</p>
                     <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.72)', lineHeight: 1.5, margin: 0 }}>
-                      {isKickoff
-                        ? 'HM profiled. Active on every candidate.'
-                        : 'Evaluation sent. Report ready to present.'}
+                      {CARDS[i]}
                     </p>
                   </div>
                 </div>

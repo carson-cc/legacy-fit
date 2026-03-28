@@ -740,15 +740,15 @@ export default function HomePage() {
           ))}
 
           <div style={{ marginTop: 56, display: 'flex', gap: 14, justifyContent: 'center' }}>
-            <a href="mailto:team@veltro.ai?subject=Veltro%20Walkthrough%20Request" style={{
+            <Link href="/sample-report" style={{
               height: 48, padding: '0 28px', borderRadius: 10, background: '#FFF', color: BG,
               fontSize: 15, fontWeight: 600, display: 'inline-flex', alignItems: 'center',
               textDecoration: 'none', transition: 'all 180ms ease', letterSpacing: '-0.01em',
             }}
               onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(255,255,255,0.15)' }}
               onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '' }}
-            >Request a walkthrough</a>
-            <Link href="/sample-report" style={{
+            >See what your client sees</Link>
+            <a href="mailto:team@veltro.ai?subject=Veltro%20Walkthrough%20Request" style={{
               height: 48, padding: '0 28px', borderRadius: 10,
               border: '1px solid rgba(255,255,255,0.15)',
               color: 'rgba(255,255,255,0.6)',
@@ -757,7 +757,7 @@ export default function HomePage() {
             }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)'; e.currentTarget.style.color = '#FFF' }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)' }}
-            >See what your client would see &rarr;</Link>
+            >Request a walkthrough &rarr;</a>
           </div>
         </div>
 

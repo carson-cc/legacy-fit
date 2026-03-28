@@ -22,10 +22,10 @@ const PH = SVG_H - M.top - M.bottom   // 504
 
 const QUADRANT_GROUPS = [
   { label: 'All', group: null },
-  { label: 'Field Command',        group: 'field_command' },
-  { label: 'Relationship Builders', group: 'people_influence' },
-  { label: 'Steady Operators',     group: 'process_structure' },
-  { label: 'Bridge Builders',      group: 'strategic_drive' },
+  { label: 'High-Drive Independent',    group: 'field_command' },
+  { label: 'People-First Collaborative', group: 'people_influence' },
+  { label: 'Process-First Independent', group: 'process_structure' },
+  { label: 'High-Drive Collaborative',  group: 'strategic_drive' },
 ] as const
 
 /* ─────────────────────────────────────────────────────────────
@@ -366,10 +366,10 @@ export default function ArchetypesPage() {
 
                 {/* Quadrant labels */}
                 {[
-                  { label: 'FIELD\nCOMMAND',        x: M.left + 0.75 * PW, y: M.top + 0.75 * PH, group: 'field_command' },
-                  { label: 'BRIDGE\nBUILDERS',       x: M.left + 0.75 * PW, y: M.top + 0.25 * PH, group: 'strategic_drive' },
-                  { label: 'STEADY\nOPERATORS',      x: M.left + 0.25 * PW, y: M.top + 0.75 * PH, group: 'process_structure' },
-                  { label: 'RELATIONSHIP\nBUILDERS', x: M.left + 0.25 * PW, y: M.top + 0.25 * PH, group: 'people_influence' },
+                  { label: 'HIGH-DRIVE\nINDEPENDENT',    x: M.left + 0.75 * PW, y: M.top + 0.75 * PH, group: 'field_command' },
+                  { label: 'HIGH-DRIVE\nCOLLABORATIVE', x: M.left + 0.75 * PW, y: M.top + 0.25 * PH, group: 'strategic_drive' },
+                  { label: 'PROCESS-FIRST\nINDEPENDENT', x: M.left + 0.25 * PW, y: M.top + 0.75 * PH, group: 'process_structure' },
+                  { label: 'PEOPLE-FIRST\nCOLLABORATIVE', x: M.left + 0.25 * PW, y: M.top + 0.25 * PH, group: 'people_influence' },
                 ].map(q => q.label.split('\n').map((line, li) => (
                   <text
                     key={`${q.label}-${li}`}
@@ -483,14 +483,14 @@ export default function ArchetypesPage() {
         <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', marginBottom: 12, lineHeight: 1.7 }}>
           Not sure which archetype fits your role?<br />Veltro suggests the benchmark automatically.
         </p>
-        <Link href="/dashboard/jobs/new" style={{
+        <Link href="/sample-report" style={{
           fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.55)',
           textDecoration: 'none', transition: 'color 160ms ease',
           display: 'inline-flex', alignItems: 'center', gap: 6,
         }}
           onMouseEnter={e => (e.currentTarget.style.color = '#FFF')}
           onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.55)')}
-        >Create a benchmark →</Link>
+        >See what a report looks like →</Link>
       </section>
 
       {/* Footer */}
