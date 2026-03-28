@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__Claude_Preview__preview_start",
+      "Bash(netstat -ano)",
+      "Bash(taskkill /PID 15592 /F)",
+      "Bash(cmd /c \"taskkill /PID 15592 /F\")",
+      "Bash(cmd /c \"taskkill /PID 15592 /F 2>&1\")",
+      "Bash(powershell -Command \"Stop-Process -Id 15592 -Force -ErrorAction SilentlyContinue; Write-Host ''done''\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/)",
+      "Bash(node -e \":*)"
+    ]
+  }
+}

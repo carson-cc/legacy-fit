@@ -1,0 +1,141 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  role      String   @default("recruiter")
+  createdAt DateTime @default(now())
+}
+
+model Client {
+  id             String                    @id @default(cuid())
+  name           String
+  industry       String?
+  createdAt      DateTime                  @default(now())
+  jobs           Job[]
+  hiringManagers HiringManagerAssessment[]
+}
+
+model Job {
+  id         String            @id @default(cuid())
+  title      String
+  roleType   String
+  clientId   String
+  client     Client            @relation(fields: [clientId], references: [id])
+  target     JobTarget?
+  invites    CandidateInvite[]
+  createdAt  DateTime          @default(now())
+  archivedAt DateTime?
+}
+
+model JobTarget {
+  id           String   @id @default(cuid())
+  jobId        String   @unique
+  job          Job      @relation(fields: [jobId], references: [id])
+  dominance    Float
+  extraversion Float
+  patience     Float
+  formality    Float
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model CandidateInvite {
+  id          String            @id @default(cuid())
+  jobId       String
+  job         Job               @relation(fields: [jobId], references: [id])
+  token       String            @unique @default(cuid())
+  name        String?
+  email       String?
+  phone       String?
+  sentAt      DateTime?
+  completedAt DateTime?
+  result      AssessmentResult?
+  outcome     PlacementOutcome?
+  createdAt   DateTime          @default(now())
+}
+
+model AssessmentResult {
+  id               String          @id @default(cuid())
+  shareToken       String          @unique @default(cuid())
+  inviteId         String          @unique
+  invite           CandidateInvite @relation(fields: [inviteId], references: [id])
+  dominance        Float
+  extraversion     Float
+  patience         Float
+  formality        Float
+  domPercentile    Float
+  extPercentile    Float
+  patPercentile    Float
+  forPercentile    Float
+  profileName      String
+  profileGroup     String
+  secondaryProfile String?
+  adaptationStress Float
+  fitPct           Int?
+  list1Responses   String
+  list2Responses   String
+  list1Order       String
+  list2Order       String
+  list1Count       Int
+  list2Count       Int
+  timeOnPage1Ms    Int?
+  timeOnPage2Ms    Int?
+  domAdaptation    Float?
+  extAdaptation    Float?
+  patAdaptation    Float?
+  forAdaptation    Float?
+  fitLow           Int?
+  fitHigh          Int?
+  scoringVersion   String    @default("v3.0.0")
+  scoringVariant   String    @default("v2_quadratic")
+  rushed           Boolean   @default(false)
+  recruiterNotes   String?
+  createdAt        DateTime  @default(now())
+}
+
+model PlacementOutcome {
+  id                String          @id @default(cuid())
+  inviteId          String          @unique
+  invite            CandidateInvite @relation(fields: [inviteId], references: [id])
+  placed            Boolean
+  retainedAt90      Boolean?
+  retainedAt180     Boolean?
+  performanceRating Int?
+  notes             String?
+  recordedAt        DateTime        @default(now())
+}
+
+model HiringManagerAssessment {
+  id           String    @id @default(cuid())
+  clientId     String
+  client       Client    @relation(fields: [clientId], references: [id])
+  name         String
+  email        String?
+  dominance    Float     @default(0)
+  extraversion Float     @default(0)
+  patience     Float     @default(0)
+  formality    Float     @default(0)
+  profileType  String    @default("")
+  token        String    @unique @default(cuid())
+  completedAt  DateTime?
+  createdAt    DateTime  @default(now())
+}
+
+model EventLog {
+  id        String   @id @default(cuid())
+  event     String
+  entityId  String
+  meta      String?
+  createdAt DateTime @default(now())
+}
