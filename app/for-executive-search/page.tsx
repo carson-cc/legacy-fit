@@ -39,18 +39,18 @@ function Footer() {
   )
 }
 
-const VALUE_PROPS = [
+const OBJECTIONS = [
   {
-    title: 'A scientific assessment in every search',
-    body: 'IPIP-NEO and 16PF validated. 1.2M+ primary norms.',
+    q: 'Our client already uses PI.',
+    a: 'PI is a hiring tool for HR teams. Veltro is a presentation tool for search firms. You\'re not replacing their process — you\'re adding a deliverable to yours. They can run both.',
   },
   {
-    title: 'A deliverable for the client',
-    body: 'Professional behavioral report. Profile, fit score, interview guide, team dynamics.',
+    q: 'How does this fit into a retained search?',
+    a: 'One additional step at shortlist. Candidates complete a 6-minute assessment. You receive a scored report 24 hours before the client meeting. Nothing else changes.',
   },
   {
-    title: 'Candidate\u2013manager pairing no competitor offers',
-    body: 'The hiring manager takes the same 6-minute assessment. Every report shows compatibility.',
+    q: 'Will candidates push back on another assessment?',
+    a: 'It\'s 6 minutes, forced-choice adjectives. At the shortlist stage, qualified candidates expect due diligence. Frame it as part of how you present them — they want the report too.',
   },
 ]
 
@@ -69,40 +69,86 @@ export default function ForExecutiveSearchPage() {
         </p>
       </section>
 
-      {/* Value Props */}
-      <section style={{ padding: '56px var(--p-sp) 56px' }}>
-        <div className="grid grid-cols-1 md:grid-cols-3" style={{ gap: 16 }}>
-          {VALUE_PROPS.map(vp => (
-            <div key={vp.title} style={{ background: 'var(--p-bg2)', border: '1px solid var(--p-b0)', borderRadius: 16, padding: 32 }}>
-              <h3 style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-0.03em', color: 'var(--p-t0)', marginBottom: 12, lineHeight: 1.2 }}>{vp.title}</h3>
-              <p style={{ fontSize: 15, color: 'var(--p-t1)', lineHeight: 1.8 }}>{vp.body}</p>
+      {/* The shortlist moment */}
+      <section style={{ borderTop: '1px solid var(--p-b0)', padding: '64px var(--p-sp) 64px' }}>
+        <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.16em', color: 'var(--p-t3)', textTransform: 'uppercase', marginBottom: 24 }}>
+          The Moment It Pays Off
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+          {[
+            {
+              step: '1',
+              title: 'You present three finalists.',
+              body: 'The client says they like two of them and wants to know how you\'d differentiate. You open the report.',
+            },
+            {
+              step: '2',
+              title: 'You show the fit scores.',
+              body: 'Candidate A scores 91 against your role benchmark. Candidate B scores 74 — strong skills, but the pace mismatch is a real risk for this environment. The numbers end the conversation.',
+            },
+            {
+              step: '3',
+              title: 'The client asks about manager fit.',
+              body: 'You already profiled their hiring manager. You show the compatibility read. "High collaboration alignment, known friction point on pace — here\'s how we\'d address that in onboarding."',
+            },
+          ].map(s => (
+            <div key={s.step} style={{ background: 'var(--p-bg2)', border: '1px solid var(--p-b0)', borderRadius: 16, padding: 32 }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--p-t3)', letterSpacing: '0.12em', marginBottom: 12 }}>{s.step}</p>
+              <h3 style={{ fontSize: 17, fontWeight: 700, letterSpacing: '-0.03em', color: 'var(--p-t0)', marginBottom: 10, lineHeight: 1.2 }}>{s.title}</h3>
+              <p style={{ fontSize: 15, color: 'var(--p-t1)', lineHeight: 1.8, margin: 0 }}>{s.body}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* The Report */}
+      {/* What you get */}
       <section style={{ borderTop: '1px solid var(--p-b0)', padding: '56px var(--p-sp) 56px' }}>
-        <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.16em', color: 'var(--p-t3)', textTransform: 'uppercase', marginBottom: 24 }}>
-          The Report
+        <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.16em', color: 'var(--p-t3)', textTransform: 'uppercase', marginBottom: 32 }}>
+          What&apos;s In Every Report
         </p>
-        <div style={{ maxWidth: 560 }}>
-          <p style={{ fontSize: 15, color: 'var(--p-t1)', lineHeight: 1.8, marginBottom: 16 }}>
-            Every candidate receives a shareable behavioral report containing their profile assignment, four-dimension breakdown, fit score against the role target, an auto-generated interview guide, and team dynamics analysis when Mode B is active.
-          </p>
-          <p style={{ fontSize: 15, color: 'var(--p-t1)', lineHeight: 1.8, marginBottom: 24 }}>
-            Reports are designed to be shared directly with clients. No login required.
-          </p>
+        <div style={{ display: 'flex', flexDirection: 'column', maxWidth: 640 }}>
+          {[
+            { label: 'Fit score', desc: 'Candidate scored against a role-specific behavioral benchmark. Not a generic population percentile.' },
+            { label: 'Behavioral profile', desc: '20 archetypes, normed against 2.2M responses. Filed under a name your client can remember.' },
+            { label: 'Dimension breakdown', desc: 'Execution, Ownership, Adaptability, Collaboration, Decision Speed — each scored, each explained.' },
+            { label: 'Interview probes', desc: 'Auto-generated questions targeting the candidate\'s specific risk areas. Ready to use in the client debrief.' },
+            { label: 'Manager compatibility', desc: 'When the hiring manager is profiled: a compatibility read and predicted friction points. The differentiator no other firm offers.' },
+          ].map((item, i) => (
+            <div key={item.label} style={{ padding: '20px 0', borderTop: i > 0 ? '1px solid var(--p-b0)' : 'none', display: 'flex', gap: 24 }}>
+              <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--p-t0)', width: 160, flexShrink: 0, margin: 0, lineHeight: 1.5 }}>{item.label}</p>
+              <p style={{ fontSize: 15, color: 'var(--p-t1)', lineHeight: 1.8, margin: 0 }}>{item.desc}</p>
+            </div>
+          ))}
+        </div>
+        <div style={{ marginTop: 32 }}>
           <Link href="/sample-report" style={{ fontSize: 13, fontWeight: 500, color: 'var(--p-t2)', textDecoration: 'underline', textUnderlineOffset: 4 }}>
             View a sample report &rarr;
           </Link>
         </div>
       </section>
 
+      {/* Objections */}
+      <section style={{ borderTop: '1px solid var(--p-b0)', padding: '56px var(--p-sp) 56px' }}>
+        <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.16em', color: 'var(--p-t3)', textTransform: 'uppercase', marginBottom: 32 }}>
+          Questions We Hear
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', maxWidth: 640 }}>
+          {OBJECTIONS.map((item, i) => (
+            <div key={i} style={{ padding: '20px 0', borderTop: i > 0 ? '1px solid var(--p-b0)' : 'none' }}>
+              <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--p-t0)', marginBottom: 8, lineHeight: 1.4 }}>{item.q}</p>
+              <p style={{ fontSize: 15, color: 'var(--p-t1)', lineHeight: 1.8, margin: 0 }}>{item.a}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* CTA */}
-      <section style={{ borderTop: '1px solid var(--p-b0)', padding: '56px var(--p-sp) 80px', textAlign: 'center' }}>
-        <a href={`mailto:${COMPANY_EMAIL}`} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', height: 44, padding: '0 32px', background: '#ffffff', color: '#000000', fontSize: 14, fontWeight: 600, borderRadius: 10, textDecoration: 'none', letterSpacing: '-0.01em' }}>
-          Request a Demo
+      <section style={{ borderTop: '1px solid var(--p-b0)', padding: '56px var(--p-sp) 80px' }}>
+        <p style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.03em', color: 'var(--p-t0)', marginBottom: 20, maxWidth: 480, lineHeight: 1.3 }}>
+          Walk through a live search scenario with us. Thirty minutes.
+        </p>
+        <a href={`mailto:${COMPANY_EMAIL}?subject=Executive%20Search%20Walkthrough`} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', height: 44, padding: '0 32px', background: '#ffffff', color: '#000000', fontSize: 14, fontWeight: 600, borderRadius: 10, textDecoration: 'none', letterSpacing: '-0.01em' }}>
+          Request a walkthrough
         </a>
       </section>
 
