@@ -234,8 +234,19 @@ function StatCounter({ value, suffix = '', label }: { value: number; suffix?: st
 ───────────────────────────────────────────────────────────── */
 
 function SignalTraceDemo({ visible }: { visible: boolean }) {
+  const wrapRef = useRef<HTMLDivElement>(null)
+  const [traceWidth, setTraceWidth] = useState(448)
+  useEffect(() => {
+    const el = wrapRef.current
+    if (!el) return
+    const obs = new ResizeObserver(([e]) => {
+      setTraceWidth(Math.min(448, Math.floor(e.contentRect.width - 48)))
+    })
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
   return (
-    <div style={{
+    <div ref={wrapRef} style={{
       background: '#0D1421',
       border: '1px solid rgba(255,255,255,0.07)',
       borderRadius: 12,
@@ -248,7 +259,7 @@ function SignalTraceDemo({ visible }: { visible: boolean }) {
       <SignalTrace
         candidateScores={{ dominance: 0.88, extraversion: 0.62, patience: 0.18, formality: 0.45 }}
         benchmarkScores={{ dominance: 0.74, extraversion: 0.54, patience: 0.46, formality: 0.56 }}
-        width={448}
+        width={traceWidth}
         variant="dark"
         animated={visible}
       />
@@ -300,9 +311,9 @@ export default function HomePage() {
         borderBottom: scrolled ? '1px solid rgba(255,255,255,0.05)' : '1px solid transparent',
         transition: 'all 240ms ease-out',
       }}>
-        <div style={{ maxWidth: MAX, margin: '0 auto', padding: '0 40px', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ maxWidth: MAX, margin: '0 auto', padding: '0 40px', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }} className="nav-inner">
           <Link href="/" style={{ fontSize: 15, fontWeight: 700, color: '#FFF', textDecoration: 'none', letterSpacing: '-0.02em' }}>Veltro</Link>
-          <div style={{ display: 'flex', gap: 36, alignItems: 'center' }}>
+          <div className="nav-links-group" style={{ display: 'flex', gap: 36, alignItems: 'center' }}>
             {[
               { label: 'Product', href: '#how-it-works' },
               { label: 'Method', href: '/profiles' },
@@ -317,11 +328,11 @@ export default function HomePage() {
             ))}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <Link href="/login" style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', textDecoration: 'none', transition: 'color 160ms ease' }}
+            <Link href="/login" className="nav-signin" style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', textDecoration: 'none', transition: 'color 160ms ease' }}
               onMouseEnter={e => (e.currentTarget.style.color = '#FFF')}
               onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.45)')}
             >Sign in</Link>
-            <a href="mailto:team@veltro.ai?subject=Veltro%20Walkthrough%20Request" style={{
+            <a href="mailto:team@veltro.ai?subject=Veltro%20Walkthrough%20Request" className="nav-cta" style={{
               height: 34, padding: '0 20px', borderRadius: 8, background: '#FFF', color: '#060B14',
               fontSize: 13, fontWeight: 600, display: 'inline-flex', alignItems: 'center',
               textDecoration: 'none', transition: 'all 160ms ease',
@@ -329,7 +340,7 @@ export default function HomePage() {
             }}
               onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(255,255,255,0.12)' }}
               onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '' }}
-            >Request a walkthrough</a>
+            ><span className="nav-cta-desktop">Request a walkthrough</span><span className="nav-cta-mobile">Talk to us</span></a>
           </div>
         </div>
       </nav>
@@ -348,7 +359,7 @@ export default function HomePage() {
         {/* Bottom fade */}
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 200, zIndex: 1, background: `linear-gradient(transparent, ${BG})`, pointerEvents: 'none' }} />
 
-        <div className="hero-grid" style={{ maxWidth: MAX, margin: '0 auto', padding: '80px 40px', width: '100%', display: 'grid', gridTemplateColumns: '1fr 480px', gap: 72, alignItems: 'center', position: 'relative', zIndex: 2 }}>
+        <div className="hero-grid" style={{ maxWidth: MAX, margin: '0 auto', padding: '80px 40px', width: '100%', display: 'grid', gap: 72, alignItems: 'center', position: 'relative', zIndex: 2 }}>
 
           {/* Left */}
           <div>
@@ -782,8 +793,8 @@ export default function HomePage() {
 
         /* ── Breakpoint: collapse side-by-side wide layouts ── */
         @media (max-width: 1100px) {
-          .hero-grid   { grid-template-columns: 1fr; }
-          .signal-grid { grid-template-columns: 1fr; }
+          .hero-grid   { grid-template-columns: 1fr !important; }
+          .signal-grid { grid-template-columns: 1fr !important; }
         }
 
         /* ── Breakpoint: collapse standard two-column layouts ── */
@@ -804,6 +815,20 @@ export default function HomePage() {
         /* ── Breakpoint: very small screens ── */
         @media (max-width: 480px) {
           .stats-grid { grid-template-columns: 1fr; }
+        }
+
+        /* ── Mobile nav: wordmark + CTA only ── */
+        .nav-cta-mobile { display: none; }
+        @media (max-width: 767px) {
+          .nav-links-group { display: none !important; }
+          .nav-signin      { display: none !important; }
+          .nav-inner       { padding: 0 20px !important; }
+          .nav-cta         { height: 36px !important; padding: 0 14px !important; font-size: 13px !important; }
+          .nav-cta-desktop { display: none !important; }
+          .nav-cta-mobile  { display: inline !important; }
+          .hero-grid       { gap: 32px !important; padding: 40px 20px !important; }
+          .signal-grid     { gap: 40px !important; }
+          .two-col-grid    { gap: 40px !important; }
         }
       `}</style>
     </main>

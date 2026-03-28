@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { scoreAssessment, SCORING_VERSION } from '@/lib/scoring'
+import { scoreAssessment, SCORING_VERSION, fitLabel, getModelConfidence, getPercentileLabel } from '@/lib/scoring'
 import { ADJECTIVES } from '@/lib/data/adjectives'
 import { ROLE_PRESETS } from '@/lib/data/norms'
 import { REFERENCE_PROFILES } from '@/lib/data/profiles'
+import { sendCandidateProfileEmail, sendRecruiterNotificationEmail } from '@/lib/email'
+import { generateCandidateProfilePdf } from '@/lib/pdf'
 
 type Params = { params: Promise<{ token: string }> }
 
@@ -129,7 +131,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       const result = scoreAssessment(list1Checked, list2Checked, ADJECTIVES, jobTarget, variant)
       const rushed = (timeOnPage1Ms != null && timeOnPage1Ms < 45000) || (timeOnPage2Ms != null && timeOnPage2Ms < 45000)
 
-      await prisma.assessmentResult.create({
+      const savedResult = await prisma.assessmentResult.create({
         data: {
           inviteId: invite.id,
           dominance: result.scores.dominance,
@@ -160,6 +162,40 @@ export async function POST(req: NextRequest, { params }: Params) {
 
       await prisma.candidateInvite.update({ where: { id: invite.id }, data: { completedAt: new Date() } })
       await prisma.eventLog.create({ data: { event: 'assessment.scored', entityId: invite.id, meta: JSON.stringify({ profileName: result.profile.name, variant }) } })
+
+      // Fire both emails in parallel without blocking the response
+      const candidateEmail = invite.email
+      const candidateName = invite.name ?? 'Candidate'
+      if (candidateEmail) {
+        const fitPct = result.fitPct ?? 0
+        const appUrl = process.env.APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000'
+        const reportUrl = `${appUrl}/report/${savedResult.shareToken}`
+
+        Promise.all([
+          generateCandidateProfilePdf(candidateName, result.profile)
+            .then(pdfBuffer =>
+              sendCandidateProfileEmail({
+                candidateName,
+                candidateEmail,
+                profile: result.profile,
+                pdfBuffer,
+              })
+            ),
+          prisma.user.findFirst().then(recruiter => {
+            if (!recruiter?.email) return
+            return sendRecruiterNotificationEmail({
+              recruiterEmail: recruiter.email,
+              candidateName,
+              jobTitle: invite.job.title,
+              fitPct,
+              recommendation: fitLabel(fitPct),
+              confidence: getModelConfidence(fitPct),
+              percentileLabel: getPercentileLabel(fitPct),
+              reportUrl,
+            })
+          }),
+        ]).catch(err => console.error('Post-assessment email error:', err))
+      }
 
       return NextResponse.json({
         success: true,

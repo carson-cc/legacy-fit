@@ -100,7 +100,7 @@ function FitModelViz({ scores, benchmark }: { scores: FitScores; benchmark: FitS
 
   return (
     <div style={{ display: 'flex', justifyContent: 'center' }}>
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-label="Fit model">
+      <svg width="100%" style={{ maxWidth: size }} viewBox={`0 0 ${size} ${size}`} aria-label="Fit model">
         <defs>
           <filter id="sr-glow">
             <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
@@ -185,6 +185,14 @@ export default function SampleReportPage() {
           .rpt-two-col    { grid-template-columns: 1fr !important; }
           .rpt-main-grid  { grid-template-columns: 1fr !important; }
         }
+        @media (max-width: 767px) {
+          .rpt-team-grid    { grid-template-columns: 1fr !important; }
+          .rpt-bmark-footer { grid-template-columns: 1fr !important; }
+          .rpt-nav-subtitle { display: none !important; }
+          .rpt-score-grid   { grid-template-columns: 1fr !important; }
+          .rpt-two-col      { grid-template-columns: 1fr !important; }
+          .rpt-main-grid    { grid-template-columns: 1fr !important; }
+        }
       `}</style>
 
       {/* Demo banner */}
@@ -194,6 +202,7 @@ export default function SampleReportPage() {
         borderBottom: '1px solid rgba(37,99,235,0.25)',
         padding: '9px 24px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        flexWrap: 'wrap',
         gap: 16,
         backdropFilter: 'blur(12px)',
       }}>
@@ -221,7 +230,7 @@ export default function SampleReportPage() {
         backdropFilter: 'blur(12px)',
       }}>
         <Link href="/" style={{ fontSize: 14, color: TEXT, fontWeight: 700, textDecoration: 'none' }}>Veltro</Link>
-        <div style={{ fontSize: 12, color: SUBTLE }}>Candidate Recommendation Report</div>
+        <div className="rpt-nav-subtitle" style={{ fontSize: 12, color: SUBTLE }}>Candidate Recommendation Report</div>
         <button
           onClick={() => window.print()}
           style={{
@@ -438,7 +447,7 @@ export default function SampleReportPage() {
               The hiring manager completed the same 6-minute assessment. This section shows candidate–manager behavioral compatibility.
             </p>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, marginBottom: 28 }}>
+            <div className="rpt-team-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, marginBottom: 28 }}>
               {[
                 { name: 'Marcus Thompson', role: 'Candidate · Pioneer', scores: CANDIDATE_FIT },
                 { name: 'David Mercer',    role: 'Hiring Manager · Diplomat', scores: HM_FIT },
@@ -471,7 +480,7 @@ export default function SampleReportPage() {
 
           {/* Benchmark footer */}
           <section style={{ ...surf, marginBottom: 24 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
+            <div className="rpt-bmark-footer" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
               {[
                 'Based on 94 behavioral signals',
                 'Recommendation generated from calibrated signal analysis',

@@ -152,6 +152,7 @@ function ProfileOverlay({ profile, onClose }: { profile: ReferenceProfile; onClo
       onClick={onClose}
     >
       <div
+        className="overlay-card"
         style={{
           background: '#0D1421',
           border: '1px solid rgba(255,255,255,0.1)',
@@ -184,7 +185,7 @@ function ProfileOverlay({ profile, onClose }: { profile: ReferenceProfile; onClo
           }}>×</button>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 240px', gap: 40 }}>
+        <div className="overlay-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 240px', gap: 40 }}>
           <div>
             <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', lineHeight: 1.8, marginBottom: 28 }}>
               {profile.description}
@@ -225,6 +226,71 @@ function ProfileOverlay({ profile, onClose }: { profile: ReferenceProfile; onClo
 }
 
 /* ─────────────────────────────────────────────────────────────
+   MOBILE CARD LIST — replaces SVG radar below 768px
+───────────────────────────────────────────────────────────── */
+
+const GROUP_ORDER = ['field_command', 'people_influence', 'process_structure', 'strategic_drive']
+
+function ArchetypeMobileList({
+  activeGroup,
+  onFilterClick,
+  onSelect,
+}: {
+  activeGroup: string | null
+  onFilterClick: (g: string | null) => void
+  onSelect: (p: ReferenceProfile) => void
+}) {
+  const B = '#2563EB'
+  const filtered = activeGroup
+    ? REFERENCE_PROFILES.filter(p => p.group === activeGroup)
+    : REFERENCE_PROFILES
+
+  // Group profiles under their group labels
+  const groups = GROUP_ORDER
+    .map(g => ({
+      group: g,
+      label: REFERENCE_PROFILES.find(p => p.group === g)?.groupLabel ?? g,
+      profiles: filtered.filter(p => p.group === g),
+    }))
+    .filter(g => g.profiles.length > 0)
+
+  return (
+    <div style={{ padding: '0 20px 48px' }}>
+      {groups.map(grp => (
+        <div key={grp.group} style={{ marginBottom: 32 }}>
+          <p style={{
+            fontSize: 11, fontWeight: 600, color: B, letterSpacing: '0.12em',
+            textTransform: 'uppercase', marginBottom: 12,
+          }}>{grp.label}</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {grp.profiles.map(p => (
+              <button
+                key={p.name}
+                onClick={() => onSelect(p)}
+                style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
+                  background: '#0D1421',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: 12, padding: '16px 18px',
+                  cursor: 'pointer', textAlign: 'left',
+                  width: '100%', minHeight: 44,
+                  transition: 'border-color 160ms ease',
+                }}
+                onTouchStart={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.22)')}
+                onTouchEnd={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)')}
+              >
+                <span style={{ fontSize: 14, fontWeight: 600, color: '#FFF', marginBottom: 4 }}>{p.name}</span>
+                <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', lineHeight: 1.4 }}>{p.tagline}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/* ─────────────────────────────────────────────────────────────
    PAGE
 ───────────────────────────────────────────────────────────── */
 
@@ -235,9 +301,17 @@ export default function ArchetypesPage() {
   const [activeGroup, setActiveGroup] = useState<string | null>(null)
   const [scrolled, setScrolled]       = useState(false)
   const [dims, setDims]               = useState({ width: 860, height: 620 })
+  const [isMobile, setIsMobile]       = useState(false)
   const [justFiltered, setJustFiltered] = useState(false)
   const containerRef  = useRef<HTMLDivElement>(null)
   const filterTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
   useEffect(() => {
     const t = window.setTimeout(() => setAnimated(true), 120)
@@ -310,9 +384,9 @@ export default function ArchetypesPage() {
         borderBottom: '1px solid rgba(255,255,255,0.07)',
         transition: 'all 240ms ease',
       }}>
-        <div style={{ maxWidth: MAX, margin: '0 auto', padding: '0 40px', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div className="nav-inner" style={{ maxWidth: MAX, margin: '0 auto', padding: '0 40px', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Link href="/" style={{ fontSize: 15, fontWeight: 700, color: '#FFF', textDecoration: 'none', letterSpacing: '-0.02em' }}>{PRODUCT_NAME}</Link>
-          <div style={{ display: 'flex', gap: 36, alignItems: 'center' }}>
+          <div className="nav-links-group" style={{ display: 'flex', gap: 36, alignItems: 'center' }}>
             {[
               { label: 'Product', href: '/#how-it-works' },
               { label: 'Method', href: '/profiles' },
@@ -331,11 +405,11 @@ export default function ArchetypesPage() {
             ))}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <Link href="/login" style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', textDecoration: 'none', transition: 'color 160ms ease' }}
+            <Link href="/login" className="nav-signin" style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', textDecoration: 'none', transition: 'color 160ms ease' }}
               onMouseEnter={e => (e.currentTarget.style.color = '#FFF')}
               onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.45)')}
             >Sign in</Link>
-            <a href="mailto:team@veltro.ai" style={{
+            <a href="mailto:team@veltro.ai" className="nav-cta" style={{
               height: 34, padding: '0 16px', borderRadius: 8, background: '#FFF', color: BG,
               fontSize: 13, fontWeight: 600, display: 'inline-flex', alignItems: 'center',
               textDecoration: 'none', letterSpacing: '-0.01em',
@@ -359,12 +433,12 @@ export default function ArchetypesPage() {
         </div>
       </section>
 
-      {/* RADAR */}
-      <section style={{ padding: '48px 40px 64px' }}>
+      {/* RADAR / MOBILE LIST */}
+      <section style={{ padding: isMobile ? '24px 0 48px' : '48px 40px 64px' }}>
         <div style={{ maxWidth: MAX, margin: '0 auto' }}>
 
           {/* Group filter pills */}
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 40 }}>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 32, padding: isMobile ? '0 20px' : undefined }}>
             {QUADRANT_GROUPS.map(q => {
               const active = q.group === activeGroup || (q.group === null && activeGroup === null)
               return (
@@ -372,7 +446,7 @@ export default function ArchetypesPage() {
                   key={q.label}
                   onClick={() => handleFilterClick(q.group ?? null)}
                   style={{
-                    height: 32, padding: '0 16px', borderRadius: 999, fontSize: 12, cursor: 'pointer',
+                    height: 44, padding: '0 18px', borderRadius: 999, fontSize: 13, cursor: 'pointer',
                     fontWeight: active ? 600 : 400,
                     color: active ? '#060B14' : 'rgba(255,255,255,0.55)',
                     background: active ? '#FFF' : 'transparent',
@@ -384,7 +458,14 @@ export default function ArchetypesPage() {
             })}
           </div>
 
-          {/* Radar container — observed for responsive sizing */}
+          {isMobile ? (
+            <ArchetypeMobileList
+              activeGroup={activeGroup}
+              onFilterClick={handleFilterClick}
+              onSelect={setSelected}
+            />
+          ) : (
+          /* Radar container — observed for responsive sizing */
           <div style={{ overflowX: 'auto' }}>
             <div ref={containerRef} style={{ width: '100%', minHeight: MIN_H, margin: '0 auto', position: 'relative' }}>
               <svg
@@ -522,6 +603,7 @@ export default function ArchetypesPage() {
               })()}
             </div>
           </div>
+          )}
 
         </div>
       </section>
@@ -557,10 +639,14 @@ export default function ArchetypesPage() {
           0%, 100% { opacity: 0.1; transform: scale(1); }
           50%       { opacity: 0.25; transform: scale(1.3); }
         }
-        @media (max-width: 768px) {
-          h1 { font-size: 36px !important; }
-          nav { padding: 0 20px !important; }
-          section { padding-left: 20px !important; padding-right: 20px !important; }
+        @media (max-width: 767px) {
+          h1 { font-size: 32px !important; }
+          .nav-links-group  { display: none !important; }
+          .nav-signin       { display: none !important; }
+          .nav-inner        { padding: 0 20px !important; }
+          .nav-cta          { height: 36px !important; padding: 0 14px !important; }
+          .overlay-card     { padding: 24px 20px !important; }
+          .overlay-grid     { grid-template-columns: 1fr !important; }
         }
       `}</style>
     </main>
