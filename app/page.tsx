@@ -484,6 +484,17 @@ export default function HomePage() {
               >Request a walkthrough</a>
             </div>
 
+            <p className="hero-italic-line" style={{
+              fontSize: 13,
+              color: 'rgba(255,255,255,0.35)',
+              fontStyle: 'italic',
+              marginTop: 16,
+              marginBottom: 0,
+              letterSpacing: '-0.01em'
+            }}>
+              So you don&rsquo;t hear &ldquo;let&rsquo;s see more candidates.&rdquo;
+            </p>
+
             {/* Trust strip */}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 0, alignItems: 'center' }}>
               {[
@@ -519,6 +530,47 @@ export default function HomePage() {
       </section>
 
       {/* ══════════════════════════════════════════════
+          THE SCENE — emotional anchor
+      ══════════════════════════════════════════════ */}
+      <section className="scene-section" style={{
+        padding: '0 32px 96px',
+        background: '#0B0F14'
+      }}>
+        <div style={{maxWidth: 600, margin: '0 auto'}}>
+          <p className="scene-paragraph" style={{
+            fontSize: 17,
+            color: 'rgba(255,255,255,0.6)',
+            lineHeight: 1.85,
+            marginBottom: 20,
+            letterSpacing: '-0.01em'
+          }}>
+            Eight weeks in. Your candidate is right for the role.
+            The client met someone internally. Now they&rsquo;re not sure.
+          </p>
+          <p className="scene-paragraph" style={{
+            fontSize: 17,
+            color: 'rgba(255,255,255,0.6)',
+            lineHeight: 1.85,
+            marginBottom: 32,
+            letterSpacing: '-0.01em'
+          }}>
+            This is where most searches break.
+            Not because the candidate is wrong.
+            Because they can&rsquo;t show why the candidate is right.
+          </p>
+          <p className="scene-conclusion" style={{
+            fontSize: 20,
+            fontWeight: 600,
+            color: '#FFFFFF',
+            lineHeight: 1.4,
+            letterSpacing: '-0.02em'
+          }}>
+            Veltro is built for that moment.
+          </p>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════
           THE OUTPUT — show before explaining
       ══════════════════════════════════════════════ */}
       <section id="output" style={{ padding: '120px 40px' }}>
@@ -532,12 +584,9 @@ export default function HomePage() {
             {/* Section header */}
             <div style={{ marginBottom: 48 }}>
               <p style={{ fontSize: 11, color: B, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase' as const, marginBottom: 14 }}>The Deliverable</p>
-              <h2 style={{ fontSize: 38, fontWeight: 700, letterSpacing: '-0.03em', color: '#FFF', marginBottom: 12, lineHeight: 1.1 }}>
-                This is what you open<br />in the client meeting.
+              <h2 style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em', color: '#FFF', marginBottom: 0, lineHeight: 1.1 }}>
+                The deliverable your client actually sees.
               </h2>
-              <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.45)', maxWidth: 480 }}>
-                One report. A score, a benchmark, a compatibility read — everything your client needs to say yes with conviction.
-              </p>
             </div>
 
             {/* Report preview + quotes side by side */}
@@ -629,9 +678,16 @@ export default function HomePage() {
 
               {/* Positioning */}
               <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <p style={{ fontSize: 11, color: B, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase' as const, marginBottom: 28 }}>Who uses it</p>
-                <p style={{ fontSize: 20, fontWeight: 400, color: 'rgba(255,255,255,0.75)', lineHeight: 1.75, marginBottom: 36 }}>
-                  Search and staffing firms placing candidates in field leadership, finance, sales, and operations — where a wrong placement costs the client a year and costs you the relationship.
+                <p style={{
+                  fontSize: 15,
+                  color: 'rgba(255,255,255,0.5)',
+                  lineHeight: 1.7,
+                  maxWidth: 560,
+                  marginBottom: 36
+                }}>
+                  Search and staffing firms placing candidates in field leadership,
+                  finance, sales, and operations — where a wrong placement costs
+                  the client a year and costs you the relationship.
                 </p>
                 <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 28 }}>
                   <Link href="/sample-report" style={{
@@ -641,10 +697,90 @@ export default function HomePage() {
                   }}
                     onMouseEnter={e => (e.currentTarget.style.color = '#FFF')}
                     onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.55)')}
-                  >See the full live report →</Link>
+                  >Open sample report &rarr;</Link>
+                  <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', marginTop: 12 }}>
+                    Used in client meetings to make the final call.
+                  </p>
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════
+          THE DIFFERENCE — what changes
+      ══════════════════════════════════════════════ */}
+      <section style={{ padding: '96px 40px' }}>
+        <div style={{ maxWidth: MAX, margin: '0 auto' }}>
+          <div className="difference-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+
+            {/* Left — what they hear today */}
+            <div style={{
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: 16,
+              padding: 40,
+            }}>
+              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' as const, marginBottom: 24 }}>What your clients hear today</p>
+              {[
+                '"Strong background for the role."',
+                '"Good operating fit, we think."',
+                '"We\'re confident in this recommendation."',
+                '"We think he can do the job."'
+              ].map((line, i) => (
+                <p key={i} style={{
+                  fontSize: 15,
+                  color: 'rgba(255,255,255,0.35)',
+                  lineHeight: 1.7,
+                  fontStyle: 'italic',
+                  marginBottom: 8
+                }}>
+                  {line}
+                </p>
+              ))}
+              <p style={{
+                fontSize: 12,
+                color: 'rgba(255,255,255,0.2)',
+                marginTop: 20,
+                fontStyle: 'italic'
+              }}>
+                Sounds fine. Doesn&rsquo;t hold up when the client gets nervous.
+              </p>
+            </div>
+
+            {/* Right — what they see with Veltro */}
+            <div style={{
+              background: 'rgba(37,99,235,0.08)',
+              border: '1px solid rgba(37,99,235,0.25)',
+              boxShadow: '0 0 40px rgba(37,99,235,0.06)',
+              borderRadius: 16,
+              padding: 40,
+            }}>
+              <p style={{ fontSize: 11, color: B, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' as const, marginBottom: 24 }}>What they see with Veltro</p>
+              {[
+                { label: '93 — Strong Hire', detail: 'Top performers in field leadership score 85+. Marcus is at 93.', color: G },
+                { label: 'Compatible with David Mercer', detail: 'High overlap on collaboration and decision speed. One gap on pace — addressable in onboarding.', color: '#A78BFA' },
+                { label: '3 interview probes generated', detail: 'Targeted questions based on flagged risk areas. Ready for the hiring manager.', color: B },
+              ].map((item, i) => (
+                <div key={i} style={{ marginBottom: 20 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <span style={{ width: 5, height: 5, borderRadius: '50%', background: item.color, flexShrink: 0 }} />
+                    <span style={{ fontSize: 14, fontWeight: 600, color: '#FFF' }}>{item.label}</span>
+                  </div>
+                  <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', lineHeight: 1.6, marginLeft: 13 }}>{item.detail}</p>
+                </div>
+              ))}
+              <p style={{
+                fontSize: 12,
+                color: 'rgba(37,99,235,0.7)',
+                marginTop: 12,
+                fontStyle: 'italic'
+              }}>
+                Specific. Scored. Ready for the room.
+              </p>
+            </div>
+
           </div>
         </div>
       </section>
@@ -738,7 +874,7 @@ export default function HomePage() {
                   <span style={{ fontSize: 17, color: 'white', fontWeight: 600 }}>Open the report in the client meeting.</span>
                   <span style={{ display: 'inline-block', fontSize: 10, fontWeight: 600, color: '#2563EB', background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.25)', borderRadius: 4, padding: '2px 7px', marginLeft: 10, letterSpacing: '0.04em' }}>Veltro active</span>
                 </div>
-                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6, maxWidth: 480, margin: 0 }}>Score, benchmark comparison, strengths, risks, and interview probes. Everything your client needs to say yes.</p>
+                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6, maxWidth: 480, margin: 0 }}>Score, fit, risks, and interview probes. The meeting ends in a decision.</p>
                 <div style={{ marginTop: 12, background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.15)', borderRadius: 8, padding: '10px 14px', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>Client receives:</span>
                   <span style={{ fontSize: 11, color: '#22C55E', fontWeight: 500 }}>Scored recommendation report</span>
@@ -990,12 +1126,15 @@ export default function HomePage() {
       ══════════════════════════════════════════════ */}
       <section style={{ padding: '64px 40px', borderTop: '1px solid rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
         <div ref={sciSection.ref} style={{ maxWidth: MAX, margin: '0 auto' }}>
+          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', textAlign: 'center', marginBottom: 40 }}>
+            Built on real behavioral data — so the recommendation holds up in the room.
+          </p>
           <div className="stats-grid" style={{ display: 'grid', gap: 40 }}>
             {[
-              { n: '2.2M', label: 'People in the norm dataset', detail: null, smallDetail: 'IPIP-NEO · 16PF · 8 peer-reviewed studies' },
+              { n: '2.2M', label: 'People in the norm dataset', detail: null, smallDetail: 'Published norm data across 8 research studies' },
               { n: '94', label: 'Behavioral signals per evaluation', detail: null, smallDetail: null },
               { n: '5', label: 'Role-relevant dimensions scored', detail: 'Execution · Ownership · Adaptability · Collaboration · Decision Speed', smallDetail: null },
-              { n: '6 min', label: 'Candidate assessment time', detail: null, smallDetail: null },
+              { n: '6 min', label: 'Time per candidate', detail: null, smallDetail: null },
             ].map((item, i) => (
               <div key={i} style={{
                 opacity: sciSection.visible ? 1 : 0,
@@ -1118,6 +1257,7 @@ export default function HomePage() {
           .two-col-grid  { grid-template-columns: 1fr; }
           .output-grid   { grid-template-columns: 1fr; }
           .stats-grid    { grid-template-columns: 1fr 1fr; }
+          .difference-grid { grid-template-columns: 1fr !important; gap: 20px !important; }
         }
 
         /* ── Breakpoint: mobile type scale ── */
@@ -1126,11 +1266,19 @@ export default function HomePage() {
           h1 { font-size: 40px !important; }
           h2 { font-size: 28px !important; }
           .stats-grid { grid-template-columns: 1fr 1fr; }
+          .scene-paragraph { font-size: 15px !important; }
+          .scene-conclusion { font-size: 18px !important; }
+          .difference-grid { grid-template-columns: 1fr !important; gap: 20px !important; }
         }
 
         /* ── Breakpoint: very small screens ── */
         @media (max-width: 480px) {
           .stats-grid { grid-template-columns: 1fr; }
+        }
+
+        /* ── Breakpoint: italic line wrap protection ── */
+        @media (max-width: 375px) {
+          .hero-italic-line { display: none !important; }
         }
 
         /* ── Mobile nav: wordmark + CTA only ── */
