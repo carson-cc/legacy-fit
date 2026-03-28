@@ -32,7 +32,7 @@ export default function LoginPage() {
         <div>
           <p style={{ fontSize: 20, fontWeight: 700, color: '#fff', letterSpacing: '-0.02em' }}>{PRODUCT_NAME}</p>
           <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', marginTop: 16, maxWidth: 320, lineHeight: 1.7 }}>
-            The hiring decision engine. Analyze behavioral signals, benchmark against high-performing archetypes, and generate defensible recommendations.
+            The hiring decision engine. Analyze behavioral signals, benchmark against high-performing archetypes, and generate scored recommendations your clients can act on.
           </p>
         </div>
         <div>

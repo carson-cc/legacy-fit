@@ -535,7 +535,7 @@ export default function HomePage() {
       <section id="how-it-works" style={{ padding: '120px 40px', background: '#080E1A', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <div ref={howWorks.ref} style={{ maxWidth: 960, margin: '0 auto' }}>
           <p style={{ fontSize: 11, color: B, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase' as const, marginBottom: 14 }}>The Process</p>
-          <h2 style={{ fontSize: 38, fontWeight: 700, letterSpacing: '-0.03em', color: '#FFF', marginBottom: 12, lineHeight: 1.1 }}>Your search, unchanged. Your presentation, unassailable.</h2>
+          <h2 style={{ fontSize: 38, fontWeight: 700, letterSpacing: '-0.03em', color: '#FFF', marginBottom: 12, lineHeight: 1.1 }}>Your search, unchanged. Your presentation, decisive.</h2>
           <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.4)', maxWidth: 520, marginBottom: 56, lineHeight: 1.7 }}>
             One additional step at shortlist. Every candidate scored against a role-specific benchmark. A deliverable your client can hold.
           </p>
@@ -661,7 +661,7 @@ export default function HomePage() {
             }}>
               <p style={{ fontSize: 11, color: B, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase' as const, marginBottom: 20 }}>The Model</p>
               <h2 style={{ fontSize: 38, fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.1, marginBottom: 20 }}>
-                94 signals.<br />Five dimensions.<br />One number you can defend in the room.
+                94 signals.<br />Five dimensions.<br />One number that closes the room.
               </h2>
               <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.5)', lineHeight: 1.8, marginBottom: 20 }}>
                 Each evaluation pulls 94 behavioral signals from two structured inputs, mapped across five dimensions that predict performance in the role — not personality in the abstract. The score tells you where a candidate fits, where they strain, and why.
@@ -723,9 +723,9 @@ export default function HomePage() {
 
         <div ref={close.ref} style={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: 720 }}>
           {[
-            { text: 'Your read on candidates is right', color: '#FFF' },
-            { text: 'more often than you get credit for.', color: '#FFF' },
-            { text: 'Veltro gives you proof.', color: B },
+            { text: 'You already know who\'s right for the role.', color: '#FFF' },
+            { text: 'Now you can show your client', color: '#FFF' },
+            { text: 'exactly why.', color: B },
           ].map((line, i) => (
             <div key={i} style={{
               display: 'block',

@@ -62,10 +62,10 @@ export default function ForStaffingFirmsPage() {
       {/* Hero */}
       <section style={{ padding: '88px var(--p-sp) 68px', borderBottom: '1px solid var(--p-b0)' }}>
         <h1 className="text-[40px] md:text-[52px]" style={{ fontWeight: 700, letterSpacing: '-0.04em', lineHeight: 0.92, color: 'var(--p-t0)', marginBottom: 18 }}>
-          Built for staffing firms
+          The only behavioral assessment built for recruiters who place candidates, not HR teams who screen them.
         </h1>
         <p style={{ fontSize: 16, color: 'var(--p-t2)', lineHeight: 1.6, maxWidth: 540 }}>
-          The only behavioral assessment designed for recruiters who place candidates, not HR teams who screen them.
+          One additional step at shortlist. A report your client can hold. Zero changes to how you run a search.
         </p>
       </section>
 

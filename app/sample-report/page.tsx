@@ -199,7 +199,7 @@ export default function SampleReportPage() {
       }}>
         <p style={{ margin: 0, fontSize: 12, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>
           <span style={{ fontWeight: 700, color: BLUE }}>Sample report</span>
-          {' — '}this is what your client sees. Every real assessment generates a live version of this.
+          {' — '}this is what your client sees. Every candidate you assess gets one.
         </p>
         <a href="mailto:team@veltro.ai?subject=Veltro%20Walkthrough%20Request"
           style={{

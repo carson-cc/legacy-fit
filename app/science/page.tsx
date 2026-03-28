@@ -46,10 +46,10 @@ const INSTRUMENTS = [
 ]
 
 const DIMENSIONS = [
-  { name: 'Drive', mapping: '16PF Factor E (Dominance)', desc: 'Assertiveness, decisiveness, and willingness to take charge in ambiguous situations.' },
-  { name: 'Social', mapping: 'IPIP Extraversion', desc: 'Comfort with people, energy in group settings, and preference for collaborative work.' },
-  { name: 'Patience', mapping: 'IPIP Neuroticism (inverted)', desc: 'Emotional steadiness, tolerance for repetition, and composure under pressure.' },
-  { name: 'Structure', mapping: 'IPIP Conscientiousness', desc: 'Preference for planning, attention to detail, and adherence to process.' },
+  { name: 'Execution', mapping: '16PF Factor E (Dominance)', desc: 'Assertiveness, decisiveness, and willingness to take charge in ambiguous situations. Maps to drive toward results and ownership of outcomes.' },
+  { name: 'Collaboration', mapping: 'IPIP Extraversion', desc: 'Comfort with people, energy in group settings, and preference for collaborative work. Predicts alignment in roles requiring sustained stakeholder management.' },
+  { name: 'Adaptability', mapping: 'IPIP Neuroticism (inverted)', desc: 'Emotional steadiness and tolerance for change. Inverted: high scores reflect calm, fast-paced response to shifting environments.' },
+  { name: 'Ownership', mapping: 'IPIP Conscientiousness', desc: 'Preference for planning, attention to detail, and adherence to process. Reflects accountability orientation and commitment to structure.' },
 ]
 
 const CITATIONS = [
@@ -73,10 +73,10 @@ export default function SciencePage() {
       {/* Hero */}
       <section style={{ padding: '88px var(--p-sp) 68px', borderBottom: '1px solid var(--p-b0)' }}>
         <h1 className="text-[40px] md:text-[52px]" style={{ fontWeight: 700, letterSpacing: '-0.04em', lineHeight: 0.92, color: 'var(--p-t0)', marginBottom: 18 }}>
-          The science behind {PRODUCT_NAME}
+          Not our proprietary model. Published science, applied to hiring decisions.
         </h1>
         <p style={{ fontSize: 16, color: 'var(--p-t2)', lineHeight: 1.6, maxWidth: 540 }}>
-          Built on the two most validated public-domain personality instruments in I/O psychology.
+          We didn&apos;t build the underlying psychology — we applied it. Every instrument {PRODUCT_NAME} uses has been validated across millions of people in peer-reviewed studies.
         </p>
       </section>
 
@@ -139,8 +139,11 @@ export default function SciencePage() {
 
       {/* Team Fit Science */}
       <section style={{ borderTop: '1px solid var(--p-b0)', padding: '56px var(--p-sp) 56px' }}>
-        <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.16em', color: 'var(--p-t3)', textTransform: 'uppercase', marginBottom: 32 }}>
+        <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.16em', color: 'var(--p-t3)', textTransform: 'uppercase', marginBottom: 16 }}>
           Team Fit Science
+        </p>
+        <p style={{ fontSize: 15, color: 'var(--p-t1)', lineHeight: 1.8, maxWidth: 560, marginBottom: 32 }}>
+          The strongest predictor of whether a placed candidate stays isn&apos;t their skill — it&apos;s whether their behavioral pattern matches their manager&apos;s. Three peer-reviewed studies back this up.
         </p>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           {CITATIONS.map((cite, i) => (
@@ -159,9 +162,6 @@ export default function SciencePage() {
           What {PRODUCT_NAME} Is and Isn&apos;t
         </p>
         <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 32 }}>
-          <p style={{ fontSize: 15, color: 'var(--p-t1)', lineHeight: 1.7, marginBottom: 20 }}>
-            We believe the most trustworthy tools are the ones that tell you exactly where they apply — and where they don&apos;t.
-          </p>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
             {LIMITATIONS.map((item, i) => (
               <li key={i} style={{ fontSize: 15, color: 'var(--p-t1)', lineHeight: 1.7, paddingLeft: 16, borderLeft: '2px solid var(--p-b1)', maxWidth: 600 }}>

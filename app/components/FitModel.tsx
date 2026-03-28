@@ -97,7 +97,7 @@ function FitModelBase({
 
     rafRef.current = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(rafRef.current)
-  }, [scores.dominance, scores.extraversion, scores.patience, scores.formality, animated])
+  }, [animated]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const axes = useMemo(() => deriveAxes(scores), [scores])
   const targetAxes = useMemo(() => (target ? deriveAxes(target) : null), [target])

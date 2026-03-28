@@ -62,10 +62,10 @@ export default function ForExecutiveSearchPage() {
       {/* Hero */}
       <section style={{ padding: '88px var(--p-sp) 68px', borderBottom: '1px solid var(--p-b0)' }}>
         <h1 className="text-[40px] md:text-[52px]" style={{ fontWeight: 700, letterSpacing: '-0.04em', lineHeight: 0.92, color: 'var(--p-t0)', marginBottom: 18 }}>
-          Behavioral science for executive search
+          When a board asks how you evaluate leadership fit, this is your answer.
         </h1>
         <p style={{ fontSize: 16, color: 'var(--p-t2)', lineHeight: 1.6, maxWidth: 520 }}>
-          When a board asks how you evaluate leadership fit, this is your answer.
+          A behavioral assessment in every search. A client-ready report. Candidate–manager compatibility no other firm offers.
         </p>
       </section>
 

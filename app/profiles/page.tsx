@@ -695,7 +695,7 @@ export default function MethodPage() {
             Built for the moment<br />the client gets cold feet.
           </h2>
           <p style={{ fontSize: 16, lineHeight: 1.8, color: T.t2, marginBottom: 36 }}>
-            Every piece of the model exists to support that conversation. The score. The benchmark. The rationale. The structured evidence. It&rsquo;s not a personality profile. It&rsquo;s a recommendation you can defend.
+            Every piece of the model exists to support that conversation. The score. The benchmark. The rationale. The structured evidence. It&rsquo;s not a personality profile. It&rsquo;s a recommendation with evidence behind it.
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
             <Link href="/dashboard/candidates/invite-marcus" style={{
