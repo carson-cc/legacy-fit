@@ -368,26 +368,19 @@ export default function SampleReportPage() {
           {/* D. RATIONALE + AI SUMMARY */}
           <section className="rpt-two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24 }}>
             <div style={surf}>
-              <Label text="Recommendation Rationale" />
-              <div style={{ marginTop: 20, display: 'grid', gap: 20 }}>
-                <div>
-                  <p style={{ margin: '0 0 8px', fontSize: 16, fontWeight: 700, color: TEXT }}>Benchmark alignment</p>
-                  <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: SUBTLE }}>
-                    Aligned with high-performing candidates in comparable field leadership roles.
-                  </p>
-                </div>
-                <div style={{ borderTop: `1px solid ${DIVIDER}`, paddingTop: 16 }}>
-                  <p style={{ margin: '0 0 8px', fontSize: 16, fontWeight: 700, color: TEXT }}>Observed strengths</p>
-                  <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: SUBTLE }}>
-                    {STRENGTHS.join('. ')}.
-                  </p>
-                </div>
-                <div style={{ borderTop: `1px solid ${DIVIDER}`, paddingTop: 16 }}>
-                  <p style={{ margin: '0 0 8px', fontSize: 16, fontWeight: 700, color: TEXT }}>Risk conditions</p>
-                  <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: SUBTLE }}>
-                    {RISKS.join('. ')}.
-                  </p>
-                </div>
+              <Label text="Dimensional Read" />
+              <div style={{ marginTop: 20, display: 'grid', gap: 16 }}>
+                {[
+                  { label: 'Decision Speed +21', note: 'Largest positive delta. Candidate moves significantly faster than the benchmark requires — an asset in field environments, a potential friction point in consensus-driven cultures.' },
+                  { label: 'Adaptability +15', note: 'Scores well above benchmark. Handles ambiguity and shifting priorities without losing execution edge.' },
+                  { label: 'Collaboration −3', note: 'Only dimension below benchmark, and within tolerance. Worth probing in roles with high cross-functional dependency or matrix reporting.' },
+                  { label: 'Execution +8 · Ownership +1', note: 'Both above benchmark. The ownership delta is narrow — candidate meets the bar but does not meaningfully exceed it on this dimension.' },
+                ].map((item, i) => (
+                  <div key={item.label} style={{ paddingTop: i > 0 ? 16 : 0, borderTop: i > 0 ? `1px solid ${DIVIDER}` : 'none' }}>
+                    <p style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 700, color: TEXT }}>{item.label}</p>
+                    <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: SUBTLE }}>{item.note}</p>
+                  </div>
+                ))}
               </div>
             </div>
             <div style={{ ...surf, background: '#0D1117', border: `1px solid ${DIVIDER}`, opacity: 0.85 }}>
@@ -405,7 +398,7 @@ export default function SampleReportPage() {
           <section style={{ ...surf, marginBottom: 24 }}>
             <Label text="Role Implication" />
             <p style={{ margin: '12px 0 0', fontSize: 15, lineHeight: 1.7, color: SUBTLE, maxWidth: 720 }}>
-              This pattern supports success in superintendent environments that reward decisive execution and visible ownership. The primary watchout is a tendency to move too fast and steamroll important input. The recommendation is strongest when the role values pace, accountability, and forward motion — and where the hiring manager is comfortable with a high-agency direct report who will push back on process overhead.
+              Best fit: hiring manager who runs a tight operation, gives clear mandates, and is comfortable with a direct report who will push back on process overhead. Lowest-risk environment: autonomous scope, visible accountability, and decisions that belong to one person. Highest-risk environment: consensus-driven leadership team or a manager who expects to be consulted before direction changes. The interview probes below are designed to surface this boundary directly.
             </p>
           </section>
 
