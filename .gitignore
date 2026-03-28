@@ -24,6 +24,9 @@
 .DS_Store
 *.pem
 
+# audit screenshots
+scripts/audit/*.png
+
 # debug
 npm-debug.log*
 yarn-debug.log*
