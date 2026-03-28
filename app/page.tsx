@@ -355,17 +355,23 @@ export default function HomePage() {
   useEffect(() => {
     const el = sceneRef.current
     if (!el) return
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
+    let fired = false
+    const check = () => {
+      if (fired) return
+      const rect = el.getBoundingClientRect()
+      // Trigger when the top of the section enters the bottom 30% of the viewport
+      // This ensures the user has scrolled TO it, not just loaded the page
+      if (rect.top < window.innerHeight * 0.85 && rect.bottom > 0) {
+        // Only fire if the user has actually scrolled (not on initial load)
+        if (window.scrollY > 100) {
+          fired = true
           setSceneTriggered(true)
-          obs.disconnect()
+          window.removeEventListener('scroll', check)
         }
-      },
-      { threshold: 0.15 }
-    )
-    obs.observe(el)
-    return () => obs.disconnect()
+      }
+    }
+    window.addEventListener('scroll', check, { passive: true })
+    return () => window.removeEventListener('scroll', check)
   }, [])
 
   const output = useInView(0.05)
