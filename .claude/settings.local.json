@@ -17,7 +17,8 @@
       "Bash(zip -r legacy-fit-v2.zip legacy-fit --exclude \"legacy-fit/node_modules/*\" --exclude \"legacy-fit/.claude/worktrees/*\" --exclude \"legacy-fit/.git/*\" --exclude \"legacy-fit/dev.db\" --exclude \"legacy-fit/prisma/dev.db\")",
       "Bash(powershell -Command \"Compress-Archive -Path ''legacy-fit'' -DestinationPath ''legacy-fit-v2.zip'' -Force\")",
       "Bash(powershell -Command \":*)",
-      "Bash(powershell -Command \"Get-Item ''C:\\\\Users\\\\carso\\\\OneDrive\\\\Desktop\\\\legacy-fit-v2.zip'' | Select-Object Name, @{N=''SizeMB'';E={[math]::Round\\($_.Length/1MB,1\\)}}\")"
+      "Bash(powershell -Command \"Get-Item ''C:\\\\Users\\\\carso\\\\OneDrive\\\\Desktop\\\\legacy-fit-v2.zip'' | Select-Object Name, @{N=''SizeMB'';E={[math]::Round\\($_.Length/1MB,1\\)}}\")",
+      "Bash(powershell -Command \"gh pr create --title ''Full product polish — homepage, dashboard, reports, UX'' --base main --head master --body ''Homepage copy/visual polish, sample report page, clients dashboard rebuild, assessment UX improvements, DecisionPanel and report refinements.'' 2>&1\")"
     ]
   }
 }
