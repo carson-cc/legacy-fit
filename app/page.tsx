@@ -353,7 +353,7 @@ export default function HomePage() {
           <div>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 28, background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.2)', borderRadius: 999, padding: '5px 12px 5px 8px' }}>
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: B, boxShadow: `0 0 6px ${B}` }} />
-              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', fontWeight: 500, letterSpacing: '0.04em' }}>Built for retained search</span>
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', fontWeight: 500, letterSpacing: '0.04em' }}>Built for search &amp; staffing firms</span>
             </div>
 
             <h1 style={{ fontSize: 60, lineHeight: 1.04, fontWeight: 700, letterSpacing: '-0.035em', marginBottom: 24, color: '#FFF' }}>
