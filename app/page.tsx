@@ -110,7 +110,7 @@ function LiveReportPanel() {
           <span style={{ width: 6, height: 6, borderRadius: '50%', background: G, boxShadow: `0 0 8px ${G}` }} />
           <span style={{ fontSize: 10, color: B, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase' as const }}>Scoring Active</span>
         </span>
-        <span style={{ marginLeft: 'auto', fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>94 signals · IPIP-NEO</span>
+        <span style={{ marginLeft: 'auto', fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>80 signals · IPIP-NEO</span>
       </div>
 
       {/* Candidate */}
@@ -135,7 +135,7 @@ function LiveReportPanel() {
         </svg>
         <div>
           <p style={{ fontSize: 17, fontWeight: 700, color: G, marginBottom: 3 }}>Strong Hire</p>
-          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginBottom: 2 }}>High confidence · Top 12%</p>
+          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginBottom: 2 }}>Fit strength: High · Strong Fit</p>
           <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)' }}>Role benchmark active</p>
         </div>
       </div>
@@ -390,7 +390,7 @@ export default function HomePage() {
             {/* Trust strip */}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 0, alignItems: 'center' }}>
               {[
-                { label: '94 behavioral signals', color: '#22C55E' },
+                { label: '80 behavioral signals', color: '#22C55E' },
                 { label: 'Role-specific benchmark', color: '#2563EB' },
                 { label: 'Hiring manager pairing', color: '#EAB308' },
               ].map((item, i) => (
@@ -462,7 +462,7 @@ export default function HomePage() {
                   {/* Benchmark */}
                   <div style={{ background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.12)', borderRadius: 8, padding: '10px 14px', marginBottom: 20 }}>
                     <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', lineHeight: 1.5, fontStyle: 'italic' }}>
-                      Aligned with high-performing candidates in comparable field leadership roles. Top 12% of evaluated candidates.
+                      Aligned with high-performing candidates in comparable field leadership roles. Strong Fit.
                     </p>
                   </div>
 
@@ -503,7 +503,7 @@ export default function HomePage() {
 
                 {/* Footer */}
                 <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 28px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>94 signals · Role benchmark active · IPIP-NEO</span>
+                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>80 signals · Role benchmark active · IPIP-NEO</span>
                   <span style={{ fontSize: 10, color: B, fontWeight: 500, cursor: 'pointer' }}>Share report →</span>
                 </div>
               </div>
