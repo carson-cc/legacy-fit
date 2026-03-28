@@ -153,6 +153,19 @@ export default function MethodPage() {
   const reco = useInView(0.1)
   const closing = useInView(0.15)
 
+  // Responsive SignalTrace width
+  const sigCardRef = useRef<HTMLDivElement>(null)
+  const [sigTraceWidth, setSigTraceWidth] = useState(420)
+  useEffect(() => {
+    const el = sigCardRef.current
+    if (!el) return
+    const obs = new ResizeObserver(([e]) => {
+      setSigTraceWidth(Math.min(420, Math.floor(e.contentRect.width - 56)))
+    })
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
+
   // FitModel: animate once on first visibility, then lock to avoid restart on scroll
   const hasFitAnimated = useRef(false)
   const [fitAnim, setFitAnim] = useState(false)
@@ -204,9 +217,9 @@ export default function MethodPage() {
         background: 'rgba(6,11,20,0.92)',
         backdropFilter: 'blur(20px)',
         borderBottom: `1px solid ${T.b}`,
-      }}>
+      }} className="nav-inner">
         <Link href="/" style={{ fontSize: 15, fontWeight: 700, color: T.t0, textDecoration: 'none', letterSpacing: '-0.02em' }}>{PRODUCT_NAME}</Link>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 36 }}>
+        <div className="nav-links-group" style={{ display: 'flex', alignItems: 'center', gap: 36 }}>
           {[
             { label: 'Product', href: '/#how-it-works' },
             { label: 'Method', href: '/profiles' },
@@ -225,11 +238,11 @@ export default function MethodPage() {
           ))}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <Link href="/login" style={{ fontSize: 13, color: T.t3, textDecoration: 'none', transition: 'color 160ms ease' }}
+          <Link href="/login" className="nav-signin" style={{ fontSize: 13, color: T.t3, textDecoration: 'none', transition: 'color 160ms ease' }}
             onMouseEnter={e => (e.currentTarget.style.color = T.t0)}
             onMouseLeave={e => (e.currentTarget.style.color = T.t3)}
           >Sign in</Link>
-          <a href="mailto:team@veltro.ai" style={{
+          <a href="mailto:team@veltro.ai" className="nav-cta" style={{
             height: 34, padding: '0 16px', borderRadius: 8, background: T.t0, color: T.bg,
             fontSize: 13, fontWeight: 600, display: 'inline-flex', alignItems: 'center',
             textDecoration: 'none', letterSpacing: '-0.01em',
@@ -247,7 +260,7 @@ export default function MethodPage() {
           minHeight: '88vh', display: 'flex', alignItems: 'center',
         }}
       >
-        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 40px', width: '100%', display: 'grid', gridTemplateColumns: '1fr 500px', gap: 72, alignItems: 'center' }}>
+        <div className="profiles-hero-grid" style={{ maxWidth: 1280, margin: '0 auto', padding: '0 40px', width: '100%', display: 'grid', gap: 72, alignItems: 'center' }}>
 
           {/* Left */}
           <div style={{
@@ -389,7 +402,7 @@ export default function MethodPage() {
           transition: 'all 500ms ease',
         }}>
           {DIMS.map((d, i) => (
-            <div key={d.name} style={{
+            <div key={d.name} className="profiles-dim-row" style={{
               display: 'grid', gridTemplateColumns: '200px 1fr',
               gap: 32, padding: '22px 8px',
               borderBottom: `1px solid ${T.b2}`,
@@ -417,7 +430,7 @@ export default function MethodPage() {
         style={{ background: '#080E1A', borderTop: `1px solid ${T.b}`, borderBottom: `1px solid ${T.b}`, padding: '96px 40px' }}
       >
         <div style={{ maxWidth: 1280, margin: '0 auto' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 80, alignItems: 'start' }}>
+          <div className="profiles-science-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 80, alignItems: 'start' }}>
 
             {/* Left — norm dataset */}
             <div style={{
@@ -468,7 +481,7 @@ export default function MethodPage() {
               transform: science.visible ? 'none' : 'translateY(16px)',
               transition: 'all 500ms ease-out 150ms',
             }}>
-              <div style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 16, padding: 28 }}>
+              <div ref={sigCardRef} style={{ background: T.card, border: `1px solid ${T.b}`, borderRadius: 16, padding: 28 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                   <p style={{ fontSize: 11, color: T.t3, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' as const }}>Signal Pattern vs. Benchmark</p>
                   <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
@@ -485,7 +498,7 @@ export default function MethodPage() {
                 <SignalTrace
                   candidateScores={{ dominance: 0.88, extraversion: 0.62, patience: 0.18, formality: 0.45 }}
                   benchmarkScores={{ dominance: 0.74, extraversion: 0.54, patience: 0.46, formality: 0.56 }}
-                  width={420}
+                  width={sigTraceWidth}
                   variant="dark"
                   animated={sigAnim}
                 />
@@ -537,7 +550,7 @@ export default function MethodPage() {
         ref={reco.ref as React.RefObject<HTMLElement>}
         style={{ maxWidth: 1280, margin: '0 auto', padding: '0 40px 96px' }}
       >
-        <div style={{
+        <div className="profiles-reco-grid" style={{
           display: 'grid', gridTemplateColumns: '1.15fr 1fr',
           overflow: 'hidden', borderRadius: 20,
           border: `1px solid ${T.b}`, background: T.card,
@@ -591,7 +604,7 @@ export default function MethodPage() {
             </div>
 
             {/* Strengths + Risks */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 28, marginBottom: 24 }}>
+            <div className="profiles-str-risk-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 28, marginBottom: 24 }}>
               <div>
                 <p style={{ fontSize: 9, color: T.t3, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase' as const, marginBottom: 12 }}>Top Strengths</p>
                 {STRENGTHS.map((s, i) => (
@@ -722,20 +735,36 @@ export default function MethodPage() {
       </footer>
 
       <style>{`
+        /* ── Grid definitions ── */
+        .profiles-hero-grid  { grid-template-columns: 1fr 500px; }
+        .profiles-reco-grid  { grid-template-columns: 1.15fr 1fr; }
+
+        /* ── Breakpoint: wide two-column collapse ── */
         @media (max-width: 1100px) {
-          div[style*="1fr 500px"] { grid-template-columns: 1fr !important; }
-          div[style*="1fr 1fr"] { grid-template-columns: 1fr !important; }
+          .profiles-hero-grid { grid-template-columns: 1fr !important; }
         }
+
+        /* ── Breakpoint: standard two-column collapse ── */
         @media (max-width: 900px) {
-          div[style*="repeat(4, 1fr)"] { grid-template-columns: 1fr 1fr !important; }
-          div[style*="200px 1fr 260px"] { grid-template-columns: 1fr !important; }
-          div[style*="1.15fr 1fr"] { grid-template-columns: 1fr !important; }
+          .profiles-science-grid   { grid-template-columns: 1fr !important; }
+          .profiles-reco-grid      { grid-template-columns: 1fr !important; }
+          .profiles-str-risk-grid  { grid-template-columns: 1fr !important; }
         }
-        @media (max-width: 768px) {
-          nav { padding: 0 20px !important; }
-          section { padding-left: 20px !important; padding-right: 20px !important; }
+
+        /* ── Breakpoint: mobile ── */
+        @media (max-width: 767px) {
+          .profiles-hero-grid      { grid-template-columns: 1fr !important; gap: 40px !important; padding: 40px 20px !important; }
+          .profiles-science-grid   { grid-template-columns: 1fr !important; gap: 40px !important; }
+          .profiles-reco-grid      { grid-template-columns: 1fr !important; }
+          .profiles-dim-row        { grid-template-columns: 1fr !important; gap: 8px !important; padding: 16px 8px !important; }
+          .profiles-str-risk-grid  { grid-template-columns: 1fr !important; gap: 16px !important; }
+          .nav-links-group         { display: none !important; }
+          .nav-signin              { display: none !important; }
+          .nav-inner               { padding: 0 20px !important; }
+          .nav-cta                 { height: 36px !important; padding: 0 14px !important; }
           h1 { font-size: 38px !important; }
           h2 { font-size: 28px !important; }
+          section { padding-left: 20px !important; padding-right: 20px !important; }
         }
       `}</style>
     </main>

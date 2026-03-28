@@ -161,11 +161,13 @@ export default function JobDetailPage() {
 
   /* Invite form */
   const [showInviteForm, setShowInviteForm] = useState(false)
-  const [inviteName, setInviteName] = useState('')
+  const [inviteFirstName, setInviteFirstName] = useState('')
+  const [inviteLastName, setInviteLastName] = useState('')
   const [inviteEmail, setInviteEmail] = useState('')
-  const [invitePhone, setInvitePhone] = useState('')
+  const [inviteRoleTitle, setInviteRoleTitle] = useState('')
   const [inviteSubmitting, setInviteSubmitting] = useState(false)
   const [inviteLink, setInviteLink] = useState<string | null>(null)
+  const [inviteEmailSent, setInviteEmailSent] = useState(false)
   const [copied, setCopied] = useState(false)
 
   /* Fetch */
@@ -195,26 +197,30 @@ export default function JobDetailPage() {
   /* Invite handlers */
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault()
-    if (!inviteName.trim()) return
+    const firstName = inviteFirstName.trim()
+    const lastName = inviteLastName.trim()
+    const email = inviteEmail.trim()
+    if (!firstName || !lastName || !email) return
     setInviteSubmitting(true)
     try {
       const res = await fetch(`/api/jobs/${id}/invites`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: inviteName.trim(),
-          email: inviteEmail.trim() || undefined,
-          phone: invitePhone.trim() || undefined,
+          name: `${firstName} ${lastName}`,
+          email,
+          roleTitle: inviteRoleTitle.trim() || job?.title,
         }),
       })
       if (!res.ok) throw new Error('Failed to create invite')
       const d = await res.json()
       setInviteLink(`${window.location.origin}/assess/${d.data.token}`)
+      setInviteEmailSent(!!d.emailSent)
       setCopied(false)
-      showToast('Invite created')
+      showToast(d.emailSent ? 'Evaluation sent' : 'Invite created')
       fetchJob()
     } catch {
-      showToast('Could not create invite', 'error')
+      showToast('Could not send evaluation', 'error')
     } finally {
       setInviteSubmitting(false)
     }
@@ -222,10 +228,12 @@ export default function JobDetailPage() {
 
   function resetInviteForm() {
     setShowInviteForm(false)
-    setInviteName('')
+    setInviteFirstName('')
+    setInviteLastName('')
     setInviteEmail('')
-    setInvitePhone('')
+    setInviteRoleTitle('')
     setInviteLink(null)
+    setInviteEmailSent(false)
     setCopied(false)
   }
 
@@ -421,6 +429,7 @@ export default function JobDetailPage() {
           <button
             onClick={() => {
               resetInviteForm()
+              setInviteRoleTitle(job?.title ?? '')
               setShowInviteForm(true)
             }}
             style={primaryBtnStyle}
@@ -490,14 +499,31 @@ export default function JobDetailPage() {
                   </svg>
                 </div>
                 <div>
-                  <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: '#111827' }}>Invite created for {inviteName}</p>
-                  <p style={{ margin: 0, fontSize: 12, color: '#9CA3AF' }}>Share the link below directly or copy the email template</p>
+                  {inviteEmailSent ? (
+                    <>
+                      <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: '#111827' }}>
+                        Evaluation sent to {inviteEmail}
+                      </p>
+                      <p style={{ margin: 0, fontSize: 12, color: '#9CA3AF' }}>
+                        {inviteFirstName} {inviteLastName} will receive the invite email shortly
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: '#111827' }}>
+                        Invite created for {inviteFirstName} {inviteLastName}
+                      </p>
+                      <p style={{ margin: 0, fontSize: 12, color: '#9CA3AF' }}>Share the link below</p>
+                    </>
+                  )}
                 </div>
               </div>
 
               {/* Link row */}
-              <div style={{ marginBottom: 20 }}>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: '#6B7280', marginBottom: 6 }}>Assessment link</label>
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: '#6B7280', marginBottom: 6 }}>
+                  {inviteEmailSent ? 'Or copy link manually' : 'Assessment link'}
+                </label>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <input
                     type="text"
@@ -521,54 +547,14 @@ export default function JobDetailPage() {
                 </div>
               </div>
 
-              {/* Email template */}
-              <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: '#6B7280', marginBottom: 6 }}>Email template</label>
-                <div style={{ position: 'relative' }}>
-                  <textarea
-                    readOnly
-                    onFocus={e => e.target.select()}
-                    rows={8}
-                    value={`Hi ${inviteName},
-
-I'd like to invite you to complete a brief behavioral assessment as part of our evaluation process for ${job?.title ?? 'this role'}.
-
-The assessment takes about 6 minutes and requires no login. There are no right or wrong answers — just select the words that feel most true to you.
-
-Complete your assessment here:
-${inviteLink}
-
-Please complete it at your earliest convenience. Reach out if you have any questions.`}
-                    style={{
-                      ...inputStyle, height: 'auto', resize: 'none', fontSize: 13,
-                      lineHeight: 1.6, color: '#374151', background: '#F9FAFB',
-                      fontFamily: '-apple-system, system-ui, sans-serif',
-                      padding: '12px 14px',
-                    }}
-                  />
-                  <button
-                    onClick={() => {
-                      const template = `Hi ${inviteName},\n\nI'd like to invite you to complete a brief behavioral assessment as part of our evaluation process for ${job?.title ?? 'this role'}.\n\nThe assessment takes about 6 minutes and requires no login. There are no right or wrong answers — just select the words that feel most true to you.\n\nComplete your assessment here:\n${inviteLink}\n\nPlease complete it at your earliest convenience. Reach out if you have any questions.`
-                      navigator.clipboard.writeText(template)
-                    }}
-                    style={{
-                      position: 'absolute', top: 8, right: 8,
-                      fontSize: 11, fontWeight: 600, color: '#6B7280',
-                      background: '#FFF', border: '1px solid #E5E7EB', borderRadius: 6,
-                      padding: '4px 10px', cursor: 'pointer',
-                    }}
-                  >
-                    Copy email
-                  </button>
-                </div>
-              </div>
-
               <button
                 onClick={() => {
-                  setInviteName('')
+                  setInviteFirstName('')
+                  setInviteLastName('')
                   setInviteEmail('')
-                  setInvitePhone('')
+                  setInviteRoleTitle('')
                   setInviteLink(null)
+                  setInviteEmailSent(false)
                   setCopied(false)
                 }}
                 style={{
@@ -579,32 +565,11 @@ Please complete it at your earliest convenience. Reach out if you have any quest
                 onMouseEnter={e => (e.currentTarget.style.color = '#6B7280')}
                 onMouseLeave={e => (e.currentTarget.style.color = '#9CA3AF')}
               >
-                + Invite another candidate
+                + Send to another candidate
               </button>
             </div>
           ) : (
             <form onSubmit={handleInvite}>
-              <div style={{ marginBottom: 16 }}>
-                <label
-                  style={{
-                    display: 'block',
-                    fontSize: 12,
-                    fontWeight: 500,
-                    color: '#6B7280',
-                    marginBottom: 4,
-                  }}
-                >
-                  Name <span style={{ color: '#EF4444' }}>*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Candidate name"
-                  value={inviteName}
-                  onChange={e => setInviteName(e.target.value)}
-                  style={inputStyle}
-                />
-              </div>
               <div
                 style={{
                   display: 'grid',
@@ -614,45 +579,56 @@ Please complete it at your earliest convenience. Reach out if you have any quest
                 }}
               >
                 <div>
-                  <label
-                    style={{
-                      display: 'block',
-                      fontSize: 12,
-                      fontWeight: 500,
-                      color: '#6B7280',
-                      marginBottom: 4,
-                    }}
-                  >
-                    Email
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: '#6B7280', marginBottom: 4 }}>
+                    First name <span style={{ color: '#EF4444' }}>*</span>
                   </label>
                   <input
-                    type="email"
-                    placeholder="email@example.com"
-                    value={inviteEmail}
-                    onChange={e => setInviteEmail(e.target.value)}
+                    type="text"
+                    required
+                    placeholder="First"
+                    value={inviteFirstName}
+                    onChange={e => setInviteFirstName(e.target.value)}
                     style={inputStyle}
                   />
                 </div>
                 <div>
-                  <label
-                    style={{
-                      display: 'block',
-                      fontSize: 12,
-                      fontWeight: 500,
-                      color: '#6B7280',
-                      marginBottom: 4,
-                    }}
-                  >
-                    Phone
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: '#6B7280', marginBottom: 4 }}>
+                    Last name <span style={{ color: '#EF4444' }}>*</span>
                   </label>
                   <input
-                    type="tel"
-                    placeholder="(555) 555-0100"
-                    value={invitePhone}
-                    onChange={e => setInvitePhone(e.target.value)}
+                    type="text"
+                    required
+                    placeholder="Last"
+                    value={inviteLastName}
+                    onChange={e => setInviteLastName(e.target.value)}
                     style={inputStyle}
                   />
                 </div>
+              </div>
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: '#6B7280', marginBottom: 4 }}>
+                  Email <span style={{ color: '#EF4444' }}>*</span>
+                </label>
+                <input
+                  type="email"
+                  required
+                  placeholder="candidate@example.com"
+                  value={inviteEmail}
+                  onChange={e => setInviteEmail(e.target.value)}
+                  style={inputStyle}
+                />
+              </div>
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: '#6B7280', marginBottom: 4 }}>
+                  Role
+                </label>
+                <input
+                  type="text"
+                  placeholder={job?.title ?? 'Role title'}
+                  value={inviteRoleTitle}
+                  onChange={e => setInviteRoleTitle(e.target.value)}
+                  style={inputStyle}
+                />
               </div>
               <button
                 type="submit"
@@ -667,7 +643,7 @@ Please complete it at your earliest convenience. Reach out if you have any quest
                 }}
                 onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}
               >
-                {inviteSubmitting ? 'Creating...' : 'Generate Link'}
+                {inviteSubmitting ? 'Sending...' : 'Send evaluation'}
               </button>
             </form>
           )}
@@ -692,6 +668,7 @@ Please complete it at your earliest convenience. Reach out if you have any quest
           <button
             onClick={() => {
               resetInviteForm()
+              setInviteRoleTitle(job?.title ?? '')
               setShowInviteForm(true)
             }}
             style={{
