@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { FitModel } from '@/app/components/FitModel'
 import FitModelDual from '@/app/components/FitModelDual'
 import SignalTrace from '@/app/components/SignalTrace'
-import SearchProcessTimeline from '@/app/components/SearchProcessTimeline'
+
 
 /* ─────────────────────────────────────────────────────────────
    HOOKS
@@ -310,6 +310,28 @@ export default function HomePage() {
   const sciSection = useInView(0.05)
   const close = useInView(0.05)
 
+  const [processMode, setProcessMode] = useState<'a' | 'b'>('a')
+  const processStep2Ref = useRef<HTMLDivElement>(null)
+  const processStep5Ref = useRef<HTMLDivElement>(null)
+  const processStepsRef = useRef<HTMLDivElement>(null)
+  const [connLine, setConnLine] = useState<{ top: number; height: number } | null>(null)
+  useEffect(() => {
+    if (processMode !== 'b') { setConnLine(null); return }
+    const measure = () => {
+      const container = processStepsRef.current
+      const s2 = processStep2Ref.current
+      const s5 = processStep5Ref.current
+      if (!container || !s2 || !s5) return
+      const cRect = container.getBoundingClientRect()
+      const s2Rect = s2.getBoundingClientRect()
+      const s5Rect = s5.getBoundingClientRect()
+      setConnLine({ top: s2Rect.bottom - cRect.top, height: Math.max(0, s5Rect.top - s2Rect.bottom) })
+    }
+    const t = setTimeout(measure, 350)
+    window.addEventListener('resize', measure)
+    return () => { clearTimeout(t); window.removeEventListener('resize', measure) }
+  }, [processMode])
+
   const BG = '#060B14'
   const SF = '#0D1421'
   const B = '#2563EB'
@@ -333,10 +355,8 @@ export default function HomePage() {
           <Link href="/" style={{ fontSize: 15, fontWeight: 700, color: '#FFF', textDecoration: 'none', letterSpacing: '-0.02em' }}>Veltro</Link>
           <div className="nav-links-group" style={{ display: 'flex', gap: 36, alignItems: 'center' }}>
             {[
-              { label: 'Product', href: '#how-it-works' },
-              { label: 'Method', href: '/profiles' },
-              { label: 'Archetypes', href: '/archetypes' },
               { label: 'Sample Report', href: '/sample-report' },
+              { label: 'Method', href: '/profiles' },
             ].map(l => (
               <Link key={l.label} href={l.href}
                 style={{ fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,0.5)', textDecoration: 'none', transition: 'color 160ms ease' }}
@@ -392,28 +412,29 @@ export default function HomePage() {
             </h1>
 
             <p style={{ fontSize: 18, lineHeight: 1.75, color: 'rgba(255,255,255,0.55)', maxWidth: 460, marginBottom: 40 }}>
-              Turn your behavioral read into a scored report your client acts on. No change to how you run a search.
+              No change to how you run a search. One additional step at shortlist. A report your client acts on.
             </p>
 
             <div className="hero-ctas" style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 52 }}>
-              <a href="mailto:team@veltro.ai?subject=Veltro%20Walkthrough%20Request" style={{
-                height: 46, padding: '0 24px', borderRadius: 10, background: '#FFF', color: '#060B14',
+              <Link href="/sample-report" style={{
+                height: 44, padding: '0 24px', borderRadius: 8, background: '#FFF', color: '#111827',
                 fontSize: 14, fontWeight: 600, display: 'inline-flex', alignItems: 'center',
                 textDecoration: 'none', transition: 'all 180ms ease', letterSpacing: '-0.01em',
               }}
                 onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(255,255,255,0.15)' }}
                 onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '' }}
-              >Request a walkthrough</a>
-              <Link href="/sample-report" style={{
-                height: 46, padding: '0 24px', borderRadius: 10,
-                border: '1px solid rgba(255,255,255,0.12)',
-                color: 'rgba(255,255,255,0.65)',
+              >See what your client sees &rarr;</Link>
+              <a href="mailto:team@veltro.ai?subject=Veltro%20Walkthrough%20Request" style={{
+                height: 44, padding: '0 24px', borderRadius: 8,
+                background: 'transparent',
+                border: '1px solid rgba(255,255,255,0.2)',
+                color: 'rgba(255,255,255,0.7)',
                 fontSize: 14, fontWeight: 500, display: 'inline-flex', alignItems: 'center',
                 textDecoration: 'none', transition: 'all 180ms ease',
               }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.25)'; e.currentTarget.style.color = '#FFF' }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'; e.currentTarget.style.color = 'rgba(255,255,255,0.65)' }}
-              >See what your client sees &rarr;</Link>
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.35)'; e.currentTarget.style.color = '#FFF' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; e.currentTarget.style.color = 'rgba(255,255,255,0.7)' }}
+              >Request a walkthrough</a>
             </div>
 
             {/* Trust strip */}
@@ -421,7 +442,7 @@ export default function HomePage() {
               {[
                 { label: '80 behavioral signals', color: '#22C55E' },
                 { label: 'Role-specific benchmark', color: '#2563EB' },
-                { label: 'Hiring manager pairing', color: '#EAB308' },
+                { label: 'Hiring manager compatibility', color: '#EAB308' },
               ].map((item, i) => (
                 <span key={item.label} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                   {i > 0 && <span style={{ margin: '0 14px', color: 'rgba(255,255,255,0.08)', fontSize: 14, lineHeight: 1 }}>·</span>}
@@ -550,7 +571,7 @@ export default function HomePage() {
               <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                 <p style={{ fontSize: 11, color: B, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase' as const, marginBottom: 28 }}>Who uses it</p>
                 <p style={{ fontSize: 20, fontWeight: 400, color: 'rgba(255,255,255,0.75)', lineHeight: 1.75, marginBottom: 36 }}>
-                  Retained search firms placing senior talent in field leadership, finance, sales, and operations — where a wrong placement costs the client a year and costs you the relationship.
+                  Search and staffing firms placing candidates in field leadership, finance, sales, and operations — where a wrong placement costs the client a year and costs you the relationship.
                 </p>
                 <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 28 }}>
                   <Link href="/sample-report" style={{
@@ -569,23 +590,207 @@ export default function HomePage() {
       </section>
 
       {/* ══════════════════════════════════════════════
-          HOW IT WORKS — search process timeline
+          HOW IT WORKS — interactive process timeline
       ══════════════════════════════════════════════ */}
-      <section id="how-it-works" style={{ padding: '120px 40px', background: '#080E1A', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+      <section id="how-it-works" style={{ padding: '96px 40px', background: '#080E1A', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <div ref={howWorks.ref} style={{ maxWidth: 960, margin: '0 auto' }}>
-          <p style={{ fontSize: 11, color: B, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase' as const, marginBottom: 14 }}>The Process</p>
-          <h2 style={{ fontSize: 38, fontWeight: 700, letterSpacing: '-0.03em', color: '#FFF', marginBottom: 12, lineHeight: 1.1 }}>Your search, unchanged. Your presentation, decisive.</h2>
-          <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.4)', maxWidth: 520, marginBottom: 56, lineHeight: 1.7 }}>
-            One additional step at shortlist. Every candidate scored against a role-specific benchmark. A deliverable your client can hold.
+
+          {/* Eyebrow */}
+          <p style={{ fontSize: 11, color: B, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase' as const, marginBottom: 14, textAlign: 'center' }}>The Process</p>
+          {/* Headline */}
+          <h2 style={{ fontSize: 38, fontWeight: 700, letterSpacing: '-0.03em', color: '#FFF', marginBottom: 12, lineHeight: 1.1, textAlign: 'center' }}>Your search, unchanged. Your presentation, decisive.</h2>
+          {/* Subhead */}
+          <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.5)', maxWidth: 560, lineHeight: 1.7, margin: '0 auto 48px', textAlign: 'center' }}>
+            Start with candidates only. Add hiring manager profiling when you&rsquo;re ready.
           </p>
 
-          <div style={{
-            opacity: howWorks.visible ? 1 : 0,
-            transform: howWorks.visible ? 'none' : 'translateY(12px)',
-            transition: 'all 400ms ease-out',
-          }}>
-            <SearchProcessTimeline />
+          {/* Mode toggle */}
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 56 }}>
+            <div style={{ display: 'inline-flex', background: 'rgba(255,255,255,0.06)', borderRadius: 999, padding: 4, gap: 4 }}>
+              <button
+                onClick={() => setProcessMode('a')}
+                style={{
+                  height: 36, padding: '0 20px', borderRadius: 999, fontSize: 13, border: 'none', cursor: 'pointer',
+                  transition: 'all 180ms ease-out',
+                  background: processMode === 'a' ? 'white' : 'transparent',
+                  color: processMode === 'a' ? '#111827' : 'rgba(255,255,255,0.45)',
+                  fontWeight: processMode === 'a' ? 600 : 400,
+                }}
+              >Candidates only</button>
+              <button
+                onClick={() => setProcessMode('b')}
+                style={{
+                  height: 36, padding: '0 20px', borderRadius: 999, fontSize: 13, border: 'none', cursor: 'pointer',
+                  transition: 'all 180ms ease-out',
+                  background: processMode === 'b' ? 'white' : 'transparent',
+                  color: processMode === 'b' ? '#111827' : 'rgba(255,255,255,0.45)',
+                  fontWeight: processMode === 'b' ? 600 : 400,
+                }}
+              >+ Hiring Manager</button>
+            </div>
           </div>
+
+          {/* ── MODE A TIMELINE ── */}
+          {processMode === 'a' && (
+            <div style={{ position: 'relative' }}>
+              {/* Spine */}
+              <div className="process-spine" style={{ position: 'absolute', left: 0, top: 8, bottom: 0, width: 1, background: 'rgba(255,255,255,0.1)' }} />
+
+              {/* Step 1 — KICKOFF */}
+              <div className="process-step" style={{ position: 'relative', paddingLeft: 32, marginBottom: 48, animation: 'fadeSlideUp 200ms ease-out forwards', animationDelay: '0ms', opacity: 0 }}>
+                <div className="process-dot" style={{ position: 'absolute', left: -5, top: 6, width: 10, height: 10, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)' }} />
+                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.1em', display: 'block', marginBottom: 5 }}>Kickoff</span>
+                <p style={{ fontSize: 17, color: 'white', fontWeight: 600, marginBottom: 6 }}>Define the role benchmark.</p>
+                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6, maxWidth: 480, margin: 0 }}>Veltro suggests a behavioral target based on role type. Adjust and confirm in 60 seconds. The benchmark drives every candidate score.</p>
+              </div>
+
+              {/* Step 2 — SHORTLIST */}
+              <div className="process-step process-step--blue-active" style={{ position: 'relative', paddingLeft: 32, marginBottom: 48, animation: 'fadeSlideUp 200ms ease-out forwards', animationDelay: '80ms', opacity: 0 }}>
+                <div className="process-dot" style={{ position: 'absolute', left: -5, top: 6, width: 10, height: 10, borderRadius: '50%', background: '#2563EB', border: '1px solid #2563EB', boxShadow: '0 0 8px rgba(37,99,235,0.5)' }} />
+                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.1em', display: 'block', marginBottom: 5 }}>Shortlist</span>
+                <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', marginBottom: 6 }}>
+                  <span style={{ fontSize: 17, color: 'white', fontWeight: 600 }}>Send each candidate a single link.</span>
+                  <span style={{ display: 'inline-block', fontSize: 10, fontWeight: 600, color: '#2563EB', background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.25)', borderRadius: 4, padding: '2px 7px', marginLeft: 10, letterSpacing: '0.04em' }}>Veltro active</span>
+                </div>
+                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6, maxWidth: 480, margin: 0 }}>No login. Any device. Six minutes per candidate. They complete the evaluation independently.</p>
+                <div style={{ marginTop: 12, background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.15)', borderRadius: 8, padding: '10px 14px', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>Candidate receives:</span>
+                  <span style={{ fontSize: 11, color: 'white', fontWeight: 500 }}>Evaluation link via email</span>
+                </div>
+              </div>
+
+              {/* Step 3 — EVALUATION */}
+              <div className="process-step process-step--blue-active" style={{ position: 'relative', paddingLeft: 32, marginBottom: 48, animation: 'fadeSlideUp 200ms ease-out forwards', animationDelay: '160ms', opacity: 0 }}>
+                <div className="process-dot" style={{ position: 'absolute', left: -5, top: 6, width: 10, height: 10, borderRadius: '50%', background: '#2563EB', border: '1px solid #2563EB', boxShadow: '0 0 8px rgba(37,99,235,0.5)' }} />
+                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.1em', display: 'block', marginBottom: 5 }}>Evaluation</span>
+                <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', marginBottom: 6 }}>
+                  <span style={{ fontSize: 17, color: 'white', fontWeight: 600 }}>Scores are generated automatically.</span>
+                  <span style={{ display: 'inline-block', fontSize: 10, fontWeight: 600, color: '#2563EB', background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.25)', borderRadius: 4, padding: '2px 7px', marginLeft: 10, letterSpacing: '0.04em' }}>Veltro active</span>
+                </div>
+                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6, maxWidth: 480, margin: 0 }}>94 behavioral signals processed against your active role benchmark. Fit score, recommendation, and confidence level produced immediately on completion.</p>
+              </div>
+
+              {/* Step 4 — PRESENTATION */}
+              <div className="process-step process-step--blue-active" style={{ position: 'relative', paddingLeft: 32, animation: 'fadeSlideUp 200ms ease-out forwards', animationDelay: '240ms', opacity: 0 }}>
+                <div className="process-dot" style={{ position: 'absolute', left: -5, top: 6, width: 10, height: 10, borderRadius: '50%', background: '#2563EB', border: '1px solid #2563EB', boxShadow: '0 0 8px rgba(37,99,235,0.5)' }} />
+                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.1em', display: 'block', marginBottom: 5 }}>Presentation</span>
+                <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', marginBottom: 6 }}>
+                  <span style={{ fontSize: 17, color: 'white', fontWeight: 600 }}>Open the report in the client meeting.</span>
+                  <span style={{ display: 'inline-block', fontSize: 10, fontWeight: 600, color: '#2563EB', background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.25)', borderRadius: 4, padding: '2px 7px', marginLeft: 10, letterSpacing: '0.04em' }}>Veltro active</span>
+                </div>
+                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6, maxWidth: 480, margin: 0 }}>Score, benchmark comparison, strengths, risks, and interview probes. Everything your client needs to say yes.</p>
+                <div style={{ marginTop: 12, background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.15)', borderRadius: 8, padding: '10px 14px', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>Client receives:</span>
+                  <span style={{ fontSize: 11, color: '#22C55E', fontWeight: 500 }}>Scored recommendation report</span>
+                </div>
+              </div>
+
+              {/* Bottom CTA — Mode A */}
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', textAlign: 'center', marginTop: 48 }}>
+                Want richer reports?{' '}
+                <button
+                  onClick={() => setProcessMode('b')}
+                  style={{ background: 'none', border: 'none', color: '#2563EB', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}
+                >See how Mode B works</button>
+              </p>
+            </div>
+          )}
+
+          {/* ── MODE B TIMELINE ── */}
+          {processMode === 'b' && (
+            <div ref={processStepsRef} style={{ position: 'relative' }}>
+              {/* Spine */}
+              <div className="process-spine" style={{ position: 'absolute', left: 0, top: 8, bottom: 0, width: 1, background: 'rgba(255,255,255,0.1)' }} />
+
+              {/* Connecting line — measured after render */}
+              {connLine && (
+                <div className="process-connecting-line" style={{
+                  position: 'absolute',
+                  left: 16,
+                  top: connLine.top,
+                  height: connLine.height,
+                  borderLeft: '1px dashed rgba(124,58,237,0.3)',
+                  pointerEvents: 'none',
+                }} />
+              )}
+
+              {/* Step 1 — KICKOFF */}
+              <div className="process-step" style={{ position: 'relative', paddingLeft: 32, marginBottom: 48, animation: 'fadeSlideUp 200ms ease-out forwards', animationDelay: '0ms', opacity: 0 }}>
+                <div className="process-dot" style={{ position: 'absolute', left: -5, top: 6, width: 10, height: 10, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)' }} />
+                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.1em', display: 'block', marginBottom: 5 }}>Kickoff</span>
+                <p style={{ fontSize: 17, color: 'white', fontWeight: 600, marginBottom: 6 }}>Define the role benchmark.</p>
+                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6, maxWidth: 480, margin: 0 }}>Veltro suggests a behavioral target based on role type. Adjust and confirm in 60 seconds. The benchmark drives every candidate score.</p>
+              </div>
+
+              {/* Step 2 — KICKOFF HIRING MANAGER — purple */}
+              <div ref={processStep2Ref} className="process-step process-step--purple-active" style={{ position: 'relative', paddingLeft: 32, marginBottom: 48, animation: 'fadeSlideUp 200ms ease-out forwards', animationDelay: '80ms', opacity: 0 }}>
+                <div className="process-dot" style={{ position: 'absolute', left: -5, top: 6, width: 10, height: 10, borderRadius: '50%', background: '#7C3AED', border: '1px solid #7C3AED', boxShadow: '0 0 8px rgba(124,58,237,0.5)' }} />
+                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.1em', display: 'block', marginBottom: 5 }}>Kickoff — Hiring Manager</span>
+                <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', marginBottom: 6 }}>
+                  <span style={{ fontSize: 17, color: 'white', fontWeight: 600 }}>Profile the hiring manager once.</span>
+                  <span style={{ display: 'inline-block', fontSize: 10, fontWeight: 600, color: '#7C3AED', background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.25)', borderRadius: 4, padding: '2px 7px', marginLeft: 10, letterSpacing: '0.04em' }}>One time per client</span>
+                </div>
+                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6, maxWidth: 480, margin: 0 }}>The hiring manager completes the same six-minute evaluation. Their profile is stored against the client account automatically.</p>
+                <div style={{ marginTop: 12, background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.15)', borderRadius: 8, padding: '10px 14px', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>Stored per client.</span>
+                  <span style={{ fontSize: 11, color: '#A78BFA', fontWeight: 500 }}>Active on every future candidate, forever.</span>
+                </div>
+              </div>
+
+              {/* Step 3 — SHORTLIST CANDIDATES */}
+              <div className="process-step process-step--blue-active" style={{ position: 'relative', paddingLeft: 32, marginBottom: 48, animation: 'fadeSlideUp 200ms ease-out forwards', animationDelay: '160ms', opacity: 0 }}>
+                <div className="process-dot" style={{ position: 'absolute', left: -5, top: 6, width: 10, height: 10, borderRadius: '50%', background: '#2563EB', border: '1px solid #2563EB', boxShadow: '0 0 8px rgba(37,99,235,0.5)' }} />
+                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.1em', display: 'block', marginBottom: 5 }}>Shortlist — Candidates</span>
+                <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', marginBottom: 6 }}>
+                  <span style={{ fontSize: 17, color: 'white', fontWeight: 600 }}>Send each candidate a single link.</span>
+                  <span style={{ display: 'inline-block', fontSize: 10, fontWeight: 600, color: '#2563EB', background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.25)', borderRadius: 4, padding: '2px 7px', marginLeft: 10, letterSpacing: '0.04em' }}>Veltro active</span>
+                </div>
+                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6, maxWidth: 480, margin: 0 }}>Same process as Candidates only. The hiring manager profile is already active — no extra steps.</p>
+              </div>
+
+              {/* Step 4 — EVALUATION */}
+              <div className="process-step process-step--blue-active" style={{ position: 'relative', paddingLeft: 32, marginBottom: 48, animation: 'fadeSlideUp 200ms ease-out forwards', animationDelay: '240ms', opacity: 0 }}>
+                <div className="process-dot" style={{ position: 'absolute', left: -5, top: 6, width: 10, height: 10, borderRadius: '50%', background: '#2563EB', border: '1px solid #2563EB', boxShadow: '0 0 8px rgba(37,99,235,0.5)' }} />
+                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.1em', display: 'block', marginBottom: 5 }}>Evaluation</span>
+                <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', marginBottom: 6 }}>
+                  <span style={{ fontSize: 17, color: 'white', fontWeight: 600 }}>Scores are generated automatically.</span>
+                  <span style={{ display: 'inline-block', fontSize: 10, fontWeight: 600, color: '#2563EB', background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.25)', borderRadius: 4, padding: '2px 7px', marginLeft: 10, letterSpacing: '0.04em' }}>Veltro active</span>
+                </div>
+                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6, maxWidth: 480, margin: 0 }}>94 behavioral signals processed against your active role benchmark. Fit score, recommendation, and confidence level produced immediately on completion.</p>
+              </div>
+
+              {/* Step 5 — PRESENTATION enhanced */}
+              <div ref={processStep5Ref} className="process-step process-step--blue-active" style={{ position: 'relative', paddingLeft: 32, animation: 'fadeSlideUp 200ms ease-out forwards', animationDelay: '320ms', opacity: 0 }}>
+                <div className="process-dot" style={{ position: 'absolute', left: -5, top: 6, width: 10, height: 10, borderRadius: '50%', background: '#2563EB', border: '1px solid #2563EB', boxShadow: '0 0 8px rgba(37,99,235,0.5)' }} />
+                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.1em', display: 'block', marginBottom: 5 }}>Presentation</span>
+                <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', marginBottom: 6 }}>
+                  <span style={{ fontSize: 17, color: 'white', fontWeight: 600 }}>Open the report. It already includes the hiring manager.</span>
+                  <span style={{ display: 'inline-block', fontSize: 10, fontWeight: 600, color: '#2563EB', background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.25)', borderRadius: 4, padding: '2px 7px', marginLeft: 10, letterSpacing: '0.04em' }}>Veltro active</span>
+                </div>
+                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6, maxWidth: 480, margin: 0 }}>Every report now shows candidate fit AND hiring manager compatibility — who they work well with, where friction may emerge, what to address in onboarding.</p>
+                <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <div style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.15)', borderRadius: 8, padding: '10px 14px' }}>
+                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>Role fit: </span>
+                    <span style={{ fontSize: 11, color: '#22C55E', fontWeight: 500 }}>Scored vs benchmark</span>
+                  </div>
+                  <div style={{ background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.15)', borderRadius: 8, padding: '10px 14px' }}>
+                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>Team fit: </span>
+                    <span style={{ fontSize: 11, color: '#A78BFA', fontWeight: 500 }}>Scored vs hiring manager</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom CTA — Mode B */}
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', textAlign: 'center', marginTop: 48 }}>
+                Already using Mode A?{' '}
+                <button
+                  onClick={() => setProcessMode('a')}
+                  style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: 13, cursor: 'pointer', textDecoration: 'underline' }}
+                >View candidate-only flow</button>
+              </p>
+            </div>
+          )}
+
         </div>
       </section>
 
@@ -602,6 +807,7 @@ export default function HomePage() {
               transform: hmSection.visible ? 'none' : 'translateY(16px)',
               transition: 'all 400ms ease-out',
             }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: '#A78BFA', letterSpacing: '0.1em', textTransform: 'uppercase' as const, display: 'block', marginBottom: 12 }}>Mode B</span>
               <p style={{ fontSize: 11, color: B, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase' as const, marginBottom: 20 }}>The Differentiator</p>
               <h2 style={{ fontSize: 38, fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.1, marginBottom: 20 }}>
                 One profile per client.<br />Active on every candidate, forever.
@@ -701,10 +907,10 @@ export default function HomePage() {
                 80 signals.<br />Five dimensions.<br />One number that closes the room.
               </h2>
               <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.5)', lineHeight: 1.8, marginBottom: 20 }}>
-                Candidates complete two forced-choice word lists — one describing how they work in a role, one describing their natural self — in about six minutes. 80 behavioral signals extracted, mapped across five dimensions that predict performance in the role — not personality in the abstract. The score tells you where a candidate fits, where they strain, and why.
+                Six minutes. Two structured word lists. The candidate describes how they work — not who they are. 80 signals extracted, scored against a benchmark built for the specific role you&rsquo;re filling. The score tells you where they fit, where they strain, and why.
               </p>
               <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.5)', lineHeight: 1.8, marginBottom: 32 }}>
-                The benchmark is role-specific — field leadership, executive, sales, technical — normed against 2.2 million respondents across eight peer-reviewed validation studies. Not a proprietary black box. Published science.
+                The benchmark is role-specific — field leadership, executive, sales, technical — built on 2.2 million people across eight research studies. Not a black box. Published science.
               </p>
               <Link href="/profiles" style={{
                 fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.5)',
@@ -726,10 +932,10 @@ export default function HomePage() {
         <div ref={sciSection.ref} style={{ maxWidth: MAX, margin: '0 auto' }}>
           <div className="stats-grid" style={{ display: 'grid', gap: 40 }}>
             {[
-              { n: '2.2M', label: 'People in the norm dataset', detail: '16PF · 8 peer-reviewed studies' },
-              { n: '94', label: 'Behavioral signals per evaluation', detail: '80 adjective inputs · 2 structured lists' },
-              { n: '5', label: 'Role-relevant dimensions scored', detail: 'Execution · Ownership · Adaptability · Collaboration · Decision Speed' },
-              { n: '6 min', label: 'Candidate assessment time', detail: 'Forced-choice adjective instrument' },
+              { n: '2.2M', label: 'People in the norm dataset', detail: null, smallDetail: 'IPIP-NEO · 16PF · 8 peer-reviewed studies' },
+              { n: '94', label: 'Behavioral signals per evaluation', detail: null, smallDetail: null },
+              { n: '5', label: 'Role-relevant dimensions scored', detail: 'Execution · Ownership · Adaptability · Collaboration · Decision Speed', smallDetail: null },
+              { n: '6 min', label: 'Candidate assessment time', detail: null, smallDetail: null },
             ].map((item, i) => (
               <div key={i} style={{
                 opacity: sciSection.visible ? 1 : 0,
@@ -738,11 +944,35 @@ export default function HomePage() {
               }}>
                 <div style={{ fontSize: 32, fontWeight: 700, color: '#FFF', letterSpacing: '-0.02em', marginBottom: 4 }}>{item.n}</div>
                 <div style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.55)', marginBottom: 4 }}>{item.label}</div>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', lineHeight: 1.5 }}>{item.detail}</div>
+                {item.detail && <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', lineHeight: 1.5 }}>{item.detail}</div>}
+                {item.smallDetail && <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', lineHeight: 1.5 }}>{item.smallDetail}</div>}
               </div>
             ))}
           </div>
         </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════
+          DRAMATIC MOMENT
+      ══════════════════════════════════════════════ */}
+      <section style={{
+        background: '#0B0F14',
+        padding: '80px 32px',
+        textAlign: 'center',
+      }}>
+        <p style={{
+          fontSize: 22,
+          color: 'rgba(255,255,255,0.9)',
+          fontWeight: 500,
+          lineHeight: 1.5,
+          maxWidth: 640,
+          margin: '0 auto',
+          letterSpacing: '-0.01em',
+        }}>
+          This doesn&rsquo;t measure personality.
+          <br />
+          It helps you make the call.
+        </p>
       </section>
 
       {/* ══════════════════════════════════════════════
@@ -799,9 +1029,8 @@ export default function HomePage() {
           </div>
         </div>
 
-        <footer style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '20px 40px', borderTop: '1px solid rgba(255,255,255,0.04)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.15)' }}>© 2026 Veltro</p>
-          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.15)' }}>veltro.ai · team@veltro.ai</p>
+        <footer style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '20px 40px', borderTop: '1px solid rgba(255,255,255,0.04)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.15)' }}>Veltro · veltro.ai · team@veltro.ai · © 2026</p>
         </footer>
       </section>
 
@@ -855,7 +1084,10 @@ export default function HomePage() {
           .nav-cta-mobile  { display: inline !important; }
           .hero-grid       { gap: 32px !important; padding: 40px 20px !important; }
           .signal-grid     { gap: 40px !important; }
-          .two-col-grid    { gap: 40px !important; }
+          .two-col-grid    { grid-template-columns: 1fr !important; gap: 40px !important; }
+          section          { padding-left: 20px !important; padding-right: 20px !important; }
+          .hero-ctas       { flex-direction: column !important; align-items: stretch !important; }
+          .hero-ctas > *   { justify-content: center !important; text-align: center !important; }
         }
       `}</style>
     </main>

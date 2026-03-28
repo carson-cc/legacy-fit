@@ -282,7 +282,7 @@ export default function MethodPage() {
               Model v2.0.1 &middot; Calibrated Mar 2026 &middot; Norm dataset: 2,245,096 respondents
             </p>
 
-            <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+            <div className="profiles-hero-ctas" style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
               <Link href="/sample-report" style={{
                 height: 46, padding: '0 24px', borderRadius: 10,
                 background: T.t0, color: T.bg,
@@ -758,6 +758,8 @@ export default function MethodPage() {
           .profiles-reco-grid      { grid-template-columns: 1fr !important; }
           .profiles-dim-row        { grid-template-columns: 1fr !important; gap: 8px !important; padding: 16px 8px !important; }
           .profiles-str-risk-grid  { grid-template-columns: 1fr !important; gap: 16px !important; }
+          .profiles-hero-ctas      { flex-direction: column !important; align-items: stretch !important; }
+          .profiles-hero-ctas > *  { justify-content: center !important; text-align: center !important; }
           .nav-links-group         { display: none !important; }
           .nav-signin              { display: none !important; }
           .nav-inner               { padding: 0 20px !important; }
