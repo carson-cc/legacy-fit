@@ -385,6 +385,25 @@ button, a, input, select, textarea {
   .mobile-only { display: inline; }
 }
 
+/* ================================================================
+   PROCESS TIMELINE — mobile
+   ================================================================ */
+@media (max-width: 768px) {
+  .process-spine { display: none !important; }
+  .process-dot { display: none !important; }
+  .process-connecting-line { display: none !important; }
+  .process-step {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 10px;
+    padding: 16px !important;
+    padding-left: 16px !important;
+    margin-bottom: 10px !important;
+  }
+  .process-step--blue-active { border-color: rgba(37,99,235,0.3) !important; }
+  .process-step--purple-active { border-color: rgba(124,58,237,0.3) !important; }
+}
+
 /* Kill dev artifacts */
 [data-nextjs-dialog-overlay],
 [data-next-badge],
