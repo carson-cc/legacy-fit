@@ -87,6 +87,13 @@ type FitModelScores = {
   decisionSpeed: number
 }
 
+interface DimensionWithDelta {
+  label: string
+  score: number
+  target: number | null
+  delta: number | null
+}
+
 const BG = '#0B0F14'
 const SURFACE = '#111827'
 const DIVIDER = 'rgba(255,255,255,0.08)'
@@ -104,8 +111,6 @@ function formatDate(iso: string): string {
   })
 }
 
-// ── FIXED: correct thresholds 85/70 ──────────────────────────
-
 function decisionColor(pct: number): string {
   if (pct >= 85) return GREEN
   if (pct >= 70) return YELLOW
@@ -116,18 +121,6 @@ function decisionLabel(pct: number): 'Strong Hire' | 'Proceed with Caution' | 'D
   if (pct >= 85) return 'Strong Hire'
   if (pct >= 70) return 'Proceed with Caution'
   return 'Do Not Hire'
-}
-
-function fitStrengthLabel(pct: number): 'High' | 'Medium' | 'Low' {
-  if (pct >= 80) return 'High'
-  if (pct >= 60) return 'Medium'
-  return 'Low'
-}
-
-function fitTierLabel(pct: number): string {
-  if (pct >= 85) return 'Strong Fit'
-  if (pct >= 70) return 'Moderate Fit'
-  return 'Low Fit'
 }
 
 function topStrengths(profile: Profile): string[] {
@@ -169,7 +162,6 @@ function benchmarkComparison(title: string, pct: number): string {
 }
 
 function roleImplication(title: string): string {
-  const role = title.toLowerCase()
   return `Best fit: a hiring manager who gives clear mandates and is comfortable with a high-agency direct report. Lowest-risk environment: autonomous scope with visible accountability. Highest-risk environment: consensus-driven leadership or a manager who expects to be consulted before direction changes. The interview probes below are designed to surface this boundary directly.`
 }
 
@@ -177,8 +169,109 @@ function executiveSummary(name: string, title: string, pct: number, strengths: s
   const label = decisionLabel(pct)
   const first = name.split(' ')[0]
   const strengthLine = strengths.slice(0, 2).join(' and ').toLowerCase() || 'execution and ownership'
-  const riskLine = risks.slice(0, 2).join(' and ').toLowerCase() || 'lower fit in process-heavy environments'
+  const riskLine = risks.slice(0, 1).join('').toLowerCase() || 'lower fit in process-heavy environments'
   return `${first} receives a ${label.toLowerCase()} recommendation for ${title.toLowerCase()} based on observed signal patterns strongest in ${strengthLine}. The recommendation is best supported in environments that value visible ownership, pace, and independent decision-making. The principal caution is ${riskLine}.`
+}
+
+// Fix 3: Decision Frame generator
+function generateDecisionFrame(
+  profileName: string,
+  strengths: string[],
+  risks: string[],
+  roleTitle: string
+): { hireIf: string; doNotHireIf: string } {
+  const topStrength = strengths[0] || ''
+  const topRisk = risks[0] || ''
+  const isExecution = topStrength.toLowerCase().includes('ownership') ||
+    topStrength.toLowerCase().includes('decision')
+  const isProcess = topRisk.toLowerCase().includes('process') ||
+    topRisk.toLowerCase().includes('alignment')
+  return {
+    hireIf: isExecution
+      ? `The ${roleTitle} role requires independent execution and fast decisions without waiting for team consensus.`
+      : `The role demands clear ownership and forward momentum with minimal process overhead.`,
+    doNotHireIf: isProcess
+      ? `Success in this role depends on consensus-driven decisions, process rigor, or cross-functional alignment before acting.`
+      : `The environment requires heavy documentation, structured approval chains, or collaborative decision-making before execution.`
+  }
+}
+
+// Fix 4: Environment fit generator
+function generateEnvironmentFit(
+  strengths: string[],
+  risks: string[],
+  dimensions: DimensionWithDelta[]
+): { acceleratesIn: string[]; breaksIn: string[] } {
+  const highSpeed = dimensions.find(d => d.label === 'Decision Speed' && (d.delta ?? 0) > 10)
+  const lowCollab = dimensions.find(d => d.label === 'Collaboration' && (d.delta ?? 0) < 0)
+  const highExec = dimensions.find(d => d.label === 'Execution' && (d.delta ?? 0) > 5)
+
+  const acceleratesIn = [
+    highExec
+      ? 'Single-threaded ownership and clear accountability'
+      : 'Roles with defined outcomes and measurable results',
+    highSpeed
+      ? 'Fast-moving environments where decisions belong to one person'
+      : 'Environments that reward initiative over process',
+    'Outcome-first organizations with minimal overhead',
+    'Autonomous scope with visible accountability',
+  ]
+
+  const breaksIn = [
+    lowCollab
+      ? 'Consensus-driven teams where alignment precedes action'
+      : 'Environments requiring heavy stakeholder management',
+    highSpeed
+      ? 'Matrix reporting structures with multiple approval layers'
+      : 'Organizations with slow decision cycles',
+    'Process-heavy or documentation-first cultures',
+    lowCollab
+      ? 'Managers who expect to be consulted before direction changes'
+      : 'Teams where everyone has equal input on every decision',
+  ]
+
+  return { acceleratesIn, breaksIn }
+}
+
+// Fix 5: Probe generator tied to specific risks
+function generateProbes(
+  risks: string[],
+  dimensions: DimensionWithDelta[]
+): Array<{ riskLabel: string; question: string; goodAnswer: string }> {
+  const highSpeedDelta = dimensions.find(d => d.label === 'Decision Speed' && (d.delta ?? 0) > 15)
+  const lowCollab = dimensions.find(d => d.label === 'Collaboration' && (d.delta ?? 0) < 0)
+
+  const probes: Array<{ riskLabel: string; question: string; goodAnswer: string }> = []
+
+  if (highSpeedDelta) {
+    probes.push({
+      riskLabel: `Decision Speed Risk — +${highSpeedDelta.delta} vs benchmark`,
+      question: 'Tell me about a time you committed to a direction before your team was fully aligned. What happened next?',
+      goodAnswer: 'Acknowledges the gap, shows ability to course-correct without defensiveness, demonstrates awareness of when speed creates friction.',
+    })
+  }
+
+  if (lowCollab) {
+    probes.push({
+      riskLabel: 'Collaboration Risk',
+      question: 'Describe a situation where you had to slow down and bring stakeholders along before you could move. How did you handle the delay?',
+      goodAnswer: 'Shows genuine adaptability rather than frustration, can distinguish when alignment is necessary vs. when it slows things down unnecessarily.',
+    })
+  }
+
+  let riskIdx = 0
+  while (probes.length < 3 && riskIdx < risks.length) {
+    const risk = risks[riskIdx]
+    const lowered = risk.charAt(0).toLowerCase() + risk.slice(1)
+    probes.push({
+      riskLabel: 'Primary Risk',
+      question: `Walk me through a situation where ${lowered}. How did it play out?`,
+      goodAnswer: 'Shows self-awareness of the pattern and can describe a specific mitigation or recovery.',
+    })
+    riskIdx++
+  }
+
+  return probes.slice(0, 3)
 }
 
 function Label({ text }: { text: string }) {
@@ -365,7 +458,6 @@ export default function SharedReportPage() {
     const fitScore = Math.round(data.fitPct ?? 0)
     const strengths = topStrengths(data.profile)
     const risks = topRisks(data.profile)
-    // Remap API keys (execution/collaboration/adaptability/ownership) to FitModel keys (dominance/extraversion/patience/formality)
     const mappedScores: Scores = {
       dominance: Number(data.scores.execution),
       extraversion: Number(data.scores.collaboration),
@@ -376,19 +468,20 @@ export default function SharedReportPage() {
     const benchmark = toFitBenchmark(data.job.target)
     const totalSignals = 80
     const roleType = data.job.roleType || data.job.title
-    const dimensions = [
-      { label: 'Execution', score: fitModel.execution, target: benchmark?.execution ?? null },
-      { label: 'Ownership', score: fitModel.ownership, target: benchmark?.ownership ?? null },
-      { label: 'Adaptability', score: fitModel.adaptability, target: benchmark?.adaptability ?? null },
-      { label: 'Collaboration', score: fitModel.collaboration, target: benchmark?.collaboration ?? null },
-      { label: 'Decision Speed', score: fitModel.decisionSpeed, target: benchmark?.decisionSpeed ?? null },
+    const dimensions: DimensionWithDelta[] = [
+      { label: 'Execution', score: fitModel.execution, target: benchmark?.execution ?? null, delta: benchmark ? fitModel.execution - benchmark.execution : null },
+      { label: 'Ownership', score: fitModel.ownership, target: benchmark?.ownership ?? null, delta: benchmark ? fitModel.ownership - benchmark.ownership : null },
+      { label: 'Adaptability', score: fitModel.adaptability, target: benchmark?.adaptability ?? null, delta: benchmark ? fitModel.adaptability - benchmark.adaptability : null },
+      { label: 'Collaboration', score: fitModel.collaboration, target: benchmark?.collaboration ?? null, delta: benchmark ? fitModel.collaboration - benchmark.collaboration : null },
+      { label: 'Decision Speed', score: fitModel.decisionSpeed, target: benchmark?.decisionSpeed ?? null, delta: benchmark ? fitModel.decisionSpeed - benchmark.decisionSpeed : null },
     ]
+    const decisionFrame = generateDecisionFrame(data.profileName, strengths, risks, roleType)
+    const environmentFit = generateEnvironmentFit(strengths, risks, dimensions)
+    const probes = generateProbes(risks, dimensions)
     return {
       fitScore,
       color: decisionColor(fitScore),
       recommendation: decisionLabel(fitScore),
-      confidence: data.confidence || fitStrengthLabel(fitScore),
-      percentile: data.percentile || fitTierLabel(fitScore),
       strengths,
       risks,
       fitModel,
@@ -399,6 +492,9 @@ export default function SharedReportPage() {
       rationale: data.rationale || 'Strong signal alignment with role benchmark requirements.',
       dimensions,
       totalSignals,
+      decisionFrame,
+      environmentFit,
+      probes,
     }
   }, [data])
 
@@ -515,20 +611,35 @@ export default function SharedReportPage() {
                   <p style={{ margin: '8px 0 0', fontSize: 24, fontWeight: 700, color: TEXT }}>
                     {derived.recommendation}
                   </p>
-                </div>
-                <div className="rpt-two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                  <div>
-                    <Label text="Fit Strength" />
-                    <p style={{ margin: '8px 0 0', fontSize: 16, fontWeight: 600, color: derived.color }}>
-                      {derived.confidence}
-                    </p>
-                  </div>
-                  <div>
-                    <Label text="Fit Tier" />
-                    <p style={{ margin: '8px 0 0', fontSize: 16, fontWeight: 600, color: TEXT }}>
-                      {derived.percentile}
-                    </p>
-                  </div>
+                  {/* Fix 1: Archetype identity block */}
+                  {c.profileName && (
+                    <div style={{
+                      marginTop: 12,
+                      paddingTop: 12,
+                      borderTop: '1px solid rgba(255,255,255,0.08)',
+                    }}>
+                      <p style={{
+                        fontSize: 18,
+                        fontWeight: 700,
+                        color: '#FFFFFF',
+                        letterSpacing: '-0.01em',
+                        margin: 0,
+                      }}>
+                        {c.profileName}
+                      </p>
+                      {c.profile?.tagline && (
+                        <p style={{
+                          fontSize: 12,
+                          color: 'rgba(255,255,255,0.5)',
+                          lineHeight: 1.5,
+                          fontStyle: 'italic',
+                          margin: '4px 0 0',
+                        }}>
+                          {c.profile.tagline}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
                 {c.rushed && (
                   <div style={{ marginTop: 4, padding: '8px 12px', background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.25)', borderRadius: 8 }}>
@@ -569,6 +680,52 @@ export default function SharedReportPage() {
             </div>
           </section>
 
+          {/* Fix 7: Executive Summary — moved above fold, after hero */}
+          <section style={{ ...surf, marginBottom: 24 }}>
+            <Label text="Executive Summary" />
+            <p style={{ margin: '12px 0 0', fontSize: 15, lineHeight: 1.7, color: SUBTLE, maxWidth: 720 }}>
+              {derived.executiveSummaryText}
+            </p>
+          </section>
+
+          {/* Fix 3: Decision Frame */}
+          <section style={{ ...surf, marginBottom: 24 }}>
+            <Label text="Decision Frame" />
+            <div style={{ marginTop: 16 }}>
+              {[
+                { label: 'HIRE IF', color: GREEN, text: derived.decisionFrame.hireIf },
+                { label: 'DO NOT HIRE IF', color: RED, text: derived.decisionFrame.doNotHireIf },
+              ].map((row, i) => (
+                <div key={i} style={{
+                  display: 'flex',
+                  gap: 16,
+                  alignItems: 'flex-start',
+                  padding: '12px 0',
+                  borderBottom: i === 0 ? `1px solid rgba(255,255,255,0.06)` : 'none',
+                }}>
+                  <span style={{
+                    fontSize: 10,
+                    fontWeight: 600,
+                    color: row.color,
+                    letterSpacing: '0.08em',
+                    whiteSpace: 'nowrap',
+                    marginTop: 2,
+                    minWidth: 100,
+                  }}>
+                    {row.label}
+                  </span>
+                  <span style={{
+                    fontSize: 13,
+                    color: 'rgba(255,255,255,0.75)',
+                    lineHeight: 1.6,
+                  }}>
+                    {row.text}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
+
           {/* B. WHY ALIGNED + KEY RISKS */}
           <section className="rpt-two-col" style={{
             display: 'grid', gridTemplateColumns: '1fr 1fr',
@@ -599,6 +756,40 @@ export default function SharedReportPage() {
             </div>
           </section>
 
+          {/* Fix 4: Where it works / Where it breaks */}
+          <section style={{ marginBottom: 24, borderRadius: 12, overflow: 'hidden', border: `1px solid ${DIVIDER}` }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, background: DIVIDER }}>
+              <div style={{ background: SURFACE, padding: '20px 24px' }}>
+                <p style={{
+                  fontSize: 10, fontWeight: 600, color: BLUE,
+                  letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 14px',
+                }}>
+                  Accelerates in
+                </p>
+                {derived.environmentFit.acceleratesIn.map((item, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
+                    <span style={{ color: GREEN, fontSize: 10, marginTop: 3, flexShrink: 0 }}>✓</span>
+                    <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', lineHeight: 1.5 }}>{item}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{ background: SURFACE, padding: '20px 24px' }}>
+                <p style={{
+                  fontSize: 10, fontWeight: 600, color: RED,
+                  letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 14px',
+                }}>
+                  Breaks in
+                </p>
+                {derived.environmentFit.breaksIn.map((item, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
+                    <span style={{ color: RED, fontSize: 10, marginTop: 3, flexShrink: 0 }}>✗</span>
+                    <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', lineHeight: 1.5 }}>{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
           {/* C. FIT MODEL + BENCHMARK SUMMARY */}
           <section className="rpt-main-grid" style={{
             display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(260px, 0.8fr)',
@@ -616,15 +807,14 @@ export default function SharedReportPage() {
               <Label text="Benchmark Summary" />
               <div style={{ marginTop: 20, display: 'grid', gap: 0 }}>
                 {derived.dimensions.map((dim) => {
-                  const delta = dim.target == null ? null : dim.score - dim.target
-                  const dc = delta == null ? SUBTLE : delta > 0 ? GREEN : delta < 0 ? RED : SUBTLE
+                  const dc = dim.delta == null ? SUBTLE : dim.delta > 0 ? GREEN : dim.delta < 0 ? RED : SUBTLE
                   return (
                     <div key={dim.label} style={{ paddingBottom: 14, marginBottom: 14, borderBottom: `1px solid ${DIVIDER}` }}>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 12, alignItems: 'baseline' }}>
                         <span style={{ fontSize: 14, fontWeight: 600, color: TEXT }}>{dim.label}</span>
                         <span style={{ fontSize: 18, fontWeight: 700, color: TEXT }}>{dim.score}</span>
                         <span style={{ fontSize: 12, color: dc, fontWeight: 600, whiteSpace: 'nowrap' }}>
-                          {delta == null ? '—' : `${delta > 0 ? '+' : ''}${delta}`}
+                          {dim.delta == null ? '—' : `${dim.delta > 0 ? '+' : ''}${dim.delta}`}
                         </span>
                       </div>
                       {dim.target != null && (
@@ -644,7 +834,7 @@ export default function SharedReportPage() {
             <Label text="Dimensional Read" />
             <div style={{ marginTop: 20, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 0 }}>
               {derived.dimensions.map((dim, i) => {
-                const delta = dim.target == null ? null : dim.score - dim.target
+                const { delta } = dim
                 if (delta == null) return null
                 const dc = delta > 2 ? GREEN : delta < -2 ? RED : SUBTLE
                 const interpretation = delta > 10
@@ -677,7 +867,7 @@ export default function SharedReportPage() {
             </p>
           </section>
 
-          {/* F. SUPPORTING EVIDENCE (if interview guide available) */}
+          {/* F. DECISION SUMMARY + INTERVIEW PROBES */}
           {c.interviewGuide?.length > 0 && (
             <section className="rpt-two-col" style={{
               ...surf,
@@ -698,13 +888,47 @@ export default function SharedReportPage() {
                   ))}
                 </div>
               </div>
+              {/* Fix 5: Interview probes with risk labels */}
               <div>
                 <Label text="Recommended Interview Probes" />
-                <div style={{ marginTop: 16, display: 'grid', gap: 10 }}>
-                  {c.interviewGuide.slice(0, 3).map((item, index) => (
-                    <p key={`${item.dimension}-${index}`} style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: SUBTLE }}>
-                      {item.questions[0]}
-                    </p>
+                <div style={{ marginTop: 16 }}>
+                  {derived.probes.map((probe, i) => (
+                    <div key={i} style={{
+                      marginBottom: 20,
+                      paddingBottom: 20,
+                      borderBottom: i < derived.probes.length - 1
+                        ? `1px solid rgba(255,255,255,0.06)`
+                        : 'none',
+                    }}>
+                      <p style={{
+                        fontSize: 10,
+                        fontWeight: 600,
+                        color: RED,
+                        letterSpacing: '0.08em',
+                        textTransform: 'uppercase',
+                        margin: '0 0 6px',
+                      }}>
+                        {probe.riskLabel}
+                      </p>
+                      <p style={{
+                        fontSize: 14,
+                        color: TEXT,
+                        lineHeight: 1.65,
+                        margin: '0 0 6px',
+                        fontWeight: 500,
+                      }}>
+                        {probe.question}
+                      </p>
+                      <p style={{
+                        fontSize: 12,
+                        color: 'rgba(255,255,255,0.45)',
+                        lineHeight: 1.55,
+                        fontStyle: 'italic',
+                        margin: 0,
+                      }}>
+                        Good answer: {probe.goodAnswer}
+                      </p>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -717,7 +941,7 @@ export default function SharedReportPage() {
               {[
                 `Based on ${derived.totalSignals} behavioral signals`,
                 'Recommendation generated from calibrated signal analysis',
-                `Fit strength: ${derived.confidence}`,
+                `Archetype: ${c.profileName || '—'}`,
                 'Use alongside structured interviews and reference checks',
               ].map((item) => (
                 <p key={item} style={{ margin: 0, fontSize: 12, color: SUBTLE }}>{item}</p>
