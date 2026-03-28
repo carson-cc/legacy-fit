@@ -7,14 +7,11 @@ import { REFERENCE_PROFILES, type ReferenceProfile } from '@/lib/data/profiles'
 import { PRODUCT_NAME } from '@/lib/brand'
 
 /* ─────────────────────────────────────────────────────────────
-   RADAR LAYOUT
+   LAYOUT CONSTANTS
 ───────────────────────────────────────────────────────────── */
 
-const SVG_W = 860
-const SVG_H = 620
 const M = { top: 56, right: 80, bottom: 60, left: 80 }
-const PW = SVG_W - M.left - M.right   // 700
-const PH = SVG_H - M.top - M.bottom   // 504
+const MIN_H = 520
 
 /* ─────────────────────────────────────────────────────────────
    QUADRANT GROUPS — filter pill labels mapped to data groups
@@ -39,63 +36,93 @@ function rawCoords(p: ReferenceProfile) {
   }
 }
 
-// Compute min/max across all profiles at module level
-const allRaw = REFERENCE_PROFILES.map(rawCoords)
-const minExec  = Math.min(...allRaw.map(c => c.execution))
-const maxExec  = Math.max(...allRaw.map(c => c.execution))
+const allRaw    = REFERENCE_PROFILES.map(rawCoords)
+const minExec   = Math.min(...allRaw.map(c => c.execution))
+const maxExec   = Math.max(...allRaw.map(c => c.execution))
 const minCollab = Math.min(...allRaw.map(c => c.collaboration))
 const maxCollab = Math.max(...allRaw.map(c => c.collaboration))
 
-// Add 8% padding on each side so dots never sit on the axis edge
-const PAD = 0.08
+const NORM_PAD = 0.08
 function normalize(val: number, min: number, max: number) {
-  return PAD + ((val - min) / (max - min)) * (1 - PAD * 2)
+  return NORM_PAD + ((val - min) / (max - min)) * (1 - NORM_PAD * 2)
 }
 
-function profileSvgCoords(p: ReferenceProfile) {
+function profileBaseCoords(p: ReferenceProfile, pw: number, ph: number) {
   const raw = rawCoords(p)
   const nx = normalize(raw.execution,     minExec,  maxExec)
   const ny = normalize(raw.collaboration, minCollab, maxCollab)
   return {
-    svgX: M.left + nx * PW,
-    svgY: M.top  + (1 - ny) * PH,   // invert Y: high collab = top
+    x: M.left + nx * pw,
+    y: M.top  + (1 - ny) * ph,
   }
 }
 
-const CENTER_X = M.left + PW / 2
-const CENTER_Y = M.top  + PH / 2
+/* ─────────────────────────────────────────────────────────────
+   COLLISION RESOLUTION
+───────────────────────────────────────────────────────────── */
+
+function resolveCollisions(
+  dots: { x: number; y: number }[],
+  minDist = 24,
+  iterations = 50,
+): { x: number; y: number }[] {
+  const d = dots.map(p => ({ ...p }))
+  for (let iter = 0; iter < iterations; iter++) {
+    let moved = false
+    for (let i = 0; i < d.length; i++) {
+      for (let j = i + 1; j < d.length; j++) {
+        const dx = d[j].x - d[i].x
+        const dy = d[j].y - d[i].y
+        const dist = Math.sqrt(dx * dx + dy * dy)
+        if (dist < minDist && dist > 0) {
+          const push = (minDist - dist) / 2
+          const nx = dx / dist
+          const ny = dy / dist
+          d[i].x -= nx * push
+          d[i].y -= ny * push
+          d[j].x += nx * push
+          d[j].y += ny * push
+          moved = true
+        }
+      }
+    }
+    if (!moved) break
+  }
+  return d
+}
 
 /* ─────────────────────────────────────────────────────────────
    HOVER CARD
 ───────────────────────────────────────────────────────────── */
 
+const CARD_W = 200
+const CARD_H = 110
+const CARD_PAD = 16
+
 function HoverCard({ profile }: { profile: ReferenceProfile }) {
-  const B = '#2563EB', G = '#22C55E'
+  const B = '#2563EB'
   return (
     <div style={{
       background: '#0D1421',
       border: '1px solid rgba(255,255,255,0.1)',
       borderRadius: 12,
-      padding: '16px 18px',
-      width: 252,
+      padding: '14px 16px',
+      width: CARD_W,
       boxShadow: '0 24px 64px rgba(0,0,0,0.7)',
       pointerEvents: 'none',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-        <span style={{
-          fontSize: 9, color: B, fontWeight: 600, letterSpacing: '0.1em',
-          textTransform: 'uppercase', background: 'rgba(37,99,235,0.12)',
-          border: '1px solid rgba(37,99,235,0.2)', borderRadius: 4, padding: '2px 7px',
-        }}>{profile.groupLabel}</span>
-      </div>
-      <p style={{ fontSize: 15, fontWeight: 700, color: '#FFF', marginBottom: 3, letterSpacing: '-0.01em' }}>{profile.name}</p>
-      <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 14, lineHeight: 1.4 }}>{profile.tagline}</p>
-      {profile.strengths.slice(0, 2).map(s => (
-        <div key={s} style={{ display: 'flex', gap: 6, alignItems: 'flex-start', marginBottom: 5 }}>
-          <span style={{ width: 4, height: 4, borderRadius: '50%', background: G, flexShrink: 0, marginTop: 4 }} />
-          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', lineHeight: 1.4 }}>{s}</span>
-        </div>
-      ))}
+      <span style={{
+        display: 'inline-block', marginBottom: 8,
+        fontSize: 9, color: B, fontWeight: 600, letterSpacing: '0.1em',
+        textTransform: 'uppercase', background: 'rgba(37,99,235,0.12)',
+        border: '1px solid rgba(37,99,235,0.2)', borderRadius: 4, padding: '2px 7px',
+      }}>{profile.groupLabel}</span>
+      <p style={{ fontSize: 14, fontWeight: 600, color: '#FFF', marginBottom: 4, letterSpacing: '-0.01em', lineHeight: 1.2 }}>
+        {profile.name}
+      </p>
+      <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 1.4, margin: 0, overflow: 'hidden' }}>
+        {profile.tagline}
+      </p>
     </div>
   )
 }
@@ -202,11 +229,15 @@ function ProfileOverlay({ profile, onClose }: { profile: ReferenceProfile; onClo
 ───────────────────────────────────────────────────────────── */
 
 export default function ArchetypesPage() {
-  const [animated, setAnimated] = useState(false)
-  const [hovered, setHovered] = useState<{ profile: ReferenceProfile; svgX: number; svgY: number } | null>(null)
-  const [selected, setSelected] = useState<ReferenceProfile | null>(null)
+  const [animated, setAnimated]       = useState(false)
+  const [hovered, setHovered]         = useState<{ profile: ReferenceProfile; svgX: number; svgY: number } | null>(null)
+  const [selected, setSelected]       = useState<ReferenceProfile | null>(null)
   const [activeGroup, setActiveGroup] = useState<string | null>(null)
-  const [scrolled, setScrolled] = useState(false)
+  const [scrolled, setScrolled]       = useState(false)
+  const [dims, setDims]               = useState({ width: 860, height: 620 })
+  const [justFiltered, setJustFiltered] = useState(false)
+  const containerRef  = useRef<HTMLDivElement>(null)
+  const filterTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     const t = window.setTimeout(() => setAnimated(true), 120)
@@ -219,15 +250,49 @@ export default function ArchetypesPage() {
     return () => window.removeEventListener('scroll', h)
   }, [])
 
-  const enriched = REFERENCE_PROFILES.map(p => {
-    const { svgX, svgY } = profileSvgCoords(p)
-    const filtered = activeGroup !== null && p.group !== activeGroup
-    const highlighted = activeGroup !== null && p.group === activeGroup
-    return { ...p, svgX, svgY, filtered, highlighted }
-  })
+  useEffect(() => {
+    if (!containerRef.current) return
+    const obs = new ResizeObserver(entries => {
+      const { width, height } = entries[0].contentRect
+      setDims({ width, height: Math.max(height, MIN_H) })
+    })
+    obs.observe(containerRef.current)
+    return () => obs.disconnect()
+  }, [])
+
+  // Canvas dimensions derived from observed container
+  const svgW    = dims.width
+  const svgH    = Math.max(dims.height, MIN_H)
+  const pw      = svgW - M.left - M.right
+  const ph      = svgH - M.top - M.bottom
+  const centerX = M.left + pw / 2
+  const centerY = M.top  + ph / 2
+
+  // Base positions → collision resolution → clamp to canvas
+  const CLAMP_PAD = 16
+  const basePos    = REFERENCE_PROFILES.map(p => profileBaseCoords(p, pw, ph))
+  const resolvedPos = resolveCollisions(basePos).map(pos => ({
+    x: Math.max(M.left + CLAMP_PAD, Math.min(svgW - M.right - CLAMP_PAD, pos.x)),
+    y: Math.max(M.top  + CLAMP_PAD, Math.min(svgH - M.bottom - CLAMP_PAD, pos.y)),
+  }))
+
+  const enriched = REFERENCE_PROFILES.map((p, idx) => ({
+    ...p,
+    svgX:        resolvedPos[idx].x,
+    svgY:        resolvedPos[idx].y,
+    filtered:    activeGroup !== null && p.group !== activeGroup,
+    highlighted: activeGroup !== null && p.group === activeGroup,
+  }))
+
+  function handleFilterClick(group: string | null) {
+    setActiveGroup(group)
+    setJustFiltered(true)
+    if (filterTimerRef.current) clearTimeout(filterTimerRef.current)
+    filterTimerRef.current = setTimeout(() => setJustFiltered(false), 350)
+  }
 
   const BG = '#060B14'
-  const B = '#2563EB'
+  const B  = '#2563EB'
   const MAX = 1280
 
   return (
@@ -305,7 +370,7 @@ export default function ArchetypesPage() {
               return (
                 <button
                   key={q.label}
-                  onClick={() => setActiveGroup(q.group ?? null)}
+                  onClick={() => handleFilterClick(q.group ?? null)}
                   style={{
                     height: 32, padding: '0 16px', borderRadius: 999, fontSize: 12, cursor: 'pointer',
                     fontWeight: active ? 600 : 400,
@@ -319,16 +384,16 @@ export default function ArchetypesPage() {
             })}
           </div>
 
-          {/* Radar container */}
+          {/* Radar container — observed for responsive sizing */}
           <div style={{ overflowX: 'auto' }}>
-            <div style={{ width: SVG_W, margin: '0 auto', position: 'relative' }}>
+            <div ref={containerRef} style={{ width: '100%', minHeight: MIN_H, margin: '0 auto', position: 'relative' }}>
               <svg
-                width={SVG_W}
-                height={SVG_H}
-                viewBox={`0 0 ${SVG_W} ${SVG_H}`}
-                style={{ display: 'block', overflow: 'visible' }}
+                width={svgW}
+                height={svgH}
+                viewBox={`0 0 ${svgW} ${svgH}`}
+                style={{ display: 'block', overflow: 'visible', minHeight: MIN_H }}
               >
-                {/* Radial gradient from center — heat map feel */}
+                {/* Radial glow */}
                 <defs>
                   <radialGradient id="radarGlow" cx="50%" cy="50%" r="50%">
                     <stop offset="0%" stopColor="rgba(37,99,235,0.07)" />
@@ -336,8 +401,8 @@ export default function ArchetypesPage() {
                   </radialGradient>
                 </defs>
                 <ellipse
-                  cx={CENTER_X} cy={CENTER_Y}
-                  rx={PW * 0.52} ry={PH * 0.52}
+                  cx={centerX} cy={centerY}
+                  rx={pw * 0.52} ry={ph * 0.52}
                   fill="url(#radarGlow)"
                 />
 
@@ -345,102 +410,112 @@ export default function ArchetypesPage() {
                 {[0.25, 0.5, 0.75].map(v => (
                   <g key={v}>
                     <line
-                      x1={M.left + v * PW} y1={M.top}
-                      x2={M.left + v * PW} y2={M.top + PH}
+                      x1={M.left + v * pw} y1={M.top}
+                      x2={M.left + v * pw} y2={M.top + ph}
                       stroke="rgba(255,255,255,0.04)" strokeWidth={1}
                     />
                     <line
-                      x1={M.left} y1={M.top + (1 - v) * PH}
-                      x2={M.left + PW} y2={M.top + (1 - v) * PH}
+                      x1={M.left} y1={M.top + (1 - v) * ph}
+                      x2={M.left + pw} y2={M.top + (1 - v) * ph}
                       stroke="rgba(255,255,255,0.04)" strokeWidth={1}
                     />
                   </g>
                 ))}
 
                 {/* Center crosshairs */}
-                <line x1={CENTER_X} y1={M.top} x2={CENTER_X} y2={M.top + PH} stroke="rgba(255,255,255,0.07)" strokeWidth={0.5} strokeDasharray="4 4" />
-                <line x1={M.left} y1={CENTER_Y} x2={M.left + PW} y2={CENTER_Y} stroke="rgba(255,255,255,0.07)" strokeWidth={0.5} strokeDasharray="4 4" />
+                <line x1={centerX} y1={M.top} x2={centerX} y2={M.top + ph} stroke="rgba(255,255,255,0.07)" strokeWidth={0.5} strokeDasharray="4 4" />
+                <line x1={M.left} y1={centerY} x2={M.left + pw} y2={centerY} stroke="rgba(255,255,255,0.07)" strokeWidth={0.5} strokeDasharray="4 4" />
 
                 {/* Axis labels */}
-                <text x={M.left + PW + 12} y={CENTER_Y} dominantBaseline="middle"
+                <text x={M.left + pw + 12} y={centerY} dominantBaseline="middle"
                   fill="rgba(255,255,255,0.22)" fontSize={9} fontWeight={600} letterSpacing="0.1em"
                 >Pace →</text>
-                <text x={CENTER_X} y={M.top - 16} textAnchor="middle"
+                <text x={centerX} y={M.top - 16} textAnchor="middle"
                   fill="rgba(255,255,255,0.22)" fontSize={9} fontWeight={600} letterSpacing="0.1em"
                 >↑ People</text>
 
                 {/* Profile dots */}
                 {enriched.map((p, i) => {
-                  const dotX = animated ? p.svgX : CENTER_X
-                  const dotY = animated ? p.svgY : CENTER_Y
+                  const dotX  = animated ? p.svgX : centerX
+                  const dotY  = animated ? p.svgY : centerY
                   const isHov = hovered?.profile.name === p.name
                   const delay = `${i * 20}ms`
-
-                  const opacity = p.filtered
-                    ? 0.08
-                    : p.highlighted
-                      ? 1
-                      : activeGroup !== null
-                        ? 0.2
-                        : 1
-
-                  const dotColor = p.highlighted ? B : 'rgba(255,255,255,0.9)'
-                  const dotR = isHov ? 8 : 5
+                  const moveTr = `cx 600ms cubic-bezier(0.16,1,0.3,1) ${delay}, cy 600ms cubic-bezier(0.16,1,0.3,1) ${delay}`
 
                   return (
-                    <g key={p.name}>
+                    <g
+                      key={p.name}
+                      style={{ cursor: 'pointer' }}
+                      onMouseEnter={() => setHovered({ profile: p, svgX: dotX, svgY: dotY })}
+                      onMouseLeave={() => setHovered(null)}
+                      onClick={() => setSelected(p)}
+                    >
+                      {/* 20px transparent hit target — same motion transition as visible dot */}
+                      <circle
+                        cx={dotX} cy={dotY} r={20}
+                        fill="transparent"
+                        style={{ transition: moveTr }}
+                      />
+
                       {/* Pulse ring on hover */}
                       {isHov && (
                         <circle
                           cx={dotX} cy={dotY} r={16}
-                          fill="none"
-                          stroke={B}
-                          strokeWidth={1}
-                          opacity={0.2}
-                          style={{ pointerEvents: 'none' }}
+                          fill="none" stroke={B} strokeWidth={1} opacity={0.2}
+                          style={{ pointerEvents: 'none', transition: moveTr }}
                         />
                       )}
+
                       {/* Highlight ring for active group */}
                       {p.highlighted && !isHov && (
                         <circle
                           cx={dotX} cy={dotY} r={10}
-                          fill={B}
-                          opacity={0.12}
-                          style={{ pointerEvents: 'none', animation: 'dotPulse 2s ease-in-out infinite' }}
+                          fill={B} opacity={0.12}
+                          style={{ pointerEvents: 'none', animation: 'dotPulse 2s ease-in-out infinite', transition: moveTr }}
                         />
                       )}
-                      {/* Main dot */}
+
+                      {/* Main dot — filter scale pulse + opacity */}
                       <circle
                         cx={dotX}
                         cy={dotY}
-                        r={dotR}
-                        fill={dotColor}
-                        opacity={opacity}
+                        r={activeGroup === null ? 5 : 6}
+                        fill={p.highlighted ? B : 'rgba(255,255,255,0.7)'}
                         style={{
-                          cursor: 'pointer',
-                          transition: `cx 600ms cubic-bezier(0.16, 1, 0.3, 1) ${delay}, cy 600ms cubic-bezier(0.16, 1, 0.3, 1) ${delay}, opacity 250ms ease, r 200ms ease`,
+                          pointerEvents: 'none',
+                          transformOrigin: `${dotX}px ${dotY}px`,
+                          transform: justFiltered && p.highlighted ? 'scale(1.5)' : 'scale(1)',
+                          opacity: activeGroup === null ? 1 : p.highlighted ? 1 : 0.08,
+                          transition: `transform 0.3s ease-out, opacity 0.2s ease-out, ${moveTr}`,
                         }}
-                        onMouseEnter={() => setHovered({ profile: p, svgX: animated ? p.svgX : CENTER_X, svgY: animated ? p.svgY : CENTER_Y })}
-                        onMouseLeave={() => setHovered(null)}
-                        onClick={() => setSelected(p)}
                       />
+
+                      {/* Name label — only when a filter is active */}
+                      {activeGroup !== null && p.highlighted && (
+                        <text
+                          x={dotX > svgW * 0.75 ? dotX - 10 : dotX + 10}
+                          y={dotY + 4}
+                          textAnchor={dotX > svgW * 0.75 ? 'end' : 'start'}
+                          fontSize={11}
+                          fill="rgba(255,255,255,0.75)"
+                          style={{ pointerEvents: 'none', userSelect: 'none' }}
+                        >{p.name}</text>
+                      )}
                     </g>
                   )
                 })}
               </svg>
 
-              {/* Hover card overlay — positioned outside SVG so it can overflow */}
+              {/* Hover card — anchored to avoid canvas overflow */}
               {hovered && (() => {
-                const above = hovered.svgY > SVG_H * 0.55
-                const left = Math.max(130, Math.min(hovered.svgX, SVG_W - 130))
+                const cardX = hovered.svgX + CARD_W + CARD_PAD > svgW
+                  ? hovered.svgX - CARD_W - CARD_PAD
+                  : hovered.svgX + CARD_PAD
+                const cardY = hovered.svgY + CARD_H + CARD_PAD > svgH
+                  ? hovered.svgY - CARD_H - CARD_PAD
+                  : hovered.svgY + CARD_PAD
                 return (
-                  <div style={{
-                    position: 'absolute',
-                    left,
-                    top: above ? hovered.svgY - 24 : hovered.svgY + 24,
-                    transform: above ? 'translate(-50%, -100%)' : 'translate(-50%, 0)',
-                    zIndex: 20,
-                  }}>
+                  <div style={{ position: 'absolute', left: cardX, top: cardY, zIndex: 20 }}>
                     <HoverCard profile={hovered.profile} />
                   </div>
                 )
@@ -480,7 +555,7 @@ export default function ArchetypesPage() {
       <style>{`
         @keyframes dotPulse {
           0%, 100% { opacity: 0.1; transform: scale(1); }
-          50% { opacity: 0.25; transform: scale(1.3); }
+          50%       { opacity: 0.25; transform: scale(1.3); }
         }
         @media (max-width: 768px) {
           h1 { font-size: 36px !important; }
