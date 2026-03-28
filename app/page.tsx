@@ -41,221 +41,6 @@ function useCursorGlow(ref: React.RefObject<HTMLElement | null>) {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   LIVE REPORT PANEL
-───────────────────────────────────────────────────────────── */
-
-function LiveReportPanel({ mobile }: { mobile: boolean }) {
-  const [benchmarkVisible, setBenchmarkVisible] = useState(false)
-  const [insightVisible, setInsightVisible] = useState(false)
-  const [strengthsLabelVisible, setStrengthsLabelVisible] = useState(false)
-  const [str0, setStr0] = useState(false)
-  const [str1, setStr1] = useState(false)
-  const [str2, setStr2] = useState(false)
-  const [divVis, setDivVis] = useState(false)
-  const [hmLabelVis, setHmLabelVis] = useState(false)
-  const [hmSignalVis, setHmSignalVis] = useState(false)
-  const [fitVis, setFitVis] = useState(false)
-  const [panelHovered, setPanelHovered] = useState(false)
-
-  useEffect(() => {
-    const timers = [
-      setTimeout(() => setBenchmarkVisible(true), 300),
-      setTimeout(() => setInsightVisible(true), 500),
-      setTimeout(() => setStrengthsLabelVisible(true), 700),
-      setTimeout(() => setStr0(true), 820),
-      setTimeout(() => setStr1(true), 940),
-      setTimeout(() => setStr2(true), 1060),
-      setTimeout(() => setDivVis(true), 1200),
-      setTimeout(() => setHmLabelVis(true), 1350),
-      setTimeout(() => setHmSignalVis(true), 1500),
-      setTimeout(() => setFitVis(true), 1800),
-    ]
-    return () => timers.forEach(clearTimeout)
-  }, [])
-
-  const G = '#22C55E', R = '#EF4444', B = '#2563EB'
-  const DIVIDER: React.CSSProperties = {
-    height: 1, background: 'rgba(255,255,255,0.07)', margin: '12px 0',
-  }
-
-  const panelTransform = mobile
-    ? 'none'
-    : panelHovered
-      ? 'perspective(1200px) rotateY(0deg) rotateX(0deg)'
-      : 'perspective(1200px) rotateY(-2deg) rotateX(1deg)'
-  const panelShadow = mobile
-    ? '0 0 0 1px rgba(255,255,255,0.04), 0 4px 6px rgba(0,0,0,0.4), 0 12px 24px rgba(0,0,0,0.5), 0 16px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06)'
-    : '0 0 0 1px rgba(255,255,255,0.04), 0 4px 6px rgba(0,0,0,0.4), 0 12px 24px rgba(0,0,0,0.5), 0 32px 64px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06)'
-
-  return (
-    <div
-      onMouseEnter={() => setPanelHovered(true)}
-      onMouseLeave={() => setPanelHovered(false)}
-      style={{
-        background: 'rgba(13,20,33,0.97)',
-        border: '1px solid rgba(255,255,255,0.08)',
-        borderRadius: 16,
-        padding: '28px 28px 24px',
-        boxShadow: panelShadow,
-        transform: panelTransform,
-        transition: 'transform 400ms ease-out',
-        transformOrigin: 'center center',
-        position: 'relative',
-        overflow: 'hidden',
-      }}
-    >
-      {/* Top scan line — system processing indicator */}
-      <div style={{
-        position: 'absolute', top: 0, left: 0, right: 0, height: 2,
-        background: 'linear-gradient(90deg, transparent 0%, rgba(37,99,235,0.6) 40%, rgba(37,99,235,0.9) 50%, rgba(37,99,235,0.6) 60%, transparent 100%)',
-        animation: 'scanPulse 2.4s ease-in-out infinite',
-      }} />
-
-      {/* Context strip */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: 16,
-        paddingBottom: 12,
-        borderBottom: '1px solid rgba(255,255,255,0.06)'
-      }}>
-        <div style={{display:'flex',alignItems:'center',gap:6}}>
-          <div style={{
-            width: 6,
-            height: 6,
-            borderRadius: '50%',
-            background: '#22C55E',
-            boxShadow: '0 0 6px rgba(34,197,94,0.6)'
-          }}/>
-          <span style={{
-            fontSize: 10,
-            color: 'rgba(255,255,255,0.35)',
-            letterSpacing: '0.08em'
-          }}>
-            FINAL RECOMMENDATION
-          </span>
-        </div>
-        <span style={{fontSize:10,color:'rgba(255,255,255,0.2)'}}>
-          Gilbane Construction · Mar 2026
-        </span>
-      </div>
-
-      {/* Candidate */}
-      <p style={{ fontSize: 22, fontWeight: 700, color: '#FFF', marginBottom: 2, letterSpacing: '-0.01em' }}>Marcus Thompson</p>
-      <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 0 }}>Superintendent · Chicago · Gilbane Construction</p>
-
-      <div style={DIVIDER} />
-
-      {/* Score + Label */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 0 }}>
-        <svg width={68} height={68} viewBox="0 0 68 68" style={{ flexShrink: 0 }}>
-          <circle cx={34} cy={34} r={31} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth={3} />
-          <circle cx={34} cy={34} r={31} fill="none" stroke={G} strokeWidth={3}
-            strokeLinecap="round"
-            strokeDasharray={`${2 * Math.PI * 31}`}
-            strokeDashoffset={`${2 * Math.PI * 31 * (1 - 93 / 100)}`}
-            transform="rotate(-90 34 34)"
-          />
-          <text x={34} y={36} textAnchor="middle" dominantBaseline="middle"
-            fill="white" fontSize={40} fontWeight={700} fontFamily="system-ui">93</text>
-        </svg>
-        <div>
-          <p style={{ fontSize: 18, fontWeight: 700, color: G, marginBottom: 3 }}>Strong Hire</p>
-          <p style={{
-            fontSize: 12,
-            color: 'rgba(255,255,255,0.45)',
-            fontStyle: 'italic',
-            margin: '4px 0',
-            opacity: insightVisible ? 1 : 0,
-            transition: 'opacity 400ms ease-out'
-          }}>
-            Strong fit for field leadership. One condition to address in onboarding.
-          </p>
-          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginBottom: 2 }}>High confidence</p>
-          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)' }}>Role benchmark active</p>
-        </div>
-      </div>
-
-      <div style={DIVIDER} />
-
-      {/* Benchmark */}
-      <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6, fontStyle: 'italic', marginBottom: 12, opacity: benchmarkVisible ? 1 : 0, transition: 'opacity 300ms ease-out' }}>
-        Aligned with high-performing candidates in comparable field leadership roles.
-      </p>
-
-      {/* Strengths */}
-      <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase' as const, marginBottom: 6, opacity: strengthsLabelVisible ? 1 : 0, transition: 'opacity 300ms ease-out' }}>Top Strengths</p>
-      {([
-        { text: 'Takes immediate ownership without being asked', vis: str0 },
-        { text: 'Makes clear decisions under pressure', vis: str1 },
-        { text: 'Drives stalled teams forward', vis: str2 },
-      ] as { text: string; vis: boolean }[]).map(({ text, vis }) => (
-        <div key={text} style={{
-          display: 'flex', alignItems: 'flex-start', gap: 7, marginBottom: 5,
-          opacity: vis ? 1 : 0,
-          transform: vis ? 'none' : 'translateY(6px)',
-          transition: 'opacity 200ms ease-out, transform 200ms ease-out',
-        }}>
-          <span style={{ width: 4, height: 4, borderRadius: '50%', background: G, flexShrink: 0, marginTop: 4 }} />
-          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', lineHeight: 1.4 }}>{text}</span>
-        </div>
-      ))}
-
-      {/* Risks */}
-      <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase' as const, marginBottom: 6, marginTop: 10 }}>Primary Risks</p>
-      {[
-        'May outrun process in structured environments',
-        'Can force alignment before full input',
-      ].map((r) => (
-        <div key={r} style={{ display: 'flex', alignItems: 'flex-start', gap: 7, marginBottom: 5 }}>
-          <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'rgba(239,68,68,0.7)', flexShrink: 0, marginTop: 4 }} />
-          <span style={{ fontSize: 12, color: 'rgba(252,165,165,0.8)', lineHeight: 1.4 }}>{r}</span>
-        </div>
-      ))}
-
-      <div style={{
-        height: 1,
-        background: 'rgba(255,255,255,0.07)',
-        margin: '12px 0',
-        width: divVis ? '100%' : '0%',
-        transition: 'width 250ms ease-out',
-      }} />
-
-      {/* HM Signal */}
-      <div>
-        <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase' as const, marginBottom: 8, opacity: hmLabelVis ? 1 : 0, transition: 'opacity 300ms ease-out' }}>Hiring Manager Signal</p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 14, opacity: hmSignalVis ? 1 : 0, transition: 'opacity 300ms ease-out' }}>
-          <span style={{ width: 5, height: 5, borderRadius: '50%', background: G }} />
-          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', fontWeight: 500 }}>Compatible · High collaboration alignment</span>
-        </div>
-      </div>
-
-      {/* FitModel */}
-      <div style={{ opacity: fitVis ? 1 : 0, transition: 'opacity 400ms ease-out', display: 'flex', justifyContent: 'center', marginTop: 4 }}>
-        <FitModel
-          scores={{ dominance: 0.88, extraversion: 0.62, patience: 0.18, formality: 0.45 }}
-          target={{ dominance: 0.74, extraversion: 0.54, patience: 0.46, formality: 0.56 }}
-          size={200}
-          variant="dark"
-          animated={fitVis}
-          showLabels={false}
-        />
-      </div>
-      <p style={{
-        fontSize: 10,
-        color: 'rgba(255,255,255,0.18)',
-        letterSpacing: '0.04em',
-        textAlign: 'center',
-        marginTop: 8
-      }}>
-        Execution · Ownership · Adaptability · Collaboration · Decision Speed
-      </p>
-    </div>
-  )
-}
-
-/* ─────────────────────────────────────────────────────────────
    STAT COUNTER
 ───────────────────────────────────────────────────────────── */
 
@@ -337,6 +122,27 @@ export default function HomePage() {
   const [scrolled, setScrolled] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
 
+  // Hero computation sequence state
+  const [scanLine, setScanLine] = useState(false)
+  const [headerVisible, setHeaderVisible] = useState(false)
+  const [candidateVisible, setCandidateVisible] = useState(false)
+  const [benchmarkLoading, setBenchmarkLoading] = useState(false)
+  const [benchmarkActive, setBenchmarkActive] = useState(false)
+  const [signalBarVisible, setSignalBarVisible] = useState(false)
+  const [signalBarComplete, setSignalBarComplete] = useState(false)
+  const [visibleDimensions, setVisibleDimensions] = useState<number[]>([])
+  const [fitModelVisible, setFitModelVisible] = useState(false)
+  const [scoreRingFilling, setScoreRingFilling] = useState(false)
+  const [scoreValue, setScoreValue] = useState(0)
+  const [recommendationVisible, setRecommendationVisible] = useState(false)
+  const [insightVisible, setInsightVisible] = useState(false)
+  const [benchmarkNoteVisible, setBenchmarkNoteVisible] = useState(false)
+  const [visibleStrengths, setVisibleStrengths] = useState<number[]>([])
+  const [visibleRisks, setVisibleRisks] = useState<number[]>([])
+  const [hmSignalVisible, setHmSignalVisible] = useState(false)
+  const [metadataVisible, setMetadataVisible] = useState(false)
+  const [copyVisible, setCopyVisible] = useState(false)
+
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768)
     check()
@@ -348,6 +154,62 @@ export default function HomePage() {
     const h = () => setScrolled(window.scrollY > 40)
     window.addEventListener('scroll', h, { passive: true })
     return () => window.removeEventListener('scroll', h)
+  }, [])
+
+  // Hero computation sequence
+  useEffect(() => {
+    const timers: ReturnType<typeof setTimeout>[] = []
+    const t = (ms: number, fn: () => void) => {
+      timers.push(setTimeout(fn, ms))
+    }
+
+    t(200,  () => setScanLine(true))
+    t(500,  () => setHeaderVisible(true))
+    t(800,  () => setCandidateVisible(true))
+    t(1100, () => setBenchmarkLoading(true))
+    t(1450, () => { setBenchmarkLoading(false); setBenchmarkActive(true) })
+    t(1700, () => setSignalBarVisible(true))
+    t(2500, () => setSignalBarComplete(true))
+
+    t(2650, () => setVisibleDimensions([1]))
+    t(2880, () => setVisibleDimensions([1,2]))
+    t(3120, () => setVisibleDimensions([1,2,3]))
+    t(3410, () => setVisibleDimensions([1,2,3,4]))
+    t(3720, () => setVisibleDimensions([1,2,3,4,5]))
+
+    t(3900, () => setFitModelVisible(true))
+    t(4400, () => setScoreRingFilling(true))
+
+    t(4400, () => {
+      const start = performance.now()
+      const duration = 700
+      const target = 93
+      const animate = (now: number) => {
+        const elapsed = now - start
+        const progress = Math.min(elapsed / duration, 1)
+        const eased = 1 - Math.pow(1 - progress, 3)
+        setScoreValue(Math.round(eased * target))
+        if (progress < 1) requestAnimationFrame(animate)
+      }
+      requestAnimationFrame(animate)
+    })
+
+    t(5300, () => setRecommendationVisible(true))
+    t(5500, () => setInsightVisible(true))
+    t(5700, () => setBenchmarkNoteVisible(true))
+
+    t(5950, () => setVisibleStrengths([0]))
+    t(6070, () => setVisibleStrengths([0,1]))
+    t(6190, () => setVisibleStrengths([0,1,2]))
+
+    t(6400, () => setVisibleRisks([0]))
+    t(6520, () => setVisibleRisks([0,1]))
+
+    t(6730, () => setHmSignalVisible(true))
+    t(6950, () => setMetadataVisible(true))
+    t(7300, () => setCopyVisible(true))
+
+    return () => timers.forEach(clearTimeout)
   }, [])
 
   const [sceneTriggered, setSceneTriggered] = useState(false)
@@ -470,8 +332,12 @@ export default function HomePage() {
 
         <div className="hero-grid" style={{ maxWidth: MAX, margin: '0 auto', padding: '32px 32px 0', width: '100%', display: 'grid', gap: 72, alignItems: 'center', position: 'relative', zIndex: 2 }}>
 
-          {/* Left */}
-          <div>
+          {/* Left — invisible until computation completes */}
+          <div style={{
+            opacity: copyVisible ? 1 : 0,
+            transform: copyVisible ? 'translateY(0)' : 'translateY(12px)',
+            transition: 'opacity 700ms ease-out, transform 700ms ease-out'
+          }}>
             <h1 style={{ fontSize: 60, lineHeight: 1.04, fontWeight: 700, letterSpacing: '-0.035em', marginBottom: 24, color: '#FFF' }}>
               <span style={{ color: 'rgba(255,255,255,0.72)' }}>Your gut is right.</span><br />
               Now show it.
@@ -529,20 +395,267 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Right — live report panel */}
-          <div>
-            <p style={{
-              fontSize: 11,
-              fontWeight: 600,
-              color: 'rgba(255,255,255,0.3)',
-              letterSpacing: '0.1em',
-              textTransform: 'uppercase' as const,
-              marginBottom: 12,
-              textAlign: 'center'
+          {/* Right — live computation panel */}
+          <div style={{
+            background: 'rgba(13,20,33,0.97)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 16,
+            padding: '24px 24px 20px',
+            boxShadow: isMobile
+              ? '0 0 0 1px rgba(255,255,255,0.04), 0 4px 6px rgba(0,0,0,0.4), 0 12px 24px rgba(0,0,0,0.5), 0 16px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06)'
+              : '0 0 0 1px rgba(255,255,255,0.04), 0 4px 6px rgba(0,0,0,0.4), 0 12px 24px rgba(0,0,0,0.5), 0 32px 64px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06)',
+            transform: isMobile ? 'none' : 'perspective(1200px) rotateY(-2deg) rotateX(1deg)',
+            transformOrigin: 'center center',
+            position: 'relative' as const,
+            overflow: 'hidden',
+          }}>
+
+            {/* Scan line */}
+            <div style={{
+              position: 'absolute',
+              top: 0, left: 0, right: 0,
+              height: 1,
+              background: 'linear-gradient(90deg, transparent, rgba(37,99,235,0.6), transparent)',
+              transformOrigin: 'left',
+              transform: scanLine ? 'scaleX(1)' : 'scaleX(0)',
+              transition: scanLine ? 'transform 600ms ease-out' : 'none'
+            }}/>
+
+            {/* System header */}
+            <div style={{
+              opacity: headerVisible ? 1 : 0,
+              transition: 'opacity 300ms ease-out',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 14,
+              paddingBottom: 12,
+              borderBottom: '1px solid rgba(255,255,255,0.06)'
             }}>
-              What your client sees
+              <span style={{ fontSize: 10, color: '#2563EB', fontWeight: 600, letterSpacing: '0.1em' }}>
+                VELTRO DECISION ENGINE
+              </span>
+              <span style={{fontSize: 10, color: 'rgba(255,255,255,0.2)'}}>
+                Gilbane Construction &middot; Mar 2026
+              </span>
+            </div>
+
+            {/* Candidate identity */}
+            <div style={{
+              opacity: candidateVisible ? 1 : 0,
+              transform: candidateVisible ? 'translateY(0)' : 'translateY(6px)',
+              transition: 'all 220ms ease-out',
+              marginBottom: 14
+            }}>
+              <p style={{ fontSize: 20, fontWeight: 700, color: '#FFFFFF', marginBottom: 3, letterSpacing: '-0.01em' }}>
+                Marcus Thompson
+              </p>
+              <p style={{fontSize: 13, color: 'rgba(255,255,255,0.45)'}}>
+                Superintendent &mdash; Chicago &middot; Gilbane Construction
+              </p>
+            </div>
+
+            {/* Benchmark status */}
+            <div style={{
+              minHeight: 20, marginBottom: 12,
+              display: 'flex', alignItems: 'center', gap: 7,
+              opacity: benchmarkLoading || benchmarkActive ? 1 : 0,
+              transition: 'opacity 200ms ease-out'
+            }}>
+              {benchmarkLoading && !benchmarkActive && (
+                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.06em' }}>
+                  BENCHMARK LOADING...
+                </span>
+              )}
+              {benchmarkActive && (
+                <>
+                  <div style={{
+                    width: 6, height: 6, borderRadius: '50%',
+                    background: '#22C55E',
+                    boxShadow: '0 0 8px rgba(34,197,94,0.7)',
+                    flexShrink: 0
+                  }}/>
+                  <span style={{ fontSize: 10, color: '#22C55E', fontWeight: 600, letterSpacing: '0.06em' }}>
+                    BENCHMARK ACTIVE &mdash; FIELD LEADERSHIP
+                  </span>
+                </>
+              )}
+            </div>
+
+            {/* Signal processing bar */}
+            {signalBarVisible && (
+              <div style={{marginBottom: 14}}>
+                <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.28)', letterSpacing: '0.08em', marginBottom: 6 }}>
+                  PROCESSING BEHAVIORAL SIGNALS
+                </p>
+                <div style={{ height: 2, background: 'rgba(255,255,255,0.07)', borderRadius: 1, overflow: 'hidden' }}>
+                  <div style={{
+                    height: '100%',
+                    background: 'linear-gradient(90deg, #2563EB, #22C55E)',
+                    borderRadius: 1,
+                    width: signalBarComplete ? '100%' : '3%',
+                    transition: signalBarComplete
+                      ? 'width 900ms cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+                      : 'width 300ms ease-out'
+                  }}/>
+                </div>
+              </div>
+            )}
+
+            {/* Dimensions resolving */}
+            <div style={{marginBottom: 12}}>
+              {[
+                { label: 'EXECUTION', value: 72, delta: '+8', color: '#22C55E', warn: false, bold: false },
+                { label: 'OWNERSHIP', value: 67, delta: '+1', color: '#22C55E', warn: false, bold: false },
+                { label: 'ADAPTABILITY', value: 65, delta: '+15', color: '#22C55E', warn: false, bold: false },
+                { label: 'COLLABORATION', value: 49, delta: '\u22123', color: '#EF4444', warn: true, bold: false },
+                { label: 'DECISION SPEED', value: 85, delta: '+21', color: '#22C55E', warn: false, bold: true },
+              ].map((dim, i) => (
+                <div key={dim.label} style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  opacity: visibleDimensions.includes(i + 1) ? 1 : 0,
+                  transform: visibleDimensions.includes(i + 1) ? 'translateY(0)' : 'translateY(4px)',
+                  transition: 'all 220ms ease-out',
+                  paddingBottom: 5, marginBottom: 5,
+                  borderBottom: i < 4 ? '1px solid rgba(255,255,255,0.04)' : 'none'
+                }}>
+                  <span style={{
+                    fontSize: 10,
+                    color: dim.warn ? 'rgba(239,68,68,0.7)' : 'rgba(255,255,255,0.32)',
+                    letterSpacing: '0.07em', fontWeight: 600
+                  }}>
+                    {dim.warn ? '\u26A0 ' : ''}{dim.label}
+                  </span>
+                  <div style={{display: 'flex', alignItems: 'center', gap: 8}}>
+                    <span style={{ fontSize: 13, fontWeight: dim.bold ? 700 : 600, color: '#FFFFFF' }}>{dim.value}</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: dim.color }}>{dim.delta}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* FitModel */}
+            <div style={{
+              opacity: fitModelVisible ? 1 : 0,
+              transition: 'opacity 500ms ease-out',
+              display: 'flex', justifyContent: 'center',
+              margin: '10px 0'
+            }}>
+              <FitModel
+                scores={{ dominance: 0.88, extraversion: 0.62, patience: 0.18, formality: 0.45 }}
+                size={140}
+                variant="dark"
+                animated={fitModelVisible}
+              />
+            </div>
+
+            {/* Score ring + recommendation */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 10 }}>
+              <svg width={64} height={64} viewBox="0 0 64 64" style={{flexShrink: 0}}>
+                <circle cx={32} cy={32} r={29} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={3} />
+                <circle cx={32} cy={32} r={29} fill="none" stroke="#22C55E" strokeWidth={3}
+                  strokeLinecap="round"
+                  strokeDasharray={`${2 * Math.PI * 29}`}
+                  strokeDashoffset={scoreRingFilling ? `${2 * Math.PI * 29 * (1 - scoreValue / 100)}` : `${2 * Math.PI * 29}`}
+                  style={{ transition: 'stroke-dashoffset 100ms linear', transform: 'rotate(-90deg)', transformOrigin: '32px 32px' }}
+                />
+                {scoreValue > 0 && (
+                  <text x={32} y={32} textAnchor="middle" dominantBaseline="middle"
+                    fill="white" fontSize={20} fontWeight={700} fontFamily="-apple-system, sans-serif">{scoreValue}</text>
+                )}
+              </svg>
+              <div>
+                <p style={{
+                  fontSize: 17, fontWeight: 700, color: '#22C55E', marginBottom: 3,
+                  visibility: recommendationVisible ? 'visible' : 'hidden'
+                }}>Strong Hire</p>
+                <p style={{
+                  fontSize: 12,
+                  color: insightVisible ? 'rgba(255,255,255,0.45)' : 'transparent',
+                  transition: 'color 300ms ease-out'
+                }}>High confidence &middot; Top 12%</p>
+              </div>
+            </div>
+
+            {/* Benchmark note */}
+            <p style={{
+              fontSize: 12, lineHeight: 1.6, fontStyle: 'italic', marginBottom: 12,
+              color: benchmarkNoteVisible ? 'rgba(255,255,255,0.55)' : 'transparent',
+              transition: 'color 300ms ease-out'
+            }}>
+              Aligned with high-performing candidates in comparable field leadership roles.
             </p>
-            <LiveReportPanel mobile={isMobile} />
+
+            {/* Divider */}
+            <div style={{
+              height: 1, background: 'rgba(255,255,255,0.07)', marginBottom: 10,
+              opacity: benchmarkNoteVisible ? 1 : 0, transition: 'opacity 300ms ease-out'
+            }}/>
+
+            {/* Strengths */}
+            {visibleStrengths.length > 0 && (
+              <div style={{marginBottom: 10}}>
+                <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', fontWeight: 600, letterSpacing: '0.12em', marginBottom: 7 }}>TOP STRENGTHS</p>
+                {['Takes immediate ownership without being asked', 'Makes clear decisions under pressure', 'Drives stalled teams forward'].map((s, i) => (
+                  <div key={i} style={{
+                    display: 'flex', alignItems: 'flex-start', gap: 7, marginBottom: 5,
+                    opacity: visibleStrengths.includes(i) ? 1 : 0,
+                    transform: visibleStrengths.includes(i) ? 'translateY(0)' : 'translateY(4px)',
+                    transition: 'all 200ms ease-out'
+                  }}>
+                    <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#22C55E', flexShrink: 0, marginTop: 5 }}/>
+                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)', lineHeight: 1.5 }}>{s}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Primary risks */}
+            {visibleRisks.length > 0 && (
+              <div style={{marginBottom: 10}}>
+                <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', fontWeight: 600, letterSpacing: '0.12em', marginBottom: 7 }}>PRIMARY RISKS</p>
+                {['May outrun process in structured environments', 'Can force alignment before full input'].map((s, i) => (
+                  <div key={i} style={{
+                    display: 'flex', alignItems: 'flex-start', gap: 7, marginBottom: 5,
+                    opacity: visibleRisks.includes(i) ? 1 : 0,
+                    transform: visibleRisks.includes(i) ? 'translateY(0)' : 'translateY(4px)',
+                    transition: 'all 200ms ease-out'
+                  }}>
+                    <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#EF4444', flexShrink: 0, marginTop: 5 }}/>
+                    <span style={{ fontSize: 11, color: 'rgba(252,165,165,0.8)', lineHeight: 1.5 }}>{s}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Hiring manager signal */}
+            <div style={{
+              opacity: hmSignalVisible ? 1 : 0,
+              transition: 'opacity 300ms ease-out',
+              paddingTop: 10,
+              borderTop: '1px solid rgba(255,255,255,0.06)'
+            }}>
+              <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', fontWeight: 600, letterSpacing: '0.12em', marginBottom: 6 }}>HIRING MANAGER SIGNAL</p>
+              <div style={{display: 'flex', alignItems: 'center', gap: 7}}>
+                <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#22C55E', flexShrink: 0 }}/>
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.72)', fontWeight: 500 }}>
+                  Compatible &middot; High collaboration alignment
+                </span>
+              </div>
+            </div>
+
+            {/* Metadata strip */}
+            <p style={{
+              fontSize: 9, marginTop: 14, paddingTop: 10,
+              borderTop: '1px solid rgba(255,255,255,0.06)',
+              textAlign: 'center', letterSpacing: '0.03em',
+              color: metadataVisible ? 'rgba(255,255,255,0.18)' : 'transparent',
+              transition: 'color 300ms ease-out'
+            }}>
+              Signal processing complete &middot; 94 signals &middot;
+              Benchmark confidence: High &middot; Scoring v2.0
+            </p>
+
           </div>
         </div>
       </section>
