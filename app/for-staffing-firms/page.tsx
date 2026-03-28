@@ -88,6 +88,24 @@ export default function ForStaffingFirmsPage() {
         </p>
       </section>
 
+      {/* The Report */}
+      <section style={{ borderTop: '1px solid var(--p-b0)', padding: '56px var(--p-sp) 56px' }}>
+        <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.16em', color: 'var(--p-t3)', textTransform: 'uppercase', marginBottom: 24 }}>
+          The Report
+        </p>
+        <div style={{ maxWidth: 560 }}>
+          <p style={{ fontSize: 15, color: 'var(--p-t1)', lineHeight: 1.8, marginBottom: 16 }}>
+            Every candidate receives a shareable behavioral report containing their profile assignment, four-dimension breakdown, fit score against the role target, an auto-generated interview guide, and team dynamics analysis when Mode B is active.
+          </p>
+          <p style={{ fontSize: 15, color: 'var(--p-t1)', lineHeight: 1.8, marginBottom: 24 }}>
+            Reports are designed to be shared directly with clients. No login required.
+          </p>
+          <Link href="/sample-report" style={{ fontSize: 13, fontWeight: 500, color: 'var(--p-t2)', textDecoration: 'underline', textUnderlineOffset: 4 }}>
+            View a sample report &rarr;
+          </Link>
+        </div>
+      </section>
+
       {/* CTA */}
       <section style={{ borderTop: '1px solid var(--p-b0)', padding: '56px var(--p-sp) 80px', textAlign: 'center' }}>
         <a href={`mailto:${COMPANY_EMAIL}`} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', height: 44, padding: '0 32px', background: '#ffffff', color: '#000000', fontSize: 14, fontWeight: 600, borderRadius: 10, textDecoration: 'none', letterSpacing: '-0.01em' }}>

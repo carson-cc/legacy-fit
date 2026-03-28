@@ -306,7 +306,7 @@ export default function HomePage() {
               { label: 'Product', href: '#how-it-works' },
               { label: 'Method', href: '/profiles' },
               { label: 'Archetypes', href: '/archetypes' },
-              { label: 'Sample Report', href: '/dashboard/candidates/invite-marcus' },
+              { label: 'Sample Report', href: '/sample-report' },
             ].map(l => (
               <Link key={l.label} href={l.href}
                 style={{ fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,0.5)', textDecoration: 'none', transition: 'color 160ms ease' }}
@@ -374,7 +374,7 @@ export default function HomePage() {
                 onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(255,255,255,0.15)' }}
                 onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '' }}
               >Request a walkthrough</a>
-              <Link href="/dashboard/candidates/invite-marcus" style={{
+              <Link href="/sample-report" style={{
                 height: 46, padding: '0 24px', borderRadius: 10,
                 border: '1px solid rgba(255,255,255,0.12)',
                 color: 'rgba(255,255,255,0.65)',
@@ -389,7 +389,7 @@ export default function HomePage() {
             {/* Trust strip */}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 0, alignItems: 'center' }}>
               {[
-                { label: '94 behavioral signals (drawn from 80 behavioral adjectives and a structured role intake)', color: '#22C55E' },
+                { label: '94 behavioral signals', color: '#22C55E' },
                 { label: 'Role-specific benchmark', color: '#2563EB' },
                 { label: 'Hiring manager pairing', color: '#EAB308' },
               ].map((item, i) => (
@@ -514,7 +514,7 @@ export default function HomePage() {
                   Retained search firms placing senior talent in field leadership, finance, sales, and operations — where a wrong placement costs the client a year and costs you the relationship.
                 </p>
                 <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 28 }}>
-                  <Link href="/dashboard/candidates/invite-marcus" style={{
+                  <Link href="/sample-report" style={{
                     fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.55)',
                     textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6,
                     transition: 'color 160ms ease',
@@ -749,7 +749,7 @@ export default function HomePage() {
               onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(255,255,255,0.15)' }}
               onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '' }}
             >Request a walkthrough</a>
-            <Link href="/dashboard/candidates/invite-marcus" style={{
+            <Link href="/sample-report" style={{
               height: 48, padding: '0 28px', borderRadius: 10,
               border: '1px solid rgba(255,255,255,0.15)',
               color: 'rgba(255,255,255,0.6)',

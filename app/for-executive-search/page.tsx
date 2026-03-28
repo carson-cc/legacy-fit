@@ -93,7 +93,7 @@ export default function ForExecutiveSearchPage() {
           <p style={{ fontSize: 15, color: 'var(--p-t1)', lineHeight: 1.8, marginBottom: 24 }}>
             Reports are designed to be shared directly with clients. No login required.
           </p>
-          <Link href="/profiles/pioneer" style={{ fontSize: 13, fontWeight: 500, color: 'var(--p-t2)', textDecoration: 'underline', textUnderlineOffset: 4 }}>
+          <Link href="/sample-report" style={{ fontSize: 13, fontWeight: 500, color: 'var(--p-t2)', textDecoration: 'underline', textUnderlineOffset: 4 }}>
             View a sample report &rarr;
           </Link>
         </div>
