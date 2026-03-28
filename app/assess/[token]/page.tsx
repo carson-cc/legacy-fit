@@ -303,7 +303,7 @@ export default function AssessPage() {
             </p>
 
             {/* Stats */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 32 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
               {[
                 { icon: '⏱', label: 'About 6 minutes' },
                 { icon: '📱', label: 'Works on any device' },
@@ -319,6 +319,18 @@ export default function AssessPage() {
                   <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>{item.label}</span>
                 </div>
               ))}
+            </div>
+
+            {/* Payoff callout */}
+            <div style={{
+              display: 'flex', alignItems: 'flex-start', gap: 10,
+              background: 'rgba(37,99,235,0.07)', border: '1px solid rgba(37,99,235,0.18)',
+              borderRadius: 10, padding: '12px 14px', marginBottom: 32,
+            }}>
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#2563EB', flexShrink: 0, marginTop: 5 }}/>
+              <p style={{ margin: 0, fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.5 }}>
+                When you finish, you&rsquo;ll see your behavioral profile — what drives you, where you thrive, and how you work.
+              </p>
             </div>
 
             <button
@@ -413,13 +425,21 @@ export default function AssessPage() {
             </div>
           )}
 
-          <div style={{ animation: 'fadeUp 400ms ease-out both', animationDelay: '400ms' }}>
+          {completionData?.description && (
+            <div style={{ animation: 'fadeUp 400ms ease-out both', animationDelay: '300ms' }}>
+              <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.5)', lineHeight: 1.75, marginBottom: 28, textAlign: 'left' }}>
+                {completionData.description}
+              </p>
+            </div>
+          )}
+
+          <div style={{ animation: 'fadeUp 400ms ease-out both', animationDelay: '450ms' }}>
             <div style={{
               background: '#0D1421', border: '1px solid rgba(255,255,255,0.06)',
               borderRadius: 12, padding: '20px 24px',
             }}>
               <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', margin: 0, lineHeight: 1.6 }}>
-                Your evaluation is complete. Your recruiter will receive your results and be in touch shortly.
+                Your results have been shared with your recruiter. They&rsquo;ll be in touch shortly.
               </p>
             </div>
           </div>
