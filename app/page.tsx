@@ -162,16 +162,25 @@ function LiveReportPanel() {
           <circle cx={34} cy={34} r={31} fill="none" stroke={G} strokeWidth={3}
             strokeLinecap="round"
             strokeDasharray={`${2 * Math.PI * 31}`}
-            strokeDashoffset={`${2 * Math.PI * 31 * (1 - score / 100)}`}
+            strokeDashoffset={`${2 * Math.PI * 31 * (1 - 93 / 100)}`}
             transform="rotate(-90 34 34)"
-            style={{ transition: 'stroke-dashoffset 60ms linear' }}
           />
           <text x={34} y={36} textAnchor="middle" dominantBaseline="middle"
-            fill="white" fontSize={26} fontWeight={700} fontFamily="system-ui">{score}</text>
+            fill="white" fontSize={40} fontWeight={700} fontFamily="system-ui">93</text>
         </svg>
         <div>
-          <p style={{ fontSize: 17, fontWeight: 700, color: G, marginBottom: 3, opacity: showRecommendation ? 1 : 0, transition: 'opacity 300ms ease-out' }}>Strong Hire</p>
-          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginBottom: 2, opacity: showRecommendation ? 1 : 0, transition: 'opacity 300ms ease-out', transitionDelay: '150ms' }}>High confidence</p>
+          <p style={{ fontSize: 18, fontWeight: 700, color: G, marginBottom: 3 }}>Strong Hire</p>
+          <p style={{
+            fontSize: 12,
+            color: 'rgba(255,255,255,0.45)',
+            fontStyle: 'italic',
+            margin: '4px 0',
+            opacity: insightVisible ? 1 : 0,
+            transition: 'opacity 400ms ease-out'
+          }}>
+            Strong fit for field leadership. One condition to address in onboarding.
+          </p>
+          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginBottom: 2 }}>High confidence</p>
           <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)' }}>Role benchmark active</p>
         </div>
       </div>
@@ -179,60 +188,71 @@ function LiveReportPanel() {
       <div style={DIVIDER} />
 
       {/* Benchmark */}
-      <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6, fontStyle: 'italic', marginBottom: 12 }}>
+      <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6, fontStyle: 'italic', marginBottom: 12, opacity: benchmarkVisible ? 1 : 0, transition: 'opacity 300ms ease-out' }}>
         Aligned with high-performing candidates in comparable field leadership roles.
       </p>
 
       {/* Strengths */}
-      <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' as const, marginBottom: 6 }}>Top Strengths</p>
-      {[
-        'Takes immediate ownership without being asked',
-        'Makes clear decisions under pressure',
-        'Drives stalled teams forward',
-      ].map((s, i) => (
-        <div key={s} style={{ ...fade(13 + i), display: 'flex', alignItems: 'flex-start', gap: 7, marginBottom: 5 }}>
+      <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase' as const, marginBottom: 6, opacity: strengthsLabelVisible ? 1 : 0, transition: 'opacity 300ms ease-out' }}>Top Strengths</p>
+      {([
+        { text: 'Takes immediate ownership without being asked', vis: str0 },
+        { text: 'Makes clear decisions under pressure', vis: str1 },
+        { text: 'Drives stalled teams forward', vis: str2 },
+      ] as { text: string; vis: boolean }[]).map(({ text, vis }) => (
+        <div key={text} style={{
+          display: 'flex', alignItems: 'flex-start', gap: 7, marginBottom: 5,
+          opacity: vis ? 1 : 0,
+          transform: vis ? 'none' : 'translateY(6px)',
+          transition: 'opacity 200ms ease-out, transform 200ms ease-out',
+        }}>
           <span style={{ width: 4, height: 4, borderRadius: '50%', background: G, flexShrink: 0, marginTop: 4 }} />
-          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.72)', lineHeight: 1.4 }}>{s}</span>
+          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', lineHeight: 1.4 }}>{text}</span>
         </div>
       ))}
 
       {/* Risks */}
-      <p style={{ ...fade(16), fontSize: 9, color: 'rgba(255,255,255,0.25)', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' as const, marginBottom: 6, marginTop: 10 }}>Primary Risks</p>
+      <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase' as const, marginBottom: 6, marginTop: 10 }}>Primary Risks</p>
       {[
         'May outrun process in structured environments',
         'Can force alignment before full input',
-      ].map((r, i) => (
-        <div key={r} style={{ ...fade(17 + i), display: 'flex', alignItems: 'flex-start', gap: 7, marginBottom: 5 }}>
+      ].map((r) => (
+        <div key={r} style={{ display: 'flex', alignItems: 'flex-start', gap: 7, marginBottom: 5 }}>
           <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'rgba(239,68,68,0.7)', flexShrink: 0, marginTop: 4 }} />
-          <span style={{ fontSize: 11, color: 'rgba(252,165,165,0.75)', lineHeight: 1.4 }}>{r}</span>
+          <span style={{ fontSize: 12, color: 'rgba(252,165,165,0.8)', lineHeight: 1.4 }}>{r}</span>
         </div>
       ))}
 
-      <div style={{ ...fade(19), ...DIVIDER }} />
+      <div style={{
+        height: 1,
+        background: 'rgba(255,255,255,0.07)',
+        margin: '12px 0',
+        width: divVis ? '100%' : '0%',
+        transition: 'width 250ms ease-out',
+      }} />
 
       {/* HM Signal */}
-      <div style={{ ...fade(19) }}>
-        <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' as const, marginBottom: 8 }}>Hiring Manager Signal</p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 14 }}>
+      <div>
+        <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase' as const, marginBottom: 8, opacity: hmLabelVis ? 1 : 0, transition: 'opacity 300ms ease-out' }}>Hiring Manager Signal</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 14, opacity: hmSignalVis ? 1 : 0, transition: 'opacity 300ms ease-out' }}>
           <span style={{ width: 5, height: 5, borderRadius: '50%', background: G }} />
           <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', fontWeight: 500 }}>Compatible · High collaboration alignment</span>
         </div>
       </div>
 
       {/* FitModel */}
-      <div style={{ ...fade(20), display: 'flex', justifyContent: 'center', marginTop: 4 }}>
+      <div style={{ opacity: fitVis ? 1 : 0, transition: 'opacity 400ms ease-out', display: 'flex', justifyContent: 'center', marginTop: 4 }}>
         <FitModel
           scores={{ dominance: 0.88, extraversion: 0.62, patience: 0.18, formality: 0.45 }}
           target={{ dominance: 0.74, extraversion: 0.54, patience: 0.46, formality: 0.56 }}
           size={200}
           variant="dark"
-          animated={step >= 20}
+          animated={fitVis}
           showLabels={false}
         />
       </div>
       <p style={{
-        fontSize: 11,
-        color: 'rgba(255,255,255,0.3)',
+        fontSize: 10,
+        color: 'rgba(255,255,255,0.18)',
         letterSpacing: '0.04em',
         textAlign: 'center',
         marginTop: 8
@@ -344,14 +364,6 @@ export default function HomePage() {
   const signalSection = useInView(0.05)
   const sciSection = useInView(0.05)
   const close = useInView(0.05)
-
-  const [isMobile, setIsMobile] = useState(false)
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768)
-    check()
-    window.addEventListener('resize', check, { passive: true })
-    return () => window.removeEventListener('resize', check)
-  }, [])
 
   const [processMode, setProcessMode] = useState<'a' | 'b'>('a')
   const processStep2Ref = useRef<HTMLDivElement>(null)
@@ -497,7 +509,20 @@ export default function HomePage() {
           </div>
 
           {/* Right — live report panel */}
-          <LiveReportPanel />
+          <div>
+            <p style={{
+              fontSize: 11,
+              fontWeight: 600,
+              color: 'rgba(255,255,255,0.3)',
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase' as const,
+              marginBottom: 12,
+              textAlign: 'center'
+            }}>
+              What your client sees
+            </p>
+            <LiveReportPanel />
+          </div>
         </div>
       </section>
 
