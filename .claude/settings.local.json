@@ -8,7 +8,11 @@
       "Bash(cmd /c \"taskkill /PID 15592 /F 2>&1\")",
       "Bash(powershell -Command \"Stop-Process -Id 15592 -Force -ErrorAction SilentlyContinue; Write-Host ''done''\")",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/)",
-      "Bash(node -e \":*)"
+      "Bash(node -e \":*)",
+      "Bash(node -e \"JSON.parse\\(require\\(''fs''\\).readFileSync\\(''/c/Users/carso/OneDrive/Desktop/legacy-fit/.claude/settings.json'',''utf8''\\)\\); console.log\\(''valid JSON''\\)\")",
+      "Bash(node -e \"JSON.parse\\(require\\(''fs''\\).readFileSync\\(''C:\\\\\\\\Users\\\\\\\\carso\\\\\\\\OneDrive\\\\\\\\Desktop\\\\\\\\legacy-fit\\\\\\\\.claude\\\\\\\\settings.json'',''utf8''\\)\\); console.log\\(''valid JSON''\\)\")",
+      "Bash(node -e \"JSON.parse\\(require\\(''fs''\\).readFileSync\\(''.claude/settings.json'',''utf8''\\)\\); console.log\\(''valid JSON''\\)\")",
+      "Bash(git -C \"/c/Users/carso/OneDrive/Desktop/legacy-fit\" worktree list)"
     ]
   }
 }
