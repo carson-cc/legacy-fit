@@ -350,14 +350,19 @@ export default function HomePage() {
     return () => window.removeEventListener('scroll', h)
   }, [])
 
-  const [sceneVisible, setSceneVisible] = useState(false)
+  const [sceneTriggered, setSceneTriggered] = useState(false)
   const sceneRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const el = sceneRef.current
     if (!el) return
     const obs = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) setSceneVisible(true) },
-      { threshold: 0.2 }
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setSceneTriggered(true)
+          obs.disconnect()
+        }
+      },
+      { threshold: 0.15 }
     )
     obs.observe(el)
     return () => obs.disconnect()
@@ -575,53 +580,52 @@ export default function HomePage() {
       {/* ----------------------------------------------
           THE SCENE — emotional anchor
       ---------------------------------------------- */}
-      <section ref={sceneRef} className="scene-section" style={{
-        padding: '64px 32px 80px',
-        background: '#0B0F14'
-      }}>
-        <div style={{maxWidth: 600, margin: '0 auto'}}>
-          <p className="scene-paragraph" style={{
-            fontSize: 17,
-            color: 'rgba(255,255,255,0.6)',
-            lineHeight: 1.85,
-            marginBottom: 20,
-            letterSpacing: '-0.01em',
-            opacity: sceneVisible ? 1 : 0,
-            transform: sceneVisible ? 'translateY(0)' : 'translateY(10px)',
-            transition: 'opacity 300ms ease-out, transform 300ms ease-out',
-            transitionDelay: '0ms'
-          }}>
-            Eight weeks in. Your candidate is right for the role.
-            The client met someone internally. Now they&rsquo;re not sure.
-          </p>
-          <p className="scene-paragraph" style={{
-            fontSize: 17,
-            color: 'rgba(255,255,255,0.6)',
-            lineHeight: 1.85,
-            marginBottom: 32,
-            letterSpacing: '-0.01em',
-            opacity: sceneVisible ? 1 : 0,
-            transform: sceneVisible ? 'translateY(0)' : 'translateY(10px)',
-            transition: 'opacity 300ms ease-out, transform 300ms ease-out',
-            transitionDelay: '180ms'
-          }}>
-            This is where most searches break.
-            Not because the candidate is wrong.
-            Because they can&rsquo;t show why the candidate is right.
-          </p>
-          <p className="scene-conclusion" style={{
-            fontSize: 20,
-            fontWeight: 600,
-            color: '#FFFFFF',
-            lineHeight: 1.4,
-            letterSpacing: '-0.02em',
-            opacity: sceneVisible ? 1 : 0,
-            transform: sceneVisible ? 'translateY(0)' : 'translateY(10px)',
-            transition: 'opacity 300ms ease-out, transform 300ms ease-out',
-            transitionDelay: '360ms'
-          }}>
-            Veltro is built for that moment.
-          </p>
+      <section
+        ref={sceneRef}
+        style={{
+          padding: '48px 32px 80px',
+          background: '#0B0F14'
+        }}
+      >
+        <div style={{ maxWidth: 600, margin: '0 auto' }}>
+          {[
+            { text: 'Eight weeks in.', pause: 0, size: 'normal' as const },
+            { text: 'Your candidate is right for the role.', pause: 120, size: 'normal' as const },
+            { text: 'The client met someone internally.', pause: 240, size: 'normal' as const },
+            { text: "Now they\u2019re not sure.", pause: 360, size: 'normal' as const },
+            { text: 'BREAK', pause: 0, size: 'break' as const },
+            { text: 'This is where most searches break.', pause: 560, size: 'normal' as const },
+            { text: 'Not because the candidate is wrong.', pause: 680, size: 'normal' as const },
+            { text: "Because they can\u2019t show why the candidate is right.", pause: 800, size: 'normal' as const },
+            { text: 'BREAK', pause: 0, size: 'break' as const },
+            { text: 'Veltro is built for that moment.', pause: 1100, size: 'verdict' as const },
+          ].map((sentence, i) => {
+            if (sentence.size === 'break') {
+              return <div key={i} style={{ height: 20 }} />
+            }
+            const isVerdict = sentence.size === 'verdict'
+            return (
+              <span
+                key={i}
+                style={{
+                  display: 'block',
+                  fontSize: isVerdict ? 20 : 17,
+                  fontWeight: isVerdict ? 600 : 400,
+                  color: isVerdict ? '#FFFFFF' : 'rgba(255,255,255,0.62)',
+                  lineHeight: 1.8,
+                  letterSpacing: isVerdict ? '-0.02em' : '-0.01em',
+                  marginBottom: isVerdict ? 0 : 2,
+                  opacity: sceneTriggered ? 1 : 0,
+                  transform: sceneTriggered ? 'translateY(0px)' : 'translateY(8px)',
+                  transition: sceneTriggered
+                    ? `opacity 320ms ease-out ${sentence.pause}ms, transform 320ms ease-out ${sentence.pause}ms`
+                    : 'none',
+                }}
+              >
+                {sentence.text}
+              </span>
+            )
+          })}
         </div>
       </section>
 
