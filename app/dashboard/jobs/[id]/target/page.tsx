@@ -14,51 +14,101 @@ interface Job {
   target: { dominance: number; extraversion: number; patience: number; formality: number; notes: string | null } | null
 }
 
+type Pick = 0 | 1 | 2
+type DimKey = 'dominance' | 'extraversion' | 'patience' | 'formality'
+
+interface Respondent {
+  id: string
+  name: string
+  picks: Record<DimKey, Pick>
+}
+
 /* ── Dimension config ────────────────────────────────────────────── */
 
-const DIMS = [
+const PICK_VALUES: [number, number, number] = [0.25, 0.50, 0.75]
+
+const DIMS: {
+  key: DimKey
+  label: string
+  options: [string, string, string]
+}[] = [
   {
-    key: 'dominance' as const,
+    key: 'dominance',
     label: 'Execution',
-    desc: (v: number) =>
-      v >= 0.70 ? 'Drives outcomes with intensity — expects ownership and resolution at all levels.'
-      : v >= 0.40 ? 'Balanced assertiveness with ability to push through obstacles when needed.'
-      : 'Steady, collaborative approach — defers to team consensus on high-stakes decisions.',
+    options: [
+      'Deliberate — builds consensus, team-led decisions',
+      'Balanced — assertive when needed, collaborative by default',
+      'Drives hard — pushes for results, expects ownership',
+    ],
   },
   {
-    key: 'formality' as const,
+    key: 'formality',
     label: 'Ownership',
-    desc: (v: number) =>
-      v >= 0.70 ? 'Precise, disciplined, rule-following — strong accountability expected at all levels.'
-      : v >= 0.40 ? 'Balances structure with adaptability — accountable without being rigid.'
-      : 'Flexible and practical — adapts process to context, values outcomes over procedure.',
+    options: [
+      'Pragmatic — adapts process to situation, outcome-focused',
+      'Structured — accountable without being rigid',
+      'Disciplined — strong process orientation, high accountability',
+    ],
   },
   {
-    key: 'patience' as const,
+    key: 'patience',
     label: 'Adaptability',
-    desc: (v: number) =>
-      v >= 0.70 ? 'Consistent and methodical — builds stability in complex, long-cycle environments.'
-      : v >= 0.40 ? 'Comfortable with moderate change — adjusts without losing effectiveness.'
-      : 'Fast-paced and urgent — thrives in high-pressure, constantly changing environments.',
+    options: [
+      'Fast-paced — built for urgency and constant change',
+      'Adaptable — handles change without losing effectiveness',
+      'Methodical — thrives in stable, long-cycle environments',
+    ],
   },
   {
-    key: 'extraversion' as const,
+    key: 'extraversion',
     label: 'Collaboration',
-    desc: (v: number) =>
-      v >= 0.70 ? 'People-oriented — success depends on relationship building and sustained alignment.'
-      : v >= 0.40 ? 'Works well with others while maintaining individual task focus.'
-      : 'Independent and task-focused — minimal social energy required; outcome-driven.',
+    options: [
+      'Independent — task-driven, minimal social overhead needed',
+      'Collaborative — works well with others, stays task-focused',
+      'People-first — success through relationships and sustained alignment',
+    ],
   },
 ]
 
-type BenchmarkDims = {
-  dominance: number
-  extraversion: number
-  patience: number
-  formality: number
+type BenchmarkDims = { dominance: number; extraversion: number; patience: number; formality: number }
+
+function defaultPicks(): Record<DimKey, Pick> {
+  return { dominance: 1, extraversion: 1, patience: 1, formality: 1 }
 }
 
-function pct(v: number) { return Math.round(v * 100) }
+function picksToValues(picks: Record<DimKey, Pick>): BenchmarkDims {
+  return {
+    dominance: PICK_VALUES[picks.dominance],
+    extraversion: PICK_VALUES[picks.extraversion],
+    patience: PICK_VALUES[picks.patience],
+    formality: PICK_VALUES[picks.formality],
+  }
+}
+
+function valuesToPicks(dims: BenchmarkDims): Record<DimKey, Pick> {
+  function nearestPick(v: number): Pick {
+    const dists = PICK_VALUES.map((p, i) => ({ i, d: Math.abs(v - p) }))
+    return dists.sort((a, b) => a.d - b.d)[0].i as Pick
+  }
+  return {
+    dominance: nearestPick(dims.dominance),
+    extraversion: nearestPick(dims.extraversion),
+    patience: nearestPick(dims.patience),
+    formality: nearestPick(dims.formality),
+  }
+}
+
+function averageDims(respondents: Respondent[]): BenchmarkDims {
+  if (!respondents.length) return { dominance: 0.5, extraversion: 0.5, patience: 0.5, formality: 0.5 }
+  const vals = respondents.map(r => picksToValues(r.picks))
+  const n = vals.length
+  return {
+    dominance: vals.reduce((s, v) => s + v.dominance, 0) / n,
+    extraversion: vals.reduce((s, v) => s + v.extraversion, 0) / n,
+    patience: vals.reduce((s, v) => s + v.patience, 0) / n,
+    formality: vals.reduce((s, v) => s + v.formality, 0) / n,
+  }
+}
 
 function interpret(dims: BenchmarkDims): string {
   const ex = dims.dominance, ow = dims.formality, ad = dims.patience, co = dims.extraversion
@@ -71,6 +121,9 @@ function interpret(dims: BenchmarkDims): string {
   return 'Balanced benchmark — consistent execution and role alignment emphasized across dimensions.'
 }
 
+let _idCounter = 0
+function uid() { return `r-${++_idCounter}-${Date.now()}` }
+
 /* ── Page ────────────────────────────────────────────────────────── */
 
 export default function RoleBenchmarkPage() {
@@ -79,17 +132,15 @@ export default function RoleBenchmarkPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [notes, setNotes] = useState('')
-
-  const [dims, setDims] = useState<BenchmarkDims>({
-    dominance: 0.65,
-    extraversion: 0.50,
-    patience: 0.50,
-    formality: 0.65,
-  })
+  const [respondents, setRespondents] = useState<Respondent[]>([
+    { id: uid(), name: 'You', picks: defaultPicks() },
+  ])
 
   const [aiLoading, setAiLoading] = useState(false)
   const [aiRationale, setAiRationale] = useState('')
   const [aiConfidence, setAiConfidence] = useState('')
+
+  const benchmark = averageDims(respondents)
 
   const fetchJob = useCallback(() => {
     setLoading(true)
@@ -99,19 +150,11 @@ export default function RoleBenchmarkPage() {
         const j = d.data as Job
         setJob(j)
         if (j.target) {
-          setDims({
-            dominance: j.target.dominance,
-            extraversion: j.target.extraversion,
-            patience: j.target.patience,
-            formality: j.target.formality,
-          })
           setNotes(j.target.notes ?? '')
+          setRespondents([{ id: uid(), name: 'You', picks: valuesToPicks(j.target) }])
         }
         setLoading(false)
-        // Auto-classify if no target set yet
-        if (!j.target && j.title) {
-          classifyRole(j.title)
-        }
+        if (!j.target && j.title) classifyRole(j.title)
       })
       .catch(() => setLoading(false))
   }, [id])
@@ -129,21 +172,33 @@ export default function RoleBenchmarkPage() {
       const data = await res.json()
       if (data.data) {
         const s = data.data
-        setDims({
-          dominance: s.dominance,
-          extraversion: s.extraversion,
-          patience: s.patience,
-          formality: s.formality,
-        })
+        setRespondents([{
+          id: uid(), name: 'AI suggestion',
+          picks: valuesToPicks({ dominance: s.dominance, extraversion: s.extraversion, patience: s.patience, formality: s.formality }),
+        }])
         setAiRationale(s.rationale)
         setAiConfidence(s.confidence)
       }
-    } catch { /* silent — user can set manually */ }
+    } catch { /* silent */ }
     finally { setAiLoading(false) }
   }
 
-  function setDim(key: keyof BenchmarkDims, value: number) {
-    setDims(prev => ({ ...prev, [key]: value }))
+  function setPick(respondentId: string, key: DimKey, pick: Pick) {
+    setRespondents(prev => prev.map(r =>
+      r.id === respondentId ? { ...r, picks: { ...r.picks, [key]: pick } } : r
+    ))
+  }
+
+  function addRespondent() {
+    setRespondents(prev => [...prev, { id: uid(), name: '', picks: defaultPicks() }])
+  }
+
+  function removeRespondent(respondentId: string) {
+    setRespondents(prev => prev.filter(r => r.id !== respondentId))
+  }
+
+  function setRespondentName(respondentId: string, name: string) {
+    setRespondents(prev => prev.map(r => r.id === respondentId ? { ...r, name } : r))
   }
 
   async function handleSave() {
@@ -151,13 +206,7 @@ export default function RoleBenchmarkPage() {
     try {
       const res = await fetch(`/api/jobs/${id}/target`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          dominance: dims.dominance,
-          extraversion: dims.extraversion,
-          patience: dims.patience,
-          formality: dims.formality,
-          notes: notes || null,
-        }),
+        body: JSON.stringify({ ...benchmark, notes: notes || null }),
       })
       if (!res.ok) throw new Error()
       showToast('Benchmark saved')
@@ -211,7 +260,7 @@ export default function RoleBenchmarkPage() {
       {/* Main grid */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 32, alignItems: 'start' }}>
 
-        {/* LEFT: Dimensions */}
+        {/* LEFT */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
           {/* AI rationale banner */}
@@ -226,50 +275,108 @@ export default function RoleBenchmarkPage() {
                 <path d="M12 8v4M12 16h.01" stroke="#2563EB" strokeWidth="1.5" strokeLinecap="round"/>
               </svg>
               <p style={{ margin: 0, fontSize: 13, color: '#374151', lineHeight: 1.6 }}>
-                <strong style={{ color: '#1D4ED8' }}>AI benchmark suggestion:</strong> {aiRationale}
+                <strong style={{ color: '#1D4ED8' }}>AI suggestion:</strong> {aiRationale}
               </p>
             </div>
           )}
 
-          {/* Dimension sliders */}
-          <div style={{ background: '#FFF', border: '1px solid #E5E7EB', borderRadius: 12, padding: 28 }}>
-            <h2 style={{ fontSize: 15, fontWeight: 600, color: '#111827', margin: '0 0 4px' }}>Benchmark dimensions</h2>
-            <p style={{ fontSize: 13, color: '#9CA3AF', margin: '0 0 28px' }}>
-              {aiRationale ? 'AI-suggested targets. Adjust to fit your expectations.' : 'Set the behavioral expectations for strong performers in this role.'}
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
-              {DIMS.map(dim => {
-                const val = dims[dim.key]
-                const percentage = pct(val)
-                return (
+          {/* Respondents */}
+          {respondents.map((respondent, rIdx) => (
+            <div key={respondent.id} style={{ background: '#FFF', border: '1px solid #E5E7EB', borderRadius: 12, padding: 28 }}>
+
+              {/* Respondent header */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{
+                    width: 28, height: 28, borderRadius: '50%', background: '#F3F4F6',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 12, fontWeight: 700, color: '#6B7280', flexShrink: 0,
+                  }}>{rIdx + 1}</div>
+                  {rIdx === 0 && respondents.length === 1 && respondent.name === 'You' ? (
+                    <span style={{ fontSize: 15, fontWeight: 600, color: '#111827' }}>Your input</span>
+                  ) : (
+                    <input
+                      value={respondent.name}
+                      onChange={e => setRespondentName(respondent.id, e.target.value)}
+                      placeholder="Name or role (e.g. Hiring Manager)"
+                      style={{
+                        fontSize: 14, fontWeight: 500, color: '#111827',
+                        border: 'none', borderBottom: '1px solid #E5E7EB',
+                        outline: 'none', background: 'transparent', padding: '2px 0',
+                        width: 240,
+                      }}
+                      onFocus={e => (e.target.style.borderBottomColor = '#2563EB')}
+                      onBlur={e => (e.target.style.borderBottomColor = '#E5E7EB')}
+                    />
+                  )}
+                </div>
+                {respondents.length > 1 && (
+                  <button
+                    onClick={() => removeRespondent(respondent.id)}
+                    style={{ fontSize: 12, color: '#9CA3AF', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px' }}
+                    onMouseEnter={e => (e.currentTarget.style.color = '#EF4444')}
+                    onMouseLeave={e => (e.currentTarget.style.color = '#9CA3AF')}
+                  >Remove</button>
+                )}
+              </div>
+
+              {/* Dimension pickers */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                {DIMS.map(dim => (
                   <div key={dim.key}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
-                      <span style={{ fontSize: 15, fontWeight: 600, color: '#111827' }}>{dim.label}</span>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: '#2563EB', minWidth: 36, textAlign: 'right' }}>{percentage}%</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 10 }}>{dim.label}</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {dim.options.map((opt, optIdx) => {
+                        const selected = respondent.picks[dim.key] === optIdx
+                        return (
+                          <button
+                            key={optIdx}
+                            onClick={() => setPick(respondent.id, dim.key, optIdx as Pick)}
+                            style={{
+                              textAlign: 'left', padding: '12px 16px', borderRadius: 8,
+                              border: selected ? '1.5px solid #2563EB' : '1px solid #E5E7EB',
+                              background: selected ? 'rgba(37,99,235,0.04)' : '#FAFAFA',
+                              cursor: 'pointer', transition: 'all 120ms ease',
+                              display: 'flex', alignItems: 'center', gap: 12,
+                            }}
+                            onMouseEnter={e => { if (!selected) e.currentTarget.style.borderColor = '#D1D5DB' }}
+                            onMouseLeave={e => { if (!selected) e.currentTarget.style.borderColor = '#E5E7EB' }}
+                          >
+                            <div style={{
+                              width: 16, height: 16, borderRadius: '50%', flexShrink: 0,
+                              border: selected ? '2px solid #2563EB' : '2px solid #D1D5DB',
+                              background: selected ? '#2563EB' : 'transparent',
+                              transition: 'all 120ms ease',
+                            }} />
+                            <span style={{ fontSize: 13, color: selected ? '#1D4ED8' : '#374151', lineHeight: 1.4 }}>{opt}</span>
+                          </button>
+                        )
+                      })}
                     </div>
-                    <div style={{ position: 'relative', height: 20, display: 'flex', alignItems: 'center' }}>
-                      <div style={{ position: 'absolute', left: 0, right: 0, height: 4, background: '#F3F4F6', borderRadius: 4 }}>
-                        <div style={{ height: '100%', width: `${percentage}%`, background: '#2563EB', borderRadius: 4, transition: 'width 60ms ease' }} />
-                      </div>
-                      <input
-                        type="range" min={0} max={1} step={0.01} value={val}
-                        onChange={e => setDim(dim.key, parseFloat(e.target.value))}
-                        style={{ position: 'absolute', left: 0, right: 0, width: '100%', opacity: 0, cursor: 'pointer', height: 20, margin: 0 }}
-                      />
-                      <div style={{
-                        position: 'absolute', left: `calc(${percentage}% - 9px)`,
-                        width: 18, height: 18, borderRadius: '50%',
-                        background: '#FFF', border: '2px solid #2563EB',
-                        boxShadow: '0 1px 4px rgba(37,99,235,0.25)', pointerEvents: 'none',
-                        transition: 'left 60ms ease',
-                      }} />
-                    </div>
-                    <p style={{ fontSize: 12, color: '#6B7280', margin: '8px 0 0', lineHeight: 1.5 }}>{dim.desc(val)}</p>
                   </div>
-                )
-              })}
+                ))}
+              </div>
             </div>
-          </div>
+          ))}
+
+          {/* Add respondent */}
+          <button
+            onClick={addRespondent}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8, padding: '14px 20px',
+              border: '1.5px dashed #D1D5DB', borderRadius: 12, background: 'transparent',
+              cursor: 'pointer', fontSize: 14, color: '#6B7280', transition: 'all 150ms ease',
+              width: '100%',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = '#9CA3AF'; e.currentTarget.style.color = '#374151' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = '#D1D5DB'; e.currentTarget.style.color = '#6B7280' }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 8v8M8 12h8"/>
+            </svg>
+            Add another perspective
+          </button>
 
           {/* Notes */}
           <div style={{ background: '#FFF', border: '1px solid #E5E7EB', borderRadius: 12, padding: 24 }}>
@@ -298,7 +405,9 @@ export default function RoleBenchmarkPage() {
               onMouseEnter={e => { if (!saving) { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.12)' } }}
               onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none' }}
             >{saving ? 'Saving...' : 'Save benchmark'}</button>
-            <span style={{ fontSize: 13, color: '#9CA3AF' }}>Refine after evaluating candidates.</span>
+            <span style={{ fontSize: 13, color: '#9CA3AF' }}>
+              {respondents.length > 1 ? `Synthesized from ${respondents.length} inputs` : 'Refine after evaluating candidates.'}
+            </span>
           </div>
         </div>
 
@@ -309,32 +418,18 @@ export default function RoleBenchmarkPage() {
           padding: 24,
         }}>
           <h2 style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4 }}>Benchmark shape</h2>
-          <p style={{ fontSize: 12, color: '#9CA3AF', margin: '0 0 20px' }}>Updates as you adjust dimensions</p>
+          <p style={{ fontSize: 12, color: '#9CA3AF', margin: '0 0 20px' }}>
+            {respondents.length > 1 ? `Synthesized from ${respondents.length} perspectives` : 'Updates as you select options'}
+          </p>
 
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
-            <FitModelLight scores={dims} size={280} animated />
-          </div>
-
-          {/* Dimension readout */}
-          <div style={{ borderTop: '1px solid #F3F4F6', paddingTop: 16, marginBottom: 16 }}>
-            <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9CA3AF', marginBottom: 12 }}>Active Benchmark</p>
-            {DIMS.map(dim => (
-              <div key={dim.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0' }}>
-                <span style={{ fontSize: 13, color: '#6B7280' }}>{dim.label}</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ width: 52, height: 4, borderRadius: 4, background: '#F3F4F6', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${pct(dims[dim.key])}%`, background: '#2563EB', borderRadius: 4, transition: 'width 60ms ease' }} />
-                  </div>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: '#111827', minWidth: 28, textAlign: 'right' }}>{pct(dims[dim.key])}%</span>
-                </div>
-              </div>
-            ))}
+            <FitModelLight scores={benchmark} size={280} animated />
           </div>
 
           {/* Interpretation */}
           <div style={{ borderTop: '1px solid #F3F4F6', paddingTop: 16, marginBottom: 16 }}>
-            <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9CA3AF', marginBottom: 8 }}>Interpretation</p>
-            <p style={{ fontSize: 13, lineHeight: 1.6, color: '#374151' }}>{interpret(dims)}</p>
+            <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#9CA3AF', marginBottom: 8 }}>What this means</p>
+            <p style={{ fontSize: 13, lineHeight: 1.6, color: '#374151' }}>{interpret(benchmark)}</p>
           </div>
 
           <div style={{ borderTop: '1px solid #F3F4F6', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 4 }}>

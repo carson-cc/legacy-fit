@@ -12,7 +12,11 @@
       "Bash(node -e \"JSON.parse\\(require\\(''fs''\\).readFileSync\\(''/c/Users/carso/OneDrive/Desktop/legacy-fit/.claude/settings.json'',''utf8''\\)\\); console.log\\(''valid JSON''\\)\")",
       "Bash(node -e \"JSON.parse\\(require\\(''fs''\\).readFileSync\\(''C:\\\\\\\\Users\\\\\\\\carso\\\\\\\\OneDrive\\\\\\\\Desktop\\\\\\\\legacy-fit\\\\\\\\.claude\\\\\\\\settings.json'',''utf8''\\)\\); console.log\\(''valid JSON''\\)\")",
       "Bash(node -e \"JSON.parse\\(require\\(''fs''\\).readFileSync\\(''.claude/settings.json'',''utf8''\\)\\); console.log\\(''valid JSON''\\)\")",
-      "Bash(git -C \"/c/Users/carso/OneDrive/Desktop/legacy-fit\" worktree list)"
+      "Bash(git -C \"/c/Users/carso/OneDrive/Desktop/legacy-fit\" worktree list)",
+      "Read(//c/Users/carso/OneDrive/Desktop/**)",
+      "Bash(zip -r legacy-fit-v2.zip legacy-fit --exclude \"legacy-fit/node_modules/*\" --exclude \"legacy-fit/.claude/worktrees/*\" --exclude \"legacy-fit/.git/*\" --exclude \"legacy-fit/dev.db\" --exclude \"legacy-fit/prisma/dev.db\")",
+      "Bash(powershell -Command \"Compress-Archive -Path ''legacy-fit'' -DestinationPath ''legacy-fit-v2.zip'' -Force\")",
+      "Bash(powershell -Command \":*)"
     ]
   }
 }
