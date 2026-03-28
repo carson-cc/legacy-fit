@@ -16,7 +16,8 @@
       "Read(//c/Users/carso/OneDrive/Desktop/**)",
       "Bash(zip -r legacy-fit-v2.zip legacy-fit --exclude \"legacy-fit/node_modules/*\" --exclude \"legacy-fit/.claude/worktrees/*\" --exclude \"legacy-fit/.git/*\" --exclude \"legacy-fit/dev.db\" --exclude \"legacy-fit/prisma/dev.db\")",
       "Bash(powershell -Command \"Compress-Archive -Path ''legacy-fit'' -DestinationPath ''legacy-fit-v2.zip'' -Force\")",
-      "Bash(powershell -Command \":*)"
+      "Bash(powershell -Command \":*)",
+      "Bash(powershell -Command \"Get-Item ''C:\\\\Users\\\\carso\\\\OneDrive\\\\Desktop\\\\legacy-fit-v2.zip'' | Select-Object Name, @{N=''SizeMB'';E={[math]::Round\\($_.Length/1MB,1\\)}}\")"
     ]
   }
 }

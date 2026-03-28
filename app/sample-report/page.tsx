@@ -295,7 +295,7 @@ export default function SampleReportPage() {
                 </p>
               </div>
               <div style={{ borderTop: `1px solid ${DIVIDER}`, paddingTop: 16, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {['Based on 94 behavioral signals', 'Role benchmark active', 'Scoring v2.0'].map((item, i) => (
+                {['Based on 94 behavioral signals', 'Role benchmark active', 'IPIP-NEO validated'].map((item, i) => (
                   <span key={item} style={{ fontSize: 11, color: SUBTLE }}>
                     {i > 0 && <span style={{ margin: '0 8px', color: DIVIDER }}>·</span>}
                     {item}
@@ -496,7 +496,7 @@ export default function SampleReportPage() {
           {/* Footer */}
           <footer style={{ paddingTop: 24, borderTop: `1px solid ${DIVIDER}` }}>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 0, marginBottom: 12, alignItems: 'center' }}>
-              {['Report ID: a4f2c8d1', 'Scoring v2.0.0', 'Assessment completed Mar 14, 2026'].map((item, i) => (
+              {['Report ID: a4f2c8d1', 'IPIP-NEO validated', 'Assessment completed Mar 14, 2026'].map((item, i) => (
                 <span key={item} style={{ fontSize: 11, color: SUBTLE }}>
                   {i > 0 && <span style={{ margin: '0 8px', opacity: 0.4 }}>·</span>}
                   {item}

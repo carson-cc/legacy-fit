@@ -109,7 +109,7 @@ function LiveReportPanel() {
           <span style={{ width: 6, height: 6, borderRadius: '50%', background: G, boxShadow: `0 0 8px ${G}` }} />
           <span style={{ fontSize: 10, color: B, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase' as const }}>Scoring Active</span>
         </span>
-        <span style={{ marginLeft: 'auto', fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>94 signals · v2.0</span>
+        <span style={{ marginLeft: 'auto', fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>94 signals · IPIP-NEO</span>
       </div>
 
       {/* Candidate */}
@@ -502,7 +502,7 @@ export default function HomePage() {
 
                 {/* Footer */}
                 <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 28px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>94 signals · Role benchmark active · Scoring v2.0</span>
+                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>94 signals · Role benchmark active · IPIP-NEO</span>
                   <span style={{ fontSize: 10, color: B, fontWeight: 500, cursor: 'pointer' }}>Share report →</span>
                 </div>
               </div>
@@ -664,7 +664,7 @@ export default function HomePage() {
                 94 signals.<br />Five dimensions.<br />One number that closes the room.
               </h2>
               <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.5)', lineHeight: 1.8, marginBottom: 20 }}>
-                Each evaluation pulls 94 behavioral signals from two structured inputs, mapped across five dimensions that predict performance in the role — not personality in the abstract. The score tells you where a candidate fits, where they strain, and why.
+                Candidates complete two forced-choice word lists — one describing how they work in a role, one describing their natural self — in about six minutes. 94 behavioral signals extracted, mapped across five dimensions that predict performance in the role — not personality in the abstract. The score tells you where a candidate fits, where they strain, and why.
               </p>
               <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.5)', lineHeight: 1.8, marginBottom: 32 }}>
                 The benchmark is role-specific — field leadership, executive, sales, technical — normed against 2.2 million respondents across eight peer-reviewed validation studies. Not a proprietary black box. Published science.
@@ -692,7 +692,7 @@ export default function HomePage() {
               { n: '2.2M', label: 'People in the norm dataset', detail: 'IPIP-NEO · 16PF · 8 peer-reviewed studies' },
               { n: '94', label: 'Behavioral signals per evaluation', detail: '80 adjective inputs · 2 structured lists' },
               { n: '5', label: 'Role-relevant dimensions scored', detail: 'Execution · Ownership · Adaptability · Collaboration · Decision Speed' },
-              { n: 'v2.0', label: 'Current scoring model', detail: 'Quadratic gap penalty · Role-weighted benchmark' },
+              { n: '6 min', label: 'Candidate assessment time', detail: 'Forced-choice adjective instrument · IPIP-NEO based' },
             ].map((item, i) => (
               <div key={i} style={{
                 opacity: sciSection.visible ? 1 : 0,

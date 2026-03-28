@@ -731,7 +731,7 @@ export default function SharedReportPage() {
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 0, marginBottom: 12, alignItems: 'center' }}>
               {[
                 `Report ID: ${c.resultId?.slice(0, 8) || '—'}`,
-                'Scoring v2.0.0',
+                'IPIP-NEO validated',
                 `Assessment completed ${formatDate(c.completedAt)}`,
               ].map((item, i) => (
                 <span key={item} style={{ fontSize: 11, color: SUBTLE }}>

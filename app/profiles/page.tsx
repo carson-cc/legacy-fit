@@ -623,7 +623,7 @@ export default function MethodPage() {
             </div>
 
             <p style={{ fontSize: 11, color: T.t4, borderTop: `1px solid ${T.b}`, paddingTop: 16 }}>
-              Based on 94 behavioral signals &middot; Role benchmark active &middot; Scoring v2.0.0 &middot; IPIP-NEO validated
+              Based on 94 behavioral signals &middot; Role benchmark active &middot; IPIP-NEO validated
             </p>
           </div>
 
