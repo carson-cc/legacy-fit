@@ -44,7 +44,7 @@ function useCursorGlow(ref: React.RefObject<HTMLElement | null>) {
    LIVE REPORT PANEL
 ───────────────────────────────────────────────────────────── */
 
-function LiveReportPanel() {
+function LiveReportPanel({ mobile }: { mobile: boolean }) {
   const [benchmarkVisible, setBenchmarkVisible] = useState(false)
   const [insightVisible, setInsightVisible] = useState(false)
   const [strengthsLabelVisible, setStrengthsLabelVisible] = useState(false)
@@ -56,14 +56,6 @@ function LiveReportPanel() {
   const [hmSignalVis, setHmSignalVis] = useState(false)
   const [fitVis, setFitVis] = useState(false)
   const [panelHovered, setPanelHovered] = useState(false)
-  const [isMobilePanel, setIsMobilePanel] = useState(false)
-
-  useEffect(() => {
-    const check = () => setIsMobilePanel(window.innerWidth < 768)
-    check()
-    window.addEventListener('resize', check)
-    return () => window.removeEventListener('resize', check)
-  }, [])
 
   useEffect(() => {
     const timers = [
@@ -86,12 +78,12 @@ function LiveReportPanel() {
     height: 1, background: 'rgba(255,255,255,0.07)', margin: '12px 0',
   }
 
-  const panelTransform = isMobilePanel
+  const panelTransform = mobile
     ? 'none'
     : panelHovered
       ? 'perspective(1200px) rotateY(0deg) rotateX(0deg)'
       : 'perspective(1200px) rotateY(-2deg) rotateX(1deg)'
-  const panelShadow = isMobilePanel
+  const panelShadow = mobile
     ? '0 0 0 1px rgba(255,255,255,0.04), 0 4px 6px rgba(0,0,0,0.4), 0 12px 24px rgba(0,0,0,0.5), 0 16px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06)'
     : '0 0 0 1px rgba(255,255,255,0.04), 0 4px 6px rgba(0,0,0,0.4), 0 12px 24px rgba(0,0,0,0.5), 0 32px 64px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06)'
 
@@ -521,7 +513,7 @@ export default function HomePage() {
             }}>
               What your client sees
             </p>
-            <LiveReportPanel />
+            <LiveReportPanel mobile={isMobile} />
           </div>
         </div>
       </section>
@@ -702,19 +694,19 @@ export default function HomePage() {
           {processMode === 'a' && (
             <div style={{ position: 'relative' }}>
               {/* Spine */}
-              <div className="process-spine" style={{ position: 'absolute', left: 0, top: 8, bottom: 0, width: 1, background: 'rgba(255,255,255,0.1)' }} />
+              <div style={{ display: isMobile ? 'none' : undefined, position: 'absolute', left: 0, top: 8, bottom: 0, width: 1, background: 'rgba(255,255,255,0.1)' }} />
 
               {/* Step 1 — KICKOFF */}
-              <div className="process-step" style={{ position: 'relative', paddingLeft: 32, marginBottom: 48, animation: 'fadeSlideUp 200ms ease-out forwards', animationDelay: '0ms', opacity: 0 }}>
-                <div className="process-dot" style={{ position: 'absolute', left: -5, top: 6, width: 10, height: 10, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)' }} />
+              <div style={{ position: 'relative', paddingLeft: isMobile ? 16 : 32, marginBottom: isMobile ? 10 : 48, animation: 'fadeSlideUp 200ms ease-out forwards', animationDelay: '0ms', opacity: 0, ...(isMobile ? { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10 } : {}) }}>
+                <div style={{ display: isMobile ? 'none' : undefined, position: 'absolute', left: -5, top: 6, width: 10, height: 10, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)' }} />
                 <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.1em', display: 'block', marginBottom: 5 }}>Kickoff</span>
                 <p style={{ fontSize: 17, color: 'white', fontWeight: 600, marginBottom: 6 }}>Define the role benchmark.</p>
                 <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6, maxWidth: 480, margin: 0 }}>Veltro suggests a behavioral target based on role type. Adjust and confirm in 60 seconds. The benchmark drives every candidate score.</p>
               </div>
 
               {/* Step 2 — SHORTLIST */}
-              <div className="process-step process-step--blue-active" style={{ position: 'relative', paddingLeft: 32, marginBottom: 48, animation: 'fadeSlideUp 200ms ease-out forwards', animationDelay: '80ms', opacity: 0 }}>
-                <div className="process-dot" style={{ position: 'absolute', left: -5, top: 6, width: 10, height: 10, borderRadius: '50%', background: '#2563EB', border: '1px solid #2563EB', boxShadow: '0 0 8px rgba(37,99,235,0.5)' }} />
+              <div style={{ position: 'relative', paddingLeft: isMobile ? 16 : 32, marginBottom: isMobile ? 10 : 48, animation: 'fadeSlideUp 200ms ease-out forwards', animationDelay: '80ms', opacity: 0, ...(isMobile ? { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(37,99,235,0.3)', borderRadius: 10 } : {}) }}>
+                <div style={{ display: isMobile ? 'none' : undefined, position: 'absolute', left: -5, top: 6, width: 10, height: 10, borderRadius: '50%', background: '#2563EB', border: '1px solid #2563EB', boxShadow: '0 0 8px rgba(37,99,235,0.5)' }} />
                 <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.1em', display: 'block', marginBottom: 5 }}>Shortlist</span>
                 <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', marginBottom: 6 }}>
                   <span style={{ fontSize: 17, color: 'white', fontWeight: 600 }}>Send each candidate a single link.</span>
@@ -728,8 +720,8 @@ export default function HomePage() {
               </div>
 
               {/* Step 3 — EVALUATION */}
-              <div className="process-step process-step--blue-active" style={{ position: 'relative', paddingLeft: 32, marginBottom: 48, animation: 'fadeSlideUp 200ms ease-out forwards', animationDelay: '160ms', opacity: 0 }}>
-                <div className="process-dot" style={{ position: 'absolute', left: -5, top: 6, width: 10, height: 10, borderRadius: '50%', background: '#2563EB', border: '1px solid #2563EB', boxShadow: '0 0 8px rgba(37,99,235,0.5)' }} />
+              <div style={{ position: 'relative', paddingLeft: isMobile ? 16 : 32, marginBottom: isMobile ? 10 : 48, animation: 'fadeSlideUp 200ms ease-out forwards', animationDelay: '160ms', opacity: 0, ...(isMobile ? { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(37,99,235,0.3)', borderRadius: 10 } : {}) }}>
+                <div style={{ display: isMobile ? 'none' : undefined, position: 'absolute', left: -5, top: 6, width: 10, height: 10, borderRadius: '50%', background: '#2563EB', border: '1px solid #2563EB', boxShadow: '0 0 8px rgba(37,99,235,0.5)' }} />
                 <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.1em', display: 'block', marginBottom: 5 }}>Evaluation</span>
                 <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', marginBottom: 6 }}>
                   <span style={{ fontSize: 17, color: 'white', fontWeight: 600 }}>Scores are generated automatically.</span>
@@ -739,8 +731,8 @@ export default function HomePage() {
               </div>
 
               {/* Step 4 — PRESENTATION */}
-              <div className="process-step process-step--blue-active" style={{ position: 'relative', paddingLeft: 32, animation: 'fadeSlideUp 200ms ease-out forwards', animationDelay: '240ms', opacity: 0 }}>
-                <div className="process-dot" style={{ position: 'absolute', left: -5, top: 6, width: 10, height: 10, borderRadius: '50%', background: '#2563EB', border: '1px solid #2563EB', boxShadow: '0 0 8px rgba(37,99,235,0.5)' }} />
+              <div style={{ position: 'relative', paddingLeft: isMobile ? 16 : 32, animation: 'fadeSlideUp 200ms ease-out forwards', animationDelay: '240ms', opacity: 0, ...(isMobile ? { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(37,99,235,0.3)', borderRadius: 10 } : {}) }}>
+                <div style={{ display: isMobile ? 'none' : undefined, position: 'absolute', left: -5, top: 6, width: 10, height: 10, borderRadius: '50%', background: '#2563EB', border: '1px solid #2563EB', boxShadow: '0 0 8px rgba(37,99,235,0.5)' }} />
                 <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.1em', display: 'block', marginBottom: 5 }}>Presentation</span>
                 <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', marginBottom: 6 }}>
                   <span style={{ fontSize: 17, color: 'white', fontWeight: 600 }}>Open the report in the client meeting.</span>
@@ -768,11 +760,11 @@ export default function HomePage() {
           {processMode === 'b' && (
             <div ref={processStepsRef} style={{ position: 'relative' }}>
               {/* Spine */}
-              <div className="process-spine" style={{ position: 'absolute', left: 0, top: 8, bottom: 0, width: 1, background: 'rgba(255,255,255,0.1)' }} />
+              <div style={{ display: isMobile ? 'none' : undefined, position: 'absolute', left: 0, top: 8, bottom: 0, width: 1, background: 'rgba(255,255,255,0.1)' }} />
 
               {/* Connecting line — measured after render */}
-              {connLine && (
-                <div className="process-connecting-line" style={{
+              {connLine && !isMobile && (
+                <div style={{
                   position: 'absolute',
                   left: 16,
                   top: connLine.top,
@@ -783,16 +775,16 @@ export default function HomePage() {
               )}
 
               {/* Step 1 — KICKOFF */}
-              <div className="process-step" style={{ position: 'relative', paddingLeft: 32, marginBottom: 48, animation: 'fadeSlideUp 200ms ease-out forwards', animationDelay: '0ms', opacity: 0 }}>
-                <div className="process-dot" style={{ position: 'absolute', left: -5, top: 6, width: 10, height: 10, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)' }} />
+              <div style={{ position: 'relative', paddingLeft: isMobile ? 16 : 32, marginBottom: isMobile ? 10 : 48, animation: 'fadeSlideUp 200ms ease-out forwards', animationDelay: '0ms', opacity: 0, ...(isMobile ? { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10 } : {}) }}>
+                <div style={{ display: isMobile ? 'none' : undefined, position: 'absolute', left: -5, top: 6, width: 10, height: 10, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)' }} />
                 <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.1em', display: 'block', marginBottom: 5 }}>Kickoff</span>
                 <p style={{ fontSize: 17, color: 'white', fontWeight: 600, marginBottom: 6 }}>Define the role benchmark.</p>
                 <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.6, maxWidth: 480, margin: 0 }}>Veltro suggests a behavioral target based on role type. Adjust and confirm in 60 seconds. The benchmark drives every candidate score.</p>
               </div>
 
               {/* Step 2 — KICKOFF HIRING MANAGER — purple */}
-              <div ref={processStep2Ref} className="process-step process-step--purple-active" style={{ position: 'relative', paddingLeft: 32, marginBottom: 48, animation: 'fadeSlideUp 200ms ease-out forwards', animationDelay: '80ms', opacity: 0 }}>
-                <div className="process-dot" style={{ position: 'absolute', left: -5, top: 6, width: 10, height: 10, borderRadius: '50%', background: '#7C3AED', border: '1px solid #7C3AED', boxShadow: '0 0 8px rgba(124,58,237,0.5)' }} />
+              <div ref={processStep2Ref} style={{ position: 'relative', paddingLeft: isMobile ? 16 : 32, marginBottom: isMobile ? 10 : 48, animation: 'fadeSlideUp 200ms ease-out forwards', animationDelay: '80ms', opacity: 0, ...(isMobile ? { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(124,58,237,0.3)', borderRadius: 10 } : {}) }}>
+                <div style={{ display: isMobile ? 'none' : undefined, position: 'absolute', left: -5, top: 6, width: 10, height: 10, borderRadius: '50%', background: '#7C3AED', border: '1px solid #7C3AED', boxShadow: '0 0 8px rgba(124,58,237,0.5)' }} />
                 <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.1em', display: 'block', marginBottom: 5 }}>Kickoff — Hiring Manager</span>
                 <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', marginBottom: 6 }}>
                   <span style={{ fontSize: 17, color: 'white', fontWeight: 600 }}>Profile the hiring manager once.</span>
@@ -806,8 +798,8 @@ export default function HomePage() {
               </div>
 
               {/* Step 3 — SHORTLIST CANDIDATES */}
-              <div className="process-step process-step--blue-active" style={{ position: 'relative', paddingLeft: 32, marginBottom: 48, animation: 'fadeSlideUp 200ms ease-out forwards', animationDelay: '160ms', opacity: 0 }}>
-                <div className="process-dot" style={{ position: 'absolute', left: -5, top: 6, width: 10, height: 10, borderRadius: '50%', background: '#2563EB', border: '1px solid #2563EB', boxShadow: '0 0 8px rgba(37,99,235,0.5)' }} />
+              <div style={{ position: 'relative', paddingLeft: isMobile ? 16 : 32, marginBottom: isMobile ? 10 : 48, animation: 'fadeSlideUp 200ms ease-out forwards', animationDelay: '160ms', opacity: 0, ...(isMobile ? { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(37,99,235,0.3)', borderRadius: 10 } : {}) }}>
+                <div style={{ display: isMobile ? 'none' : undefined, position: 'absolute', left: -5, top: 6, width: 10, height: 10, borderRadius: '50%', background: '#2563EB', border: '1px solid #2563EB', boxShadow: '0 0 8px rgba(37,99,235,0.5)' }} />
                 <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.1em', display: 'block', marginBottom: 5 }}>Shortlist — Candidates</span>
                 <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', marginBottom: 6 }}>
                   <span style={{ fontSize: 17, color: 'white', fontWeight: 600 }}>Send each candidate a single link.</span>
@@ -817,8 +809,8 @@ export default function HomePage() {
               </div>
 
               {/* Step 4 — EVALUATION */}
-              <div className="process-step process-step--blue-active" style={{ position: 'relative', paddingLeft: 32, marginBottom: 48, animation: 'fadeSlideUp 200ms ease-out forwards', animationDelay: '240ms', opacity: 0 }}>
-                <div className="process-dot" style={{ position: 'absolute', left: -5, top: 6, width: 10, height: 10, borderRadius: '50%', background: '#2563EB', border: '1px solid #2563EB', boxShadow: '0 0 8px rgba(37,99,235,0.5)' }} />
+              <div style={{ position: 'relative', paddingLeft: isMobile ? 16 : 32, marginBottom: isMobile ? 10 : 48, animation: 'fadeSlideUp 200ms ease-out forwards', animationDelay: '240ms', opacity: 0, ...(isMobile ? { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(37,99,235,0.3)', borderRadius: 10 } : {}) }}>
+                <div style={{ display: isMobile ? 'none' : undefined, position: 'absolute', left: -5, top: 6, width: 10, height: 10, borderRadius: '50%', background: '#2563EB', border: '1px solid #2563EB', boxShadow: '0 0 8px rgba(37,99,235,0.5)' }} />
                 <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.1em', display: 'block', marginBottom: 5 }}>Evaluation</span>
                 <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', marginBottom: 6 }}>
                   <span style={{ fontSize: 17, color: 'white', fontWeight: 600 }}>Scores are generated automatically.</span>
@@ -828,8 +820,8 @@ export default function HomePage() {
               </div>
 
               {/* Step 5 — PRESENTATION enhanced */}
-              <div ref={processStep5Ref} className="process-step process-step--blue-active" style={{ position: 'relative', paddingLeft: 32, animation: 'fadeSlideUp 200ms ease-out forwards', animationDelay: '320ms', opacity: 0 }}>
-                <div className="process-dot" style={{ position: 'absolute', left: -5, top: 6, width: 10, height: 10, borderRadius: '50%', background: '#2563EB', border: '1px solid #2563EB', boxShadow: '0 0 8px rgba(37,99,235,0.5)' }} />
+              <div ref={processStep5Ref} style={{ position: 'relative', paddingLeft: isMobile ? 16 : 32, animation: 'fadeSlideUp 200ms ease-out forwards', animationDelay: '320ms', opacity: 0, ...(isMobile ? { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(37,99,235,0.3)', borderRadius: 10 } : {}) }}>
+                <div style={{ display: isMobile ? 'none' : undefined, position: 'absolute', left: -5, top: 6, width: 10, height: 10, borderRadius: '50%', background: '#2563EB', border: '1px solid #2563EB', boxShadow: '0 0 8px rgba(37,99,235,0.5)' }} />
                 <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.1em', display: 'block', marginBottom: 5 }}>Presentation</span>
                 <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', marginBottom: 6 }}>
                   <span style={{ fontSize: 17, color: 'white', fontWeight: 600 }}>Open the report. It already includes the hiring manager.</span>
