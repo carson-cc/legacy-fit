@@ -115,8 +115,8 @@ export default function HomePage() {
       <style>{`
         .snap-page::-webkit-scrollbar{display:none}
         @keyframes radarPulse {
-          0%, 100% { r: 4px; opacity: 0.15; }
-          50% { r: 13px; opacity: 0; }
+          0%, 100% { r: 4px; opacity: 0.10; }
+          50% { r: 9px; opacity: 0; }
         }
         .vglow-ex { animation: radarPulse 2.5s ease-in-out infinite 0s; }
         .vglow-ds { animation: radarPulse 2.5s ease-in-out infinite 1.2s; }
@@ -246,9 +246,9 @@ export default function HomePage() {
                 <svg viewBox="-35 -5 260 215" style={{ width: '100%', height: '100%' }}>
                   {/* Background rings at 50% and 100% radius */}
                   <polygon points="100.0,28.0 168.5,77.8 142.3,158.2 57.7,158.2 31.5,77.8"
-                    fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="0.5" />
+                    fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="0.5" />
                   <polygon points="100.0,64.0 134.2,88.9 121.2,129.1 78.8,129.1 65.8,88.9"
-                    fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="0.5" />
+                    fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="0.5" />
 
                   {/* Layer 1 — Pioneer archetype reference (faintest) */}
                   {/* values: Execution 82, Ownership 78, Adaptability 76, Collaboration 68, Decision Speed 88 */}
@@ -281,13 +281,19 @@ export default function HomePage() {
                 </svg>
               </div>
 
-              {/* Bottom: legend + archetype one-liner */}
-              <div style={{ textAlign: 'center' }}>
-                <p style={{ fontSize: 9, color: 'rgba(238,236,230,0.28)', marginBottom: 4 }}>
-                  — Candidate &nbsp;·&nbsp; - - Role &nbsp;·&nbsp; ··· Pioneer
+              {/* Bottom: Operating Style */}
+              <div>
+                <p style={{ fontSize: 8, color: 'rgba(238,236,230,0.18)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6 }}>
+                  Operating Style
                 </p>
-                <p style={{ fontSize: 9, fontWeight: 300, fontStyle: 'italic', color: 'rgba(238,236,230,0.32)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  Pioneer: moves first, decides fast, drives without waiting for alignment.
+                <p style={{ fontSize: 10, fontWeight: 700, color: 'rgba(238,236,230,0.65)', marginBottom: 5, letterSpacing: '-0.01em' }}>
+                  Pioneer — Execution-first operator
+                </p>
+                <p style={{ fontSize: 9, fontWeight: 300, color: 'rgba(238,236,230,0.38)', lineHeight: 1.55, margin: '0 0 6px' }}>
+                  Moves first, decides fast, drives without waiting for alignment. Trades collaboration for speed under pressure.
+                </p>
+                <p style={{ fontSize: 8, color: 'rgba(238,236,230,0.18)', marginBottom: 0 }}>
+                  — Candidate &nbsp;·&nbsp; - - Role
                 </p>
               </div>
             </div>
@@ -366,13 +372,33 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* The one question */}
-              <div style={{ paddingBottom: 12, borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
-                <p style={{ fontSize: 9, color: 'rgba(238,236,230,0.25)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6 }}>
-                  The one thing to verify
+              {/* Team Dynamics */}
+              <div style={{ paddingBottom: 10, borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
+                <p style={{ fontSize: 8, color: 'rgba(238,236,230,0.22)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>
+                  Team Dynamics
                 </p>
-                <p style={{ fontSize: 12, fontWeight: 400, fontStyle: 'italic', color: 'rgba(238,236,230,0.68)', lineHeight: 1.55 }}>
-                  Can he slow down when needed — or does he only know how to go fast?
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {([
+                    { role: 'CEO', dots: 5, color: '#3aa868', text: 'Aligned on speed and ownership', note: 'Likely to experience candidate as highly effective' },
+                    { role: 'Operating Partner', dots: 2, color: '#c8a832', text: 'Misaligned on pacing', note: 'Friction on decision timing' },
+                    { role: 'Board Member', dots: 3, color: 'rgba(238,236,230,0.4)', text: 'Moderate alignment on ownership', note: 'May expect more structure' },
+                  ] as Array<{ role: string; dots: number; color: string; text: string; note: string }>).map(({ role, dots, color, text, note }) => (
+                    <div key={role} style={{ display: 'grid', gridTemplateColumns: '76px 48px 1fr', gap: '0 4px', alignItems: 'start' }}>
+                      <span style={{ fontSize: 9, fontWeight: 600, color: 'rgba(238,236,230,0.5)', paddingTop: 1, lineHeight: 1.2 }}>{role}</span>
+                      <span style={{ display: 'inline-flex', gap: 2, paddingTop: 3, flexShrink: 0 }}>
+                        {Array.from({ length: 5 }, (_, i) => (
+                          <span key={i} style={{ width: 5, height: 5, borderRadius: '50%', display: 'inline-block', flexShrink: 0, background: i < dots ? 'rgba(238,236,230,0.55)' : 'transparent', border: `1px solid ${i < dots ? 'rgba(238,236,230,0.45)' : 'rgba(255,255,255,0.14)'}` }} />
+                        ))}
+                      </span>
+                      <div>
+                        <span style={{ fontSize: 9, fontWeight: 600, color, display: 'block', lineHeight: 1.2 }}>{text}</span>
+                        <span style={{ fontSize: 8, fontWeight: 300, color: 'rgba(238,236,230,0.35)', display: 'block', lineHeight: 1.35 }}>→ {note}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p style={{ margin: '7px 0 0', fontSize: 8, fontWeight: 300, fontStyle: 'italic', color: 'rgba(238,236,230,0.35)', lineHeight: 1.45 }}>
+                  Aligns strongly with CEO, diverges with Operating Partner on pace — primary execution risk.
                 </p>
               </div>
 
@@ -390,28 +416,17 @@ export default function HomePage() {
                   { label: 'Collaboration', score: 62, pos: false },
                   { label: 'D. Speed', score: 88, pos: true },
                 ] as Array<{ label: string; score: number; pos: boolean }>).map((dim) => (
-                  <div key={dim.label} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <span style={{ fontSize: 9, color: 'rgba(238,236,230,0.28)', width: 72, flexShrink: 0, letterSpacing: '0.05em' }}>{dim.label}</span>
-                    <div style={{ flex: 1, height: 3, background: 'rgba(255,255,255,0.06)', borderRadius: 2 }}>
+                  <div key={dim.label} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                    <span style={{ fontSize: 8, color: 'rgba(238,236,230,0.25)', width: 68, flexShrink: 0, letterSpacing: '0.04em' }}>{dim.label}</span>
+                    <div style={{ flex: 1, height: 2, background: 'rgba(255,255,255,0.05)', borderRadius: 2 }}>
                       <div style={{
                         width: `${dim.score}%`, height: '100%', borderRadius: 2,
-                        background: dim.pos ? 'rgba(74,142,255,0.4)' : 'rgba(224,90,58,0.55)'
+                        background: dim.pos ? 'rgba(74,142,255,0.38)' : 'rgba(224,90,58,0.5)'
                       }} />
                     </div>
-                    <span style={{ fontSize: 9, color: dim.pos ? 'rgba(238,236,230,0.32)' : 'rgba(224,90,58,0.7)', width: 20, textAlign: 'right', flexShrink: 0 }}>{dim.score}</span>
+                    <span style={{ fontSize: 8, color: dim.pos ? 'rgba(238,236,230,0.28)' : 'rgba(224,90,58,0.65)', width: 18, textAlign: 'right', flexShrink: 0 }}>{dim.score}</span>
                   </div>
                 ))}
-
-                {/* Team alignment — dots only */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10 }}>
-                  <span style={{ fontSize: 9, color: 'rgba(238,236,230,0.2)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Team</span>
-                  <div style={{ display: 'flex', gap: 4 }}>
-                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#c8a832', display: 'inline-block' }} />
-                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#c8a832', display: 'inline-block' }} />
-                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#3aa868', display: 'inline-block' }} />
-                  </div>
-                  <span style={{ fontSize: 9, fontWeight: 300, color: 'rgba(238,236,230,0.3)' }}>Mixed · 1 strong alignment · 2 friction risk</span>
-                </div>
 
               </div>
 
