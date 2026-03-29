@@ -3,7 +3,9 @@
 import { useEffect, useState, useRef } from 'react'
 import Nav from '@/app/components/Nav'
 
+// ── Tokens ────────────────────────────────────────────────────────────────────
 const GREEN     = '#3aa868'
+const AMBER     = '#c8a832'
 const RED       = '#e05a3a'
 const BLUE      = '#4a8eff'
 const TEXT      = '#eeece6'
@@ -12,47 +14,57 @@ const FAINT     = 'rgba(238,236,230,0.22)'
 const DIV       = 'rgba(255,255,255,0.06)'
 const CONDENSED = '"Barlow Condensed", sans-serif'
 
-// ── Axis data with benchmark deltas and hover interpretations ────────────────
+// ── Dimension data ────────────────────────────────────────────────────────────
+// score = candidate, benchmark = role minimum, delta = difference
 const AXES = [
   {
-    key: 'execution',    svgLabel: 'Execution',  score: 82, benchmark: 75, delta: +7,
-    above: true,
-    interp: 'Above benchmark',
-    impl:   'Drives forward without hesitation — pushes execution pace in any environment',
-    // SVG label position
+    key: 'execution',
+    svgLabel: 'Execution',  fullLabel: 'Execution',
+    score: 82, benchmark: 75, delta: +7, above: true,
+    interp:   'Above benchmark by +7',
+    impl:     'Drives execution without needing direction. An asset in environments with clear mandates.',
     lx: 100, ly: 16, anchor: 'middle', baseline: 'auto',
+    teamLink: 'CEO',
   },
   {
-    key: 'ownership',    svgLabel: 'Ownership',  score: 74, benchmark: 72, delta: +2,
-    above: true,
-    interp: 'Slightly above benchmark',
-    impl:   'Takes accountability — meets the bar but does not significantly exceed it',
+    key: 'ownership',
+    svgLabel: 'Ownership',  fullLabel: 'Ownership',
+    score: 74, benchmark: 72, delta: +2, above: true,
+    interp:   'At benchmark (+2)',
+    impl:     'Takes accountability. Meets the bar — does not significantly exceed it. Monitor in high-stakes roles.',
     lx: 178, ly: 80, anchor: 'start', baseline: 'middle',
+    teamLink: 'Board',
   },
   {
-    key: 'adaptability', svgLabel: 'Adapt.',     score: 70, benchmark: 65, delta: +5,
-    above: true,
-    interp: 'Above benchmark',
-    impl:   'Handles shifting scope and ambiguity without losing execution edge',
+    key: 'adaptability',
+    svgLabel: 'Adapt.',     fullLabel: 'Adaptability',
+    score: 70, benchmark: 65, delta: +5, above: true,
+    interp:   'Above benchmark by +5',
+    impl:     'Handles shifting scope without losing execution edge. Resilient to ambiguity.',
     lx: 150, ly: 170, anchor: 'start', baseline: 'hanging',
+    teamLink: null,
   },
   {
-    key: 'collaboration',svgLabel: 'Collab.',    score: 62, benchmark: 68, delta: -6,
-    above: false,
-    interp: 'Below benchmark',
-    impl:   'Prefers independent execution — friction point in high-coordination environments',
+    key: 'collaboration',
+    svgLabel: 'Collab.',    fullLabel: 'Collaboration',
+    score: 62, benchmark: 68, delta: -6, above: false,
+    interp:   'Below benchmark by −6',
+    impl:     'Prefers independent execution over cross-functional coordination. The only gap — and the source of the pacing risk.',
     lx: 50,  ly: 170, anchor: 'end', baseline: 'hanging',
+    teamLink: 'Board',
   },
   {
-    key: 'decisionSpeed',svgLabel: 'Dec. Speed', score: 88, benchmark: 78, delta: +10,
-    above: true,
-    interp: 'Significantly above benchmark',
-    impl:   'Largest delta — moves faster than most environments can absorb',
+    key: 'decisionSpeed',
+    svgLabel: 'Dec. Speed', fullLabel: 'Decision Speed',
+    score: 88, benchmark: 78, delta: +10, above: true,
+    interp:   'Significantly above benchmark (+10)',
+    impl:     'Largest delta on the screen. Moves faster than most environments expect. Primary source of Operating Partner friction.',
     lx: 20,  ly: 80, anchor: 'end', baseline: 'middle',
+    teamLink: 'Operating Partner',
   },
 ]
 
-// Pentagon geometry helpers
+// ── Pentagon geometry ─────────────────────────────────────────────────────────
 const CENTER = 100, MAX_R = 72
 const angle  = (i: number) => -Math.PI / 2 + (Math.PI * 2 * i) / 5
 const vertex = (val: number, i: number) => ({
@@ -61,33 +73,68 @@ const vertex = (val: number, i: number) => ({
 })
 const polyPts = (vals: number[]) =>
   vals.map((v, i) => { const p = vertex(v, i); return `${p.x},${p.y}` }).join(' ')
+const ringPts = (pct: number) =>
+  AXES.map((_, i) => { const p = vertex(pct, i); return `${p.x},${p.y}` }).join(' ')
 
-const CANDIDATE_VALS  = AXES.map(a => a.score)
-const BENCHMARK_VALS  = AXES.map(a => a.benchmark)
-const RING_50         = AXES.map((_, i) => { const p = vertex(50, i); return `${p.x},${p.y}` }).join(' ')
-const RING_100        = AXES.map((_, i) => { const p = vertex(100, i); return `${p.x},${p.y}` }).join(' ')
+const CAND_VALS      = AXES.map(a => a.score)
+const BENCH_VALS     = AXES.map(a => a.benchmark)
+const RING_50        = ringPts(50)
+const RING_100       = ringPts(100)
 
-// Stagger helper
+// Shortlist comparison ghosts — proves "Top 1 of 3"
+// Candidate B: strong collaboration but lagging speed/execution
+// Candidate C: balanced but weaker across the board on pace dimensions
+const SHORTLIST = [
+  { label: 'Cand. B', vals: [70, 65, 60, 72, 66], color: 'rgba(255,255,255,0.12)', dash: '5 4' },
+  { label: 'Cand. C', vals: [73, 68, 64, 67, 58], color: 'rgba(255,255,255,0.08)', dash: '3 4' },
+]
+
+// ── Team dynamics ─────────────────────────────────────────────────────────────
+// "Pacing gap" (amber) instead of "Friction risk" (red) — contextual, not disqualifying
+const TEAM = [
+  {
+    role: 'CEO', subtitle: 'Direct Report',
+    status: 'Strong alignment', statusColor: GREEN,
+    note: 'Will likely be experienced as decisive and highly effective. No material friction expected.',
+    axisKey: 'execution',
+  },
+  {
+    role: 'Operating Partner', subtitle: null,
+    status: 'Pacing gap', statusColor: AMBER,
+    note: 'Will likely move faster than expected. Friction is about timing, not competence — manageable with early alignment.',
+    axisKey: 'decisionSpeed',
+  },
+  {
+    role: 'Board', subtitle: null,
+    status: 'Moderate fit', statusColor: FAINT,
+    note: 'May expect more structured communication cadence. Low friction risk if reporting expectations are set.',
+    axisKey: 'collaboration',
+  },
+]
+
+// Stagger fade helper
 const fade = (mounted: boolean, delay: number): React.CSSProperties => ({
   opacity:    mounted ? 1 : 0,
   transform:  mounted ? 'translateY(0)' : 'translateY(5px)',
   transition: `opacity 380ms ease ${delay}ms, transform 380ms ease ${delay}ms`,
 })
 
-// ── Component ─────────────────────────────────────────────────────────────────
+// ── Page ──────────────────────────────────────────────────────────────────────
 export default function HomePage() {
-  const [navLight,     setNavLight]     = useState(false)
-  const [lineDrawn,    setLineDrawn]    = useState(false)
-  const [showWhy,      setShowWhy]      = useState(false)
-  const [activeSection,setActiveSection]= useState(0)
-  const [cardMounted,  setCardMounted]  = useState(false)
-  const [hoveredAxis,  setHoveredAxis]  = useState<string | null>(null)
+  const [navLight,      setNavLight]      = useState(false)
+  const [lineDrawn,     setLineDrawn]     = useState(false)
+  const [showWhy,       setShowWhy]       = useState(false)
+  const [activeSection, setActiveSection] = useState(0)
+  const [cardMounted,   setCardMounted]   = useState(false)
+  const [hoveredAxis,   setHoveredAxis]   = useState<string | null>(null)
+  const [hoveredTeam,   setHoveredTeam]   = useState<string | null>(null)
+  const [compMode,      setCompMode]      = useState<'benchmark' | 'shortlist'>('benchmark')
 
   const beat4Ref = useRef<HTMLDivElement>(null)
   const snapRef  = useRef<HTMLDivElement>(null)
   const reportRef= useRef<HTMLElement | null>(null)
 
-  // Nav light mode
+  // Nav light
   useEffect(() => {
     const els = document.querySelectorAll('.beat-light')
     const obs = new IntersectionObserver(
@@ -98,10 +145,9 @@ export default function HomePage() {
     return () => obs.disconnect()
   }, [])
 
-  // Beat 4 line draw
+  // Line draw trigger
   useEffect(() => {
-    const el = beat4Ref.current
-    if (!el) return
+    const el = beat4Ref.current; if (!el) return
     const obs = new IntersectionObserver(
       ([entry]) => { if (entry.isIntersecting) { setLineDrawn(true); obs.disconnect() } },
       { threshold: 0.6 }
@@ -110,19 +156,15 @@ export default function HomePage() {
     return () => obs.disconnect()
   }, [])
 
-  // Scroll-to-reveal on beat 1
+  // Beat 1 scroll reveal
   useEffect(() => {
-    const container = snapRef.current
-    if (!container) return
-    const handled = { current: false }
-    const scrollingAway = { current: false }
+    const container = snapRef.current; if (!container) return
+    const handled = { current: false }, scrollingAway = { current: false }
     let touchStartY = 0
     const tryReveal = (e: Event) => {
       if (container.scrollTop > 10 || handled.current) return
-      handled.current = true
-      scrollingAway.current = true
-      e.preventDefault()
-      setShowWhy(true)
+      handled.current = true; scrollingAway.current = true
+      e.preventDefault(); setShowWhy(true)
       setTimeout(() => { reportRef.current?.scrollIntoView({ behavior: 'smooth' }) }, 900)
     }
     const onWheel      = (e: WheelEvent)  => { if (e.deltaY > 0) tryReveal(e) }
@@ -132,42 +174,42 @@ export default function HomePage() {
       if (scrollingAway.current) { if (container.scrollTop > 50) scrollingAway.current = false; return }
       if (container.scrollTop < 10) { handled.current = false; setShowWhy(false) }
     }
-    container.addEventListener('wheel',      onWheel,      { passive: false })
+    container.addEventListener('wheel', onWheel, { passive: false })
     container.addEventListener('touchstart', onTouchStart, { passive: true })
-    container.addEventListener('touchend',   onTouchEnd,   { passive: false })
-    container.addEventListener('scroll',     onScroll,     { passive: true })
+    container.addEventListener('touchend', onTouchEnd, { passive: false })
+    container.addEventListener('scroll', onScroll, { passive: true })
     return () => {
-      container.removeEventListener('wheel',      onWheel)
+      container.removeEventListener('wheel', onWheel)
       container.removeEventListener('touchstart', onTouchStart)
-      container.removeEventListener('touchend',   onTouchEnd)
-      container.removeEventListener('scroll',     onScroll)
+      container.removeEventListener('touchend', onTouchEnd)
+      container.removeEventListener('scroll', onScroll)
     }
   }, [])
 
-  // Active section tracker
+  // Active section dot nav
   useEffect(() => {
-    const container = snapRef.current
-    if (!container) return
+    const container = snapRef.current; if (!container) return
     const sections = Array.from(container.querySelectorAll('section'))
     const obs = new IntersectionObserver(
-      (entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) setActiveSection(sections.indexOf(entry.target as HTMLElement))
-        })
-      },
+      (entries) => { entries.forEach(entry => { if (entry.isIntersecting) setActiveSection(sections.indexOf(entry.target as HTMLElement)) }) },
       { threshold: 0.5, root: container }
     )
     sections.forEach(s => obs.observe(s))
     return () => obs.disconnect()
   }, [])
 
-  // Card mount animation trigger
+  // Card mount animation
   useEffect(() => {
     const t = setTimeout(() => setCardMounted(true), 60)
     return () => clearTimeout(t)
   }, [])
 
-  const hovAxis = AXES.find(a => a.key === hoveredAxis) ?? null
+  // Determine active axis highlight (team hover overrides axis hover)
+  const effectiveHovAxis = hoveredTeam
+    ? TEAM.find(t => t.role === hoveredTeam)?.axisKey ?? null
+    : hoveredAxis
+
+  const hovAxData = AXES.find(a => a.key === effectiveHovAxis) ?? null
 
   return (
     <div className="snap-page" ref={snapRef}>
@@ -178,15 +220,14 @@ export default function HomePage() {
           .report-card-left  { width: 100% !important; border-right: none !important; border-bottom: 1px solid rgba(255,255,255,0.07) !important; }
           .report-card-right { padding: 16px !important; }
         }
-        .team-row { transition: background 150ms ease; border-radius: 6px; padding: 5px 6px; margin: -5px -6px; }
-        .team-row:hover { background: rgba(255,255,255,0.03); }
-        .works-card { transition: border-color 150ms ease; }
-        .works-card:hover { border-color: rgba(255,255,255,0.1) !important; }
+        .team-row { transition: background 150ms ease; border-radius: 6px; padding: 5px 6px; margin: 0 -6px; cursor: default; }
+        .team-row:hover { background: rgba(255,255,255,0.04) !important; }
+        .comp-btn { transition: background 150ms ease, border-color 150ms ease, color 150ms ease; cursor: pointer; }
       `}</style>
 
       <Nav light={navLight} />
 
-      {/* ── BEAT 1 — Recognition ─────────────────────────────────────── */}
+      {/* ── BEAT 1 ── */}
       <section className="snap-beat" style={{ background: '#080808' }}>
         <div style={{ textAlign: 'center' }}>
           <p style={{
@@ -211,34 +252,29 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── BEAT 2 — The Object ──────────────────────────────────────── */}
+      {/* ── BEAT 2 — The card ── */}
       <section
         ref={reportRef}
         className="snap-beat"
         style={{ background: '#080808', position: 'relative', overflow: 'hidden', padding: 0 }}
       >
-        {/* Ambient glow */}
         <div style={{
           position: 'absolute', top: '50%', left: '50%',
           transform: 'translate(-50%, -50%)',
           width: '130%', paddingBottom: '130%', borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(37,99,235,0.04) 0%, transparent 65%)',
+          background: 'radial-gradient(circle, rgba(58,168,104,0.03) 0%, transparent 60%)',
           pointerEvents: 'none', zIndex: 0,
         }} />
 
         <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
-
-          {/* CARD */}
           <div style={{
             width: '100%',
             maxWidth: 'min(1060px, calc(100vw - clamp(40px, 8vw, 160px)))',
             height: 'calc(100svh - 58px)',
             background: '#0d0d0d',
             border: '1px solid rgba(255,255,255,0.07)',
-            borderRadius: 14,
-            overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column',
+            borderRadius: 14, overflow: 'hidden',
+            display: 'flex', flexDirection: 'column',
             boxShadow: '0 0 0 1px rgba(255,255,255,0.03), 0 40px 80px rgba(0,0,0,0.8)',
           }}>
 
@@ -259,23 +295,45 @@ export default function HomePage() {
             {/* BODY */}
             <div className="report-card-body" style={{ display: 'flex', flex: 1, overflow: 'hidden', minHeight: 0 }}>
 
-              {/* ── LEFT COLUMN ── */}
+              {/* ── LEFT: Evidence panel ── */}
               <div className="report-card-left" style={{
                 width: '40%', flexShrink: 0,
                 borderRight: `1px solid ${DIV}`,
                 padding: '18px 20px',
-                display: 'flex', flexDirection: 'column', gap: 0,
-                justifyContent: 'space-between',
+                display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
               }}>
 
-                {/* Identity */}
+                {/* Identity + comparison toggle */}
                 <div style={fade(cardMounted, 0)}>
-                  <p style={{ fontSize: 9, color: FAINT, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 4 }}>
-                    PE-Backed CFO · Velocity Growth Partners
-                  </p>
-                  <p style={{ fontSize: 20, fontFamily: CONDENSED, fontWeight: 800, color: TEXT }}>
-                    Kent Morrison
-                  </p>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+                    <div>
+                      <p style={{ fontSize: 9, color: FAINT, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 3 }}>
+                        PE-Backed CFO · Velocity Growth Partners
+                      </p>
+                      <p style={{ fontSize: 20, fontFamily: CONDENSED, fontWeight: 800, color: TEXT }}>
+                        Kent Morrison
+                      </p>
+                    </div>
+                    {/* Comparison toggle */}
+                    <div style={{ display: 'flex', gap: 3, flexShrink: 0, marginTop: 2 }}>
+                      {(['benchmark', 'shortlist'] as const).map(mode => (
+                        <button
+                          key={mode}
+                          className="comp-btn"
+                          onClick={() => setCompMode(mode)}
+                          style={{
+                            fontSize: 8, padding: '3px 7px', borderRadius: 4,
+                            background: compMode === mode ? 'rgba(255,255,255,0.09)' : 'transparent',
+                            border: `1px solid ${compMode === mode ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.07)'}`,
+                            color: compMode === mode ? TEXT : FAINT,
+                            letterSpacing: '0.05em', textTransform: 'uppercase',
+                          }}
+                        >
+                          {mode === 'benchmark' ? 'vs. Role' : 'vs. Shortlist'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
 
                 {/* Radar */}
@@ -283,37 +341,35 @@ export default function HomePage() {
                   <svg
                     viewBox="-35 -5 260 215"
                     style={{ width: '100%', height: '100%' }}
-                    onMouseLeave={() => setHoveredAxis(null)}
+                    onMouseLeave={() => { setHoveredAxis(null) }}
                   >
-                    {/* Rings */}
+                    {/* Grid rings */}
                     <polygon points={RING_50}  fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="0.5" />
                     <polygon points={RING_100} fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="0.5" />
 
-                    {/* Axis lines (with wide invisible hit area) */}
+                    {/* Axis lines + labels + hit areas */}
                     {AXES.map((ax, i) => {
                       const tip = vertex(100, i)
-                      const isHov = hoveredAxis === ax.key
+                      const isHov = effectiveHovAxis === ax.key
                       return (
                         <g key={ax.key}
                           onMouseEnter={() => setHoveredAxis(ax.key)}
-                          style={{ cursor: 'default' }}>
-                          {/* Visible line */}
-                          <line
-                            x1={CENTER} y1={CENTER} x2={tip.x} y2={tip.y}
-                            stroke={isHov ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)'}
+                          style={{ cursor: 'default' }}
+                        >
+                          <line x1={CENTER} y1={CENTER} x2={tip.x} y2={tip.y}
+                            stroke={isHov ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.05)'}
                             strokeWidth="0.75"
                             style={{ transition: 'stroke 150ms ease' }}
                           />
-                          {/* Invisible wide hit area */}
+                          {/* Wide invisible hit area */}
                           <line x1={CENTER} y1={CENTER} x2={tip.x} y2={tip.y}
-                            stroke="transparent" strokeWidth="18" />
-                          {/* Label */}
+                            stroke="transparent" strokeWidth="20" />
                           <text
                             x={ax.lx} y={ax.ly}
                             textAnchor={ax.anchor as 'middle' | 'start' | 'end'}
                             dominantBaseline={ax.baseline as 'auto' | 'middle' | 'hanging'}
                             fontSize="9"
-                            fill={isHov ? 'rgba(238,236,230,0.8)' : 'rgba(238,236,230,0.35)'}
+                            fill={isHov ? 'rgba(238,236,230,0.85)' : 'rgba(238,236,230,0.32)'}
                             style={{ transition: 'fill 150ms ease' }}
                           >
                             {ax.svgLabel}
@@ -322,20 +378,40 @@ export default function HomePage() {
                       )
                     })}
 
-                    {/* Benchmark polygon */}
-                    <polygon
-                      points={polyPts(BENCHMARK_VALS)}
-                      fill="rgba(255,255,255,0.02)"
-                      stroke="rgba(255,255,255,0.28)"
-                      strokeWidth="1.5"
-                      strokeDasharray="4 3"
-                    />
-                    <text x="100" y="30" textAnchor="middle" fontSize="8" fill="rgba(255,255,255,0.22)">Role</text>
+                    {/* ─ Benchmark mode ─ */}
+                    {compMode === 'benchmark' && (
+                      <>
+                        <polygon
+                          points={polyPts(BENCH_VALS)}
+                          fill="rgba(255,255,255,0.02)"
+                          stroke="rgba(255,255,255,0.25)"
+                          strokeWidth="1.5"
+                          strokeDasharray="4 3"
+                        />
+                        <text x="100" y="30" textAnchor="middle" fontSize="8" fill="rgba(255,255,255,0.2)">Role</text>
+                      </>
+                    )}
+
+                    {/* ─ Shortlist mode — ghost outlines ─ */}
+                    {compMode === 'shortlist' && SHORTLIST.map((ghost, idx) => (
+                      <polygon
+                        key={ghost.label}
+                        points={polyPts(ghost.vals)}
+                        fill="none"
+                        stroke={ghost.color}
+                        strokeWidth="1"
+                        strokeDasharray={ghost.dash}
+                        style={{
+                          opacity: cardMounted ? 1 : 0,
+                          transition: `opacity 500ms ease ${300 + idx * 80}ms`,
+                        }}
+                      />
+                    ))}
 
                     {/* Candidate polygon — animates in */}
                     <polygon
-                      points={polyPts(CANDIDATE_VALS)}
-                      fill={`rgba(74,142,255,0.09)`}
+                      points={polyPts(CAND_VALS)}
+                      fill="rgba(74,142,255,0.09)"
                       stroke={BLUE}
                       strokeWidth="2"
                       style={{
@@ -347,10 +423,10 @@ export default function HomePage() {
                     {/* Vertex dots */}
                     {AXES.map((ax, i) => {
                       const p = vertex(ax.score, i)
-                      const isHov = hoveredAxis === ax.key
+                      const isHov = effectiveHovAxis === ax.key
                       return (
-                        <circle
-                          key={ax.key} cx={p.x} cy={p.y} r={isHov ? 4.5 : 3}
+                        <circle key={ax.key} cx={p.x} cy={p.y}
+                          r={isHov ? 4.5 : 3}
                           fill={isHov ? '#fff' : BLUE}
                           style={{
                             opacity: cardMounted ? 1 : 0,
@@ -362,27 +438,48 @@ export default function HomePage() {
                   </svg>
                 </div>
 
-                {/* Gap callouts or axis detail */}
-                <div style={{ ...fade(cardMounted, 380), minHeight: 52 }}>
-                  {hovAxis ? (
-                    <div style={{ borderLeft: `2px solid ${hovAxis.above ? BLUE : RED}`, paddingLeft: 10 }}>
-                      <p style={{ margin: '0 0 2px', fontSize: 10, fontWeight: 700, color: TEXT }}>{hovAxis.svgLabel === 'Adapt.' ? 'Adaptability' : hovAxis.svgLabel === 'Collab.' ? 'Collaboration' : hovAxis.svgLabel === 'Dec. Speed' ? 'Decision Speed' : hovAxis.svgLabel}</p>
-                      <p style={{ margin: '0 0 3px', fontSize: 9, fontWeight: 600, color: hovAxis.above ? BLUE : RED }}>{hovAxis.interp}</p>
-                      <p style={{ margin: 0, fontSize: 9, color: SUB, lineHeight: 1.45 }}>{hovAxis.impl}</p>
+                {/* Callout / axis detail / comparison note */}
+                <div style={{ ...fade(cardMounted, 380), minHeight: 56 }}>
+                  {hovAxData ? (
+                    // Axis hover detail
+                    <div style={{ borderLeft: `2px solid ${hovAxData.above ? BLUE : AMBER}`, paddingLeft: 10 }}>
+                      <p style={{ margin: '0 0 2px', fontSize: 10, fontWeight: 700, color: TEXT }}>{hovAxData.fullLabel}</p>
+                      <p style={{ margin: '0 0 3px', fontSize: 9, fontWeight: 600, color: hovAxData.above ? BLUE : AMBER }}>{hovAxData.interp}</p>
+                      <p style={{ margin: 0, fontSize: 9, color: SUB, lineHeight: 1.45 }}>{hovAxData.impl}</p>
+                    </div>
+                  ) : compMode === 'shortlist' ? (
+                    // Shortlist comparison note
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      <p style={{ margin: '0 0 4px', fontSize: 8, color: FAINT, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                        Kent vs. shortlist
+                      </p>
+                      {[
+                        { text: '↑ Leads on Decision Speed by +18–22pts', pos: true },
+                        { text: '↑ Stronger execution profile than both', pos: true },
+                        { text: '↓ Lower collaboration vs. Cand. B', pos: false },
+                      ].map(({ text, pos }) => (
+                        <div key={text} style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+                          <span style={{ fontSize: 9, color: pos ? 'rgba(74,142,255,0.7)' : AMBER, flexShrink: 0 }}>
+                            {text.slice(0, 1)}
+                          </span>
+                          <span style={{ fontSize: 9, color: FAINT, lineHeight: 1.4 }}>{text.slice(2)}</span>
+                        </div>
+                      ))}
                     </div>
                   ) : (
+                    // Default benchmark callouts
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                       {[
                         { label: 'Decision Speed', delta: +10, above: true },
-                        { label: 'Execution', delta: +7, above: true },
-                        { label: 'Collaboration', delta: -6, above: false },
+                        { label: 'Execution',      delta: +7,  above: true },
+                        { label: 'Collaboration',  delta: -6,  above: false },
                       ].map(({ label, delta, above }) => (
                         <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <span style={{ fontSize: 9, color: above ? 'rgba(74,142,255,0.7)' : RED, flexShrink: 0 }}>
+                          <span style={{ fontSize: 9, color: above ? 'rgba(74,142,255,0.7)' : AMBER, flexShrink: 0 }}>
                             {above ? '↑' : '↓'}
                           </span>
                           <span style={{ fontSize: 9, color: FAINT }}>
-                            {label} — {above ? `+${delta} vs benchmark` : `${delta} vs benchmark`}
+                            {label} — {above ? `+${delta}` : `${delta}`} vs. benchmark
                           </span>
                         </div>
                       ))}
@@ -392,94 +489,93 @@ export default function HomePage() {
 
                 {/* Operating Style */}
                 <div style={fade(cardMounted, 460)}>
-                  <p style={{ fontSize: 8, color: 'rgba(238,236,230,0.18)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 5 }}>
+                  <p style={{ fontSize: 8, color: 'rgba(238,236,230,0.16)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 5 }}>
                     Operating Style
                   </p>
-                  <p style={{ fontSize: 10, fontWeight: 700, color: 'rgba(238,236,230,0.6)', marginBottom: 4, letterSpacing: '-0.01em' }}>
+                  <p style={{ fontSize: 10, fontWeight: 700, color: 'rgba(238,236,230,0.58)', marginBottom: 4, letterSpacing: '-0.01em' }}>
                     Pioneer — Execution-first operator
                   </p>
-                  <p style={{ fontSize: 9, color: 'rgba(238,236,230,0.36)', lineHeight: 1.55, margin: 0 }}>
-                    Moves first, decides fast, drives without waiting for full alignment. Trades collaboration for speed under pressure.
+                  <p style={{ fontSize: 9, color: 'rgba(238,236,230,0.34)', lineHeight: 1.55, margin: 0 }}>
+                    Moves first, drives without waiting for full alignment. High in pace, lower in cross-functional coordination.
                   </p>
                 </div>
 
               </div>
 
-              {/* ── RIGHT COLUMN ── */}
+              {/* ── RIGHT: Decision panel ── */}
               <div className="report-card-right" style={{
                 flex: 1,
                 display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
                 padding: '18px 22px', overflow: 'hidden',
               }}>
 
-                {/* 1. VERDICT */}
+                {/* 1 — VERDICT (green-dominant, score muted) */}
                 <div style={{ flexShrink: 0, paddingBottom: 12, borderBottom: `1px solid ${DIV}`, ...fade(cardMounted, 0) }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
                     <div>
-                      <p style={{
-                        margin: '0 0 5px',
-                        fontSize: 13, fontWeight: 800, fontFamily: CONDENSED,
-                        color: GREEN, letterSpacing: '0.08em', textTransform: 'uppercase',
-                      }}>
-                        Strong Hire
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+                        <p style={{
+                          margin: 0,
+                          fontSize: 13, fontWeight: 800, fontFamily: CONDENSED,
+                          color: GREEN, letterSpacing: '0.08em', textTransform: 'uppercase',
+                        }}>Strong Hire</p>
+                        <span style={{
+                          fontSize: 8, padding: '2px 6px', borderRadius: 4,
+                          background: 'rgba(58,168,104,0.1)', border: '1px solid rgba(58,168,104,0.2)',
+                          color: 'rgba(58,168,104,0.7)', letterSpacing: '0.06em', textTransform: 'uppercase',
+                          fontWeight: 600,
+                        }}>Risk: Manageable</span>
+                      </div>
+                      <p style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 500, color: TEXT, lineHeight: 1.3 }}>
+                        Strong operator — thrives in low-friction, high-autonomy environments
                       </p>
-                      <p style={{ margin: '0 0 5px', fontSize: 14, fontWeight: 500, color: TEXT, lineHeight: 1.3 }}>
-                        Outpaces organization — requires low-friction environment
-                      </p>
-                      <p style={{ margin: 0, fontSize: 10, color: 'rgba(238,236,230,0.32)' }}>
-                        Top 1 of 3 candidates · 4 of 5 dimensions above benchmark
+                      <p style={{ margin: 0, fontSize: 10, color: 'rgba(238,236,230,0.30)' }}>
+                        Top 1 of 3 shortlisted · 4 of 5 dimensions above benchmark
                       </p>
                     </div>
                     <span style={{
                       fontSize: 52, fontFamily: CONDENSED, fontWeight: 900,
-                      color: 'rgba(238,236,230,0.20)', lineHeight: 1, flexShrink: 0,
+                      color: 'rgba(238,236,230,0.18)', lineHeight: 1, flexShrink: 0,
                     }}>93</span>
                   </div>
                 </div>
 
-                {/* 2. CORE RISK */}
+                {/* 2 — PRIMARY WATCHOUT (amber, not red — contextual, not disqualifying) */}
                 <div style={{ flexShrink: 0, paddingBottom: 12, borderBottom: `1px solid ${DIV}`, ...fade(cardMounted, 80) }}>
-                  <p style={{ margin: '0 0 5px', fontSize: 15, fontWeight: 600, color: TEXT, lineHeight: 1.3 }}>
+                  <p style={{ margin: '0 0 5px', fontSize: 8, color: FAINT, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+                    Primary Watchout
+                  </p>
+                  <p style={{ margin: '0 0 4px', fontSize: 15, fontWeight: 600, color: TEXT, lineHeight: 1.3 }}>
                     Moves faster than the organization can absorb
                   </p>
-                  <p style={{ margin: 0, fontSize: 11, color: RED, lineHeight: 1.45, fontWeight: 300 }}>
-                    Will create friction with the Operating Partner on pacing and alignment
+                  <p style={{ margin: '0 0 6px', fontSize: 11, color: AMBER, lineHeight: 1.45, fontWeight: 300 }}>
+                    Likely pacing friction with Operating Partner — manageable with early alignment on decision cadence
+                  </p>
+                  <p style={{ margin: 0, fontSize: 9, color: 'rgba(238,236,230,0.25)', letterSpacing: '0.04em' }}>
+                    Contextual risk · Affects one relationship · Not a hiring veto
                   </p>
                 </div>
 
-                {/* 3. EXECUTION TENSION */}
+                {/* 3 — THRIVES IN / WATCH FOR (renamed from Works/Breaks) */}
                 <div style={{ flexShrink: 0, paddingBottom: 12, borderBottom: `1px solid ${DIV}`, ...fade(cardMounted, 150) }}>
-                  <p style={{ margin: '0 0 5px', fontSize: 8, color: FAINT, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-                    Execution Tension
-                  </p>
-                  <p style={{ margin: '0 0 3px', fontSize: 12, fontWeight: 600, color: TEXT }}>
-                    Outpacing organization
-                  </p>
-                  <p style={{ margin: 0, fontSize: 11, color: SUB, lineHeight: 1.5 }}>
-                    Prefers speed and autonomy over alignment and coordination
-                  </p>
-                </div>
-
-                {/* 4. WORKS / BREAKS */}
-                <div style={{ flexShrink: 0, paddingBottom: 12, borderBottom: `1px solid ${DIV}`, ...fade(cardMounted, 220) }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                    <div className="works-card" style={{ borderLeft: '1.5px solid rgba(58,168,104,0.25)', paddingLeft: 9 }}>
+                    <div style={{ borderLeft: '1.5px solid rgba(58,168,104,0.25)', paddingLeft: 9 }}>
                       <p style={{ margin: '0 0 6px', fontSize: 8, color: GREEN, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                        Works when
+                        Thrives In
                       </p>
                       {[
-                        'CEO allows independent execution without full consensus',
+                        'CEO grants autonomous execution without full consensus',
                         'Ownership is clear, stakeholder drag is low',
                       ].map(t => (
                         <p key={t} style={{ margin: '0 0 4px', fontSize: 10, color: 'rgba(238,236,230,0.55)', lineHeight: 1.45 }}>{t}</p>
                       ))}
                     </div>
-                    <div className="works-card" style={{ borderLeft: '1.5px solid rgba(224,90,58,0.25)', paddingLeft: 9 }}>
-                      <p style={{ margin: '0 0 6px', fontSize: 8, color: RED, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                        Breaks when
+                    <div style={{ borderLeft: '1.5px solid rgba(200,168,50,0.25)', paddingLeft: 9 }}>
+                      <p style={{ margin: '0 0 6px', fontSize: 8, color: AMBER, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                        Watch For
                       </p>
                       {[
-                        'Operating Partner expects close coordination on pacing',
+                        'Operating Partner expects closer coordination on pacing',
                         'Decisions require partner-wide alignment before action',
                       ].map(t => (
                         <p key={t} style={{ margin: '0 0 4px', fontSize: 10, color: 'rgba(238,236,230,0.55)', lineHeight: 1.45 }}>{t}</p>
@@ -488,37 +584,36 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                {/* 5. TEAM DYNAMICS */}
-                <div style={{ flexShrink: 0, paddingBottom: 10, borderBottom: `1px solid ${DIV}`, ...fade(cardMounted, 290) }}>
-                  <p style={{ margin: '0 0 8px', fontSize: 8, color: FAINT, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-                    Team Dynamics
-                  </p>
+                {/* 4 — TEAM DYNAMICS (hover links to radar) */}
+                <div style={{ flexShrink: 0, paddingBottom: 10, borderBottom: `1px solid ${DIV}`, ...fade(cardMounted, 220) }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
+                    <p style={{ margin: 0, fontSize: 8, color: FAINT, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+                      Team Dynamics
+                    </p>
+                    <p style={{ margin: 0, fontSize: 9, color: 'rgba(238,236,230,0.28)', fontStyle: 'italic' }}>
+                      Strong fit · One relationship needs early alignment
+                    </p>
+                  </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-                    {([
-                      {
-                        role: 'CEO', subtitle: 'Direct Report',
-                        status: 'Strong alignment', statusColor: GREEN,
-                        note: 'Will likely be experienced as decisive and highly effective',
-                      },
-                      {
-                        role: 'Operating Partner', subtitle: null,
-                        status: 'Friction risk', statusColor: RED,
-                        note: 'Will likely move faster than expected and create pacing tension',
-                      },
-                      {
-                        role: 'Board', subtitle: null,
-                        status: 'Moderate alignment', statusColor: FAINT,
-                        note: 'May be seen as less structured than the environment prefers',
-                      },
-                    ] as Array<{ role: string; subtitle: string | null; status: string; statusColor: string; note: string }>).map(({ role, status, statusColor, note }, i) => (
-                      <div key={role} className="team-row" style={{
-                        paddingTop: i > 0 ? 7 : 0,
-                        borderTop: i > 0 ? '1px solid rgba(255,255,255,0.04)' : 'none',
-                        marginTop: i > 0 ? 0 : 0,
-                      }}>
+                    {TEAM.map(({ role, status, statusColor, note }, i) => (
+                      <div
+                        key={role}
+                        className="team-row"
+                        onMouseEnter={() => setHoveredTeam(role)}
+                        onMouseLeave={() => setHoveredTeam(null)}
+                        style={{
+                          paddingTop: i > 0 ? 7 : 0,
+                          borderTop: i > 0 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                          marginTop: i > 0 ? 2 : 0,
+                        }}
+                      >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 2 }}>
                           <span style={{ fontSize: 10, fontWeight: 600, color: 'rgba(238,236,230,0.68)' }}>{role}</span>
-                          <span style={{ fontSize: 8, fontWeight: 600, color: statusColor, letterSpacing: '0.05em', textTransform: 'uppercase' }}>{status}</span>
+                          <span style={{
+                            fontSize: 8, fontWeight: 600, color: statusColor,
+                            letterSpacing: '0.05em', textTransform: 'uppercase',
+                            transition: 'color 150ms ease',
+                          }}>{status}</span>
                         </div>
                         <p style={{ margin: 0, fontSize: 9, color: 'rgba(238,236,230,0.33)', lineHeight: 1.45 }}>{note}</p>
                       </div>
@@ -526,23 +621,28 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                {/* 6. SIGNAL PROFILE */}
-                <div style={{ flex: 1, overflow: 'hidden', paddingTop: 8, ...fade(cardMounted, 360) }}>
-                  <p style={{ margin: '0 0 6px', fontSize: 8, color: 'rgba(238,236,230,0.18)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+                {/* 5 — SIGNAL PROFILE (evidence, compressed) */}
+                <div style={{ flex: 1, overflow: 'hidden', paddingTop: 8, ...fade(cardMounted, 300) }}>
+                  <p style={{ margin: '0 0 6px', fontSize: 8, color: 'rgba(238,236,230,0.16)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
                     Signal Profile
                   </p>
                   {AXES.map((ax) => (
                     <div key={ax.key} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                      <span style={{ fontSize: 8, color: 'rgba(238,236,230,0.25)', width: 68, flexShrink: 0, letterSpacing: '0.03em' }}>
+                      <span style={{ fontSize: 8, color: 'rgba(238,236,230,0.24)', width: 68, flexShrink: 0 }}>
                         {ax.svgLabel}
                       </span>
                       <div style={{ flex: 1, height: 2, background: 'rgba(255,255,255,0.05)', borderRadius: 2 }}>
                         <div style={{
                           width: `${ax.score}%`, height: '100%', borderRadius: 2,
-                          background: ax.above ? 'rgba(74,142,255,0.38)' : 'rgba(224,90,58,0.5)',
+                          background: ax.above ? 'rgba(74,142,255,0.36)' : 'rgba(200,168,50,0.45)',
+                          transition: 'background 200ms ease',
                         }} />
                       </div>
-                      <span style={{ fontSize: 8, color: ax.above ? 'rgba(238,236,230,0.28)' : 'rgba(224,90,58,0.65)', width: 18, textAlign: 'right', flexShrink: 0 }}>
+                      <span style={{
+                        fontSize: 8,
+                        color: ax.above ? 'rgba(238,236,230,0.26)' : 'rgba(200,168,50,0.6)',
+                        width: 18, textAlign: 'right', flexShrink: 0,
+                      }}>
                         {ax.score}
                       </span>
                     </div>
@@ -555,7 +655,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── BEAT 3 — Consequence ─────────────────────────────────────── */}
+      {/* ── BEAT 3 — Consequence ── */}
       <section className="snap-beat" style={{ background: '#080808' }} ref={beat4Ref}>
         <div style={{ textAlign: 'center' }}>
           <p style={{ fontSize: 'clamp(24px, 3.5vw, 36px)', fontWeight: 600, color: 'rgba(255,255,255,0.82)', letterSpacing: '-0.02em', marginBottom: 12 }}>
@@ -575,7 +675,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── BEAT 4 — Break ──────────────────────────────────────────── */}
+      {/* ── BEAT 4 — Break ── */}
       <section className="snap-beat beat-light" style={{ background: '#F5F5F0' }}>
         <div style={{ textAlign: 'center' }}>
           <p style={{ fontSize: 'clamp(28px, 4vw, 48px)', fontWeight: 600, color: 'rgba(0,0,0,0.22)', letterSpacing: '-0.03em', marginBottom: 14 }}>
@@ -587,9 +687,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── BEAT 5 — Close ──────────────────────────────────────────── */}
+      {/* ── BEAT 5 — Close ── */}
       <section className="snap-beat" style={{ background: '#080808', position: 'relative', overflow: 'hidden' }}>
-        {/* Ghost report */}
         <div style={{
           position: 'absolute', top: '50%', left: '50%',
           transform: 'translate(-50%, -50%)',
@@ -609,7 +708,6 @@ export default function HomePage() {
             ))}
           </div>
         </div>
-
         <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24 }}>
           <div>
             <p style={{ fontSize: 'clamp(32px, 5vw, 56px)', fontWeight: 700, color: 'rgba(255,255,255,0.88)', letterSpacing: '-0.03em', lineHeight: 1.05, marginBottom: 12 }}>
@@ -623,7 +721,7 @@ export default function HomePage() {
             display: 'inline-flex', alignItems: 'center',
             background: '#FFFFFF', color: '#000000',
             fontSize: 16, fontWeight: 700, padding: '15px 36px',
-            borderRadius: 9, textDecoration: 'none', letterSpacing: '-0.01em', maxWidth: 320,
+            borderRadius: 9, textDecoration: 'none', letterSpacing: '-0.01em',
           }}>
             Open sample report →
           </a>
