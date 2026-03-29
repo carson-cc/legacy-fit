@@ -4,16 +4,16 @@ import { FitModel } from '@/app/components/FitModel'
 import type { FitModelScores } from '@/app/components/FitModel'
 
 // ─── Brand tokens ────────────────────────────────────────────────────
-const BG    = '#000'
-const CARD  = '#0D1421'
-const TEXT  = 'rgba(255,255,255,0.88)'
-const MUTED = 'rgba(255,255,255,0.4)'
-const DIM   = 'rgba(255,255,255,0.18)'
+const BG    = '#080808'
+const CARD  = '#0f0f0f'
+const TEXT  = '#eeece6'
+const MUTED = 'rgba(238,236,230,0.42)'
+const DIM   = 'rgba(238,236,230,0.18)'
 const BORD  = 'rgba(255,255,255,0.07)'
 const BLUE  = '#2563EB'
-const GREEN = '#22C55E'
-const AMBER = '#EAB308'
-const RED   = '#EF4444'
+const GREEN = '#3aa868'
+const AMBER = '#c8a832'
+const RED   = '#e05a3a'
 const FONT  = '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif'
 
 // ─── Profile data ────────────────────────────────────────────────────
@@ -342,7 +342,7 @@ function SimCard() {
                   <span style={{ fontSize: 10, fontFamily: FONT, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{d.label}</span>
                   <span style={{ fontSize: 10, fontFamily: FONT, color: MUTED }}>{d.val}%</span>
                 </div>
-                <div style={{ height: 3, background: BORD, borderRadius: 2, overflow: 'hidden' }}>
+                <div style={{ height: 4, background: BORD, borderRadius: 2, overflow: 'hidden' }}>
                   <div style={{
                     height: '100%', borderRadius: 2,
                     background: BLUE,
@@ -411,8 +411,8 @@ export default function MethodPage() {
   }
 
   const eyebrow = (_text: string): React.CSSProperties => ({
-    fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.25)',
-    letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 20,
+    fontSize: 11, fontWeight: 600, color: DIM,
+    letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 20,
   })
 
   return (
@@ -542,7 +542,7 @@ export default function MethodPage() {
                   <div style={{
                     position: 'absolute', bottom: '100%', left: '50%',
                     transform: 'translateX(-50%)',
-                    background: '#111', border: `1px solid ${BORD}`,
+                    background: '#0f0f0f', border: `1px solid ${BORD}`,
                     borderRadius: 8, padding: '10px 14px',
                     width: 220, pointerEvents: 'none', zIndex: 10, marginBottom: 8,
                   }}>
@@ -765,7 +765,7 @@ export default function MethodPage() {
                       </div>
                       <span style={{ fontSize: 12, fontFamily: FONT, fontWeight: 500, color: p.color, flexShrink: 0 }}>{p.pct}%</span>
                     </div>
-                    <div style={{ height: 3, background: BORD, borderRadius: 2, overflow: 'hidden', marginBottom: 4 }}>
+                    <div style={{ height: 4, background: BORD, borderRadius: 2, overflow: 'hidden', marginBottom: 4 }}>
                       <div style={{ height: '100%', width: `${p.pct}%`, background: p.color, borderRadius: 2 }} />
                     </div>
                     <p style={{ fontSize: 10, fontFamily: FONT, fontWeight: 300, color: DIM, paddingLeft: 13 }}>{p.sub}</p>

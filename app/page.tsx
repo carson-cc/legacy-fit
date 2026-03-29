@@ -159,7 +159,7 @@ export default function HomePage() {
           BEAT 1 — The Recognition → The Shift
           Second line animates in on first scroll attempt.
       ============================================ */}
-      <section className="snap-beat" style={{ background: '#000' }}>
+      <section className="snap-beat" style={{ background: '#080808' }}>
         <div style={{ textAlign: 'center' }}>
           <p style={{
             fontSize: 'clamp(36px, 5.5vw, 64px)',
@@ -222,7 +222,7 @@ export default function HomePage() {
           snap-beat-scroll allows internal scroll
           if report exceeds viewport height.
       ============================================ */}
-      <section ref={reportRef} className="snap-beat-scroll" style={{ background: '#000', position: 'relative', overflow: 'hidden' }}>
+      <section ref={reportRef} className="snap-beat-scroll" style={{ background: '#080808', position: 'relative', overflow: 'hidden' }}>
 
         {/* Radial glow — sits behind everything */}
         <div style={{
@@ -256,7 +256,7 @@ export default function HomePage() {
         <div style={{
           width: '100%',
           maxWidth: 1060,
-          background: 'linear-gradient(160deg, #0F1825, #0A1018)',
+          background: 'linear-gradient(160deg, #111827, #0c1118)',
           border: '1px solid rgba(255,255,255,0.09)',
           borderRadius: 16,
           overflow: 'hidden',
@@ -706,7 +706,7 @@ export default function HomePage() {
       ============================================ */}
       <section
         className="snap-beat"
-        style={{ background: '#000' }}
+        style={{ background: '#080808' }}
         ref={beat4Ref}
       >
         <div style={{ textAlign: 'center' }}>
@@ -784,7 +784,7 @@ export default function HomePage() {
       ============================================ */}
       <section
         className="snap-beat"
-        style={{ background: '#000', position: 'relative', overflow: 'hidden' }}
+        style={{ background: '#080808', position: 'relative', overflow: 'hidden' }}
       >
         {/* Ghost report — subliminal, behind everything */}
         <div style={{
@@ -800,7 +800,7 @@ export default function HomePage() {
           userSelect: 'none'
         }}>
           <div style={{
-            background: '#0D1421',
+            background: '#0f0f0f',
             border: '1px solid rgba(255,255,255,0.15)',
             borderRadius: 14,
             padding: 32

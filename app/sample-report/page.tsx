@@ -1,27 +1,73 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 
-// ── Design tokens (mirrors report page) ─────────────────────────────────────
-const BG = '#0B0F14'
-const SURFACE = '#111827'
-const DIVIDER = 'rgba(255,255,255,0.08)'
-const TEXT = '#FFFFFF'
-const SUBTLE = '#9CA3AF'
-const FAINT = 'rgba(255,255,255,0.35)'
-const BLUE = '#2563EB'
-const GREEN = '#22C55E'
-const YELLOW = '#EAB308'
-const RED = '#EF4444'
+// ── Brand tokens (homepage system) ───────────────────────────────────────
+const BG      = '#080808'
+const SURFACE = '#0f0f0f'
+const DIV     = 'rgba(255,255,255,0.07)'
+const TEXT    = '#eeece6'
+const SUB     = 'rgba(238,236,230,0.42)'
+const FAINT   = 'rgba(238,236,230,0.18)'
+const BLUE    = '#2563EB'
+const GREEN   = '#3aa868'
+const AMBER   = '#c8a832'
+const RED     = '#e05a3a'
+const FONT    = '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Helvetica Neue", sans-serif'
+const CONDENSED = '"Barlow Condensed", system-ui'
 
 const surf: React.CSSProperties = {
-  background: SURFACE,
-  border: `1px solid ${DIVIDER}`,
-  borderRadius: 12,
-  padding: 32,
+  background: SURFACE, border: `1px solid ${DIV}`, borderRadius: 12, padding: 32,
 }
 
+// ── Candidate + benchmark data ────────────────────────────────────────────
+const DIMENSIONS = [
+  { key: 'execution',     label: 'Execution',      score: 72, target: 64, delta: +8  },
+  { key: 'ownership',     label: 'Ownership',      score: 67, target: 66, delta: +1  },
+  { key: 'adaptability',  label: 'Adaptability',   score: 65, target: 50, delta: +15 },
+  { key: 'collaboration', label: 'Collaboration',  score: 49, target: 52, delta: -3  },
+  { key: 'decisionSpeed', label: 'Decision Speed', score: 85, target: 64, delta: +21 },
+]
+
+type DimKey = 'execution' | 'ownership' | 'adaptability' | 'collaboration' | 'decisionSpeed'
+type FitScores = Record<DimKey, number>
+
+const CANDIDATE: FitScores = { execution: 72, ownership: 67, adaptability: 65, collaboration: 49, decisionSpeed: 85 }
+const BENCHMARK: FitScores = { execution: 64, ownership: 66, adaptability: 50, collaboration: 52, decisionSpeed: 64 }
+
+// Derive Primary Tension from data — lowest delta vs. highest delta
+const tensionDim  = [...DIMENSIONS].sort((a, b) => a.delta - b.delta)[0]   // Collaboration −3
+const strengthDim = [...DIMENSIONS].sort((a, b) => b.delta - a.delta)[0]   // Decision Speed +21
+
+const TEAM = [
+  {
+    name: 'David Mercer', role: 'Hiring Manager',
+    scores: { execution: 44, ownership: 56, adaptability: 60, collaboration: 72, decisionSpeed: 54 } as FitScores,
+    compat: 74, statusColor: AMBER,
+    note: 'Aligned on pace. Escalation expectations differ — address before Marcus starts.',
+  },
+  {
+    name: 'Sarah Chen', role: 'Project Manager',
+    scores: { execution: 55, ownership: 60, adaptability: 65, collaboration: 78, decisionSpeed: 48 } as FitScores,
+    compat: 61, statusColor: RED,
+    note: 'Collaboration gap is the friction point. Agree on decision authority before their work overlaps.',
+  },
+  {
+    name: 'James Okafor', role: 'Site Supervisor',
+    scores: { execution: 70, ownership: 73, adaptability: 55, collaboration: 58, decisionSpeed: 71 } as FitScores,
+    compat: 88, statusColor: GREEN,
+    note: 'Strongest alignment on this team. Shared execution and ownership profile.',
+  },
+]
+
+const INTERVIEW_PROBES = [
+  'Tell me about a time you had to take charge of a situation before anyone asked you to. What made you step forward?',
+  'Walk me through a high-stakes decision you made with incomplete information. What was the pressure, and how did you move?',
+  'Describe a time you drove a stalled project forward when the team had lost momentum. What did you do first?',
+]
+
+// ── Label ─────────────────────────────────────────────────────────────────
 function Label({ text }: { text: string }) {
   return (
     <p style={{
@@ -31,17 +77,20 @@ function Label({ text }: { text: string }) {
   )
 }
 
+// ── Section divider ───────────────────────────────────────────────────────
+function LayerDivider() {
+  return <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '48px 0' }} />
+}
+
 // ── Animated score ring ───────────────────────────────────────────────────
 function ScoreRing({ score, color }: { score: number; color: string }) {
   const [displayed, setDisplayed] = useState(0)
-  const size = 120
-  const r = size / 2 - 6
-  const circ = 2 * Math.PI * r
+  const size = 120, r = size / 2 - 6, circ = 2 * Math.PI * r
   useEffect(() => {
-    const t0 = performance.now(), duration = 700
+    const t0 = performance.now(), dur = 700
     let raf = 0
     const tick = (now: number) => {
-      const p = Math.min((now - t0) / duration, 1)
+      const p = Math.min((now - t0) / dur, 1)
       setDisplayed(Math.round((1 - Math.pow(1 - p, 3)) * score))
       if (p < 1) raf = requestAnimationFrame(tick)
     }
@@ -50,127 +99,155 @@ function ScoreRing({ score, color }: { score: number; color: string }) {
   }, [score])
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={5} />
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color + '26'} strokeWidth={12} />
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={5}/>
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color + '26'} strokeWidth={12}/>
       <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={5}
         strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={circ * (1 - displayed / 100)}
         transform={`rotate(-90 ${size/2} ${size/2})`}
         style={{ transition: 'stroke-dashoffset 60ms ease-out' }}
       />
       <text x={size/2} y={size/2 + 2} textAnchor="middle" dominantBaseline="middle"
-        fill={TEXT} fontSize={38} fontWeight={700}
-        fontFamily="-apple-system, system-ui, sans-serif">{displayed}</text>
+        fill={TEXT} fontSize={38} fontWeight={900} fontFamily={CONDENSED}>{displayed}</text>
     </svg>
   )
 }
 
-// ── Fit model pentagon ────────────────────────────────────────────────────
-const DIMS = [
+// ── Pentagon radar (with scroll animation) ────────────────────────────────
+const RADAR_DIMS: { key: DimKey; label: string }[] = [
   { key: 'execution',     label: 'Execution' },
   { key: 'ownership',     label: 'Ownership' },
   { key: 'adaptability',  label: 'Adaptability' },
   { key: 'collaboration', label: 'Collaboration' },
   { key: 'decisionSpeed', label: 'Decision Speed' },
-] as const
+]
 
-type DimKey = typeof DIMS[number]['key']
-type FitScores = Record<DimKey, number>
+function PentagonRadar({
+  candidate, benchmark, overlays = [], animated = false, size: svgSize = 300,
+}: {
+  candidate: FitScores
+  benchmark: FitScores | null
+  overlays?: { scores: FitScores; color: string; dash?: string }[]
+  animated?: boolean
+  size?: number
+}) {
+  const [progress, setProgress] = useState(animated ? 0 : 1)
+  const svgRef = useRef<SVGSVGElement>(null)
 
-const CANDIDATE_FIT: FitScores  = { execution: 72, ownership: 67, adaptability: 65, collaboration: 49, decisionSpeed: 85 }
-const BENCHMARK_FIT: FitScores  = { execution: 64, ownership: 66, adaptability: 50, collaboration: 52, decisionSpeed: 64 }
-const HM_FIT: FitScores         = { execution: 44, ownership: 56, adaptability: 60, collaboration: 72, decisionSpeed: 54 }
+  useEffect(() => {
+    if (!animated) return
+    const el = svgRef.current
+    if (!el) return
+    const obs = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return
+      const t0 = performance.now(), dur = 800
+      const tick = (now: number) => {
+        const p = Math.min((now - t0) / dur, 1)
+        setProgress(1 - Math.pow(1 - p, 3))
+        if (p < 1) requestAnimationFrame(tick)
+      }
+      requestAnimationFrame(tick)
+      obs.disconnect()
+    }, { threshold: 0.3 })
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [animated])
 
-function FitModelViz({ scores, benchmark }: { scores: FitScores; benchmark: FitScores | null }) {
-  const size = 300, center = 150, radius = 100
+  const center = svgSize / 2, radius = svgSize * 0.33
   const rings = [0.25, 0.5, 0.75, 1]
-  const pt = (val: number, i: number) => {
-    const a = -Math.PI / 2 + (Math.PI * 2 * i) / DIMS.length
-    const r = radius * (val / 100)
-    return { x: center + Math.cos(a) * r, y: center + Math.sin(a) * r }
+
+  const pt = (val: number, i: number, prog = progress) => {
+    const a = -Math.PI / 2 + (Math.PI * 2 * i) / RADAR_DIMS.length
+    const rv = radius * (val / 100) * prog
+    return { x: center + Math.cos(a) * rv, y: center + Math.sin(a) * rv }
   }
-  const lp = (i: number) => {
-    const a = -Math.PI / 2 + (Math.PI * 2 * i) / DIMS.length
-    const r = radius * 1.24
-    return { x: center + Math.cos(a) * r, y: center + Math.sin(a) * r }
+  const labelPt = (i: number) => {
+    const a = -Math.PI / 2 + (Math.PI * 2 * i) / RADAR_DIMS.length
+    const rv = radius * 1.28
+    return { x: center + Math.cos(a) * rv, y: center + Math.sin(a) * rv }
   }
-  const poly = (s: FitScores) =>
-    DIMS.map((d, i) => pt(s[d.key], i)).map((p, i) => `${i===0?'M':'L'} ${p.x} ${p.y}`).join(' ') + ' Z'
+  const poly = (s: FitScores, prog = progress) =>
+    RADAR_DIMS.map((d, i) => pt(s[d.key], i, prog)).map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ') + ' Z'
   const ringPts = (f: number) =>
-    DIMS.map((_, i) => { const p = pt(100 * f, i); return `${p.x},${p.y}` }).join(' ')
+    RADAR_DIMS.map((_, i) => {
+      const a = -Math.PI / 2 + (Math.PI * 2 * i) / RADAR_DIMS.length
+      return `${center + Math.cos(a) * radius * f},${center + Math.sin(a) * radius * f}`
+    }).join(' ')
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center' }}>
-      <svg width="100%" style={{ maxWidth: size }} viewBox={`0 0 ${size} ${size}`} aria-label="Fit model">
-        <defs>
-          <filter id="sr-glow">
-            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-            <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
-          </filter>
-        </defs>
-        {rings.map(f => (
-          <polygon key={f} points={ringPts(f)} fill="none" stroke={DIVIDER} strokeWidth="1"/>
-        ))}
-        {DIMS.map((d, i) => {
-          const end = pt(100, i), l = lp(i)
-          return (
-            <g key={d.key}>
-              <line x1={center} y1={center} x2={end.x} y2={end.y} stroke={DIVIDER} strokeWidth="1"/>
-              <text x={l.x} y={l.y} fill={SUBTLE} fontSize="11" fontWeight="500"
-                textAnchor={l.x < center - 15 ? 'end' : l.x > center + 15 ? 'start' : 'middle'}
-                dominantBaseline={l.y < center - 15 ? 'alphabetic' : l.y > center + 15 ? 'hanging' : 'middle'}
-                fontFamily="-apple-system, system-ui, sans-serif">{d.label}</text>
-            </g>
-          )
-        })}
-        {benchmark && (
-          <path d={poly(benchmark)} fill="rgba(255,255,255,0.02)"
-            stroke="rgba(255,255,255,0.22)" strokeWidth="1.5" strokeDasharray="5 4"/>
-        )}
-        <path d={poly(scores)} fill="rgba(37,99,235,0.12)" stroke={BLUE} strokeWidth="2" filter="url(#sr-glow)"/>
-        {DIMS.map((d, i) => {
-          const p = pt(scores[d.key], i)
-          return <circle key={d.key} cx={p.x} cy={p.y} r="3.5" fill={BLUE}/>
-        })}
-      </svg>
+    <svg ref={svgRef} width="100%" style={{ maxWidth: svgSize }} viewBox={`0 0 ${svgSize} ${svgSize}`} aria-label="Fit model radar">
+      <defs>
+        <filter id="radar-glow">
+          <feGaussianBlur stdDeviation="3" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      {rings.map(f => <polygon key={f} points={ringPts(f)} fill="none" stroke={DIV} strokeWidth="1"/>)}
+      {RADAR_DIMS.map((d, i) => {
+        const end = { x: center + Math.cos(-Math.PI / 2 + (Math.PI * 2 * i) / RADAR_DIMS.length) * radius, y: center + Math.sin(-Math.PI / 2 + (Math.PI * 2 * i) / RADAR_DIMS.length) * radius }
+        const lp = labelPt(i)
+        return (
+          <g key={d.key}>
+            <line x1={center} y1={center} x2={end.x} y2={end.y} stroke={DIV} strokeWidth="1"/>
+            <text x={lp.x} y={lp.y} fill={SUB} fontSize="11" fontWeight="500" fontFamily={FONT}
+              textAnchor={lp.x < center - 15 ? 'end' : lp.x > center + 15 ? 'start' : 'middle'}
+              dominantBaseline={lp.y < center - 15 ? 'alphabetic' : lp.y > center + 15 ? 'hanging' : 'middle'}>
+              {d.label}
+            </text>
+          </g>
+        )
+      })}
+      {benchmark && (
+        <path d={poly(benchmark, 1)} fill="rgba(255,255,255,0.02)"
+          stroke="rgba(255,255,255,0.22)" strokeWidth="1.5" strokeDasharray="5 4"/>
+      )}
+      {overlays.map((ov, idx) => (
+        <path key={idx} d={poly(ov.scores, 1)} fill="none"
+          stroke={ov.color} strokeWidth="1.5" strokeDasharray={ov.dash ?? '4 3'} opacity={0.5}/>
+      ))}
+      <path d={poly(candidate)} fill="rgba(37,99,235,0.12)" stroke={BLUE} strokeWidth="2" filter="url(#radar-glow)"/>
+      {RADAR_DIMS.map((d, i) => {
+        const p = pt(candidate[d.key], i)
+        return <circle key={d.key} cx={p.x} cy={p.y} r="3.5" fill={BLUE}/>
+      })}
+    </svg>
+  )
+}
+
+// ── Dimension bar ─────────────────────────────────────────────────────────
+function DimBar({ label, score, target, delta, isTension }: {
+  label: string; score: number; target: number; delta: number; isTension: boolean
+}) {
+  const dc = isTension ? AMBER : delta > 0 ? GREEN : delta < 0 ? RED : SUB
+  return (
+    <div style={{ marginBottom: 18 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 7 }}>
+        <span style={{ fontSize: isTension ? 15 : 14, fontWeight: isTension ? 700 : 600, color: TEXT, letterSpacing: isTension ? '-0.01em' : 'normal' }}>
+          {label}
+        </span>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'baseline' }}>
+          <span style={{ fontSize: 18, fontWeight: 700, color: TEXT }}>{score}</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: dc, minWidth: 34 }}>
+            {delta > 0 ? '+' : ''}{delta}
+          </span>
+        </div>
+      </div>
+      <div style={{ position: 'relative', height: 4, background: 'rgba(255,255,255,0.07)', borderRadius: 2 }}>
+        <div style={{
+          position: 'absolute', left: 0, top: 0, height: '100%',
+          width: `${score}%`, borderRadius: 2,
+          background: isTension ? AMBER : BLUE, opacity: 0.75,
+        }}/>
+        <div style={{
+          position: 'absolute', top: -4, width: 2, height: 12,
+          left: `${target}%`, background: 'rgba(255,255,255,0.35)', borderRadius: 1,
+        }}/>
+      </div>
+      <p style={{ margin: '4px 0 0', fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>Benchmark {target}</p>
     </div>
   )
 }
 
-// ── Static demo data ──────────────────────────────────────────────────────
-
-const DIMENSIONS = [
-  { label: 'Execution',     score: 72, target: 64, delta: +8  },
-  { label: 'Ownership',     score: 67, target: 66, delta: +1  },
-  { label: 'Adaptability',  score: 65, target: 50, delta: +15 },
-  { label: 'Collaboration', score: 49, target: 52, delta: -3  },
-  { label: 'Decision Speed',score: 85, target: 64, delta: +21 },
-]
-
-const STRENGTHS = [
-  'Takes immediate ownership without being asked',
-  'Makes clear decisions under pressure with incomplete information',
-  'Drives teams forward when momentum stalls',
-]
-
-const RISKS = [
-  'May move too fast and steamroll important input',
-  'Undervalues process, documentation, and follow-through systems',
-  'Can create tension by deciding before everyone is aligned',
-]
-
-const INTERVIEW_PROBES = [
-  'Tell me about a time you had to take charge of a situation before anyone asked you to. What made you step forward?',
-  'Walk me through a high-stakes decision you made with incomplete information. What was the pressure, and how did you move?',
-  'Describe a time you drove a stalled project forward when the team had lost momentum. What did you do first?',
-]
-
-const DECISION_SUMMARY = [
-  ...STRENGTHS,
-  `Watchout: ${RISKS[0]}`,
-]
-
 // ── Page ──────────────────────────────────────────────────────────────────
-
 export default function SampleReportPage() {
   return (
     <>
@@ -181,73 +258,69 @@ export default function SampleReportPage() {
           .report-root { background: #fff !important; color: #111 !important; }
         }
         @media (max-width: 900px) {
-          .rpt-score-grid { grid-template-columns: 1fr !important; }
+          .rpt-hero-grid  { grid-template-columns: 1fr !important; }
           .rpt-two-col    { grid-template-columns: 1fr !important; }
-          .rpt-main-grid  { grid-template-columns: 1fr !important; }
+          .rpt-three-col  { grid-template-columns: 1fr !important; }
+          .rpt-proof-grid { grid-template-columns: 1fr !important; }
         }
         @media (max-width: 767px) {
-          .rpt-team-grid    { grid-template-columns: 1fr !important; }
-          .rpt-bmark-footer { grid-template-columns: 1fr !important; }
           .rpt-nav-subtitle { display: none !important; }
-          .rpt-score-grid   { grid-template-columns: 1fr !important; }
-          .rpt-two-col      { grid-template-columns: 1fr !important; }
-          .rpt-main-grid    { grid-template-columns: 1fr !important; }
         }
       `}</style>
 
-      {/* Demo banner */}
+      {/* ── Demo banner ── */}
       <div className="sr-demo-banner" style={{
         position: 'sticky', top: 0, zIndex: 50,
-        background: 'rgba(37,99,235,0.12)',
-        borderBottom: '1px solid rgba(37,99,235,0.25)',
-        padding: '9px 24px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: 16,
-        backdropFilter: 'blur(12px)',
+        background: 'rgba(37,99,235,0.12)', borderBottom: '1px solid rgba(37,99,235,0.25)',
+        padding: '9px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        flexWrap: 'wrap', gap: 16, backdropFilter: 'blur(12px)',
       }}>
         <p style={{ margin: 0, fontSize: 12, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>
           <span style={{ fontWeight: 700, color: BLUE }}>Sample report</span>
           {' — '}this is what your client sees. Every candidate you assess gets one.
         </p>
-        <a href="mailto:team@veltro.ai?subject=Veltro%20Walkthrough%20Request"
-          style={{
-            flexShrink: 0, height: 30, padding: '0 16px', borderRadius: 8,
-            background: BLUE, color: '#FFF', fontSize: 12, fontWeight: 600,
-            display: 'inline-flex', alignItems: 'center', textDecoration: 'none',
-            whiteSpace: 'nowrap',
-          }}
-        >Request a walkthrough</a>
+        <a href="mailto:team@veltro.ai?subject=Veltro%20Walkthrough%20Request" style={{
+          flexShrink: 0, height: 30, padding: '0 16px', borderRadius: 8,
+          background: BLUE, color: '#FFF', fontSize: 12, fontWeight: 600,
+          display: 'inline-flex', alignItems: 'center', textDecoration: 'none', whiteSpace: 'nowrap',
+        }}>Request a walkthrough</a>
       </div>
 
-      {/* Report nav */}
+      {/* ── Sticky report nav ── */}
       <nav className="report-nav" style={{
         position: 'sticky', top: 42, zIndex: 40, height: 56,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 24px',
-        background: 'rgba(11,15,20,0.95)',
-        borderBottom: `1px solid ${DIVIDER}`,
+        padding: '0 24px', background: 'rgba(8,8,8,0.95)', borderBottom: `1px solid ${DIV}`,
         backdropFilter: 'blur(12px)',
       }}>
         <Link href="/" style={{ fontSize: 14, color: TEXT, fontWeight: 700, textDecoration: 'none' }}>Veltro</Link>
-        <div className="rpt-nav-subtitle" style={{ fontSize: 12, color: SUBTLE }}>Candidate Recommendation Report</div>
-        <button
-          onClick={() => window.print()}
-          style={{
-            height: 32, padding: '0 14px', borderRadius: 8,
-            border: `1px solid ${DIVIDER}`, background: 'transparent',
-            color: SUBTLE, fontSize: 13, fontWeight: 500, cursor: 'pointer',
-          }}
-        >Print</button>
+        <div className="rpt-nav-subtitle" style={{ fontSize: 12, color: SUB }}>Candidate Recommendation Report</div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={() => {
+              if (navigator.clipboard) navigator.clipboard.writeText(window.location.href)
+            }}
+            style={{
+              height: 32, padding: '0 14px', borderRadius: 8, border: `1px solid ${DIV}`,
+              background: 'transparent', color: SUB, fontSize: 13, fontWeight: 500, cursor: 'pointer',
+            }}
+          >Copy link</button>
+          <button
+            onClick={() => window.print()}
+            style={{
+              height: 32, padding: '0 14px', borderRadius: 8, border: `1px solid ${DIV}`,
+              background: 'transparent', color: SUB, fontSize: 13, fontWeight: 500, cursor: 'pointer',
+            }}
+          >Print</button>
+        </div>
       </nav>
 
       <main className="report-root" style={{
-        minHeight: '100vh', background: BG, color: TEXT,
-        fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif',
+        minHeight: '100vh', background: BG, color: TEXT, fontFamily: FONT,
       }}>
         <div style={{ maxWidth: 960, margin: '0 auto', padding: '64px 24px 96px' }}>
 
-          {/* Header */}
+          {/* ── Report header ── */}
           <header style={{ textAlign: 'center', marginBottom: 48 }}>
             <p style={{ margin: '0 0 16px', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: FAINT, fontWeight: 600 }}>
               Candidate Recommendation Report
@@ -255,309 +328,363 @@ export default function SampleReportPage() {
             <h1 style={{ margin: '0 0 8px', fontSize: 40, lineHeight: 1.15, letterSpacing: '-0.03em', fontWeight: 700, color: TEXT }}>
               Marcus Thompson
             </h1>
-            <p style={{ margin: 0, fontSize: 16, color: SUBTLE }}>
+            <p style={{ margin: 0, fontSize: 16, color: SUB }}>
               Superintendent · Gilbane Construction · Mar 14, 2026
             </p>
           </header>
 
-          {/* A. RECOMMENDATION HERO */}
-          <section className="rpt-score-grid" style={{
-            ...surf,
-            display: 'grid',
-            gridTemplateColumns: '220px minmax(0, 1fr)',
-            gap: 40,
-            boxShadow: '0 4px 24px rgba(0,0,0,0.12)',
-            marginBottom: 24,
-          }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 20, alignItems: 'flex-start' }}>
-              <Label text="Fit Score" />
-              <ScoreRing score={93} color={GREEN} />
-              <div style={{ display: 'grid', gap: 16 }}>
+          {/* ══════════════════════════════════════════════
+              LAYER 1 — THE CALL
+          ══════════════════════════════════════════════ */}
+          <section style={{ ...surf, marginBottom: 0 }}>
+
+            {/* 1A — Score + Verdict */}
+            <div className="rpt-hero-grid" style={{
+              display: 'grid', gridTemplateColumns: '140px minmax(0,1fr)', gap: 40, alignItems: 'start',
+            }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 12 }}>
+                <Label text="Fit Score" />
+                <ScoreRing score={93} color={GREEN} />
                 <div>
-                  <Label text="Recommendation" />
-                  <p style={{ margin: '8px 0 0', fontSize: 24, fontWeight: 700, color: TEXT }}>Strong Hire</p>
-                  <div style={{
-                    marginTop: 10,
-                    paddingTop: 10,
-                    borderTop: '1px solid rgba(255,255,255,0.08)'
-                  }}>
-                    <p style={{
-                      fontSize: 17,
-                      fontWeight: 700,
-                      color: '#FFFFFF',
-                      letterSpacing: '-0.01em',
-                      marginBottom: 3
-                    }}>
-                      Pioneer
-                    </p>
-                    <p style={{
-                      fontSize: 12,
-                      color: 'rgba(255,255,255,0.4)',
-                      lineHeight: 1.5,
-                      fontStyle: 'italic'
-                    }}>
-                      Moves first. Decides fast. Drives outcomes without waiting for alignment.
-                    </p>
-                  </div>
+                  <p style={{ margin: 0, fontSize: 26, fontWeight: 800, color: GREEN, lineHeight: 1.1, fontFamily: CONDENSED, textTransform: 'uppercase', letterSpacing: '0.02em' }}>Strong Hire</p>
+                  <p style={{ margin: '4px 0 0', fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>Decision confidence: High</p>
+                </div>
+                <div style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  background: 'rgba(255,255,255,0.04)', border: `1px solid ${DIV}`,
+                  borderRadius: 6, padding: '4px 10px',
+                }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: TEXT, letterSpacing: '-0.01em' }}>Pioneer</span>
+                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontStyle: 'italic' }}>archetype</span>
                 </div>
               </div>
-            </div>
 
-            <div style={{ borderLeft: `1px solid ${DIVIDER}`, paddingLeft: 40, display: 'grid', gap: 24 }}>
-              <div>
-                <Label text="Benchmark Comparison" />
-                <p style={{ margin: '12px 0 0', fontSize: 24, fontWeight: 700, color: TEXT, lineHeight: 1.3, maxWidth: 500 }}>
-                  Aligned with high-performing candidates in comparable field leadership roles.
-                </p>
-              </div>
-              <div>
-                <Label text="Recommendation Rationale" />
-                <p style={{ margin: '12px 0 0', fontSize: 16, lineHeight: 1.7, color: SUBTLE }}>
-                  Strong signal alignment with role benchmark requirements. Pattern matches Pioneer archetype — decisive under pressure, high execution drive, built for field environments where someone has to step forward and own the outcome.
-                </p>
+              <div style={{ borderLeft: `1px solid ${DIV}`, paddingLeft: 40, display: 'grid', gap: 28 }}>
+
+                {/* 1B — Primary Tension */}
                 <div style={{
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  borderRadius: 8,
-                  padding: '16px 20px',
-                  margin: '16px 0'
+                  borderLeft: `3px solid ${AMBER}`, paddingLeft: 16,
+                  background: 'rgba(234,179,8,0.04)', borderRadius: '0 8px 8px 0', padding: '14px 16px',
                 }}>
+                  <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 700, color: 'rgba(234,179,8,0.7)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                    Primary Tension
+                  </p>
+                  <p style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 700, color: TEXT, letterSpacing: '-0.01em', lineHeight: 1.25 }}>
+                    {strengthDim.label} vs. {tensionDim.label}
+                  </p>
+                  <p style={{ margin: 0, fontSize: 14, color: 'rgba(255,255,255,0.55)', lineHeight: 1.5 }}>
+                    Marcus decides before the room is ready.
+                  </p>
+                </div>
+
+                {/* 1C — Recommendation Rationale */}
+                <div>
+                  <Label text="Recommendation Rationale" />
+                  <p style={{ margin: '12px 0 0', fontSize: 15, lineHeight: 1.7, color: SUB, fontWeight: 300 }}>
+                    Marcus fits this role. The Pioneer pattern — decisive under pressure, high execution drive, ownership without prompting — matches what field leadership demands. The one flag is collaboration. It&apos;s below benchmark and it&apos;s worth probing, not ignoring.
+                  </p>
+                </div>
+
+              </div>
+            </div>
+          </section>
+
+          <LayerDivider />
+
+          {/* ══════════════════════════════════════════════
+              LAYER 2 — THE RISK
+          ══════════════════════════════════════════════ */}
+          <section>
+            <div className="rpt-two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 20 }}>
+
+              {/* 2A — When This Works */}
+              <div style={surf}>
+                <Label text="When This Works" />
+                <div style={{ marginTop: 20, display: 'grid', gap: 14 }}>
                   {[
-                    {
-                      label: 'HIRE IF',
-                      color: '#22C55E',
-                      text: 'The role requires independent execution and fast decisions without waiting for team consensus.'
-                    },
-                    {
-                      label: 'DO NOT HIRE IF',
-                      color: '#EF4444',
-                      text: 'Success depends on consensus-driven decisions, process rigor, or cross-functional alignment before action.'
-                    }
-                  ].map((row, i) => (
-                    <div key={i} style={{
-                      display: 'flex',
-                      gap: 14,
-                      alignItems: 'flex-start',
-                      padding: '8px 0',
-                      borderTop: i > 0
-                        ? '1px solid rgba(255,255,255,0.06)'
-                        : 'none'
-                    }}>
-                      <span style={{
-                        fontSize: 9,
-                        fontWeight: 600,
-                        color: row.color,
-                        letterSpacing: '0.08em',
-                        textTransform: 'uppercase',
-                        whiteSpace: 'nowrap',
-                        marginTop: 2,
-                        minWidth: 88
-                      }}>
-                        {row.label}
-                      </span>
-                      <span style={{
-                        fontSize: 13,
-                        color: 'rgba(255,255,255,0.65)',
-                        lineHeight: 1.6
-                      }}>
-                        {row.text}
-                      </span>
+                    'The operating environment rewards pace over consensus.',
+                    'Scope is clear and accountability belongs to one person.',
+                    'The client wants forward motion, not deliberation.',
+                  ].map((item, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: GREEN, flexShrink: 0, marginTop: 8 }}/>
+                      <p style={{ margin: 0, fontSize: 15, lineHeight: 1.6, color: TEXT }}>{item}</p>
                     </div>
                   ))}
                 </div>
               </div>
-              <div style={{ borderTop: `1px solid ${DIVIDER}`, paddingTop: 16, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {['Based on 80 behavioral signals', 'Role benchmark active'].map((item, i) => (
-                  <span key={item} style={{ fontSize: 11, color: SUBTLE }}>
-                    {i > 0 && <span style={{ margin: '0 8px', color: DIVIDER }}>·</span>}
-                    {item}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </section>
 
-          {/* B. WHY ALIGNED + KEY RISKS */}
-          <section className="rpt-two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24 }}>
-            <div style={surf}>
-              <Label text="Why Aligned" />
-              <div style={{ marginTop: 20, display: 'grid', gap: 16 }}>
-                {STRENGTHS.map(item => (
-                  <div key={item} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: GREEN, flexShrink: 0, marginTop: 8 }}/>
-                    <p style={{ margin: 0, fontSize: 15, lineHeight: 1.6, color: TEXT }}>{item}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div style={surf}>
-              <Label text="Key Risks" />
-              <div style={{ marginTop: 20, display: 'grid', gap: 16 }}>
-                {RISKS.map(item => (
-                  <div key={item} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: RED, flexShrink: 0, marginTop: 8 }}/>
-                    <p style={{ margin: 0, fontSize: 15, lineHeight: 1.6, color: TEXT }}>{item}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          {/* C. FIT MODEL + BENCHMARK SUMMARY */}
-          <section className="rpt-main-grid" style={{
-            display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(260px, 0.8fr)',
-            gap: 24, marginBottom: 24,
-          }}>
-            <div style={surf}>
-              <Label text="Fit Model" />
-              <p style={{ margin: '12px 0 24px', fontSize: 14, lineHeight: 1.6, color: SUBTLE }}>
-                Observed candidate signal pattern against the active role benchmark.
-              </p>
-              <FitModelViz scores={CANDIDATE_FIT} benchmark={BENCHMARK_FIT} />
-            </div>
-            <div style={surf}>
-              <Label text="Benchmark Summary" />
-              <div style={{ marginTop: 20, display: 'grid', gap: 0 }}>
-                {DIMENSIONS.map(dim => {
-                  const dc = dim.delta > 0 ? GREEN : dim.delta < 0 ? RED : SUBTLE
-                  return (
-                    <div key={dim.label} style={{ paddingBottom: 14, marginBottom: 14, borderBottom: `1px solid ${DIVIDER}` }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 12, alignItems: 'baseline' }}>
-                        <span style={{ fontSize: 14, fontWeight: 600, color: TEXT }}>{dim.label}</span>
-                        <span style={{ fontSize: 18, fontWeight: 700, color: TEXT }}>{dim.score}</span>
-                        <span style={{ fontSize: 12, color: dc, fontWeight: 600, whiteSpace: 'nowrap' }}>
-                          {dim.delta > 0 ? '+' : ''}{dim.delta}
-                        </span>
-                      </div>
-                      <p style={{ margin: '3px 0 0', fontSize: 12, color: SUBTLE }}>Benchmark {dim.target}</p>
+              {/* 2B — When It Breaks */}
+              <div style={surf}>
+                <Label text="When It Breaks" />
+                <div style={{ marginTop: 20, display: 'grid', gap: 14 }}>
+                  {[
+                    'Success requires broad stakeholder buy-in before decisions.',
+                    'The hiring manager expects to be consulted before direction changes.',
+                    'The team runs on shared authority — no one person holds the call.',
+                  ].map((item, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: RED, flexShrink: 0, marginTop: 8 }}/>
+                      <p style={{ margin: 0, fontSize: 15, lineHeight: 1.6, color: TEXT }}>{item}</p>
                     </div>
-                  )
-                })}
+                  ))}
+                </div>
               </div>
-            </div>
-          </section>
 
-          {/* D. RATIONALE + AI SUMMARY */}
-          <section className="rpt-two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24 }}>
-            <div style={surf}>
-              <Label text="Dimensional Read" />
-              <div style={{ marginTop: 20, display: 'grid', gap: 16 }}>
-                {[
-                  { label: 'Decision Speed +21', note: 'Largest positive delta. Candidate moves significantly faster than the benchmark requires — an asset in field environments, a potential friction point in consensus-driven cultures.' },
-                  { label: 'Adaptability +15', note: 'Scores well above benchmark. Handles ambiguity and shifting priorities without losing execution edge.' },
-                  { label: 'Collaboration −3', note: 'Only dimension below benchmark, and within tolerance. Worth probing in roles with high cross-functional dependency or matrix reporting.' },
-                  { label: 'Execution +8 · Ownership +1', note: 'Both above benchmark. The ownership delta is narrow — candidate meets the bar but does not meaningfully exceed it on this dimension.' },
-                ].map((item, i) => (
-                  <div key={item.label} style={{ paddingTop: i > 0 ? 16 : 0, borderTop: i > 0 ? `1px solid ${DIVIDER}` : 'none' }}>
-                    <p style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 700, color: TEXT }}>{item.label}</p>
-                    <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: SUBTLE }}>{item.note}</p>
-                  </div>
-                ))}
-              </div>
             </div>
-            <div style={surf}>
-              <Label text="Executive Summary" />
-              <p style={{ margin: '20px 0 0', fontSize: 14, lineHeight: 1.8, color: SUBTLE }}>
-                Marcus receives a <strong style={{ color: TEXT }}>Strong Hire</strong> recommendation for Superintendent. Signal patterns are strongest on ownership and decisiveness under pressure — the behavioral demands most predictive of success in field leadership. The one dimension below benchmark (Collaboration, −3) is within tolerance and should be probed in the client debrief, not treated as a gate. Overall pattern is well-matched to roles that require forward motion over consensus.
+
+            {/* 2C — The One Thing to Verify */}
+            <div style={{
+              borderLeft: `3px solid ${AMBER}`,
+              background: 'rgba(234,179,8,0.04)',
+              borderRadius: '0 10px 10px 0',
+              padding: '20px 24px',
+            }}>
+              <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 700, color: 'rgba(234,179,8,0.7)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                The One Thing to Verify
+              </p>
+              <p style={{ margin: 0, fontSize: 17, fontWeight: 700, color: TEXT, lineHeight: 1.5 }}>
+                Does Marcus know when to slow down — or does he only know how to go fast?
               </p>
             </div>
           </section>
 
-          {/* E. ROLE IMPLICATION */}
+          <LayerDivider />
+
+          {/* ══════════════════════════════════════════════
+              LAYER 3 — THE PROOF
+          ══════════════════════════════════════════════ */}
+          <section>
+
+            {/* 3A — Pentagon Radar with Benchmark */}
+            <div className="rpt-proof-grid" style={{ ...surf, display: 'grid', gridTemplateColumns: 'minmax(0,1.2fr) minmax(260px,0.8fr)', gap: 40, marginBottom: 24 }}>
+              <div>
+                <Label text="Signal Profile vs. Benchmark" />
+                <p style={{ margin: '8px 0 24px', fontSize: 14, lineHeight: 1.6, color: SUB }}>
+                  Candidate signal pattern against the active role benchmark.
+                </p>
+                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                  <PentagonRadar candidate={CANDIDATE} benchmark={BENCHMARK} animated size={300} />
+                </div>
+                <div style={{ display: 'flex', gap: 20, justifyContent: 'center', marginTop: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div style={{ width: 16, height: 2, background: BLUE, borderRadius: 1 }}/>
+                    <span style={{ fontSize: 11, color: SUB }}>Marcus Thompson</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div style={{ width: 16, height: 2, background: 'rgba(255,255,255,0.4)', borderRadius: 1, backgroundImage: 'repeating-linear-gradient(90deg, rgba(255,255,255,0.4) 0 5px, transparent 5px 9px)' }}/>
+                    <span style={{ fontSize: 11, color: SUB }}>Role Benchmark</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 3B — Dimension Breakdown */}
+              <div style={{ borderLeft: `1px solid ${DIV}`, paddingLeft: 32 }}>
+                <Label text="Dimension Breakdown" />
+                <p style={{ margin: '8px 0 20px', fontSize: 12, color: 'rgba(255,255,255,0.25)' }}>
+                  Bar = candidate · Tick = benchmark · Delta vs. role
+                </p>
+                {DIMENSIONS.map(dim => (
+                  <DimBar
+                    key={dim.key}
+                    label={dim.label}
+                    score={dim.score}
+                    target={dim.target}
+                    delta={dim.delta}
+                    isTension={dim.key === tensionDim.key}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* 3C — Archetype Context */}
+            <div style={{ ...surf, borderTop: `2px solid rgba(255,255,255,0.06)` }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, marginBottom: 12 }}>
+                <span style={{ fontSize: 20, fontWeight: 800, color: TEXT, letterSpacing: '-0.03em', textTransform: 'uppercase' }}>
+                  Pioneer
+                </span>
+                <Label text="Archetype" />
+              </div>
+              <p style={{ margin: 0, fontSize: 14, lineHeight: 1.7, color: SUB, maxWidth: 640 }}>
+                Pioneers move first and decide fast — they drive outcomes without waiting for alignment. The trade-off is process: documentation, follow-through systems, and consensus-building get deprioritized when momentum is available.
+              </p>
+            </div>
+
+          </section>
+
+          <LayerDivider />
+
+          {/* ══════════════════════════════════════════════
+              LAYER 4 — THE DETAIL
+          ══════════════════════════════════════════════ */}
+
+          {/* 4.1 — ROI Identification */}
           <section style={{ ...surf, marginBottom: 24 }}>
-            <Label text="Role Implication" />
-            <p style={{ margin: '12px 0 0', fontSize: 15, lineHeight: 1.7, color: SUBTLE, maxWidth: 720 }}>
-              Best fit: hiring manager who runs a tight operation, gives clear mandates, and is comfortable with a direct report who will push back on process overhead. Lowest-risk environment: autonomous scope, visible accountability, and decisions that belong to one person. Highest-risk environment: consensus-driven leadership team or a manager who expects to be consulted before direction changes. The interview probes below are designed to surface this boundary directly.
+            <Label text="ROI Identification" />
+            <p style={{ margin: '12px 0 0', fontSize: 15, lineHeight: 1.7, color: SUB, maxWidth: 720 }}>
+              Best fit: a hiring manager who runs a tight operation, gives clear mandates, and is comfortable with a direct report who pushes back on process overhead. Autonomous scope, visible accountability, decisions that belong to one person. Highest-risk environment: a consensus-driven leadership team or a manager who expects to be consulted before direction changes.
             </p>
           </section>
 
-          {/* F. DECISION SUMMARY + INTERVIEW PROBES */}
-          <section className="rpt-two-col" style={{
-            ...surf, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, marginBottom: 24,
-          }}>
-            <div>
-              <Label text="Decision Summary" />
-              <div style={{ marginTop: 16, display: 'grid', gap: 10 }}>
-                {DECISION_SUMMARY.map(item => (
-                  <div key={item} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                    <span style={{ color: SUBTLE, flexShrink: 0, marginTop: 2 }}>—</span>
-                    <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: SUBTLE }}>{item}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div>
-              <Label text="Recommended Interview Probes" />
-              <div style={{ marginTop: 16, display: 'grid', gap: 14 }}>
-                {INTERVIEW_PROBES.map((q, i) => (
-                  <p key={i} style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: SUBTLE }}>{q}</p>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          {/* G. TEAM FIT — Mode B differentiator */}
-          <section style={{ ...surf, marginBottom: 24, background: '#0D1421', border: '1px solid rgba(37,99,235,0.18)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-              <Label text="Team Compatibility Analysis" />
+          {/* 4.2 — Team Compatibility */}
+          <section style={{ ...surf, background: '#0f1520', border: '1px solid rgba(37,99,235,0.18)', marginBottom: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+              <Label text="Team Compatibility" />
               <span style={{
                 display: 'inline-flex', alignItems: 'center', padding: '2px 8px',
                 background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.25)',
                 borderRadius: 4, fontSize: 10, color: BLUE, fontWeight: 600, letterSpacing: '0.06em',
               }}>MODE B</span>
             </div>
-            <p style={{ margin: '0 0 28px', fontSize: 14, lineHeight: 1.6, color: SUBTLE, maxWidth: 560 }}>
-              The hiring manager completed the same 6-minute assessment. This section shows candidate–manager behavioral compatibility.
+            <p style={{ margin: '0 0 32px', fontSize: 14, lineHeight: 1.6, color: SUB, maxWidth: 560 }}>
+              Three key people on the hiring side completed the same assessment. This shows where Marcus fits and where friction lives.
             </p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 28 }}>
-              <FitModelViz scores={CANDIDATE_FIT} benchmark={HM_FIT} />
-              <p style={{
-                fontSize: 11,
-                color: 'rgba(255,255,255,0.3)',
-                textAlign: 'center',
-                marginTop: 8
-              }}>
-                Solid line: Marcus Thompson · Dashed line: David Mercer (HM)
-              </p>
+            {/* Full-width overlay radar */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 32 }}>
+              <PentagonRadar
+                candidate={CANDIDATE}
+                benchmark={null}
+                overlays={[
+                  { scores: TEAM[0].scores, color: AMBER },
+                  { scores: TEAM[1].scores, color: RED },
+                  { scores: TEAM[2].scores, color: GREEN },
+                ]}
+                size={380}
+              />
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20, justifyContent: 'center', marginTop: 14 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div style={{ width: 14, height: 2, background: BLUE, borderRadius: 1 }}/>
+                  <span style={{ fontSize: 11, color: SUB }}>Marcus Thompson</span>
+                </div>
+                {TEAM.map(person => (
+                  <div key={person.name} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div style={{ width: 14, height: 2, background: person.statusColor, opacity: 0.6, borderRadius: 1 }}/>
+                    <span style={{ fontSize: 11, color: SUB }}>{person.name}</span>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <div style={{ display: 'grid', gap: 10 }}>
-              <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '12px 16px', background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.15)', borderRadius: 8 }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: GREEN, flexShrink: 0, marginTop: 6 }}/>
-                <div>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>Works well with: </span>
-                  <span style={{ fontSize: 13, color: SUBTLE }}>Collaboration and Decision Speed dimensions align — both operate with directness and expect accountability, reducing friction in daily execution.</span>
+            {/* Three person rows */}
+            <div style={{ display: 'grid', gap: 12 }}>
+              {TEAM.map(person => (
+                <div key={person.name} style={{
+                  display: 'flex', gap: 16, alignItems: 'flex-start',
+                  padding: '16px 20px',
+                  background: 'rgba(255,255,255,0.03)',
+                  border: `1px solid rgba(255,255,255,0.07)`,
+                  borderRadius: 10,
+                }}>
+                  <div style={{ flexShrink: 0, width: 40, textAlign: 'center' }}>
+                    <p style={{ margin: 0, fontSize: 20, fontWeight: 800, color: person.statusColor, lineHeight: 1 }}>{person.compat}</p>
+                    <p style={{ margin: '2px 0 0', fontSize: 10, color: 'rgba(255,255,255,0.25)', letterSpacing: '0.04em' }}>compat</p>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'baseline', marginBottom: 4 }}>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: TEXT }}>{person.name}</span>
+                      <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>{person.role}</span>
+                    </div>
+                    {/* Dimension contrast bars */}
+                    <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
+                      {RADAR_DIMS.map(d => {
+                        const cand = CANDIDATE[d.key]
+                        const them = person.scores[d.key]
+                        const diff = Math.abs(cand - them)
+                        const isLarge = diff > 20
+                        return (
+                          <div key={d.key} style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            <div style={{ height: 4, background: BLUE, borderRadius: 2, opacity: 0.65, width: `${cand}%`, maxWidth: '100%' }}/>
+                            <div style={{
+                              height: 4, borderRadius: 2, opacity: 0.55,
+                              background: isLarge ? RED : GREEN,
+                              width: `${them}%`, maxWidth: '100%',
+                            }}/>
+                          </div>
+                        )
+                      })}
+                    </div>
+                    <p style={{ margin: 0, fontSize: 13, color: SUB, lineHeight: 1.5 }}>{person.note}</p>
+                  </div>
                 </div>
-              </div>
-              <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '12px 16px', background: 'rgba(234,179,8,0.06)', border: '1px solid rgba(234,179,8,0.15)', borderRadius: 8 }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: YELLOW, flexShrink: 0, marginTop: 6 }}/>
-                <div>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>Watch for: </span>
-                  <span style={{ fontSize: 13, color: SUBTLE }}>Adaptability gap and pace mismatch — Marcus moves faster than David's comfort zone under ambiguity. Address in onboarding: agree on escalation thresholds before Marcus hits the ground.</span>
-                </div>
-              </div>
+              ))}
             </div>
           </section>
 
-          {/* Benchmark footer */}
+          {/* 4.3 — Dimensional Impact */}
           <section style={{ ...surf, marginBottom: 24 }}>
-            <div className="rpt-bmark-footer" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
+            <Label text="Dimensional Impact" />
+            <div style={{ marginTop: 20, display: 'grid', gap: 0 }}>
+              {[
+                { label: 'Decision Speed +21', note: 'Largest positive delta. Marcus moves significantly faster than this role requires. An asset in field environments. A friction point anywhere that runs on consensus.' },
+                { label: 'Adaptability +15', note: 'Well above benchmark. Handles shifting priorities and ambiguity without losing execution edge.' },
+                { label: 'Execution +8', note: 'Above benchmark. The pattern matches what field leadership demands — moves forward, doesn\'t wait.' },
+                { label: 'Ownership +1', note: 'Narrow delta. Marcus meets the bar but doesn\'t meaningfully exceed it on this dimension. Worth watching.' },
+                { label: 'Collaboration −3', note: 'Only dimension below benchmark. Within tolerance. Probe it in roles with high cross-functional dependency. This is the tension.' },
+              ].map((item, i) => {
+                const isTension = item.label.startsWith('Collaboration')
+                return (
+                  <div key={item.label} style={{
+                    paddingTop: i > 0 ? 18 : 0, paddingBottom: 18,
+                    borderBottom: `1px solid ${DIV}`,
+                    borderLeft: isTension ? `3px solid ${AMBER}` : 'none',
+                    paddingLeft: isTension ? 16 : 0,
+                  }}>
+                    <p style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 700, color: isTension ? AMBER : TEXT }}>{item.label}</p>
+                    <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: SUB }}>{item.note}</p>
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+
+          {/* 4.4 — Interview Probes */}
+          <section style={{ ...surf, marginBottom: 24 }}>
+            <Label text="Interview Probes" />
+            <p style={{ margin: '8px 0 28px', fontSize: 14, color: SUB, lineHeight: 1.6 }}>
+              These surface the Primary Tension directly. Ask them in order.
+            </p>
+            <div style={{ display: 'grid', gap: 0 }}>
+              {INTERVIEW_PROBES.map((q, i) => (
+                <div key={i} style={{
+                  display: 'flex', gap: 24, alignItems: 'flex-start',
+                  paddingTop: i > 0 ? 28 : 0, paddingBottom: 28,
+                  borderBottom: i < INTERVIEW_PROBES.length - 1 ? `1px solid ${DIV}` : 'none',
+                }}>
+                  <span style={{
+                    fontSize: 40, fontWeight: 800, color: 'rgba(255,255,255,0.06)',
+                    lineHeight: 1, flexShrink: 0, letterSpacing: '-0.04em', fontVariantNumeric: 'tabular-nums',
+                    minWidth: 48,
+                  }}>
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <p style={{ margin: 0, fontSize: 16, lineHeight: 1.7, color: TEXT, fontStyle: 'italic' }}>
+                    &ldquo;{q}&rdquo;
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* ── Report footer metadata ── */}
+          <section style={{ ...surf, marginBottom: 24, padding: '20px 24px' }}>
+            <div className="rpt-two-col" style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 12 }}>
               {[
                 'Based on 94 behavioral signals',
                 'Recommendation generated from calibrated signal analysis',
                 'Benchmark confidence: High',
                 'Use alongside structured interviews and reference checks',
               ].map(item => (
-                <p key={item} style={{ margin: 0, fontSize: 12, color: SUBTLE }}>{item}</p>
+                <p key={item} style={{ margin: 0, fontSize: 12, color: SUB }}>{item}</p>
               ))}
             </div>
           </section>
 
-          {/* Footer */}
-          <footer style={{ paddingTop: 24, borderTop: `1px solid ${DIVIDER}` }}>
+          {/* ── Footer ── */}
+          <footer style={{ paddingTop: 24, borderTop: `1px solid ${DIV}` }}>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 0, marginBottom: 12, alignItems: 'center' }}>
               {['Report ID: a4f2c8d1', 'Assessment completed Mar 14, 2026'].map((item, i) => (
-                <span key={item} style={{ fontSize: 11, color: SUBTLE }}>
+                <span key={item} style={{ fontSize: 11, color: SUB }}>
                   {i > 0 && <span style={{ margin: '0 8px', opacity: 0.4 }}>·</span>}
                   {item}
                 </span>
@@ -567,37 +694,31 @@ export default function SampleReportPage() {
               Prepared by Veltro · veltro.ai. Recommendation generated from calibrated signal analysis and intended for use alongside structured interviews and reference checks. Assessment results are one input, not a hiring decision.
             </p>
           </footer>
+
         </div>
 
-        {/* CTA bar */}
+        {/* ── CTA bar ── */}
         <div className="sr-cta" style={{
-          borderTop: `1px solid ${DIVIDER}`,
-          padding: '40px 24px',
+          borderTop: `1px solid ${DIV}`, padding: '40px 24px',
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16,
           background: '#080E1A',
         }}>
           <p style={{ margin: 0, fontSize: 20, fontWeight: 700, color: TEXT, letterSpacing: '-0.02em', textAlign: 'center' }}>
             Every candidate you place can have a report like this.
           </p>
-          <p style={{ margin: 0, fontSize: 14, color: SUBTLE, textAlign: 'center', maxWidth: 480 }}>
+          <p style={{ margin: 0, fontSize: 14, color: SUB, textAlign: 'center', maxWidth: 480 }}>
             One additional step at shortlist. A deliverable your client can hold. Takes six minutes per candidate.
           </p>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <a href="mailto:team@veltro.ai?subject=Veltro%20Walkthrough%20Request"
-              style={{
-                height: 44, padding: '0 24px', borderRadius: 10, background: '#FFF', color: BG,
-                fontSize: 14, fontWeight: 600, display: 'inline-flex', alignItems: 'center',
-                textDecoration: 'none',
-              }}
-            >Request a walkthrough</a>
-            <Link href="/"
-              style={{
-                height: 44, padding: '0 24px', borderRadius: 10,
-                border: `1px solid ${DIVIDER}`, color: SUBTLE,
-                fontSize: 14, fontWeight: 500, display: 'inline-flex', alignItems: 'center',
-                textDecoration: 'none',
-              }}
-            >Back to Veltro</Link>
+            <a href="mailto:team@veltro.ai?subject=Veltro%20Walkthrough%20Request" style={{
+              height: 44, padding: '0 24px', borderRadius: 10, background: '#FFF', color: BG,
+              fontSize: 14, fontWeight: 600, display: 'inline-flex', alignItems: 'center', textDecoration: 'none',
+            }}>Request a walkthrough</a>
+            <Link href="/" style={{
+              height: 44, padding: '0 24px', borderRadius: 10,
+              border: `1px solid ${DIV}`, color: SUB,
+              fontSize: 14, fontWeight: 500, display: 'inline-flex', alignItems: 'center', textDecoration: 'none',
+            }}>Back to Veltro</Link>
           </div>
         </div>
       </main>

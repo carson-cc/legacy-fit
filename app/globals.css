@@ -18,14 +18,47 @@
 }
 
 :root {
-  /* ── DARK (public pages) ── */
-  --bg-dark: #0B0F14;
-  --bg-dark-card: #111827;
+  /* ══════════════════════════════════════════
+     PUBLIC PAGES — DARK BRAND SYSTEM
+     ══════════════════════════════════════════ */
+
+  /* Backgrounds */
+  --bg-page:       #080808;
+  --bg-card:       #0f0f0f;
+  --bg-card-hover: #141414;
+
+  /* Borders */
+  --border:        rgba(255, 255, 255, 0.07);
+  --border-hover:  rgba(255, 255, 255, 0.13);
+
+  /* Text — warm off-white system */
+  --dp-text:       #eeece6;
+  --dp-text-muted: rgba(238, 236, 230, 0.42);
+  --dp-text-faint: rgba(238, 236, 230, 0.18);
+
+  /* Semantic status colors — premium palette */
+  --color-positive: #3aa868;
+  --color-caution:  #c8a832;
+  --color-friction: #e05a3a;
+
+  /* Bar system — used everywhere bars appear */
+  --bar-track:  rgba(255, 255, 255, 0.07);
+  --bar-height: 4px;
+  --bar-radius: 2px;
+
+  /* Accent */
+  --accent: #2563EB;
+
+  /* ══════════════════════════════════════════
+     DARK (legacy public page vars — kept for compat)
+     ══════════════════════════════════════════ */
+  --bg-dark: #080808;
+  --bg-dark-card: #0f0f0f;
   --bg-dark-elevated: #1F2937;
-  --border-dark: rgba(255,255,255,0.08);
-  --text-white: #FFFFFF;
-  --text-white-secondary: rgba(255,255,255,0.6);
-  --text-white-muted: rgba(255,255,255,0.35);
+  --border-dark: rgba(255,255,255,0.07);
+  --text-white: #eeece6;
+  --text-white-secondary: rgba(238,236,230,0.42);
+  --text-white-muted: rgba(238,236,230,0.18);
 
   /* ── LIGHT (dashboard) ── */
   --bg-light: #FFFFFF;
@@ -38,10 +71,9 @@
   --text-muted: #9CA3AF;
 
   /* ── STATUS ── */
-  --status-strong: #22C55E;
-  --status-caution: #EAB308;
-  --status-risk: #EF4444;
-  --accent: #2563EB;
+  --status-strong:  #3aa868;
+  --status-caution: #c8a832;
+  --status-risk:    #e05a3a;
 
   /* ── SHADOWS ── */
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
@@ -70,8 +102,8 @@
 html { scroll-behavior: smooth; }
 
 body {
-  background: var(--bg-dark);
-  color: var(--text-white);
+  background: var(--bg-page);
+  color: var(--dp-text);
   font-family: var(--font-sans);
   font-size: 14px;
   line-height: 1.5;
@@ -170,14 +202,14 @@ button, a, input, select, textarea {
    SIGNAL BAR
    ================================================================ */
 .signal-bar {
-  height: 3px; background: #F3F4F6;
-  border-radius: 2px; position: relative; overflow: hidden;
+  height: var(--bar-height); background: #F3F4F6;
+  border-radius: var(--bar-radius); position: relative; overflow: hidden;
 }
 .signal-bar-dark {
-  height: 3px; background: rgba(255,255,255,0.06);
-  border-radius: 2px; position: relative; overflow: hidden;
+  height: var(--bar-height); background: var(--bar-track);
+  border-radius: var(--bar-radius); position: relative; overflow: hidden;
 }
-.signal-fill { height: 100%; border-radius: 2px; transition: width 400ms ease; }
+.signal-fill { height: 100%; border-radius: var(--bar-radius); transition: width 400ms ease; }
 
 /* ================================================================
    SECTION LABEL
