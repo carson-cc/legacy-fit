@@ -609,10 +609,9 @@ export default function HomePage() {
                 <p style={{
                   fontSize: 11,
                   color: 'rgba(255,255,255,0.52)',
-                  lineHeight: 1.65,
-                  fontStyle: 'italic'
+                  lineHeight: 1.65
                 }}>
-                  &ldquo;Kent operates at a speed and ownership level consistent with top PE-backed CFOs. Primary risk is stakeholder pacing &mdash; alignment expectations must be set early, not retroactively.&rdquo;
+                  Speed and ownership signal consistent with top PE-backed CFOs. Primary risk is stakeholder pacing — alignment expectations must be set early, not retroactively.
                 </p>
               </div>
 
