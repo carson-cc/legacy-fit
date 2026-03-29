@@ -217,7 +217,7 @@ function FitModelBase({
         ))}
 
         {showLabels &&
-          AXIS_ABBR.map((label, i) => {
+          AXIS_LABELS.map((label, i) => {
             const p = polarPoint(cx, cy, labelR, i, 5)
             const anchor = p.x < cx - 8 ? 'end' : p.x > cx + 8 ? 'start' : 'middle'
             return (

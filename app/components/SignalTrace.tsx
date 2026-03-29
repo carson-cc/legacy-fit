@@ -271,7 +271,7 @@ export default function SignalTrace({
               fontWeight="600"
               letterSpacing="0.05em"
             >
-              {AXIS_ABBR[lane.index]}
+              {AXIS_LABELS[lane.index]}
             </text>
 
             {/* Benchmark reference line */}

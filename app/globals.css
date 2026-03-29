@@ -516,6 +516,33 @@ button, a, input, select, textarea {
   }
 }
 
+/* ================================================================
+   PROFILES / METHOD PAGE — RESPONSIVE
+   ================================================================ */
+@media (max-width: 900px) {
+  .hero-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .hero-grid > div:last-child {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .score-build-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .dimensions-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .process-steps-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .data-stats-grid {
+    grid-template-columns: repeat(2,1fr) !important;
+  }
+}
+
 /* Kill dev artifacts */
 [data-nextjs-dialog-overlay],
 [data-next-badge],
