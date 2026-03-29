@@ -716,23 +716,12 @@ function Metric({ val, label, active }: { val: number; label: string; active: bo
 
 // ─── HowItWorksSection ────────────────────────────────────────────────
 export function HowItWorksSection() {
-  const sectionRef = useRef<HTMLElement>(null)
   const [active, setActive] = useState(false)
 
-  useEffect(() => {
-    const el = sectionRef.current
-    if (!el) return
-    const obs = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) setActive(true) },
-      { threshold: 0.15 }
-    )
-    obs.observe(el)
-    return () => obs.disconnect()
-  }, [])
+  useEffect(() => { setActive(true) }, [])
 
   return (
     <section
-      ref={sectionRef}
       style={{
         height: '100vh', flexShrink: 0, scrollSnapAlign: 'start',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
