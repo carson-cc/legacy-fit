@@ -879,13 +879,18 @@ export function HowItWorksSection() {
   return (
     <section
       style={{
-        height: '100vh', flexShrink: 0, scrollSnapAlign: 'start',
+        minHeight: '100vh', flexShrink: 0, scrollSnapAlign: 'start',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '100px 64px', background: BG, overflowY: 'auto',
+        padding: 'clamp(60px, 8vh, 100px) clamp(20px, 5vw, 64px)', background: BG, overflowY: 'auto',
         borderTop: `1px solid ${BORD}`,
       }}
     >
-      <div style={{
+      <style>{`
+        @media (max-width: 767px) {
+          .howit-works-grid { grid-template-columns: 1fr !important; gap: 40px !important; }
+        }
+      `}</style>
+      <div className="howit-works-grid" style={{
         width: '100%',
         maxWidth: 'min(1120px, calc(100vw - clamp(40px, 8vw, 160px)))',
         display: 'grid', gridTemplateColumns: '1fr 1fr',

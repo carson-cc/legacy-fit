@@ -478,8 +478,16 @@ export default function MethodPage() {
   const [fading, setFading] = useState(false)
   const [tooltip, setTooltip] = useState<number | null>(null)
   const [activeSection, setActiveSection] = useState(0)
+  const [isMobile, setIsMobile] = useState(false)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const snapContainerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
 
   // Profile rotation
@@ -515,8 +523,8 @@ export default function MethodPage() {
 
   const profile = PROFILES[activeProfile]
 
-  // Hero card vertex tooltips — compute axis hit positions for size=280
-  const HERO_SIZE = 280
+  // Hero card vertex tooltips — compute axis hit positions
+  const HERO_SIZE = isMobile ? 220 : 280
   const cx = HERO_SIZE / 2
   const cy = HERO_SIZE / 2
   const hitR = HERO_SIZE * 0.36
@@ -539,7 +547,16 @@ export default function MethodPage() {
 
   return (
     <div className="snap-page" ref={snapContainerRef} style={{ background: BG, color: TEXT, fontFamily: FONT }}>
-      <style>{`.snap-page::-webkit-scrollbar{display:none}`}</style>
+      <style>{`
+        .snap-page::-webkit-scrollbar{display:none}
+        @media (max-width: 767px) {
+          .hero-grid { grid-template-columns: 1fr !important; gap: 40px !important; }
+          .signal-grid { grid-template-columns: 1fr !important; gap: 40px !important; }
+          .dimensions-five-col { grid-template-columns: 1fr !important; }
+          .profiles-hero-ctas { flex-direction: column !important; align-items: stretch !important; }
+          .profiles-hero-ctas > * { justify-content: center !important; text-align: center !important; }
+        }
+      `}</style>
 
       {/* ── NAV ─────────────────────────────────────────────────────── */}
       <Nav activePage="profiles" />
@@ -562,17 +579,16 @@ export default function MethodPage() {
               fontWeight: 700, color: TEXT, letterSpacing: '-0.03em',
               lineHeight: 1.05, marginBottom: 24,
             }}>
-              Why the recommendation<br />holds up.
+              Measure fit. Not personality.
             </h1>
             <p style={{
               fontSize: 17, fontFamily: FONT, fontWeight: 300, color: MUTED,
               lineHeight: 1.75, marginBottom: 10, maxWidth: 400,
             }}>
-              The score isn&apos;t a personality label.
-              It&apos;s a distance from a role-specific benchmark.
+              Distance from a role- and environment-specific benchmark.
             </p>
             <p style={{ fontSize: 11, fontFamily: FONT, fontWeight: 300, color: DIM, marginBottom: 44, letterSpacing: '0.02em' }}>
-              Model v2.0 · Calibrated Mar 2026 · 2,245,096 respondents
+              Calibrated on 2.2M+ respondents · Model v2.0
             </p>
             <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
               <a href="/sample-report" style={{
@@ -580,7 +596,7 @@ export default function MethodPage() {
                 background: '#FFFFFF', color: '#000000',
                 fontSize: 16, fontWeight: 700,
                 padding: '15px 36px', borderRadius: 9, textDecoration: 'none',
-              }}>See a full recommendation</a>
+              }}>View full report →</a>
             </div>
           </div>
 
@@ -726,54 +742,44 @@ export default function MethodPage() {
             }}>
               Fit for the role.<br />Fit for the room.
             </h2>
-            <p style={{ fontSize: 14, fontFamily: FONT, fontWeight: 300, color: MUTED, lineHeight: 1.8, marginBottom: 14 }}>
-              The benchmark answers whether the candidate can do the job.
-              The team layer answers whether they&apos;ll do it here — with
-              this manager, these peers, in this environment.
+            <p style={{ fontSize: 15, fontFamily: FONT, fontWeight: 400, color: '#eeece6', lineHeight: 1.65, marginBottom: 20 }}>
+              The benchmark tells you if they can do the job.
+              The team layer tells you if they&apos;ll do it here.
             </p>
-            <p style={{ fontSize: 14, fontFamily: FONT, fontWeight: 300, color: MUTED, lineHeight: 1.8, marginBottom: 36 }}>
-              Profile the hiring manager and key stakeholders once.
-              Every candidate is automatically scored against every stored
-              profile — showing alignment and friction before the client meeting.
+            <p style={{ fontSize: 15, fontFamily: FONT, fontWeight: 300, color: 'rgba(238,236,230,0.62)', lineHeight: 1.75 }}>
+              Profile the people they&apos;ll work with once.
+              Every candidate scores against those profiles automatically.
+              You walk into the client meeting knowing where alignment
+              lives — and where friction will show up first.
             </p>
-
-            {/* Icon list */}
-            {[
-              { icon: 'M4 12h16M4 6h16M4 18h10', text: 'Hiring manager profiled once. Active on every future candidate.' },
-              { icon: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75', text: 'Peer, board, and stakeholder profiles stack automatically.' },
-              { icon: 'M22 11.08V12a10 10 0 1 1-5.93-9.14M22 4L12 14.01l-3-3', text: 'Friction surfaces before onboarding, not after.' },
-            ].map((item, i) => (
-              <div key={i} style={{ display: 'flex', gap: 14, alignItems: 'flex-start', marginBottom: 16 }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={BLUE} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}>
-                  <path d={item.icon} />
-                </svg>
-                <p style={{ fontSize: 13, fontFamily: FONT, fontWeight: 300, color: MUTED, lineHeight: 1.65 }}>{item.text}</p>
-              </div>
-            ))}
+            <p style={{ fontSize: 13, fontFamily: FONT, fontWeight: 400, color: 'rgba(238,236,230,0.42)', marginTop: 28 }}>
+              One setup. Active on every search.
+            </p>
           </div>
 
           {/* Right */}
           <div style={{ ...fi(s3.inView, 150), display: 'flex', flexDirection: 'column', gap: 0 }}>
             <div style={{ background: CARD, border: `1px solid ${BORD}`, borderRadius: 16, padding: '20px 22px 16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <span style={{ fontSize: 9, fontFamily: FONT, fontWeight: 300, color: DIM, letterSpacing: '0.12em', textTransform: 'uppercase' }}>Candidate vs. Hiring Manager</span>
+                <span style={{ fontSize: 9, fontFamily: FONT, fontWeight: 300, color: DIM, letterSpacing: '0.12em', textTransform: 'uppercase' }}>Behavioral Alignment</span>
               </div>
 
               {/* Legend */}
               <div style={{ display: 'flex', gap: 16, marginBottom: 14 }}>
                 {[
-                  { color: BLUE, label: 'Candidate', dashed: false },
-                  { color: 'rgba(255,255,255,0.5)', label: 'Hiring Manager', dashed: true },
-                  { color: 'rgba(255,255,255,0.2)', label: 'Benchmark', dashed: true },
+                  { label: 'Candidate',      stroke: BLUE,                       dasharray: undefined },
+                  { label: 'Hiring Manager', stroke: 'rgba(255,255,255,0.55)',    dasharray: '4 3' },
+                  { label: 'Benchmark',      stroke: 'rgba(255,255,255,0.35)',    dasharray: '2 3' },
                 ].map((item, i) => (
-                  <div key={i} style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
-                    <div style={{
-                      width: 14, height: 2,
-                      background: item.dashed
-                        ? `repeating-linear-gradient(90deg,${item.color} 0,${item.color} 3px,transparent 3px,transparent 6px)`
-                        : item.color,
-                    }} />
-                    <span style={{ fontSize: 9, fontFamily: FONT, fontWeight: 300, color: MUTED }}>{item.label}</span>
+                  <div key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    <svg width="16" height="2" viewBox="0 0 16 2" style={{ flexShrink: 0, overflow: 'visible' }}>
+                      <line x1="0" y1="1" x2="16" y2="1"
+                        stroke={item.stroke} strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeDasharray={item.dasharray}
+                      />
+                    </svg>
+                    <span style={{ fontSize: 10, fontFamily: FONT, fontWeight: 300, color: 'rgba(238,236,230,0.45)' }}>{item.label}</span>
                   </div>
                 ))}
               </div>
@@ -783,7 +789,7 @@ export default function MethodPage() {
                   scores={PROFILES[0].scores}
                   target={HIRING_MANAGER}
                   benchmarkScores={BENCHMARK}
-                  size={240}
+                  size={isMobile ? 200 : 240}
                   variant="dark"
                   animated={s3.inView}
                 />
