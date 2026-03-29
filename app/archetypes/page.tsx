@@ -1,652 +1,437 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
-import { FitModel } from '@/app/components/FitModel'
-import { REFERENCE_PROFILES, type ReferenceProfile } from '@/lib/data/profiles'
-import { PRODUCT_NAME } from '@/lib/brand'
+import { REFERENCE_PROFILES } from '@/lib/data/profiles'
+import { PRODUCT_NAME, COMPANY_EMAIL } from '@/lib/brand'
 
 /* ─────────────────────────────────────────────────────────────
-   LAYOUT CONSTANTS
+   FAMILY ORDER + COLOR
 ───────────────────────────────────────────────────────────── */
 
-const M = { top: 56, right: 80, bottom: 60, left: 80 }
-const MIN_H = 520
+const FAMILY_ORDER = ['Drivers', 'Catalysts', 'Operators', 'Stabilizers']
 
-/* ─────────────────────────────────────────────────────────────
-   QUADRANT GROUPS — filter pill labels mapped to data groups
-───────────────────────────────────────────────────────────── */
-
-const QUADRANT_GROUPS = [
-  { label: 'All',         group: null },
-  { label: 'Drivers',     group: 'field_command' },
-  { label: 'Catalysts',   group: 'people_influence' },
-  { label: 'Operators',   group: 'process_structure' },
-  { label: 'Stabilizers', group: 'strategic_drive' },
-] as const
-
-/* ─────────────────────────────────────────────────────────────
-   AXIS NORMALIZATION — spread dots across full plot area
-───────────────────────────────────────────────────────────── */
-
-function rawCoords(p: ReferenceProfile) {
-  return {
-    execution:     p.coords.dominance * 0.58 + p.coords.formality * 0.42,
-    collaboration: p.coords.extraversion * 0.68 + p.coords.patience * 0.32,
+function getFamilyColor(family: string): string {
+  const colors: Record<string, string> = {
+    'Drivers':     '#EF4444',
+    'Catalysts':   '#2563EB',
+    'Operators':   '#EAB308',
+    'Stabilizers': '#22C55E',
   }
+  return colors[family] || 'rgba(255,255,255,0.3)'
 }
 
-const allRaw    = REFERENCE_PROFILES.map(rawCoords)
-const minExec   = Math.min(...allRaw.map(c => c.execution))
-const maxExec   = Math.max(...allRaw.map(c => c.execution))
-const minCollab = Math.min(...allRaw.map(c => c.collaboration))
-const maxCollab = Math.max(...allRaw.map(c => c.collaboration))
-
-const NORM_PAD = 0.08
-function normalize(val: number, min: number, max: number) {
-  return NORM_PAD + ((val - min) / (max - min)) * (1 - NORM_PAD * 2)
-}
-
-function profileBaseCoords(p: ReferenceProfile, pw: number, ph: number) {
-  const raw = rawCoords(p)
-  const nx = normalize(raw.execution,     minExec,  maxExec)
-  const ny = normalize(raw.collaboration, minCollab, maxCollab)
-  return {
-    x: M.left + nx * pw,
-    y: M.top  + (1 - ny) * ph,
-  }
-}
-
-/* ─────────────────────────────────────────────────────────────
-   COLLISION RESOLUTION
-───────────────────────────────────────────────────────────── */
-
-function resolveCollisions(
-  dots: { x: number; y: number }[],
-  minDist = 24,
-  iterations = 50,
-): { x: number; y: number }[] {
-  const d = dots.map(p => ({ ...p }))
-  for (let iter = 0; iter < iterations; iter++) {
-    let moved = false
-    for (let i = 0; i < d.length; i++) {
-      for (let j = i + 1; j < d.length; j++) {
-        const dx = d[j].x - d[i].x
-        const dy = d[j].y - d[i].y
-        const dist = Math.sqrt(dx * dx + dy * dy)
-        if (dist < minDist && dist > 0) {
-          const push = (minDist - dist) / 2
-          const nx = dx / dist
-          const ny = dy / dist
-          d[i].x -= nx * push
-          d[i].y -= ny * push
-          d[j].x += nx * push
-          d[j].y += ny * push
-          moved = true
-        }
-      }
-    }
-    if (!moved) break
-  }
-  return d
-}
-
-/* ─────────────────────────────────────────────────────────────
-   HOVER CARD
-───────────────────────────────────────────────────────────── */
-
-const CARD_W = 200
-const CARD_H = 110
-const CARD_PAD = 16
-
-function HoverCard({ profile }: { profile: ReferenceProfile }) {
-  const B = '#2563EB'
-  return (
-    <div style={{
-      background: '#0D1421',
-      border: '1px solid rgba(255,255,255,0.1)',
-      borderRadius: 12,
-      padding: '14px 16px',
-      width: CARD_W,
-      boxShadow: '0 24px 64px rgba(0,0,0,0.7)',
-      pointerEvents: 'none',
-    }}>
-      <span style={{
-        display: 'inline-block', marginBottom: 8,
-        fontSize: 9, color: B, fontWeight: 600, letterSpacing: '0.1em',
-        textTransform: 'uppercase', background: 'rgba(37,99,235,0.12)',
-        border: '1px solid rgba(37,99,235,0.2)', borderRadius: 4, padding: '2px 7px',
-      }}>{profile.groupLabel}</span>
-      <p style={{ fontSize: 14, fontWeight: 600, color: '#FFF', marginBottom: 4, letterSpacing: '-0.01em', lineHeight: 1.2 }}>
-        {profile.name}
-      </p>
-      <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 1.4, margin: 0, overflow: 'hidden' }}>
-        {profile.tagline}
-      </p>
-    </div>
-  )
-}
-
-/* ─────────────────────────────────────────────────────────────
-   FULL PROFILE OVERLAY
-───────────────────────────────────────────────────────────── */
-
-function ProfileOverlay({ profile, onClose }: { profile: ReferenceProfile; onClose: () => void }) {
-  const B = '#2563EB', G = '#22C55E', Y = '#EAB308'
-  useEffect(() => {
-    const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    document.addEventListener('keydown', h)
-    return () => document.removeEventListener('keydown', h)
-  }, [onClose])
-
-  return (
-    <div
-      style={{
-        position: 'fixed', inset: 0,
-        background: 'rgba(6,11,20,0.92)',
-        backdropFilter: 'blur(12px)',
-        zIndex: 200, overflow: 'auto',
-        display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
-        padding: '40px 20px',
-      }}
-      onClick={onClose}
-    >
-      <div
-        className="overlay-card"
-        style={{
-          background: '#0D1421',
-          border: '1px solid rgba(255,255,255,0.1)',
-          borderRadius: 20, padding: 40,
-          maxWidth: 720, width: '100%',
-          boxShadow: '0 40px 120px rgba(0,0,0,0.7)',
-        }}
-        onClick={e => e.stopPropagation()}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 32 }}>
-          <div>
-            <span style={{
-              fontSize: 9, color: B, fontWeight: 600, letterSpacing: '0.1em',
-              textTransform: 'uppercase', background: 'rgba(37,99,235,0.12)',
-              border: '1px solid rgba(37,99,235,0.2)', borderRadius: 4, padding: '3px 8px',
-              display: 'inline-block', marginBottom: 12,
-            }}>{profile.groupLabel}</span>
-            <h2 style={{ fontSize: 32, fontWeight: 700, color: '#FFF', marginBottom: 6, letterSpacing: '-0.03em', lineHeight: 1.1 }}>
-              {profile.name}
-            </h2>
-            <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.5)', lineHeight: 1.5 }}>{profile.tagline}</p>
-          </div>
-          <button onClick={onClose} style={{
-            width: 36, height: 36, borderRadius: '50%',
-            border: '1px solid rgba(255,255,255,0.1)',
-            background: 'rgba(255,255,255,0.04)',
-            color: 'rgba(255,255,255,0.5)', fontSize: 18,
-            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexShrink: 0, marginTop: 4,
-          }}>×</button>
-        </div>
-
-        <div className="overlay-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 240px', gap: 40 }}>
-          <div>
-            <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', lineHeight: 1.8, marginBottom: 28 }}>
-              {profile.description}
-            </p>
-            <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>Strengths</p>
-            {profile.strengths.map(s => (
-              <div key={s} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 7 }}>
-                <span style={{ width: 5, height: 5, borderRadius: '50%', background: G, flexShrink: 0, marginTop: 5 }} />
-                <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.72)', lineHeight: 1.5 }}>{s}</span>
-              </div>
-            ))}
-            <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12, marginTop: 20 }}>Traps</p>
-            {profile.traps.map(t => (
-              <div key={t} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 7 }}>
-                <span style={{ width: 5, height: 5, borderRadius: '50%', background: Y, flexShrink: 0, marginTop: 5 }} />
-                <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>{t}</span>
-              </div>
-            ))}
-            <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 10, marginTop: 20 }}>Best Roles</p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {profile.bestRoles.map(r => (
-                <span key={r} style={{
-                  fontSize: 11, color: 'rgba(255,255,255,0.55)',
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  borderRadius: 6, padding: '4px 10px',
-                }}>{r}</span>
-              ))}
-            </div>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <FitModel scores={profile.coords} size={240} variant="dark" animated />
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-/* ─────────────────────────────────────────────────────────────
-   MOBILE CARD LIST — replaces SVG radar below 768px
-───────────────────────────────────────────────────────────── */
-
-const GROUP_ORDER = ['field_command', 'people_influence', 'process_structure', 'strategic_drive']
-
-function ArchetypeMobileList({
-  activeGroup,
-  onFilterClick,
-  onSelect,
-}: {
-  activeGroup: string | null
-  onFilterClick: (g: string | null) => void
-  onSelect: (p: ReferenceProfile) => void
-}) {
-  const B = '#2563EB'
-  const filtered = activeGroup
-    ? REFERENCE_PROFILES.filter(p => p.group === activeGroup)
-    : REFERENCE_PROFILES
-
-  // Group profiles under their group labels
-  const groups = GROUP_ORDER
-    .map(g => ({
-      group: g,
-      label: REFERENCE_PROFILES.find(p => p.group === g)?.groupLabel ?? g,
-      profiles: filtered.filter(p => p.group === g),
-    }))
-    .filter(g => g.profiles.length > 0)
-
-  return (
-    <div style={{ padding: '0 20px 48px' }}>
-      {groups.map(grp => (
-        <div key={grp.group} style={{ marginBottom: 32 }}>
-          <p style={{
-            fontSize: 11, fontWeight: 600, color: B, letterSpacing: '0.12em',
-            textTransform: 'uppercase', marginBottom: 12,
-          }}>{grp.label}</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {grp.profiles.map(p => (
-              <button
-                key={p.name}
-                onClick={() => onSelect(p)}
-                style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
-                  background: '#0D1421',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  borderRadius: 12, padding: '16px 18px',
-                  cursor: 'pointer', textAlign: 'left',
-                  width: '100%', minHeight: 44,
-                  transition: 'border-color 160ms ease',
-                }}
-                onTouchStart={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.22)')}
-                onTouchEnd={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)')}
-              >
-                <span style={{ fontSize: 14, fontWeight: 600, color: '#FFF', marginBottom: 4 }}>{p.name}</span>
-                <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', lineHeight: 1.4 }}>{p.tagline}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
+const sorted = [...REFERENCE_PROFILES].sort((a, b) => {
+  const fi = FAMILY_ORDER.indexOf(a.groupLabel) - FAMILY_ORDER.indexOf(b.groupLabel)
+  if (fi !== 0) return fi
+  return a.name.localeCompare(b.name)
+})
 
 /* ─────────────────────────────────────────────────────────────
    PAGE
 ───────────────────────────────────────────────────────────── */
 
 export default function ArchetypesPage() {
-  const [animated, setAnimated]       = useState(false)
-  const [hovered, setHovered]         = useState<{ profile: ReferenceProfile; svgX: number; svgY: number } | null>(null)
-  const [selected, setSelected]       = useState<ReferenceProfile | null>(null)
-  const [activeGroup, setActiveGroup] = useState<string | null>(null)
-  const [scrolled, setScrolled]       = useState(false)
-  const [dims, setDims]               = useState({ width: 860, height: 620 })
-  const [isMobile, setIsMobile]       = useState(false)
-  const [justFiltered, setJustFiltered] = useState(false)
-  const containerRef  = useRef<HTMLDivElement>(null)
-  const filterTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [scrolled, setScrolled] = useState(false)
 
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768)
-    check()
-    window.addEventListener('resize', check)
-    return () => window.removeEventListener('resize', check)
-  }, [])
-
-  useEffect(() => {
-    const t = window.setTimeout(() => setAnimated(true), 120)
-    return () => clearTimeout(t)
-  }, [])
-
-  useEffect(() => {
-    const h = () => setScrolled(window.scrollY > 40)
-    window.addEventListener('scroll', h, { passive: true })
-    return () => window.removeEventListener('scroll', h)
-  }, [])
-
-  useEffect(() => {
-    if (!containerRef.current) return
-    const obs = new ResizeObserver(entries => {
-      const { width, height } = entries[0].contentRect
-      setDims({ width, height: Math.max(height, MIN_H) })
-    })
-    obs.observe(containerRef.current)
-    return () => obs.disconnect()
-  }, [])
-
-  // Canvas dimensions derived from observed container
-  const svgW    = dims.width
-  const svgH    = Math.max(dims.height, MIN_H)
-  const pw      = svgW - M.left - M.right
-  const ph      = svgH - M.top - M.bottom
-  const centerX = M.left + pw / 2
-  const centerY = M.top  + ph / 2
-
-  // Base positions → collision resolution → clamp to canvas
-  const CLAMP_PAD = 16
-  const basePos    = REFERENCE_PROFILES.map(p => profileBaseCoords(p, pw, ph))
-  const resolvedPos = resolveCollisions(basePos).map(pos => ({
-    x: Math.max(M.left + CLAMP_PAD, Math.min(svgW - M.right - CLAMP_PAD, pos.x)),
-    y: Math.max(M.top  + CLAMP_PAD, Math.min(svgH - M.bottom - CLAMP_PAD, pos.y)),
-  }))
-
-  const enriched = REFERENCE_PROFILES.map((p, idx) => ({
-    ...p,
-    svgX:        resolvedPos[idx].x,
-    svgY:        resolvedPos[idx].y,
-    filtered:    activeGroup !== null && p.group !== activeGroup,
-    highlighted: activeGroup !== null && p.group === activeGroup,
-  }))
-
-  function handleFilterClick(group: string | null) {
-    setActiveGroup(group)
-    setJustFiltered(true)
-    if (filterTimerRef.current) clearTimeout(filterTimerRef.current)
-    filterTimerRef.current = setTimeout(() => setJustFiltered(false), 350)
+  if (typeof window !== 'undefined') {
+    // passive scroll listener attached once
   }
 
-  const BG = '#060B14'
-  const B  = '#2563EB'
-  const MAX = 1280
-
   return (
-    <main style={{
-      background: BG, color: '#FFF', minHeight: '100vh',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif',
-      overflowX: 'hidden',
-    }}>
+    <main
+      style={{
+        background: '#000',
+        color: '#FFF',
+        minHeight: '100vh',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif',
+        overflowX: 'hidden',
+      }}
+      onScrollCapture={(e) => {
+        const target = e.currentTarget
+        setScrolled(target.scrollTop > 40)
+      }}
+    >
 
       {/* NAV */}
       <nav style={{
-        position: 'sticky', top: 0, zIndex: 50, height: 64,
-        background: scrolled ? 'rgba(6,11,20,0.95)' : 'rgba(6,11,20,0.92)',
+        position: 'sticky',
+        top: 0,
+        zIndex: 50,
+        height: 64,
+        background: scrolled ? 'rgba(0,0,0,0.98)' : 'rgba(0,0,0,0.92)',
         backdropFilter: 'blur(20px)',
         borderBottom: '1px solid rgba(255,255,255,0.07)',
-        transition: 'all 240ms ease',
+        transition: 'background 240ms ease',
       }}>
-        <div className="nav-inner" style={{ maxWidth: MAX, margin: '0 auto', padding: '0 40px', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Link href="/" style={{ fontSize: 15, fontWeight: 700, color: '#FFF', textDecoration: 'none', letterSpacing: '-0.02em' }}>{PRODUCT_NAME}</Link>
+        <div
+          className="nav-inner"
+          style={{
+            maxWidth: 1280,
+            margin: '0 auto',
+            padding: '0 40px',
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <Link
+            href="/"
+            style={{ fontSize: 15, fontWeight: 700, color: '#FFF', textDecoration: 'none', letterSpacing: '-0.02em' }}
+          >
+            {PRODUCT_NAME}
+          </Link>
           <div className="nav-links-group" style={{ display: 'flex', gap: 36, alignItems: 'center' }}>
             {[
-              { label: 'Product', href: '/#how-it-works' },
-              { label: 'Method', href: '/profiles' },
-              { label: 'Archetypes', href: '/archetypes' },
+              { label: 'Product',       href: '/#how-it-works' },
+              { label: 'Method',        href: '/profiles' },
+              { label: 'Archetypes',    href: '/archetypes' },
               { label: 'Sample Report', href: '/sample-report' },
             ].map(l => (
-              <Link key={l.label} href={l.href}
+              <Link
+                key={l.label}
+                href={l.href}
                 style={{
-                  fontSize: 13, fontWeight: l.href === '/archetypes' ? 600 : 500,
+                  fontSize: 13,
+                  fontWeight: l.href === '/archetypes' ? 600 : 500,
                   color: l.href === '/archetypes' ? '#FFF' : 'rgba(255,255,255,0.45)',
-                  textDecoration: 'none', transition: 'color 160ms ease',
+                  textDecoration: 'none',
+                  transition: 'color 160ms ease',
                 }}
                 onMouseEnter={e => (e.currentTarget.style.color = '#FFF')}
                 onMouseLeave={e => (e.currentTarget.style.color = l.href === '/archetypes' ? '#FFF' : 'rgba(255,255,255,0.45)')}
-              >{l.label}</Link>
+              >
+                {l.label}
+              </Link>
             ))}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <Link href="/login" className="nav-signin" style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', textDecoration: 'none', transition: 'color 160ms ease' }}
+            <Link
+              href="/login"
+              className="nav-signin"
+              style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', textDecoration: 'none', transition: 'color 160ms ease' }}
               onMouseEnter={e => (e.currentTarget.style.color = '#FFF')}
               onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.45)')}
-            >Sign in</Link>
-            <a href="mailto:team@veltro.ai" className="nav-cta" style={{
-              height: 34, padding: '0 16px', borderRadius: 8, background: '#FFF', color: BG,
-              fontSize: 13, fontWeight: 600, display: 'inline-flex', alignItems: 'center',
-              textDecoration: 'none', letterSpacing: '-0.01em',
-            }}>Talk to us</a>
+            >
+              Sign in
+            </Link>
+            <a
+              href={`mailto:${COMPANY_EMAIL}`}
+              className="nav-cta"
+              style={{
+                height: 34,
+                padding: '0 16px',
+                borderRadius: 8,
+                background: '#FFF',
+                color: '#000',
+                fontSize: 13,
+                fontWeight: 600,
+                display: 'inline-flex',
+                alignItems: 'center',
+                textDecoration: 'none',
+                letterSpacing: '-0.01em',
+              }}
+            >
+              Talk to us
+            </a>
           </div>
         </div>
       </nav>
 
-      {/* HERO */}
-      <section style={{ padding: '88px 40px 56px', textAlign: 'center', position: 'relative', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', backgroundImage: 'radial-gradient(rgba(255,255,255,0.012) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
-        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'radial-gradient(600px circle at 50% 80%, rgba(37,99,235,0.06), transparent 60%)' }} />
-        <div style={{ position: 'relative' }}>
-          <p style={{ fontSize: 11, color: B, fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 20 }}>Behavioral Archetypes</p>
-          <h1 style={{ fontSize: 52, fontWeight: 700, letterSpacing: '-0.035em', lineHeight: 1.06, color: '#FFF', marginBottom: 20 }}>
-            Every pattern your candidates<br />fall into. Mapped.
-          </h1>
-          <p style={{ fontSize: 17, color: 'rgba(255,255,255,0.5)', maxWidth: 480, margin: '0 auto', lineHeight: 1.7 }}>
-            20+ behavioral archetypes calibrated against 2.2 million people. Every candidate evaluation maps to one.
-          </p>
-        </div>
-      </section>
-
-      {/* RADAR / MOBILE LIST */}
-      <section style={{ padding: isMobile ? '24px 0 48px' : '48px 40px 64px' }}>
-        <div style={{ maxWidth: MAX, margin: '0 auto' }}>
-
-          {/* Group filter pills */}
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 32, padding: isMobile ? '0 20px' : undefined }}>
-            {QUADRANT_GROUPS.map(q => {
-              const active = q.group === activeGroup || (q.group === null && activeGroup === null)
-              return (
-                <button
-                  key={q.label}
-                  onClick={() => handleFilterClick(q.group ?? null)}
-                  style={{
-                    height: 44, padding: '0 18px', borderRadius: 999, fontSize: 13, cursor: 'pointer',
-                    fontWeight: active ? 600 : 400,
-                    color: active ? '#060B14' : 'rgba(255,255,255,0.55)',
-                    background: active ? '#FFF' : 'transparent',
-                    border: `1px solid ${active ? '#FFF' : 'rgba(255,255,255,0.14)'}`,
-                    transition: 'all 200ms ease',
-                  }}
-                >{q.label}</button>
-              )
-            })}
-          </div>
-
-          {isMobile ? (
-            <ArchetypeMobileList
-              activeGroup={activeGroup}
-              onFilterClick={handleFilterClick}
-              onSelect={setSelected}
-            />
-          ) : (
-          /* Radar container — observed for responsive sizing */
-          <div style={{ overflowX: 'auto' }}>
-            <div ref={containerRef} style={{ width: '100%', minHeight: MIN_H, margin: '0 auto', position: 'relative' }}>
-              <svg
-                width={svgW}
-                height={svgH}
-                viewBox={`0 0 ${svgW} ${svgH}`}
-                style={{ display: 'block', overflow: 'visible', minHeight: MIN_H }}
-              >
-                {/* Radial glow */}
-                <defs>
-                  <radialGradient id="radarGlow" cx="50%" cy="50%" r="50%">
-                    <stop offset="0%" stopColor="rgba(37,99,235,0.07)" />
-                    <stop offset="100%" stopColor="rgba(37,99,235,0)" />
-                  </radialGradient>
-                </defs>
-                <ellipse
-                  cx={centerX} cy={centerY}
-                  rx={pw * 0.52} ry={ph * 0.52}
-                  fill="url(#radarGlow)"
-                />
-
-                {/* Grid lines at 25%, 50%, 75% */}
-                {[0.25, 0.5, 0.75].map(v => (
-                  <g key={v}>
-                    <line
-                      x1={M.left + v * pw} y1={M.top}
-                      x2={M.left + v * pw} y2={M.top + ph}
-                      stroke="rgba(255,255,255,0.04)" strokeWidth={1}
-                    />
-                    <line
-                      x1={M.left} y1={M.top + (1 - v) * ph}
-                      x2={M.left + pw} y2={M.top + (1 - v) * ph}
-                      stroke="rgba(255,255,255,0.04)" strokeWidth={1}
-                    />
-                  </g>
-                ))}
-
-                {/* Center crosshairs */}
-                <line x1={centerX} y1={M.top} x2={centerX} y2={M.top + ph} stroke="rgba(255,255,255,0.07)" strokeWidth={0.5} strokeDasharray="4 4" />
-                <line x1={M.left} y1={centerY} x2={M.left + pw} y2={centerY} stroke="rgba(255,255,255,0.07)" strokeWidth={0.5} strokeDasharray="4 4" />
-
-                {/* Axis labels */}
-                <text x={M.left + pw + 12} y={centerY} dominantBaseline="middle"
-                  fill="rgba(255,255,255,0.22)" fontSize={9} fontWeight={600} letterSpacing="0.1em"
-                >Pace →</text>
-                <text x={centerX} y={M.top - 16} textAnchor="middle"
-                  fill="rgba(255,255,255,0.22)" fontSize={9} fontWeight={600} letterSpacing="0.1em"
-                >↑ People</text>
-
-                {/* Profile dots */}
-                {enriched.map((p, i) => {
-                  const dotX  = animated ? p.svgX : centerX
-                  const dotY  = animated ? p.svgY : centerY
-                  const isHov = hovered?.profile.name === p.name
-                  const delay = `${i * 20}ms`
-                  const moveTr = `cx 600ms cubic-bezier(0.16,1,0.3,1) ${delay}, cy 600ms cubic-bezier(0.16,1,0.3,1) ${delay}`
-
-                  return (
-                    <g
-                      key={p.name}
-                      style={{ cursor: 'pointer' }}
-                      onMouseEnter={() => setHovered({ profile: p, svgX: dotX, svgY: dotY })}
-                      onMouseLeave={() => setHovered(null)}
-                      onClick={() => setSelected(p)}
-                    >
-                      {/* 20px transparent hit target — same motion transition as visible dot */}
-                      <circle
-                        cx={dotX} cy={dotY} r={20}
-                        fill="transparent"
-                        style={{ transition: moveTr }}
-                      />
-
-                      {/* Pulse ring on hover */}
-                      {isHov && (
-                        <circle
-                          cx={dotX} cy={dotY} r={16}
-                          fill="none" stroke={B} strokeWidth={1} opacity={0.2}
-                          style={{ pointerEvents: 'none', transition: moveTr }}
-                        />
-                      )}
-
-                      {/* Highlight ring for active group */}
-                      {p.highlighted && !isHov && (
-                        <circle
-                          cx={dotX} cy={dotY} r={10}
-                          fill={B} opacity={0.12}
-                          style={{ pointerEvents: 'none', animation: 'dotPulse 2s ease-in-out infinite', transition: moveTr }}
-                        />
-                      )}
-
-                      {/* Main dot — filter scale pulse + opacity */}
-                      <circle
-                        cx={dotX}
-                        cy={dotY}
-                        r={activeGroup === null ? 5 : 6}
-                        fill={p.highlighted ? B : 'rgba(255,255,255,0.7)'}
-                        style={{
-                          pointerEvents: 'none',
-                          transformOrigin: `${dotX}px ${dotY}px`,
-                          transform: justFiltered && p.highlighted ? 'scale(1.5)' : 'scale(1)',
-                          opacity: activeGroup === null ? 1 : p.highlighted ? 1 : 0.08,
-                          transition: `transform 0.3s ease-out, opacity 0.2s ease-out, ${moveTr}`,
-                        }}
-                      />
-
-                      {/* Name label — only when a filter is active */}
-                      {activeGroup !== null && p.highlighted && (
-                        <text
-                          x={dotX > svgW * 0.75 ? dotX - 10 : dotX + 10}
-                          y={dotY + 4}
-                          textAnchor={dotX > svgW * 0.75 ? 'end' : 'start'}
-                          fontSize={11}
-                          fill="rgba(255,255,255,0.75)"
-                          style={{ pointerEvents: 'none', userSelect: 'none' }}
-                        >{p.name}</text>
-                      )}
-                    </g>
-                  )
-                })}
-              </svg>
-
-              {/* Hover card — anchored to avoid canvas overflow */}
-              {hovered && (() => {
-                const cardX = hovered.svgX + CARD_W + CARD_PAD > svgW
-                  ? hovered.svgX - CARD_W - CARD_PAD
-                  : hovered.svgX + CARD_PAD
-                const cardY = hovered.svgY + CARD_H + CARD_PAD > svgH
-                  ? hovered.svgY - CARD_H - CARD_PAD
-                  : hovered.svgY + CARD_PAD
-                return (
-                  <div style={{ position: 'absolute', left: cardX, top: cardY, zIndex: 20 }}>
-                    <HoverCard profile={hovered.profile} />
-                  </div>
-                )
-              })()}
-            </div>
-          </div>
-          )}
-
-        </div>
-      </section>
-
-      {/* BOTTOM CTA */}
-      <section style={{ padding: '64px 40px', borderTop: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
-        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', marginBottom: 12, lineHeight: 1.7 }}>
-          Not sure which archetype fits your role?<br />Veltro suggests the benchmark automatically.
+      {/* SECTION 1 — HERO */}
+      <section style={{
+        minHeight: '100vh',
+        background: '#000',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        textAlign: 'center',
+        padding: '80px 48px',
+        position: 'relative',
+      }}>
+        <p style={{
+          fontSize: 11,
+          fontWeight: 600,
+          color: 'rgba(255,255,255,0.28)',
+          letterSpacing: '0.12em',
+          textTransform: 'uppercase',
+          marginBottom: 20,
+        }}>
+          Behavioral Archetypes
         </p>
-        <Link href="/sample-report" style={{
-          fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.55)',
-          textDecoration: 'none', transition: 'color 160ms ease',
-          display: 'inline-flex', alignItems: 'center', gap: 6,
-        }}
-          onMouseEnter={e => (e.currentTarget.style.color = '#FFF')}
-          onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.55)')}
-        >See what a report looks like →</Link>
+
+        <h1 style={{
+          fontSize: 'clamp(40px, 6vw, 72px)',
+          fontWeight: 800,
+          color: '#FFFFFF',
+          letterSpacing: '-0.04em',
+          lineHeight: 1.0,
+          maxWidth: 660,
+          marginBottom: 20,
+        }}>
+          You&apos;ve met these people.<br />
+          Now you have words for them.
+        </h1>
+
+        <p style={{
+          fontSize: 17,
+          color: 'rgba(255,255,255,0.38)',
+          maxWidth: 440,
+          lineHeight: 1.65,
+          marginBottom: 40,
+        }}>
+          Browse the patterns recruiters recognize instantly —
+          or find your own in six minutes.
+        </p>
+
+        <a
+          href="/invite-self"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            background: '#FFFFFF',
+            color: '#000000',
+            fontSize: 15,
+            fontWeight: 700,
+            padding: '13px 28px',
+            borderRadius: 8,
+            textDecoration: 'none',
+            marginBottom: 14,
+          }}
+        >
+          Find my archetype →
+        </a>
+
+        <p style={{
+          fontSize: 12,
+          color: 'rgba(255,255,255,0.18)',
+        }}>
+          Or scroll to browse every archetype.
+        </p>
+
+        <div style={{
+          position: 'absolute',
+          bottom: 36,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 6,
+          opacity: 0.3,
+        }}>
+          <div style={{
+            width: 1,
+            height: 32,
+            background: 'linear-gradient(180deg,rgba(255,255,255,0.6),transparent)',
+          }} />
+          <span style={{
+            fontSize: 9,
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            color: 'rgba(255,255,255,0.5)',
+          }}>Scroll</span>
+        </div>
       </section>
 
-      {/* Footer */}
-      <footer style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '20px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.15)' }}>{PRODUCT_NAME} by Legacy Workforce · © 2026</span>
-        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.15)' }}>team@veltro.ai</span>
+      {/* SECTION 2 — THE ARCHETYPES */}
+      {sorted.map((profile, i) => (
+        <section
+          key={profile.name}
+          style={{
+            minHeight: '100vh',
+            background: i % 2 === 0 ? '#000' : '#0B0F14',
+            display: 'flex',
+            alignItems: 'center',
+            padding: '80px 48px',
+            borderTop: '1px solid rgba(255,255,255,0.05)',
+          }}
+        >
+          <div style={{
+            maxWidth: 680,
+            margin: '0 auto',
+            width: '100%',
+          }}>
+
+            <p style={{
+              fontSize: 10,
+              fontWeight: 600,
+              color: getFamilyColor(profile.groupLabel),
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              marginBottom: 16,
+            }}>
+              {profile.groupLabel}
+            </p>
+
+            <h2 style={{
+              fontSize: 'clamp(56px, 9vw, 108px)',
+              fontWeight: 800,
+              color: '#FFFFFF',
+              letterSpacing: '-0.04em',
+              lineHeight: 0.88,
+              marginBottom: 28,
+            }}>
+              {profile.name}
+            </h2>
+
+            <p style={{
+              fontSize: 'clamp(18px, 2.2vw, 22px)',
+              fontWeight: 500,
+              color: 'rgba(255,255,255,0.72)',
+              lineHeight: 1.5,
+              letterSpacing: '-0.01em',
+              marginBottom: 20,
+              maxWidth: 540,
+            }}>
+              {profile.essence}
+            </p>
+
+            <p style={{
+              fontSize: 16,
+              color: 'rgba(255,255,255,0.42)',
+              lineHeight: 1.9,
+              marginBottom: 32,
+              maxWidth: 580,
+            }}>
+              {profile.scene}
+            </p>
+
+            <div style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '6px 28px',
+            }}>
+              <p style={{
+                fontSize: 12,
+                color: 'rgba(255,255,255,0.2)',
+              }}>
+                <span style={{
+                  color: 'rgba(255,255,255,0.35)',
+                  fontWeight: 600,
+                }}>Works in: </span>
+                {profile.worksBestIn}
+              </p>
+              <p style={{
+                fontSize: 12,
+                color: 'rgba(255,255,255,0.2)',
+              }}>
+                <span style={{
+                  color: 'rgba(255,255,255,0.35)',
+                  fontWeight: 600,
+                }}>Watch for: </span>
+                {profile.watchFor}
+              </p>
+            </div>
+
+          </div>
+        </section>
+      ))}
+
+      {/* SECTION 3 — CLOSE */}
+      <section style={{
+        minHeight: '70vh',
+        background: '#000',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        textAlign: 'center',
+        padding: '80px 48px',
+        borderTop: '1px solid rgba(255,255,255,0.05)',
+      }}>
+        <h2 style={{
+          fontSize: 'clamp(32px, 4.5vw, 52px)',
+          fontWeight: 700,
+          color: '#FFFFFF',
+          letterSpacing: '-0.03em',
+          lineHeight: 1.05,
+          maxWidth: 520,
+          margin: '0 auto 16px',
+        }}>
+          You already knew the type.<br />
+          Now you can name it.
+        </h2>
+
+        <p style={{
+          fontSize: 15,
+          color: 'rgba(255,255,255,0.3)',
+          marginBottom: 32,
+          maxWidth: 380,
+        }}>
+          See how archetypes appear in a real candidate report —
+          or find out which one you are.
+        </p>
+
+        <div style={{
+          display: 'flex',
+          gap: 12,
+          flexWrap: 'wrap',
+          justifyContent: 'center',
+        }}>
+          <a
+            href="/sample-report"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              background: '#FFFFFF',
+              color: '#000000',
+              fontSize: 15,
+              fontWeight: 700,
+              padding: '13px 28px',
+              borderRadius: 8,
+              textDecoration: 'none',
+            }}
+          >
+            See a real report →
+          </a>
+          <a
+            href="/invite-self"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              background: 'transparent',
+              color: 'rgba(255,255,255,0.55)',
+              fontSize: 15,
+              fontWeight: 500,
+              padding: '13px 24px',
+              borderRadius: 8,
+              textDecoration: 'none',
+              border: '1px solid rgba(255,255,255,0.15)',
+            }}
+          >
+            Find my archetype →
+          </a>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer style={{
+        borderTop: '1px solid rgba(255,255,255,0.05)',
+        padding: '20px 40px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+      }}>
+        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.15)' }}>
+          {PRODUCT_NAME} by Legacy Workforce · © 2026
+        </span>
+        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.15)' }}>
+          {COMPANY_EMAIL}
+        </span>
       </footer>
 
-      {/* Full profile overlay */}
-      {selected && (
-        <ProfileOverlay profile={selected} onClose={() => setSelected(null)} />
-      )}
-
       <style>{`
-        @keyframes dotPulse {
-          0%, 100% { opacity: 0.1; transform: scale(1); }
-          50%       { opacity: 0.25; transform: scale(1.3); }
-        }
         @media (max-width: 767px) {
-          h1 { font-size: 32px !important; }
-          .nav-links-group  { display: none !important; }
-          .nav-signin       { display: none !important; }
-          .nav-inner        { padding: 0 20px !important; }
-          .nav-cta          { height: 36px !important; padding: 0 14px !important; }
-          .overlay-card     { padding: 24px 20px !important; }
-          .overlay-grid     { grid-template-columns: 1fr !important; }
+          .nav-links-group { display: none !important; }
+          .nav-signin      { display: none !important; }
+          .nav-inner       { padding: 0 20px !important; }
+          .nav-cta         { height: 36px !important; padding: 0 14px !important; }
+        }
+        @media (max-width: 600px) {
+          section { padding: 60px 24px !important; }
         }
       `}</style>
     </main>
