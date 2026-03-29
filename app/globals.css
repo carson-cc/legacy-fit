@@ -629,6 +629,11 @@ button, a, input, select, textarea {
   }
 }
 
+@keyframes veltro-glow {
+  0%, 100% { opacity: 0.15; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(1.4); }
+}
+
 /* Kill dev artifacts */
 [data-nextjs-dialog-overlay],
 [data-next-badge],
