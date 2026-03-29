@@ -611,7 +611,7 @@ export default function HomePage() {
                   color: 'rgba(255,255,255,0.52)',
                   lineHeight: 1.65
                 }}>
-                  Speed and ownership signal consistent with top PE-backed CFOs. Primary risk is stakeholder pacing — alignment expectations must be set early, not retroactively.
+                  Strong execution and ownership signal. One thing to manage: the operating partner expects more structure than Kent naturally brings. Set that expectation before day one.
                 </p>
               </div>
 
