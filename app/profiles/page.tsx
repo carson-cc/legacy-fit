@@ -414,7 +414,8 @@ export default function MethodPage() {
   })
 
   const SECTION_STYLE: React.CSSProperties = {
-    minHeight: '100vh', display: 'flex', alignItems: 'center',
+    height: '100vh', flexShrink: 0, scrollSnapAlign: 'start',
+    display: 'flex', alignItems: 'center', overflowY: 'auto',
     justifyContent: 'center', padding: '100px 64px', position: 'relative',
     background: BG,
   }
