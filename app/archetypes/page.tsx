@@ -99,13 +99,15 @@ function pentagonVals(p: typeof REFERENCE_PROFILES[0]): number[] {
   ]
 }
 
-function drawCanvasPentagon(
+// Generalized pentagon drawing from raw vals + position
+function drawPentagonRaw(
   ctx: CanvasRenderingContext2D,
-  profile: typeof REFERENCE_PROFILES[0],
-  dx: number, dy: number, color: string, progress: number,
+  vals: number[], dx: number, dy: number,
+  color: string, progress: number,
+  strokeWidth = 1.5, fillAlpha = 0.09, strokeAlpha = 0.75, radiusScale = 1.0,
 ) {
-  const pts = pentagonVals(profile).map((v, i) => {
-    const r = (0.22 + v * 0.78) * (RADAR_SIZE / 16)
+  const pts = vals.map((v, i) => {
+    const r = (0.22 + v * 0.78) * (RADAR_SIZE / 16) * radiusScale
     return [dx + Math.cos(PENT_ANGLES[i]) * r, dy + Math.sin(PENT_ANGLES[i]) * r]
   })
   let perim = 0
@@ -116,13 +118,36 @@ function drawCanvasPentagon(
   ctx.beginPath()
   pts.forEach(([x, y], i) => i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y))
   ctx.closePath()
-  ctx.fillStyle = hexAlpha(color, 0.09 * progress)
+  ctx.fillStyle = hexAlpha(color, fillAlpha * progress)
   ctx.fill()
   ctx.setLineDash([perim * progress, perim + 2])
-  ctx.strokeStyle = hexAlpha(color, 0.75 * progress)
-  ctx.lineWidth = 1.5
+  ctx.strokeStyle = hexAlpha(color, strokeAlpha * progress)
+  ctx.lineWidth = strokeWidth
   ctx.stroke()
   ctx.setLineDash([])
+}
+
+function drawCanvasPentagon(
+  ctx: CanvasRenderingContext2D,
+  profile: typeof REFERENCE_PROFILES[0],
+  dx: number, dy: number, color: string, progress: number,
+) {
+  drawPentagonRaw(ctx, pentagonVals(profile), dx, dy, color, progress, 1.5, 0.09, 0.75)
+}
+
+// Compute average pentagon vals + dot centroid for a group
+function groupAverage(groupKey: string, S: number, M: number) {
+  const ps = REFERENCE_PROFILES.filter(p => p.group === groupKey)
+  if (!ps.length) return null
+  const avgVals = [0, 0, 0, 0, 0]
+  let ap = 0, ae = 0
+  ps.forEach(p => {
+    pentagonVals(p).forEach((v, i) => { avgVals[i] += v / ps.length })
+    ap += p.coords.patience / ps.length
+    ae += p.coords.extraversion / ps.length
+  })
+  const { x, y } = dotXY(ap, ae, S, M)
+  return { vals: avgVals, x, y }
 }
 
 function MiniPentagon({ vals, color, size = 20 }: { vals: number[]; color: string; size?: number }) {
@@ -153,14 +178,21 @@ function RadarCanvas({
   onHoverCat: (k: string | null) => void
   onHoverProfile: (name: string | null) => void
 }) {
-  const canvasRef        = useRef<HTMLCanvasElement>(null)
-  const rafRef           = useRef(0)
-  const activeCatRef     = useRef<string | null>(null)
-  const hoveredProfRef   = useRef<string | null>(null)
-  const hoverStartRef    = useRef<number>(0)
+  const canvasRef          = useRef<HTMLCanvasElement>(null)
+  const rafRef             = useRef(0)
+  const activeCatRef       = useRef<string | null>(null)
+  const hoveredProfRef     = useRef<string | null>(null)
+  const hoverStartRef      = useRef<number>(0)
+  const groupFocusStartRef = useRef<number>(0)
+  const ambientRef         = useRef<{
+    cat: string | null; startT: number; endT: number; nextT: number; idx: number
+  }>({ cat: null, startT: 0, endT: 0, nextT: 2200, idx: -1 })
   const [tooltip, setTooltip] = useState<TooltipState | null>(null)
 
-  useEffect(() => { activeCatRef.current = activeCat }, [activeCat])
+  useEffect(() => {
+    activeCatRef.current = activeCat
+    if (activeCat !== null) groupFocusStartRef.current = performance.now()
+  }, [activeCat])
   useEffect(() => {
     hoveredProfRef.current = hoveredProfileName
     if (hoveredProfileName) hoverStartRef.current = performance.now()
@@ -179,89 +211,180 @@ function RadarCanvas({
 
     ctx.clearRect(0, 0, S, S)
 
-    // Radial bg — subtle depth, center slightly lighter
-    const bgGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 1.2)
-    bgGrad.addColorStop(0, '#151515')
+    // ── Background: radial depth, center brighter than edges ──
+    const bgGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 1.3)
+    bgGrad.addColorStop(0, '#171717')
+    bgGrad.addColorStop(0.6, '#0f0f0f')
     bgGrad.addColorStop(1, '#080808')
     ctx.fillStyle = bgGrad
     ctx.fillRect(0, 0, S, S)
 
     const activeCat = activeCatRef.current
+    const hovProf   = hoveredProfRef.current
+    const isInteracting = activeCat !== null || hovProf !== null
 
-    // Quadrant color washes — contextual tinting from corners
+    // ── Ambient animation: slow group cycling ──
+    const amb = ambientRef.current
+    if (!isInteracting) {
+      if (t > amb.nextT) {
+        amb.idx = (amb.idx + 1) % CATS.length
+        amb.cat = CATS[amb.idx].key
+        amb.startT = t
+        amb.endT   = t + 2600
+        amb.nextT  = t + 2600 + 1400 + seeded(CATS[amb.idx].key) * 1200
+      }
+    } else {
+      // Reset ambient when user interacts
+      amb.nextT = t + 3000
+    }
+    let ambCat: string | null = null
+    let ambAlpha = 0
+    if (amb.cat && !isInteracting) {
+      const fadeIn  = Math.min(1, (t - amb.startT) / 700)
+      const fadeOut = t > amb.endT ? 1 - Math.min(1, (t - amb.endT) / 900) : 1
+      ambAlpha = fadeIn * fadeOut
+      if (ambAlpha > 0.005) ambCat = amb.cat
+    }
+
+    // ── Quadrant color washes ──
     const washes = [
-      { qx: cx - R * 0.5, qy: M,       cat: 'strategic_drive'   },  // top-left  → Stabilizers
-      { qx: cx + R * 0.5, qy: M,       cat: 'people_influence'  },  // top-right → Catalysts
-      { qx: cx - R * 0.5, qy: S - M,   cat: 'process_structure' },  // bot-left  → Operators
-      { qx: cx + R * 0.5, qy: S - M,   cat: 'field_command'     },  // bot-right → Drivers
+      { qx: cx - R * 0.55, qy: cy - R * 0.55, cat: 'strategic_drive'   },
+      { qx: cx + R * 0.55, qy: cy - R * 0.55, cat: 'people_influence'  },
+      { qx: cx - R * 0.55, qy: cy + R * 0.55, cat: 'process_structure' },
+      { qx: cx + R * 0.55, qy: cy + R * 0.55, cat: 'field_command'     },
     ]
     washes.forEach(w => {
-      const c = getCat(w.cat)
-      const isOn = activeCat === null || activeCat === w.cat
-      const opacity = isOn ? 0.09 : 0.02
-      const grad = ctx.createRadialGradient(w.qx, w.qy, 0, w.qx, w.qy, R)
+      const c   = getCat(w.cat)
+      const isAmbient = ambCat === w.cat
+      const isActive  = activeCat === w.cat
+      const opacity = isActive ? 0.13
+        : activeCat !== null ? 0.018
+        : isAmbient ? 0.07 + ambAlpha * 0.06
+        : 0.05
+      const grad = ctx.createRadialGradient(w.qx, w.qy, 0, w.qx, w.qy, R * 0.95)
       grad.addColorStop(0, hexAlpha(c.color, opacity))
       grad.addColorStop(1, 'transparent')
       ctx.fillStyle = grad
       ctx.fillRect(0, 0, S, S)
     })
 
-    // Rings — fading outward
+    // ── Rings: inner more visible than outer ──
     for (let i = 1; i <= 4; i++) {
-      const op = (0.10 - (i / 4) * 0.07).toFixed(3)
+      const op = (0.11 - (i - 1) * 0.024).toFixed(3)
       ctx.beginPath()
       ctx.arc(cx, cy, R * i / 4, 0, Math.PI * 2)
       ctx.strokeStyle = `rgba(255,255,255,${op})`
       ctx.lineWidth = 1; ctx.stroke()
     }
 
-    // Axes — hairline only, no text labels (corner overlays handle labeling)
-    ctx.setLineDash([2, 7])
-    ctx.strokeStyle = 'rgba(255,255,255,0.045)'; ctx.lineWidth = 1
+    // ── Axes: directional hairlines with subtle labels ──
+    ctx.setLineDash([2, 8])
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 1
     ctx.beginPath(); ctx.moveTo(M, cy); ctx.lineTo(S - M, cy); ctx.stroke()
     ctx.beginPath(); ctx.moveTo(cx, M); ctx.lineTo(cx, S - M); ctx.stroke()
     ctx.setLineDash([])
+    // Axis direction labels
+    ctx.font = '500 9px system-ui, -apple-system'
+    ctx.fillStyle = 'rgba(255,255,255,0.11)'
+    ctx.textAlign = 'center'
+    ctx.fillText('PEOPLE', cx, M - 16)
+    ctx.fillText('OUTPUT', cx, S - M + 22)
+    ctx.textAlign = 'left'
+    ctx.fillText('FAST →', S - M + 8, cy - 4)
+    ctx.textAlign = 'right'
+    ctx.fillText('← DELIBERATE', M - 8, cy - 4)
+    ctx.textAlign = 'left'
 
-    const hovProf   = hoveredProfRef.current
-    const hoverProg = hovProf ? Math.min(1, (t - hoverStartRef.current) / 400) : 0
+    // ── Group pentagon layer: drawn BEFORE dots ──
+    const groupProgress = activeCat ? Math.min(1, (t - groupFocusStartRef.current) / 300) : 0
 
-    // Dots
+    if (activeCat !== null && groupProgress > 0.01) {
+      const gc = getCat(activeCat)
+
+      // Member pentagons (semi-transparent, 20–35% opacity)
+      REFERENCE_PROFILES
+        .filter(p => p.group === activeCat)
+        .forEach(p => {
+          const { x, y } = dotXY(p.coords.patience, p.coords.extraversion, S, M)
+          drawPentagonRaw(ctx, pentagonVals(p), x, y, gc.color,
+            groupProgress, 1.2, 0.06, 0.28)
+        })
+
+      // Group average pentagon: thicker stroke, slightly larger, centrally placed
+      const avg = groupAverage(activeCat, S, M)
+      if (avg) {
+        drawPentagonRaw(ctx, avg.vals, avg.x, avg.y, gc.color,
+          groupProgress, 2.2, 0.04, 0.50, 1.15)
+      }
+    }
+
+    // Ambient: faint pentagons when group is ambience-highlighted
+    if (ambCat !== null && ambAlpha > 0.01) {
+      const ac = getCat(ambCat)
+      REFERENCE_PROFILES
+        .filter(p => p.group === ambCat)
+        .forEach(p => {
+          const { x, y } = dotXY(p.coords.patience, p.coords.extraversion, S, M)
+          drawPentagonRaw(ctx, pentagonVals(p), x, y, ac.color,
+            ambAlpha * 0.5, 1.0, 0.03, 0.14)
+        })
+    }
+
+    // ── Dots ──
+    const hoverProg = hovProf ? Math.min(1, (t - hoverStartRef.current) / 200) : 0
+
     REFERENCE_PROFILES.forEach((p, i) => {
       const { x, y } = dotXY(p.coords.patience, p.coords.extraversion, S, M)
       const c = getCat(p.group)
-      const isHovProf = p.name === hovProf
-      // Resting alpha ~0.50; dim to 0.08 when something else is focused
+      const isHovProf  = p.name === hovProf
+      const isAmbGroup = p.group === ambCat
+
+      // Base alpha
       const alpha = hovProf
-        ? (isHovProf ? 0.95 : 0.08)
-        : activeCat === null ? 0.50 : activeCat === p.group ? 0.92 : 0.08
+        ? (isHovProf ? 0.96 : 0.07)
+        : activeCat !== null
+          ? (activeCat === p.group ? 0.94 : 0.07)
+          : isAmbGroup
+            ? 0.50 + ambAlpha * 0.32
+            : 0.44 - ambAlpha * 0.12
+
       const isFocused = (activeCat !== null && activeCat === p.group) || isHovProf
+
+      // Individual hover pentagon — draw below dot
+      if (isHovProf && hoverProg > 0) {
+        drawCanvasPentagon(ctx, p, x, y, c.color, hoverProg)
+      }
+
+      // Pulse bloom — restrained when ambient, fuller when focused
       const pp    = pulseParams.current[i]
       const pulse = (Math.sin(t * 0.001 * pp.speed + pp.phase) + 1) / 2
-
-      if (isHovProf && hoverProg > 0) drawCanvasPentagon(ctx, p, x, y, c.color, hoverProg)
-
-      // Bloom ring
-      if (alpha > 0.09) {
-        const pr = 5 + pulse * 15
-        const pa = (1 - pulse) * 0.26 * (isFocused ? 1.6 : 0.7)
+      if (alpha > 0.08) {
+        const pr = 4.5 + pulse * 13
+        const pa = (1 - pulse) * 0.22 * (isFocused ? 1.8 : isAmbGroup ? 1.3 : 0.7)
         ctx.beginPath()
         ctx.arc(x, y, pr, 0, Math.PI * 2)
-        ctx.strokeStyle = hexAlpha(c.color, Math.min(pa * (alpha < 0.5 ? alpha * 1.4 : alpha), 0.45))
+        ctx.strokeStyle = hexAlpha(c.color, Math.min(pa * Math.max(alpha, 0.5), 0.42))
         ctx.lineWidth = 1; ctx.stroke()
       }
 
+      // Center-proximity depth: dots closer to center are slightly larger/crisper
+      const distFromCenter = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2) / R
+      const depthScale = 1 - distFromCenter * 0.18
+      const baseR = isHovProf ? 6 : isAmbGroup && !isInteracting ? 4 + ambAlpha * 0.8 : 3.8
+      const dotR  = baseR * depthScale + (isHovProf ? 0 : (1 - depthScale) * 0.5)
+
       // Core dot
       ctx.beginPath()
-      ctx.arc(x, y, isHovProf ? 6.5 : 4, 0, Math.PI * 2)
+      ctx.arc(x, y, dotR, 0, Math.PI * 2)
       ctx.fillStyle = hexAlpha(c.color, alpha)
       ctx.fill()
 
-      // Contextual label — appears when category is focused (not on hover, tooltip handles that)
-      if (!isHovProf && activeCat !== null && activeCat === p.group && alpha > 0.5) {
+      // Contextual name labels — group hover only
+      if (!isHovProf && activeCat !== null && activeCat === p.group && groupProgress > 0.5) {
         ctx.font = '500 9px system-ui, -apple-system'
-        ctx.fillStyle = hexAlpha(c.color, alpha * 0.70)
+        ctx.fillStyle = hexAlpha(c.color, groupProgress * 0.65)
         ctx.textAlign = 'center'
-        ctx.fillText(p.name.toUpperCase(), x, y + 15)
+        ctx.fillText(p.name.toUpperCase(), x, y + 14)
         ctx.textAlign = 'left'
       }
     })
@@ -313,7 +436,7 @@ function RadarCanvas({
   }, [onHoverProfile, onHoverCat])
 
   return (
-    <div style={{ position: 'relative', width: 'min(calc(100vh - 140px), 90vw, 720px)', height: 'min(calc(100vh - 140px), 90vw, 720px)', zIndex: 1 }}>
+    <div style={{ position: 'relative', width: 'min(72vh, 86vw, 720px)', height: 'min(72vh, 86vw, 720px)', zIndex: 1 }}>
       <canvas
         ref={canvasRef}
         width={RADAR_SIZE} height={RADAR_SIZE}
@@ -643,66 +766,75 @@ export default function ArchetypesPage() {
       {/* ── HERO ── */}
       <section style={{
         height: '100vh', display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center',
-        position: 'relative', textAlign: 'center',
+        justifyContent: 'center',
+        position: 'relative',
         padding: '80px 48px', overflow: 'hidden',
       }}>
         {/* Ambient pulse */}
         <div style={{ position: 'absolute', top: '50%', left: '50%', width: 640, height: 640, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.022) 0%, transparent 70%)', animation: 'heroPulse 4s ease-out infinite', pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', top: '50%', left: '50%', width: 640, height: 640, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.022) 0%, transparent 70%)', animation: 'heroPulse 4s ease-out 2s infinite', pointerEvents: 'none' }} />
 
-        <div style={{ position: 'relative' }}>
-          <p style={{ fontSize: 10, fontWeight: 500, color: 'rgba(255,255,255,0.25)', letterSpacing: '0.18em', textTransform: 'uppercase', marginBottom: 18 }}>
+        <div style={{ position: 'relative', maxWidth: 900, width: '100%', margin: '0 auto', marginTop: '-10vh' }}>
+          <p style={{ fontSize: 10, fontWeight: 300, color: 'rgba(238,236,230,0.32)', letterSpacing: '0.22em', textTransform: 'uppercase', margin: '0 0 20px 0' }}>
             Behavioral Archetypes
           </p>
-          <div style={{ maxWidth: 820, margin: '0 auto' }}>
-            <h1 style={{
-              fontFamily: '"Barlow Condensed", system-ui',
-              fontSize: 'clamp(44px, 6.5vw, 88px)',
-              fontWeight: 900, textTransform: 'uppercase',
-              letterSpacing: '-0.01em', lineHeight: 0.92, margin: 0,
-            }}>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0 0.22em', justifyContent: 'center', marginBottom: '0.06em' }}>
-                {HERO_WORDS.map((word, i) => (
-                  <span key={i} style={{
-                    display: 'inline-block', color: '#FFFFFF',
-                    opacity: heroWords > i ? 1 : 0,
-                    transform: heroWords > i ? 'translateY(0)' : 'translateY(8px)',
-                    transition: 'opacity 320ms ease, transform 320ms ease',
-                  }}>{word}</span>
-                ))}
-              </div>
-              <span style={{
-                display: 'block', color: 'rgba(255,255,255,0.13)',
-                opacity: heroGhost ? 1 : 0,
-                transform: heroGhost ? 'translateY(0)' : 'translateY(8px)',
-                transition: 'opacity 320ms ease, transform 320ms ease',
-              }}>Now you have words for them.</span>
-            </h1>
-          </div>
-          <p style={{ fontSize: 15, fontWeight: 300, color: 'rgba(255,255,255,0.38)', maxWidth: 400, margin: '28px auto 0', lineHeight: 1.7 }}>
+          <h1 style={{
+            fontFamily: '"Barlow Condensed", system-ui',
+            fontWeight: 900, textTransform: 'uppercase',
+            letterSpacing: '-0.01em', lineHeight: 0.9, margin: 0,
+          }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0 0.22em', marginBottom: 4 }}>
+              {HERO_WORDS.map((word, i) => (
+                <span key={i} style={{
+                  display: 'inline-block',
+                  fontSize: 'clamp(52px, 7vw, 88px)',
+                  color: '#eeece6',
+                  opacity: heroWords > i ? 1 : 0,
+                  transform: heroWords > i ? 'translateY(0)' : 'translateY(8px)',
+                  transition: 'opacity 320ms ease, transform 320ms ease',
+                }}>{word}</span>
+              ))}
+            </div>
+            <span style={{
+              display: 'block',
+              fontSize: 'clamp(52px, 7vw, 88px)',
+              color: 'rgba(238,236,230,0.09)',
+              opacity: heroGhost ? 1 : 0,
+              transform: heroGhost ? 'translateY(0)' : 'translateY(8px)',
+              transition: 'opacity 320ms ease, transform 320ms ease',
+            }}>Now you have words for them.</span>
+          </h1>
+          <p style={{ fontSize: 16, fontWeight: 300, color: 'rgba(238,236,230,0.5)', maxWidth: 420, marginTop: 28, lineHeight: 1.65 }}>
             Browse the patterns recruiters recognize instantly — or find your own in six minutes.
           </p>
-          <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 36, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 36, flexWrap: 'wrap' }}>
             <a href="/invite-self" style={{
-              height: 44, padding: '0 24px', borderRadius: 8,
-              background: '#FFFFFF', color: BG, fontSize: 14, fontWeight: 600,
+              padding: '11px 24px', borderRadius: 100,
+              background: '#eeece6', color: '#080808', fontSize: 13, fontWeight: 500,
               display: 'inline-flex', alignItems: 'center', textDecoration: 'none', transition: 'opacity 150ms ease',
             }}
               onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
               onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
             >Find your archetype</a>
             <a href="#archetypes" style={{
-              height: 44, padding: '0 24px', borderRadius: 8,
-              background: 'transparent', color: 'rgba(255,255,255,0.50)',
+              padding: '11px 24px', borderRadius: 100,
+              background: 'transparent', color: 'rgba(238,236,230,0.6)',
               border: '1px solid rgba(255,255,255,0.14)',
-              fontSize: 14, fontWeight: 400, display: 'inline-flex', alignItems: 'center',
+              fontSize: 13, fontWeight: 400, display: 'inline-flex', alignItems: 'center',
               textDecoration: 'none', transition: 'border-color 150ms ease, color 150ms ease',
             }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.28)'; e.currentTarget.style.color = '#FFF' }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.14)'; e.currentTarget.style.color = 'rgba(255,255,255,0.50)' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.28)'; e.currentTarget.style.color = 'rgba(238,236,230,1)' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.14)'; e.currentTarget.style.color = 'rgba(238,236,230,0.6)' }}
             >Browse all {REFERENCE_PROFILES.length}</a>
           </div>
+        </div>
+
+        {/* Scroll indicator */}
+        <div style={{ position: 'absolute', bottom: 32, left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, pointerEvents: 'none' }}>
+          <div style={{ width: 1, height: 36, background: 'rgba(255,255,255,0.2)', overflow: 'hidden', position: 'relative' }}>
+            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(255,255,255,0.55)', animation: 'scrollLine 2s ease-in-out infinite' }} />
+          </div>
+          <p style={{ fontSize: 9, fontWeight: 400, color: 'rgba(238,236,230,0.3)', letterSpacing: '0.2em', textTransform: 'uppercase', margin: 0 }}>Scroll</p>
         </div>
 
       </section>
@@ -748,6 +880,19 @@ export default function ArchetypesPage() {
           onHoverCat={setActive}
           onHoverProfile={setHovProf}
         />
+
+        {/* Interpretation line — floats below map, absolute so it doesn't shift layout */}
+        <p style={{
+          position: 'absolute', bottom: 22, left: 0, right: 0,
+          textAlign: 'center', margin: 0,
+          fontSize: 11, fontWeight: 300,
+          color: 'rgba(255,255,255,0.16)',
+          letterSpacing: '0.01em',
+          fontFamily: '"DM Sans", sans-serif',
+          pointerEvents: 'none', zIndex: 2,
+        }}>
+          Position reflects speed of execution and orientation toward people vs. output.
+        </p>
 
       </section>
 
@@ -832,6 +977,10 @@ export default function ArchetypesPage() {
         @keyframes heroPulse {
           0%   { opacity: 0.035; transform: translate(-50%,-50%) scale(0.3); }
           100% { opacity: 0;     transform: translate(-50%,-50%) scale(1.9); }
+        }
+        @keyframes scrollLine {
+          0%   { transform: translateY(-100%); opacity: 1; }
+          100% { transform: translateY(100%);  opacity: 0; }
         }
         html, body { scrollbar-width: none; -ms-overflow-style: none; }
         html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; }
