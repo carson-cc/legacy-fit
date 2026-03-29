@@ -153,6 +153,26 @@ function getDotXY(p: typeof REFERENCE_PROFILES[0], w: number, h: number, M: numb
   return dotXY(p.coords.patience, p.coords.extraversion, w, h, M)
 }
 
+// ─── ARCH ESSENCE ─────────────────────────────────────────────────────────────
+const ARCH_ESSENCE: Record<string, string> = {
+  Conductor:   'COMMANDS WITHOUT FILLING SPACE',
+  Pioneer:     'STARTS BEFORE IT\'S READY',
+  Purist:      'HOLDS THE LINE ON QUALITY',
+  Renegade:    'FORCES THE DIFFERENT DIRECTION',
+  Igniter:     'CREATES MOMENTUM FAST',
+  Diplomat:    'KEEPS EVERYONE ALIGNED',
+  Rainmaker:   'WINS THROUGH RELATIONSHIPS',
+  Unifier:     'HOLDS THE TEAM TOGETHER',
+  Anchor:      'STABLE UNDER ANY PRESSURE',
+  Navigator:   'THINKS BEFORE MOVING',
+  Sentinel:    'CATCHES WHAT OTHERS MISS',
+  Steward:     'RUNS WHAT WORKS CONSISTENTLY',
+  Expert:      'OPERATES FROM DEEP KNOWLEDGE',
+  Executor:    'TURNS DECISIONS INTO ACTION',
+  Trailblazer: 'RAISES WHAT\'S POSSIBLE',
+  Veteran:     'GUIDES FROM EXPERIENCE',
+}
+
 // ─── ARCH COPY ────────────────────────────────────────────────────────────────
 const ARCH_COPY: Record<string, { blurb: string; risk: string }> = {
   Conductor:   { blurb: 'Takes control quickly.',                           risk: 'Overrides others before they step in.' },
@@ -295,12 +315,16 @@ function MiniPentagon({ vals, color, size = 20 }: { vals: number[]; color: strin
 }
 
 // ─── CARD PENTAGON ────────────────────────────────────────────────────────────
-function CardPentagon({ name, color, hovered }: { name: string; color: string; hovered: boolean }) {
+function CardPentagon({ name, color, hovered, sectionVisible, cardIndex }: { name: string; color: string; hovered: boolean; sectionVisible: boolean; cardIndex: number }) {
   const [drawn, setDrawn] = useState(false)
-  useEffect(() => { if (hovered && !drawn) setDrawn(true) }, [hovered, drawn])
+  const animatedRef = useRef(false)
+
+  useEffect(() => {
+    if ((sectionVisible || hovered) && !drawn) setDrawn(true)
+  }, [sectionVisible, hovered, drawn])
 
   const vals    = PENT_VALUES[name] ?? [60, 60, 60, 60, 60]
-  const size    = 56, cx = 28, cy = 28, maxR = 22
+  const size    = 72, cx = 36, cy = 36, maxR = 28
   const angles  = [0, 1, 2, 3, 4].map(i => (i * 2 * Math.PI / 5) - Math.PI / 2)
 
   function ring(r: number) {
@@ -311,6 +335,9 @@ function CardPentagon({ name, color, hovered }: { name: string; color: string; h
     const r = (v / 100) * maxR
     return `${cx + r * Math.cos(angles[i])},${cy + r * Math.sin(angles[i])}`
   }).join(' ')
+
+  const shouldAnimate = drawn && !animatedRef.current
+  if (drawn) animatedRef.current = true
 
   return (
     <svg
@@ -326,8 +353,8 @@ function CardPentagon({ name, color, hovered }: { name: string; color: string; h
         stroke={color}
         strokeWidth="1.2"
         opacity={hovered ? 1 : 0.65}
-        className={drawn ? 'pent-first-draw' : undefined}
-        style={{ transition: 'opacity 200ms ease, fill 200ms ease' }}
+        className={shouldAnimate ? 'pent-first-draw' : undefined}
+        style={{ transition: 'opacity 200ms ease, fill 200ms ease', animationDelay: shouldAnimate ? `${cardIndex * 100}ms` : '0ms' }}
       />
     </svg>
   )
@@ -458,10 +485,10 @@ function RadarCanvas({
       const c        = getCat(ww.cat)
       const isActive  = activeCat === ww.cat
       const isAmbient = ambCat === ww.cat
-      const opacity   = isActive ? 0.14
-        : activeCat !== null ? 0.018
-        : isAmbient ? 0.07 + ambAlpha * 0.07
-        : 0.045
+      const opacity   = isActive ? 0.10
+        : activeCat !== null ? 0.014
+        : isAmbient ? 0.05 + ambAlpha * 0.05
+        : 0.032
       const grad = ctx.createRadialGradient(ww.qx, ww.qy, 0, ww.qx, ww.qy, R * 1.1)
       grad.addColorStop(0, hexAlpha(c.color, opacity))
       grad.addColorStop(1, 'transparent')
@@ -473,7 +500,7 @@ function RadarCanvas({
     for (let i = 1; i <= 4; i++) {
       ctx.beginPath()
       ctx.arc(cx, cy, R * i / 4, 0, Math.PI * 2)
-      ctx.strokeStyle = 'rgba(255,255,255,0.04)'
+      ctx.strokeStyle = 'rgba(255,255,255,0.07)'
       ctx.lineWidth = 1; ctx.stroke()
     }
 
@@ -481,7 +508,7 @@ function RadarCanvas({
     const px0 = ox + M, px1 = ox + side - M
     const py0 = oy + M, py1 = oy + side - M
     ctx.setLineDash([2, 8])
-    ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 1
+    ctx.strokeStyle = 'rgba(255,255,255,0.07)'; ctx.lineWidth = 1
     ctx.beginPath(); ctx.moveTo(px0, cy); ctx.lineTo(px1, cy); ctx.stroke()
     ctx.beginPath(); ctx.moveTo(cx, py0); ctx.lineTo(cx, py1); ctx.stroke()
     ctx.setLineDash([])
@@ -530,12 +557,12 @@ function RadarCanvas({
       const isAmbGroup = p.group === ambCat
 
       const alpha = hovProf
-        ? (isHovProf ? 0.96 : 0.07)
+        ? (isHovProf ? 1.0 : 0.06)
         : activeCat !== null
-          ? (activeCat === p.group ? 0.94 : 0.07)
+          ? (activeCat === p.group ? 1.0 : 0.06)
           : isAmbGroup
-            ? 0.50 + ambAlpha * 0.32
-            : 0.44 - ambAlpha * 0.12
+            ? 0.65 + ambAlpha * 0.25
+            : 0.62 - ambAlpha * 0.14
 
       const isFocused = (activeCat !== null && activeCat === p.group) || isHovProf
 
@@ -545,35 +572,42 @@ function RadarCanvas({
 
       const pp    = pulseParams.current[i]
       const pulse = (Math.sin(t * 0.001 * pp.speed + pp.phase) + 1) / 2
-      // Glow circle — radius 18 (scaled), category color at 0.10 opacity
+      // Glow circle — radius 22 (scaled), category color with depth
       if (alpha > 0.08) {
-        const glowR = 18 * (side / RADAR_SIZE)
+        const glowR = 22 * (side / RADAR_SIZE)
+        const glowGrad = ctx.createRadialGradient(x, y, 0, x, y, glowR)
+        glowGrad.addColorStop(0, hexAlpha(c.color, 0.18 * alpha))
+        glowGrad.addColorStop(1, 'transparent')
         ctx.beginPath()
         ctx.arc(x, y, glowR, 0, Math.PI * 2)
-        ctx.fillStyle = hexAlpha(c.color, 0.10 * alpha)
+        ctx.fillStyle = glowGrad
         ctx.fill()
 
-        const pr = 4.5 + pulse * 13
-        const pa = (1 - pulse) * 0.22 * (isFocused ? 1.8 : isAmbGroup ? 1.3 : 0.7)
+        const pr = 4.5 + pulse * 14
+        const pa = (1 - pulse) * 0.26 * (isFocused ? 2.0 : isAmbGroup ? 1.4 : 0.8)
         ctx.beginPath()
         ctx.arc(x, y, pr, 0, Math.PI * 2)
-        ctx.strokeStyle = hexAlpha(c.color, Math.min(pa * Math.max(alpha, 0.5), 0.42))
+        ctx.strokeStyle = hexAlpha(c.color, Math.min(pa * Math.max(alpha, 0.55), 0.48))
         ctx.lineWidth = 1; ctx.stroke()
       }
 
-      // Main dot — radius 9 (scaled)
-      const dotR = 9 * (side / RADAR_SIZE)
+      // Main dot — radius 11 (scaled) with inner glow gradient
+      const dotR = 11 * (side / RADAR_SIZE)
+      const dotGrad = ctx.createRadialGradient(x, y, 0, x, y, dotR)
+      dotGrad.addColorStop(0,   hexAlpha(c.color, Math.min(alpha * 1.15, 1.0)))
+      dotGrad.addColorStop(0.5, hexAlpha(c.color, alpha * 0.92))
+      dotGrad.addColorStop(1,   hexAlpha(c.color, alpha * 0.55))
 
       ctx.beginPath()
       ctx.arc(x, y, dotR, 0, Math.PI * 2)
-      ctx.fillStyle = hexAlpha(c.color, alpha * 0.88)
+      ctx.fillStyle = dotGrad
       ctx.fill()
 
       if (!isHovProf && activeCat !== null && activeCat === p.group && groupProgress > 0.5) {
         ctx.font = '500 9px system-ui, -apple-system'
         ctx.fillStyle = hexAlpha(c.color, groupProgress * 0.65)
         ctx.textAlign = 'center'
-        ctx.fillText(displayName(p.name).toUpperCase(), x, y + 14)
+        ctx.fillText(displayName(p.name).toUpperCase(), x, y + 16)
         ctx.textAlign = 'left'
       }
     })
@@ -699,13 +733,16 @@ function useFadeInUp(ref: { current: HTMLElement | null }, delay = 0) {
 function HScrollRow({ children }: { children: React.ReactNode }) {
   const rowRef = useRef<HTMLDivElement>(null)
   const [pct, setPct] = useState(0)
+  const [showFade, setShowFade] = useState(true)
   const onScroll = useCallback(() => {
     const el = rowRef.current; if (!el) return
     const max = el.scrollWidth - el.clientWidth
     setPct(max > 0 ? el.scrollLeft / max : 0)
+    const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 10
+    setShowFade(!atEnd)
   }, [])
   return (
-    <div>
+    <div style={{ position: 'relative' }}>
       <div ref={rowRef} onScroll={onScroll} style={{
         display: 'flex', gap: 12,
         overflowX: 'auto', scrollSnapType: 'x mandatory',
@@ -714,6 +751,16 @@ function HScrollRow({ children }: { children: React.ReactNode }) {
       }}>
         {children}
       </div>
+      <div style={{
+        position: 'absolute',
+        top: 0, right: 0,
+        width: 80, height: 'calc(100% - 14px)',
+        background: 'linear-gradient(to right, transparent, #080808)',
+        pointerEvents: 'none',
+        zIndex: 2,
+        opacity: showFade ? 1 : 0,
+        transition: 'opacity 200ms ease',
+      }} />
       <div style={{ marginTop: 10, height: 1, background: 'rgba(255,255,255,0.07)', borderRadius: 1, position: 'relative', overflow: 'hidden' }}>
         <div style={{
           position: 'absolute', top: 0, left: `${pct * 60}%`, width: '40%', height: '100%',
@@ -725,10 +772,12 @@ function HScrollRow({ children }: { children: React.ReactNode }) {
 }
 
 // ─── ARCH CARD ────────────────────────────────────────────────────────────────
-function ArchCard({ profile, catColor, catKey, onHover }: {
+function ArchCard({ profile, catColor, catKey, onHover, sectionVisible, cardIndex }: {
   profile: typeof REFERENCE_PROFILES[0]
   catColor: string; catKey: string
   onHover: (k: string | null) => void
+  sectionVisible: boolean
+  cardIndex: number
 }) {
   const [hov, setHov] = useState(false)
   return (
@@ -747,9 +796,10 @@ function ArchCard({ profile, catColor, catKey, onHover }: {
         width: 240, flexShrink: 0,
         scrollSnapAlign: 'start', touchAction: 'pan-x',
         position: 'relative',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
       }}
     >
-      <CardPentagon name={displayName(profile.name)} color={catColor} hovered={hov} />
+      <CardPentagon name={displayName(profile.name)} color={catColor} hovered={hov} sectionVisible={sectionVisible} cardIndex={cardIndex} />
       <div style={{
         opacity: hov ? 1 : 0.62,
         transition: 'opacity 150ms ease, filter 150ms ease',
@@ -763,30 +813,34 @@ function ArchCard({ profile, catColor, catKey, onHover }: {
           fontSize: 20, fontWeight: 800, textTransform: 'uppercase',
           letterSpacing: '0.02em',
           color: hov ? catColor : 'rgba(255,255,255,0.88)',
-          lineHeight: 1.1, marginBottom: 8, transition: 'color 150ms ease',
-          paddingRight: 68,
+          lineHeight: 1.1, transition: 'color 150ms ease',
+          paddingRight: 88,
         }}>{displayName(profile.name)}</div>
+        {ARCH_ESSENCE[displayName(profile.name)] && (
+          <div style={{
+            fontSize: 10, fontWeight: 400, color: catColor,
+            textTransform: 'uppercase', letterSpacing: '0.14em',
+            marginTop: 2, marginBottom: 6,
+            fontFamily: '"DM Sans", sans-serif',
+          }}>
+            {ARCH_ESSENCE[displayName(profile.name)]}
+          </div>
+        )}
         <div>
           <p style={{ fontSize: 12, fontWeight: 300, color: 'rgba(255,255,255,0.62)', lineHeight: 1.65, margin: '0 0 6px 0', fontFamily: '"DM Sans", sans-serif' }}>
             {ARCH_COPY[displayName(profile.name)]?.blurb ?? profile.essence}
           </p>
-          {ARCH_COPY[displayName(profile.name)] && (
-            <p style={{ fontSize: 12, fontWeight: 300, fontStyle: 'italic', color: 'rgba(238,236,230,0.45)', lineHeight: 1.5, margin: 0, fontFamily: '"DM Sans", sans-serif' }}>
-              <span style={{ fontStyle: 'normal', fontWeight: 500, fontSize: 10, color: catColor, textTransform: 'uppercase', letterSpacing: '0.1em', marginRight: 5 }}>Risk:</span>
-              {ARCH_COPY[displayName(profile.name)].risk}
+          {ARCH_COPY[displayName(profile.name)]?.risk && (
+            <p style={{
+              fontSize: 12, fontWeight: 300, fontStyle: 'italic',
+              color: 'rgba(238,236,230,0.38)',
+              lineHeight: 1.5, margin: '8px 0 0 0',
+              fontFamily: '"DM Sans", sans-serif',
+            }}>
+              — {ARCH_COPY[displayName(profile.name)].risk}
             </p>
           )}
         </div>
-      </div>
-      <div style={{
-        display: 'inline-block', alignSelf: 'flex-start', marginTop: 'auto',
-        fontSize: 10, fontWeight: 500,
-        color: hexAlpha(catColor, 0.75), background: hexAlpha(catColor, 0.08),
-        border: `1px solid ${hexAlpha(catColor, 0.14)}`,
-        borderRadius: 5, padding: '3px 8px',
-        fontFamily: '"DM Sans", sans-serif', letterSpacing: '0.04em',
-      }}>
-        {TAGS[displayName(profile.name)] ?? profile.tagline.split(',')[0]}
       </div>
       {/* Decision signal — reveals on hover */}
       <div style={{
@@ -999,13 +1053,15 @@ export default function ArchetypesPage() {
   const [axisColors,     setAxisColors]     = useState<AxisColors>(DEFAULT_AXIS_COLORS)
   const [axisShadows,    setAxisShadows]    = useState<AxisShadows>(DEFAULT_AXIS_SHADOWS)
   const [selectedProfile, setSelectedProfile] = useState<string | null>(null)
+  const [cardsDrawn,     setCardsDrawn]     = useState(false)
 
-  const ctaBandRef = useRef<HTMLDivElement>(null)
-  const cat0Ref    = useRef<HTMLDivElement>(null)
-  const cat1Ref    = useRef<HTMLDivElement>(null)
-  const cat2Ref    = useRef<HTMLDivElement>(null)
-  const cat3Ref    = useRef<HTMLDivElement>(null)
-  const mainRef    = useRef<HTMLElement>(null)
+  const ctaBandRef         = useRef<HTMLDivElement>(null)
+  const cat0Ref            = useRef<HTMLDivElement>(null)
+  const cat1Ref            = useRef<HTMLDivElement>(null)
+  const cat2Ref            = useRef<HTMLDivElement>(null)
+  const cat3Ref            = useRef<HTMLDivElement>(null)
+  const mainRef            = useRef<HTMLElement>(null)
+  const archetypeBlocksRef = useRef<HTMLDivElement>(null)
 
   const setActive  = useCallback((k: string | null) => setActiveCat(k), [])
   const setHovProf = useCallback((n: string | null) => setHoveredProfile(n), [])
@@ -1050,6 +1106,16 @@ export default function ArchetypesPage() {
     link.href = 'https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap'
     document.head.appendChild(link)
     return () => { try { document.head.removeChild(link) } catch {} }
+  }, [])
+
+  useEffect(() => {
+    const el = archetypeBlocksRef.current
+    if (!el) return
+    const obs = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) { setCardsDrawn(true); obs.disconnect() }
+    }, { threshold: 0.15 })
+    obs.observe(el)
+    return () => obs.disconnect()
   }, [])
 
 
@@ -1178,6 +1244,20 @@ export default function ArchetypesPage() {
           }}>
             Every person you&#39;ve ever hired sits somewhere on this map.
           </p>
+          <p style={{
+            margin: '7px 0 0 0', fontSize: 11, fontWeight: 300,
+            color: 'rgba(238,236,230,0.30)', fontFamily: '"DM Sans", sans-serif',
+            letterSpacing: '0.01em',
+          }}>
+            Speed of execution × orientation toward people vs. output.
+          </p>
+          <p style={{
+            margin: '8px 0 0 0', fontSize: 9, fontWeight: 300,
+            color: 'rgba(238,236,230,0.18)', fontFamily: '"DM Sans", sans-serif',
+            letterSpacing: '0.08em', textTransform: 'uppercase',
+          }}>
+            Use this to understand how candidates will behave in your environment.
+          </p>
         </div>
 
         {/* Axis labels — DOM so they can animate */}
@@ -1240,14 +1320,23 @@ export default function ArchetypesPage() {
                 zIndex: 4, cursor: 'default',
               }}
             >
-              <div style={{
-                fontFamily: '"Barlow Condensed", system-ui',
-                fontSize: 13, fontWeight: 700,
-                textTransform: 'uppercase', letterSpacing: '0.08em',
-                color: isDimmed ? 'rgba(238,236,230,0.18)' : cat.color,
-                marginBottom: 6, lineHeight: 1,
-                transition: 'color 200ms ease',
-              }}>{cat.label}</div>
+              <div style={{ marginBottom: 6 }}>
+                <div style={{
+                  fontFamily: '"Barlow Condensed", system-ui',
+                  fontSize: 13, fontWeight: 700,
+                  textTransform: 'uppercase', letterSpacing: '0.08em',
+                  color: isDimmed ? 'rgba(238,236,230,0.18)' : cat.color,
+                  lineHeight: 1,
+                  transition: 'color 200ms ease',
+                }}>{cat.label}</div>
+                <div style={{
+                  fontSize: 9, fontWeight: 300,
+                  color: isDimmed ? 'rgba(238,236,230,0.10)' : 'rgba(238,236,230,0.32)',
+                  letterSpacing: '0.06em', marginTop: 3, lineHeight: 1,
+                  fontFamily: '"DM Sans", sans-serif',
+                  transition: 'color 200ms ease',
+                }}>{cat.axisNote}</div>
+              </div>
               {profiles.map(p => {
                 const dn = displayName(p.name)
                 const isDom = DOMINANT_ARCHETYPES.has(dn)
@@ -1327,7 +1416,7 @@ export default function ArchetypesPage() {
         </div>
 
         {/* Archetype blocks */}
-        <div style={{ padding: 'clamp(40px, 6vh, 72px) clamp(20px, 5vw, 40px) clamp(60px, 8vh, 100px)', maxWidth: 'min(1320px, calc(100vw - clamp(40px, 8vw, 160px)))', margin: '0 auto', width: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 64 }}>
+        <div ref={archetypeBlocksRef} style={{ padding: 'clamp(40px, 6vh, 72px) clamp(20px, 5vw, 40px) clamp(60px, 8vh, 100px)', maxWidth: 'min(1320px, calc(100vw - clamp(40px, 8vw, 160px)))', margin: '0 auto', width: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 64 }}>
           {grouped.map((g, idx) => (
             <div key={g.key}>
               <div ref={catRefs[idx]} style={{
@@ -1337,7 +1426,7 @@ export default function ArchetypesPage() {
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <Icon paths={CAT_ICONS[g.key] ?? []} size={22} stroke={g.color} />
-                  <span style={{ fontFamily: '"Barlow Condensed", system-ui', fontSize: 'clamp(22px, 3vw, 28px)', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.02em', color: g.color }}>
+                  <span style={{ fontFamily: '"Barlow Condensed", system-ui', fontSize: 26, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: g.color }}>
                     {g.label}
                   </span>
                   <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.28)', fontWeight: 300 }}>{g.descriptor}</span>
@@ -1345,8 +1434,8 @@ export default function ArchetypesPage() {
                 <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.18)', letterSpacing: '0.06em' }}>{g.axisNote}</span>
               </div>
               <HScrollRow>
-                {g.profiles.map(p => (
-                  <ArchCard key={p.name} profile={p} catColor={g.color} catKey={g.key} onHover={setActive} />
+                {g.profiles.map((p, i) => (
+                  <ArchCard key={p.name} profile={p} catColor={g.color} catKey={g.key} onHover={setActive} sectionVisible={cardsDrawn} cardIndex={idx * 4 + i} />
                 ))}
               </HScrollRow>
             </div>
