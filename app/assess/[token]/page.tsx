@@ -36,24 +36,6 @@ function profileToValues(coords: { dominance: number; extraversion: number; pati
   return [dominance, formality, (1 - formality + patience) / 2, extraversion, 1 - patience]
 }
 
-function computeSignal(checked: Set<string>) {
-  let drive = 0, social = 0, pace = 0, structure = 0
-  for (const w of checked) {
-    const adj = ADJECTIVES.find(a => a.word === w)
-    if (!adj) continue
-    if (adj.dimension === 'dominance' && adj.polarity === 'positive') drive++
-    if (adj.dimension === 'extraversion' && adj.polarity === 'positive') social++
-    if (adj.dimension === 'patience' && adj.polarity === 'negative') pace++
-    if (adj.dimension === 'formality' && adj.polarity === 'positive') structure++
-  }
-  return {
-    drive: Math.min(drive / 10, 1),
-    social: Math.min(social / 10, 1),
-    pace: Math.min(pace / 10, 1),
-    structure: Math.min(structure / 10, 1),
-  }
-}
-
 // ─── Archetype Insights ──────────────────────────────────────────────────────
 
 const INSIGHTS: Record<string, { coreSignal: string; whereYouWin: string; watchFor: string; emotionalLine: string }> = {
@@ -73,61 +55,61 @@ const INSIGHTS: Record<string, { coreSignal: string; whereYouWin: string; watchF
     coreSignal: "You hold the line on standards when everyone else is looking for the shortcut.",
     whereYouWin: "Quality-critical environments where the cost of getting it wrong compounds over time.",
     watchFor: "High standards without warmth can create fear in rooms that needed excellence.",
-    emotionalLine: "You're the reason the thing that should have failed didn't.",
+    emotionalLine: "You hold the line on quality when everyone else has rationalized their way past it.",
   },
   Renegade: {
     coreSignal: "You change the energy in a room the moment you walk in — and the direction shortly after.",
     whereYouWin: "Competitive, high-visibility environments where momentum is the product.",
     watchFor: "What you start brilliantly needs someone to finish — and that someone isn't always there.",
-    emotionalLine: "The reason the stalled thing started moving again was you.",
+    emotionalLine: "You say the thing no one else will say, then prove you were right.",
   },
   Catalyst: {
     coreSignal: "You make things feel possible — then make them feel urgent.",
     whereYouWin: "Launch phases and new initiatives where energy is the scarce resource.",
     watchFor: "The gap between what you start and what gets completed can quietly widen.",
-    emotionalLine: "Before anyone else saw the opportunity, you were already selling it.",
+    emotionalLine: "You create motion in rooms that had gone completely still.",
   },
   Diplomat: {
     coreSignal: "You set expectations before the problem develops — and people remember that.",
     whereYouWin: "Stakeholder-intensive environments where trust is the actual deliverable.",
     watchFor: "Prioritizing alignment over speed can cost you decisions that needed to be made.",
-    emotionalLine: "The agreement felt unanimous. You'd been steering it there since you walked in.",
+    emotionalLine: "You hold people together through situations that should have broken them apart.",
   },
   Rainmaker: {
     coreSignal: "You open doors through warmth, not pressure — and they stay open.",
     whereYouWin: "External-facing roles where authentic relationships determine outcomes.",
     watchFor: "Your generosity can be mistaken for a blank check by people who will test its limits.",
-    emotionalLine: "They didn't stay for the contract. They stayed because of you.",
+    emotionalLine: "You open doors that shouldn't open, through warmth alone.",
   },
   Unifier: {
     coreSignal: "You notice when people are struggling before anyone else does — and you do something about it.",
     whereYouWin: "Team-intensive environments where interpersonal trust is what makes everything else work.",
     watchFor: "Protecting people from discomfort can let problems fester longer than they should.",
-    emotionalLine: "You don't fully understand what they do until they're gone.",
+    emotionalLine: "People trust you before they know why. That's not charm — that's integrity.",
   },
   Anchor: {
     coreSignal: "You prioritize consistency over visibility — and people notice.",
     whereYouWin: "Operations-intensive roles where reliability and follow-through are the actual product.",
     watchFor: "Being the person everything goes through can quietly become the person everything depends on.",
-    emotionalLine: "You're the person teams rely on when things quietly start to fall apart.",
+    emotionalLine: "Steady isn't a compromise. For you, it's the strategy.",
   },
   Navigator: {
     coreSignal: "You already planned for the problem someone is about to bring you.",
     whereYouWin: "Complex environments where the ability to sequence and anticipate determines outcomes.",
     watchFor: "Waiting for perfect information can delay decisions that needed to happen yesterday.",
-    emotionalLine: "The project wasn't supposed to land on time. You're the reason it did.",
+    emotionalLine: "You see three moves ahead and let others think it was obvious.",
   },
   Sentinel: {
     coreSignal: "You catch the thing nobody was looking for — before it becomes the thing nobody can ignore.",
     whereYouWin: "Compliance and quality roles where accuracy has real consequences that compound.",
     watchFor: "Precision applied to low-stakes decisions can slow environments that need momentum.",
-    emotionalLine: "They didn't know they needed you until what you caught would have cost them everything.",
+    emotionalLine: "You catch what would embarrass the organization later. Quietly. Every time.",
   },
   Standard: {
     coreSignal: "You deliver the same quality in year ten that you delivered in week one.",
     whereYouWin: "Process-dependent roles where repeatability is more valuable than variability.",
     watchFor: "Consistency can become inertia when the situation genuinely requires adaptation.",
-    emotionalLine: "Steady isn't a compromise. For you, it's the strategy.",
+    emotionalLine: "The machine runs because you run it. That's not small — that's everything.",
   },
   Agent: {
     coreSignal: "You know things that can't be learned quickly — and everyone in the room knows it.",
@@ -139,13 +121,13 @@ const INSIGHTS: Record<string, { coreSignal: string; whereYouWin: string; watchF
     coreSignal: "You don't just win — you build the organization that keeps winning after you've moved on.",
     whereYouWin: "Scaling environments where ambition and operational discipline are required simultaneously.",
     watchFor: "Perfectionism can become a bottleneck when good enough shipped beats perfect pending.",
-    emotionalLine: "You set the ambitious goal. Then you built the system that actually reached it.",
+    emotionalLine: "You don't wait for permission. You wait for clarity — then you move.",
   },
   Trailblazer: {
     coreSignal: "You set a pace others didn't know was possible — and then hold it.",
     whereYouWin: "Competitive scaling environments where performance itself is the differentiator.",
     watchFor: "The bar you set can exhaust people who are genuinely trying to keep up.",
-    emotionalLine: "You didn't announce the bar had been raised. You just raised it.",
+    emotionalLine: "You raise what everyone thought was possible, then make it look routine.",
   },
   Veteran: {
     coreSignal: "You've seen what happens when people cut corners — and you show up every time to make sure it doesn't.",
@@ -156,10 +138,11 @@ const INSIGHTS: Record<string, { coreSignal: string; whereYouWin: string; watchF
 }
 
 const PENTAGON_LABELS = ['Execution', 'Ownership', 'Adaptability', 'Collaboration', 'Dec. Speed']
+const PROC_DIMS = ['EXECUTION', 'OWNERSHIP', 'ADAPTABILITY', 'COLLABORATION', 'DECISION SPEED']
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type Phase = 'loading' | 'welcome' | 'list1' | 'list2' | 'submitting' | 'complete' | 'error'
+type Phase = 'loading' | 'welcome' | 'list1' | 'list2' | 'processing' | 'complete' | 'error'
 
 interface CompletionData {
   profileName: string
@@ -193,11 +176,22 @@ export default function AssessPage() {
   const [pendingAction, setPendingAction] = useState<'finishList1' | 'submitAssessment' | null>(null)
   const [showScrollTop, setShowScrollTop] = useState(false)
   const [scoringVariant, setScoringVariant] = useState<'v1_stepped' | 'v2_quadratic'>('v2_quadratic')
-  const [isSubmittingAnimating, setIsSubmittingAnimating] = useState(false)
 
-  const [resultStage, setResultStage] = useState(0)
+  // Processing screen animation (Change 2)
+  const [procStage, setProcStage] = useState(0) // 0=black,1=line,2-6=dims,7=fadeout
+
+  // Results animation (Change 3)
+  const [resultMoment, setResultMoment] = useState(0) // 0-10
   const [displayedName, setDisplayedName] = useState('')
-  const [pentagonActive, setPentagonActive] = useState(false)
+
+  // Timer management (all timeouts tracked for cleanup)
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([])
+  function schedule(fn: () => void, ms: number) {
+    const id = setTimeout(fn, ms)
+    timers.current.push(id)
+    return id
+  }
+  useEffect(() => () => { timers.current.forEach(clearTimeout) }, [])
 
   const storageKey = `legacy-fit-${token}`
 
@@ -210,7 +204,7 @@ export default function AssessPage() {
         if (data.list2Order) setList2Order(data.list2Order)
         if (data.list1Checked) setList1Checked(new Set(data.list1Checked))
         if (data.list2Checked) setList2Checked(new Set(data.list2Checked))
-        if (data.phase && data.phase !== 'loading' && data.phase !== 'submitting') {
+        if (data.phase && data.phase !== 'loading' && data.phase !== 'processing') {
           setPhase(data.phase)
           return
         }
@@ -279,33 +273,50 @@ export default function AssessPage() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [phase])
 
+  // Processing screen animation sequence
+  useEffect(() => {
+    if (phase !== 'processing') { setProcStage(0); return }
+    schedule(() => setProcStage(1), 400)
+    schedule(() => setProcStage(2), 900)
+    schedule(() => setProcStage(3), 1060)
+    schedule(() => setProcStage(4), 1220)
+    schedule(() => setProcStage(5), 1380)
+    schedule(() => setProcStage(6), 1540)
+    schedule(() => setProcStage(7), 1800)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase])
+
   // Results sequence
   useEffect(() => {
     if (phase !== 'complete' || !completionData) return
+    setResultMoment(0)
+    setDisplayedName('')
+
     const name = completionData.profileName
-    const typeMs = name.length * 55
 
-    const t1 = setTimeout(() => setResultStage(1), 400)
-    const t2 = setTimeout(() => setResultStage(2), 1000)
+    schedule(() => setResultMoment(1), 200)
+    schedule(() => setResultMoment(2), 500)
+    schedule(() => setResultMoment(3), 600)
 
-    let idx = 0
-    const ticker = setInterval(() => {
-      idx++
-      setDisplayedName(name.slice(0, idx))
-      if (idx >= name.length) clearInterval(ticker)
-    }, 55)
+    // Typewriter starts at 1400ms
+    schedule(() => {
+      setResultMoment(4)
+      let idx = 0
+      const tick = setInterval(() => {
+        idx++
+        setDisplayedName(name.slice(0, idx))
+        if (idx >= name.length) clearInterval(tick)
+      }, 40)
+      timers.current.push(tick as unknown as ReturnType<typeof setTimeout>)
+    }, 1400)
 
-    const done = 1000 + typeMs
-    const t3 = setTimeout(() => setResultStage(3), done + 400)
-    const t4 = setTimeout(() => { setResultStage(4); setPentagonActive(true) }, done + 800)
-    const t5 = setTimeout(() => setResultStage(5), done + 2400)
-    const t6 = setTimeout(() => setResultStage(6), done + 4600)
-
-    return () => {
-      clearTimeout(t1); clearTimeout(t2); clearTimeout(t3)
-      clearTimeout(t4); clearTimeout(t5); clearTimeout(t6)
-      clearInterval(ticker)
-    }
+    schedule(() => setResultMoment(5), 1800)
+    schedule(() => setResultMoment(6), 2200)
+    schedule(() => setResultMoment(7), 2800)
+    schedule(() => setResultMoment(8), 3200)
+    schedule(() => setResultMoment(9), 3800)
+    schedule(() => setResultMoment(10), 4600)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, completionData])
 
   function toggleWord(list: 1 | 2, word: string) {
@@ -340,22 +351,15 @@ export default function AssessPage() {
   async function submitAssessment() {
     if (list2Checked.size < 10) return
     if (list2Checked.size < 15) { setShowLowCountWarning(true); setPendingAction('submitAssessment'); return }
-    await doAnimatedSubmit()
-  }
-
-  async function doAnimatedSubmit() {
-    setShowLowCountWarning(false)
-    setPendingAction(null)
-    setIsSubmittingAnimating(true)
-    await new Promise(r => setTimeout(r, 1500))
-    setIsSubmittingAnimating(false)
-    doSubmitAssessment()
+    await doSubmitAssessment()
   }
 
   async function doSubmitAssessment() {
+    setShowLowCountWarning(false)
+    setPendingAction(null)
     const t2 = Date.now() - page2StartRef.current
     setTimeOnPage2Ms(t2)
-    setPhase('submitting')
+    setPhase('processing')
 
     const payload = {
       list1Checked: Array.from(list1Checked),
@@ -365,36 +369,50 @@ export default function AssessPage() {
       scoringVariant,
     }
 
-    let retries = 0
-    while (retries < 3) {
-      try {
-        const res = await fetch(`/api/assess/${token}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        })
-        const data = await res.json()
-        if (data.success) {
-          setCompletionData(data)
-          setPhase('complete')
-          localStorage.removeItem(storageKey)
-          return
+    // Run animation (2200ms minimum) and API call in parallel
+    const minDuration = new Promise<void>(res => setTimeout(res, 2200))
+
+    type ApiResult = { data: CompletionData | null; error: boolean }
+    const apiCall = async (): Promise<ApiResult> => {
+      let retries = 0
+      while (retries < 3) {
+        try {
+          const res = await fetch(`/api/assess/${token}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          })
+          const data = await res.json()
+          if (data.success) {
+            localStorage.removeItem(storageKey)
+            return { data: data as CompletionData, error: false }
+          }
+          if (data.error === 'Assessment already completed') {
+            return { data: null, error: false }
+          }
+          throw new Error(data.error || 'Submission failed')
+        } catch {
+          retries++
+          if (retries < 3) await new Promise(r => setTimeout(r, 1000 * retries))
         }
-        if (data.error === 'Assessment already completed') { setPhase('complete'); return }
-        throw new Error(data.error || 'Submission failed')
-      } catch {
-        retries++
-        if (retries < 3) await new Promise(r => setTimeout(r, 1000 * retries))
       }
+      return { data: null, error: true }
     }
 
-    setErrorMsg('Something went wrong. Your answers are saved — please try again.')
-    setPhase('list2')
+    const [, result] = await Promise.all([minDuration, apiCall()])
+
+    if (result.error) {
+      setErrorMsg('Something went wrong. Your answers are saved — please try again.')
+      setPhase('list2')
+      return
+    }
+    if (result.data) setCompletionData(result.data)
+    setPhase('complete')
   }
 
   function handleContinueAnyway() {
     if (pendingAction === 'finishList1') doFinishList1()
-    else if (pendingAction === 'submitAssessment') doAnimatedSubmit()
+    else if (pendingAction === 'submitAssessment') doSubmitAssessment()
   }
 
   // ─── LOADING ─────────────────────────────────────────────────────────────
@@ -431,12 +449,11 @@ export default function AssessPage() {
 
   if (phase === 'welcome') {
     const firstName = candidateName ? candidateName.split(' ')[0] : ''
-    const bgPentPts = ringPts(160, 160, 140)
     return (
       <div style={{ minHeight: '100svh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#080808', padding: '24px', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif', position: 'relative', overflow: 'hidden' }}>
         <style>{`
           @keyframes spin { to { transform: rotate(360deg) } }
-          @keyframes pent-draw {
+          @keyframes pent-bg {
             0%   { stroke-dashoffset: 830; opacity: 0; }
             8%   { opacity: 1; }
             50%  { stroke-dashoffset: 0; opacity: 1; }
@@ -449,48 +466,36 @@ export default function AssessPage() {
           }
         `}</style>
 
-        {/* Ambient pentagon */}
         <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', pointerEvents: 'none', zIndex: 0 }}>
           <svg width="320" height="320" viewBox="0 0 320 320">
-            <polygon points={bgPentPts} fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="1"
-              style={{ strokeDasharray: 830, animation: 'pent-draw 6s ease-in-out infinite' }} />
+            <polygon points={ringPts(160, 160, 140)} fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="1"
+              style={{ strokeDasharray: 830, animation: 'pent-bg 6s ease-in-out infinite' }} />
             <polygon points={ringPts(160, 160, 90)} fill="none" stroke="rgba(255,255,255,0.025)" strokeWidth="1"
-              style={{ strokeDasharray: 540, animation: 'pent-draw 6s ease-in-out infinite', animationDelay: '1s' }} />
+              style={{ strokeDasharray: 540, animation: 'pent-bg 6s ease-in-out infinite', animationDelay: '1s' }} />
           </svg>
         </div>
 
         <div style={{ width: '100%', maxWidth: 520, position: 'relative', zIndex: 1, animation: 'fadeUp 500ms ease-out both' }}>
-          {/* Wordmark */}
           <div style={{ textAlign: 'center', marginBottom: 64 }}>
             <span style={{ fontSize: 15, fontWeight: 500, color: 'rgba(238,236,230,0.5)', letterSpacing: '-0.01em' }}>{PRODUCT_NAME}</span>
           </div>
-
-          {/* Greeting */}
           {firstName && (
             <p style={{ fontSize: 16, color: 'rgba(238,236,230,0.45)', margin: '0 0 12px', fontWeight: 300 }}>Hi {firstName},</p>
           )}
-
-          {/* Headline */}
           <h1 style={{ fontSize: 'clamp(22px, 3vw, 32px)', fontWeight: 600, color: '#eeece6', margin: '0 0 20px', lineHeight: 1.25, letterSpacing: '-0.02em' }}>
             You&rsquo;ve been selected for a behavioral calibration.
           </h1>
-
-          {/* Subtext */}
           <p style={{ fontSize: 15, color: 'rgba(238,236,230,0.52)', margin: '0 0 6px', fontWeight: 300, lineHeight: 1.5 }}>
             There are no right or wrong answers.
           </p>
           <p style={{ fontSize: 15, color: 'rgba(238,236,230,0.52)', margin: '0 0 32px', fontWeight: 300, lineHeight: 1.5 }}>
             Select words that feel true. Don&rsquo;t overthink it.
           </p>
-
-          {/* What you'll get */}
           <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: '16px 20px', marginBottom: 40 }}>
             <p style={{ margin: 0, fontSize: 13, color: 'rgba(238,236,230,0.55)', lineHeight: 1.65, fontWeight: 300 }}>
               When you finish, you&rsquo;ll see your behavioral profile — your archetype, your signal pattern, and where you&rsquo;re likely to perform at your best.
             </p>
           </div>
-
-          {/* CTA */}
           <button
             onClick={startList1}
             style={{ width: '100%', height: 52, borderRadius: 100, background: '#eeece6', color: '#080808', fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer', transition: 'all 160ms ease', letterSpacing: '-0.01em' }}
@@ -499,7 +504,6 @@ export default function AssessPage() {
           >
             Begin calibration
           </button>
-
           <p style={{ fontSize: 11, color: 'rgba(238,236,230,0.25)', textAlign: 'center', marginTop: 16 }}>
             About 6 minutes &nbsp;&middot;&nbsp; Confidential
           </p>
@@ -508,20 +512,45 @@ export default function AssessPage() {
     )
   }
 
-  // ─── SUBMITTING ───────────────────────────────────────────────────────────
+  // ─── PROCESSING (Change 2) ────────────────────────────────────────────────
 
-  if (phase === 'submitting') {
+  if (phase === 'processing') {
+    const fading = procStage === 7
     return (
       <div style={{ position: 'fixed', inset: 0, background: '#080808', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif' }}>
-        <div style={{ width: 36, height: 36, border: '1.5px solid rgba(255,255,255,0.05)', borderTopColor: 'rgba(255,255,255,0.5)', borderRadius: '50%', animation: 'spin 0.7s linear infinite', marginBottom: 20 }} />
-        <p style={{ fontSize: 15, fontWeight: 500, color: '#eeece6', margin: '0 0 6px' }}>Analyzing your responses</p>
-        <p style={{ fontSize: 13, color: 'rgba(238,236,230,0.35)', fontWeight: 300 }}>This takes just a moment</p>
-        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+        <style>{`
+          @keyframes proc-fadein { from { opacity: 0 } to { opacity: 1 } }
+        `}</style>
+
+        {/* Phase 2: "Analyzing 94 signals." */}
+        <p style={{
+          fontSize: 16, fontWeight: 300, color: 'rgba(238,236,230,0.55)',
+          margin: '0 0 20px', letterSpacing: '0.01em',
+          opacity: procStage >= 1 ? (fading ? 0 : 1) : 0,
+          transition: procStage >= 1 ? (fading ? 'opacity 200ms ease' : 'opacity 250ms ease') : 'none',
+        }}>
+          Analyzing 94 signals.
+        </p>
+
+        {/* Phase 3: Dimension labels */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+          {PROC_DIMS.map((dim, i) => (
+            <p key={dim} style={{
+              fontSize: 10, fontWeight: 300, color: 'rgba(238,236,230,0.25)',
+              textTransform: 'uppercase', letterSpacing: '0.2em',
+              margin: 0,
+              opacity: procStage >= i + 2 ? (fading ? 0 : 1) : 0,
+              transition: procStage >= i + 2 ? (fading ? 'opacity 200ms ease' : 'opacity 200ms ease') : 'none',
+            }}>
+              {dim}
+            </p>
+          ))}
+        </div>
       </div>
     )
   }
 
-  // ─── COMPLETE ─────────────────────────────────────────────────────────────
+  // ─── COMPLETE (Change 3) ──────────────────────────────────────────────────
 
   if (phase === 'complete') {
     const firstName = candidateName ? candidateName.split(' ')[0] : ''
@@ -529,64 +558,49 @@ export default function AssessPage() {
     const pentagonValues = profile ? profileToValues(profile.coords) : [0.5, 0.5, 0.5, 0.5, 0.5]
     const insights = completionData ? INSIGHTS[completionData.profileName] : null
 
+    // Pentagon perimeter ≈ 530px
+    const PENT_PERIMETER = 530
+
     return (
-      <div style={{ minHeight: '100svh', background: '#080808', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 24px', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif' }}>
+      <div style={{ minHeight: '100svh', background: '#080808', overflowX: 'hidden', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif' }}>
         <style>{`
-          @keyframes spin { to { transform: rotate(360deg) } }
           @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
-          @keyframes fadeUp { from { opacity: 0; transform: translateY(12px) } to { opacity: 1; transform: translateY(0) } }
-          .result-fade { animation: fadeIn 400ms ease both; }
-          .result-up   { animation: fadeUp 500ms ease both; }
-          @keyframes pent-draw {
-            0%   { stroke-dashoffset: 530; fill-opacity: 0; }
-            82%  { stroke-dashoffset: 0;   fill-opacity: 0; }
-            100% { stroke-dashoffset: 0;   fill-opacity: 1; }
+          @keyframes fadeUp { from { opacity: 0; transform: translateY(10px) } to { opacity: 1; transform: translateY(0) } }
+          @keyframes rings-in { from { opacity: 0 } to { opacity: 1 } }
+          @keyframes pent-stroke {
+            from { stroke-dashoffset: ${PENT_PERIMETER}; }
+            to   { stroke-dashoffset: 0; }
           }
-          @keyframes label-fade {
-            from { opacity: 0; }
-            to   { opacity: 1; }
-          }
+          @keyframes pent-fill { from { fill-opacity: 0 } to { fill-opacity: 1 } }
+          @keyframes blink { 0%,100% { opacity: 0.3 } 50% { opacity: 0 } }
         `}</style>
 
-        <div style={{ width: '100%', maxWidth: 480, textAlign: 'center' }}>
-
-          {/* MOMENT 1 — "You're done" */}
-          {resultStage === 1 && (
-            <p className="result-fade" style={{ fontSize: 16, color: 'rgba(238,236,230,0.45)', fontWeight: 300, margin: 0 }}>
+        {/* MOMENT 1 — Greeting, centered fullscreen */}
+        <div style={{
+          position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          pointerEvents: 'none', zIndex: 10,
+          opacity: resultMoment === 1 ? 1 : 0,
+          transition: resultMoment >= 2 ? 'opacity 200ms ease' : 'none',
+        }}>
+          {resultMoment >= 1 && (
+            <p style={{ fontSize: 18, fontWeight: 300, color: 'rgba(238,236,230,0.45)', margin: 0, animation: 'fadeIn 300ms ease both' }}>
               {firstName ? `You're done, ${firstName}.` : "You're done."}
             </p>
           )}
+        </div>
 
-          {/* MOMENT 2+ — Archetype name */}
-          {resultStage >= 2 && (
-            <div>
-              <h1 style={{
-                fontSize: 'clamp(52px, 8vw, 88px)', fontWeight: 800, color: '#eeece6',
-                letterSpacing: '-0.03em', lineHeight: 1, margin: '0 0 0',
-                fontFamily: '"Barlow Condensed", "SF Pro Display", -apple-system, sans-serif',
-                animation: resultStage === 2 ? 'none' : undefined,
-              }}>
-                {displayedName}
-                {resultStage === 2 && <span style={{ opacity: 0.3, animation: 'blink 0.8s step-end infinite' }}>|</span>}
-              </h1>
+        {/* MOMENTS 2–6 — Main reveal content */}
+        {resultMoment >= 3 && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '18vh', paddingBottom: 72, paddingLeft: 24, paddingRight: 24 }}>
 
-              {/* MOMENT 3 — Group label */}
-              {resultStage >= 3 && completionData && (
-                <p className="result-fade" style={{ fontSize: 16, fontStyle: 'italic', color: 'rgba(238,236,230,0.38)', fontWeight: 300, margin: '12px 0 0' }}>
-                  {completionData.profileGroup}
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* MOMENT 4 — Pentagon */}
-          {resultStage >= 4 && (
-            <div className="result-up" style={{ margin: '36px auto 0', display: 'flex', justifyContent: 'center', position: 'relative' }}>
-              {/* viewBox padded -32 -24 on all sides so no label clips */}
+            {/* MOMENT 2 — Pentagon */}
+            <div style={{ animation: 'fadeIn 400ms ease both' }}>
               <svg width="252" height="244" viewBox="-32 -24 284 268">
-                {/* Background rings */}
-                <polygon points={ringPts(110, 110, 88)} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="0.5" />
-                <polygon points={ringPts(110, 110, 44)} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="0.5" />
+                {/* Background rings fade in first */}
+                <polygon points={ringPts(110, 110, 88)} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="0.5"
+                  style={{ animation: 'rings-in 400ms ease-out both', animationDelay: '0ms' }} />
+                <polygon points={ringPts(110, 110, 44)} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="0.5"
+                  style={{ animation: 'rings-in 400ms ease-out both', animationDelay: '100ms' }} />
                 {/* Axis lines */}
                 {Array.from({ length: 5 }, (_, i) => {
                   const a = (270 + i * 72) * Math.PI / 180
@@ -596,103 +610,124 @@ export default function AssessPage() {
                       x2={(110 + 88 * Math.cos(a)).toFixed(2)}
                       y2={(110 + 88 * Math.sin(a)).toFixed(2)}
                       stroke="rgba(255,255,255,0.04)" strokeWidth="0.5"
+                      style={{ animation: 'rings-in 400ms ease-out both', animationDelay: '50ms' }}
                     />
                   )
                 })}
-                {/* Data polygon — keyframe draws stroke first, then fades fill in */}
+                {/* Data polygon: stroke draws in 800ms, fill fades in after */}
                 <polygon
                   points={pentagonPts(pentagonValues, 110, 110, 88)}
-                  fill="rgba(37,99,235,0.1)"
+                  fill="rgba(37,99,235,0.07)"
                   stroke="#2563EB"
-                  strokeWidth="1.5"
+                  strokeWidth="2"
                   style={{
-                    strokeDasharray: 530,
-                    strokeDashoffset: 530,
+                    strokeDasharray: PENT_PERIMETER,
+                    animation: `pent-stroke 800ms cubic-bezier(0.25,0.46,0.45,0.94) 200ms forwards,
+                                 pent-fill 400ms ease 900ms forwards`,
                     fillOpacity: 0,
-                    ...(pentagonActive && {
-                      animation: 'pent-draw 2200ms cubic-bezier(0.4, 0, 0.2, 1) forwards',
-                    }),
+                    strokeDashoffset: PENT_PERIMETER,
                   }}
                 />
-                {/* Vertex labels — fade in after stroke completes */}
+                {/* Vertex labels: appear as stroke passes each vertex */}
                 {PENTAGON_LABELS.map((label, i) => {
                   const a = (270 + i * 72) * Math.PI / 180
                   const lx = 110 + 106 * Math.cos(a)
                   const ly = 110 + 106 * Math.sin(a)
+                  const labelDelay = 200 + Math.round((i / 5) * 800)
                   return (
                     <text key={label} x={lx.toFixed(1)} y={ly.toFixed(1)}
                       textAnchor="middle" dominantBaseline="middle"
-                      fill="rgba(238,236,230,0.28)" fontSize="8.5"
+                      fill="rgba(238,236,230,0.3)" fontSize="8.5"
                       fontFamily="-apple-system, BlinkMacSystemFont, sans-serif"
-                      style={pentagonActive ? { animation: 'label-fade 500ms ease both', animationDelay: '1900ms' } : { opacity: 0 }}
+                      style={{ animation: `fadeIn 200ms ease both`, animationDelay: `${labelDelay + 100}ms`, opacity: 0 }}
                     >{label}</text>
                   )
                 })}
               </svg>
             </div>
-          )}
 
-          {/* MOMENT 5 — Insights */}
-          {resultStage >= 5 && insights && (
-            <div style={{ marginTop: 40, textAlign: 'left' }}>
-              {/* Core signal */}
-              <div className="result-up" style={{ marginBottom: 20, animationDelay: '0ms' }}>
-                <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.14em', margin: '0 0 6px', fontWeight: 500 }}>Core Signal</p>
-                <p style={{ fontSize: 14, color: 'rgba(238,236,230,0.82)', lineHeight: 1.6, margin: 0, fontWeight: 400 }}>{insights.coreSignal}</p>
+            {/* MOMENT 3 — Archetype name */}
+            <div style={{ textAlign: 'center', marginTop: 20 }}>
+              {resultMoment >= 4 && (
+                <h1 style={{
+                  fontSize: 'clamp(52px, 7vw, 80px)', fontWeight: 900, color: '#eeece6',
+                  letterSpacing: '-0.02em', lineHeight: 1, margin: 0,
+                  fontFamily: '"Barlow Condensed", "SF Pro Display", -apple-system, sans-serif',
+                }}>
+                  {displayedName}
+                  <span style={{ opacity: 0.25, animation: 'blink 0.7s step-end infinite' }}>|</span>
+                </h1>
+              )}
+
+              {/* MOMENT 3b — Group label */}
+              {resultMoment >= 5 && completionData && (
+                <p style={{ fontSize: 16, fontStyle: 'italic', color: 'rgba(238,236,230,0.38)', fontWeight: 300, margin: '10px 0 0', animation: 'fadeIn 300ms ease both' }}>
+                  {completionData.profileGroup}
+                </p>
+              )}
+            </div>
+
+            {/* MOMENT 4 — Insight blocks */}
+            {insights && (
+              <div style={{ width: '100%', maxWidth: 440, marginTop: 40, textAlign: 'left' }}>
+                {resultMoment >= 6 && (
+                  <div style={{ marginBottom: 20, animation: 'fadeUp 400ms ease both' }}>
+                    <p style={{ fontSize: 9, color: 'rgba(238,236,230,0.3)', textTransform: 'uppercase', letterSpacing: '0.16em', margin: '0 0 6px', fontWeight: 500 }}>Core Signal</p>
+                    <p style={{ fontSize: 14, color: 'rgba(238,236,230,0.8)', lineHeight: 1.6, margin: 0, fontWeight: 400 }}>{insights.coreSignal}</p>
+                  </div>
+                )}
+                {resultMoment >= 7 && (
+                  <div style={{ marginBottom: 20, animation: 'fadeUp 400ms ease both' }}>
+                    <p style={{ fontSize: 9, color: '#3aa868', textTransform: 'uppercase', letterSpacing: '0.16em', margin: '0 0 6px', fontWeight: 500 }}>Where You Win</p>
+                    <p style={{ fontSize: 13, color: 'rgba(238,236,230,0.65)', lineHeight: 1.6, margin: 0, fontWeight: 300 }}>{insights.whereYouWin}</p>
+                  </div>
+                )}
+                {resultMoment >= 8 && (
+                  <div style={{ marginBottom: 0, animation: 'fadeUp 400ms ease both' }}>
+                    <p style={{ fontSize: 9, color: '#c8a832', textTransform: 'uppercase', letterSpacing: '0.16em', margin: '0 0 6px', fontWeight: 500 }}>Watch For</p>
+                    <p style={{ fontSize: 13, color: 'rgba(238,236,230,0.55)', lineHeight: 1.6, margin: 0, fontWeight: 300, fontStyle: 'italic' }}>{insights.watchFor}</p>
+                  </div>
+                )}
               </div>
-              {/* Where you win */}
-              <div className="result-up" style={{ marginBottom: 20, animationDelay: '200ms' }}>
-                <p style={{ fontSize: 9, color: '#3aa868', textTransform: 'uppercase', letterSpacing: '0.14em', margin: '0 0 6px', fontWeight: 500 }}>Where You Win</p>
-                <p style={{ fontSize: 13, color: 'rgba(238,236,230,0.65)', lineHeight: 1.6, margin: 0, fontWeight: 300 }}>{insights.whereYouWin}</p>
-              </div>
-              {/* Watch for */}
-              <div className="result-up" style={{ marginBottom: 0, animationDelay: '400ms' }}>
-                <p style={{ fontSize: 9, color: '#c8a832', textTransform: 'uppercase', letterSpacing: '0.14em', margin: '0 0 6px', fontWeight: 500 }}>Watch For</p>
-                <p style={{ fontSize: 13, color: 'rgba(238,236,230,0.55)', lineHeight: 1.6, margin: 0, fontWeight: 300, fontStyle: 'italic' }}>{insights.watchFor}</p>
-              </div>
-              {/* Emotional line */}
-              <p className="result-up" style={{ fontSize: 16, color: 'rgba(238,236,230,0.75)', lineHeight: 1.6, margin: '32px 0 0', textAlign: 'center', animationDelay: '700ms' }}>
+            )}
+
+            {/* MOMENT 5 — Emotional line */}
+            {resultMoment >= 9 && insights && (
+              <p style={{
+                fontSize: 17, fontWeight: 400, color: 'rgba(238,236,230,0.72)',
+                lineHeight: 1.65, margin: '32px 0 0', textAlign: 'center',
+                maxWidth: 520, animation: 'fadeIn 500ms ease both',
+              }}>
                 {insights.emotionalLine}
               </p>
-            </div>
-          )}
+            )}
 
-          {/* MOMENT 6 — Closing */}
-          {resultStage >= 6 && (
-            <div className="result-up" style={{ marginTop: 40 }}>
-              <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: '20px 24px' }}>
-                <p style={{ fontSize: 13, color: '#eeece6', margin: '0 0 4px', fontWeight: 400 }}>
-                  Your profile has been shared with your search partner.
-                </p>
-                <p style={{ fontSize: 12, color: 'rgba(238,236,230,0.42)', margin: 0, fontWeight: 300, lineHeight: 1.55 }}>
-                  They&rsquo;ll use this to evaluate role alignment. Your results are on file.
-                </p>
+            {/* MOMENT 6 — Closing */}
+            {resultMoment >= 10 && (
+              <div style={{ width: '100%', maxWidth: 440, marginTop: 40, animation: 'fadeIn 400ms ease both' }}>
+                <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: '18px 22px' }}>
+                  <p style={{ fontSize: 13, color: '#eeece6', margin: '0 0 4px', fontWeight: 400 }}>
+                    Your profile has been shared with your search partner.
+                  </p>
+                  <p style={{ fontSize: 12, color: 'rgba(238,236,230,0.4)', margin: 0, fontWeight: 300, lineHeight: 1.55 }}>
+                    They&rsquo;ll use this to evaluate role alignment. Your results are on file.
+                  </p>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
-
-        <style>{`@keyframes blink { 0%,100% { opacity: 0.3 } 50% { opacity: 0 } }`}</style>
+            )}
+          </div>
+        )}
       </div>
     )
   }
 
-  // ─── WORD LISTS ───────────────────────────────────────────────────────────
+  // ─── WORD LISTS (Change 1: signal panel removed, grid expanded to 860px) ──
 
   const isList1 = phase === 'list1'
   const currentOrder = isList1 ? list1Order : list2Order
   const currentChecked = isList1 ? list1Checked : list2Checked
   const selectionCount = currentChecked.size
   const canProceed = selectionCount >= 10
-
-  const signal = computeSignal(currentChecked)
-  const signalBars = [
-    { label: 'Drive', value: signal.drive },
-    { label: 'Social', value: signal.social },
-    { label: 'Pace', value: signal.pace },
-    { label: 'Structure', value: signal.structure },
-  ]
-  const dominantSignal = signalBars.reduce((a, b) => b.value > a.value ? b : a, signalBars[0])
 
   let counterText = ''
   let counterColor = 'rgba(238,236,230,0.35)'
@@ -714,7 +749,7 @@ export default function AssessPage() {
           background: rgba(255,255,255,0.03);
           color: rgba(238,236,230,0.65);
           font-size: 13px; font-weight: 400;
-          cursor: pointer; transition: border-color 120ms ease, color 120ms ease, background 120ms ease;
+          cursor: pointer; transition: border-color 120ms ease, color 120ms ease, background 120ms ease, transform 120ms ease;
           user-select: none; -webkit-tap-highlight-color: transparent;
           font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif;
           min-height: 40px; white-space: nowrap;
@@ -733,14 +768,16 @@ export default function AssessPage() {
           animation: chip-pop 180ms ease;
         }
         .word-chip[data-sel="true"]:hover { transform: scale(1); }
-        @media (max-width: 1100px) { .signal-panel { display: none !important; } }
-        @media (max-width: 600px) { .word-chips { padding: 0 16px !important; } .list-header { padding: 24px 16px 16px !important; } }
+        @media (max-width: 600px) {
+          .word-chips { padding: 0 16px !important; }
+          .list-header { padding: 24px 16px 16px !important; }
+          .bottom-bar { padding: 0 16px !important; }
+        }
       `}</style>
 
       {/* Top bar */}
       <div style={{ height: 48, borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 48px', position: 'sticky', top: 0, zIndex: 20, background: 'rgba(8,8,8,0.98)', backdropFilter: 'blur(8px)' }}>
         <span style={{ fontSize: 13, color: 'rgba(238,236,230,0.3)', fontWeight: 400 }}>{PRODUCT_NAME}</span>
-        {/* Step dots */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <div style={{ width: 7, height: 7, borderRadius: '50%', background: isList1 ? '#2563EB' : 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 250ms ease', flexShrink: 0 }}>
             {!isList1 && (
@@ -755,7 +792,7 @@ export default function AssessPage() {
       </div>
 
       {/* Instruction */}
-      <div className="list-header" style={{ maxWidth: 680, margin: '0 auto', padding: '32px 48px 24px' }}>
+      <div className="list-header" style={{ maxWidth: 860, margin: '0 auto', padding: '32px 48px 24px' }}>
         <h2 style={{ fontSize: 18, fontWeight: 600, color: '#eeece6', margin: '0 0 8px', lineHeight: 1.3 }}>
           {isList1
             ? 'Select words that describe what others expect from you at work.'
@@ -768,8 +805,8 @@ export default function AssessPage() {
         </p>
       </div>
 
-      {/* Word chips */}
-      <div className="word-chips" style={{ maxWidth: 680, margin: '0 auto', padding: '0 48px' }}>
+      {/* Word chips — full 860px width, no signal panel */}
+      <div className="word-chips" style={{ maxWidth: 860, margin: '0 auto', padding: '0 48px' }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {currentOrder.map(word => (
             <button
@@ -782,24 +819,6 @@ export default function AssessPage() {
             </button>
           ))}
         </div>
-      </div>
-
-      {/* Live signal panel */}
-      <div className="signal-panel" style={{ position: 'fixed', right: 32, top: '50%', transform: 'translateY(-50%)', width: 180, background: '#0e0e0e', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: 16, zIndex: 10 }}>
-        <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', letterSpacing: '0.16em', margin: '0 0 14px', fontWeight: 500 }}>Signal</p>
-        {signalBars.map(bar => (
-          <div key={bar.label} style={{ marginBottom: 12 }}>
-            <p style={{ fontSize: 9, color: 'rgba(238,236,230,0.3)', textTransform: 'uppercase', letterSpacing: '0.12em', margin: '0 0 4px', fontWeight: 500 }}>{bar.label}</p>
-            <div style={{ height: 2, background: 'rgba(255,255,255,0.06)', borderRadius: 1, overflow: 'hidden' }}>
-              <div style={{ height: '100%', background: '#2563EB', borderRadius: 1, width: `${bar.value * 100}%`, transition: 'width 300ms ease' }} />
-            </div>
-          </div>
-        ))}
-        {selectionCount >= 5 && dominantSignal.value > 0 && (
-          <p style={{ fontSize: 10, color: 'rgba(238,236,230,0.35)', fontStyle: 'italic', margin: '6px 0 0' }}>
-            {dominantSignal.label} dominant
-          </p>
-        )}
       </div>
 
       {/* Scroll to top */}
@@ -815,22 +834,8 @@ export default function AssessPage() {
         </button>
       )}
 
-      {/* Processing overlay */}
-      {isSubmittingAnimating && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 40, background: 'rgba(8,8,8,0.75)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'fadeIn 300ms ease' }}>
-          <p style={{ color: 'rgba(238,236,230,0.6)', fontSize: 14, fontWeight: 300, letterSpacing: '0.02em' }}>
-            Analyzing
-            <span style={{ animation: 'blink3 1.2s step-end infinite' }}>...</span>
-          </p>
-          <style>{`
-            @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
-            @keyframes blink3 { 0%,100% { opacity: 1 } 33% { opacity: 0 } 66% { opacity: 0.5 } }
-          `}</style>
-        </div>
-      )}
-
       {/* Bottom bar */}
-      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, height: 72, background: 'rgba(8,8,8,0.97)', backdropFilter: 'blur(8px)', borderTop: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 48px', zIndex: 10 }}>
+      <div className="bottom-bar" style={{ position: 'fixed', bottom: 0, left: 0, right: 0, height: 72, background: 'rgba(8,8,8,0.97)', backdropFilter: 'blur(8px)', borderTop: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 48px', zIndex: 10 }}>
         {/* Low count warning */}
         {showLowCountWarning && (
           <div style={{ position: 'absolute', bottom: 80, left: 0, right: 0, padding: '0 48px' }}>
@@ -861,12 +866,12 @@ export default function AssessPage() {
         ) : (
           <button
             onClick={submitAssessment}
-            disabled={!canProceed || isSubmittingAnimating}
+            disabled={!canProceed}
             style={{ height: 42, padding: '0 28px', borderRadius: 100, background: canProceed ? '#eeece6' : 'rgba(255,255,255,0.08)', color: canProceed ? '#080808' : 'rgba(238,236,230,0.2)', fontSize: 13, fontWeight: 600, border: 'none', cursor: canProceed ? 'pointer' : 'not-allowed', transition: 'all 150ms ease' }}
             onMouseEnter={e => { if (canProceed) e.currentTarget.style.background = '#ffffff' }}
             onMouseLeave={e => { if (canProceed) e.currentTarget.style.background = '#eeece6' }}
           >
-            {isSubmittingAnimating ? 'Analyzing...' : 'Complete calibration'}
+            Complete calibration
           </button>
         )}
       </div>
