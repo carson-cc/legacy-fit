@@ -180,7 +180,24 @@ export default function HomePage() {
           snap-beat-scroll allows internal scroll
           if report exceeds viewport height.
       ============================================ */}
-      <section className="snap-beat-scroll" style={{ background: '#000' }}>
+      <section className="snap-beat-scroll" style={{ background: '#000', position: 'relative', overflow: 'hidden' }}>
+
+        {/* Radial glow — sits behind everything */}
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: '140%',
+          paddingBottom: '140%',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(37,99,235,0.08) 0%, transparent 65%)',
+          pointerEvents: 'none',
+          zIndex: 0
+        }} />
+
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+
         <p style={{
           fontSize: 11,
           fontWeight: 600,
@@ -201,7 +218,7 @@ export default function HomePage() {
           border: '1px solid rgba(255,255,255,0.09)',
           borderRadius: 16,
           overflow: 'hidden',
-          boxShadow: '0 60px 140px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.06), inset 0 1px 0 rgba(255,255,255,0.04)'
+          boxShadow: '0 0 0 1px rgba(255,255,255,0.07), 0 40px 80px rgba(0,0,0,0.8), 0 0 60px rgba(37,99,235,0.08), 0 0 120px rgba(37,99,235,0.05), inset 0 1px 0 rgba(255,255,255,0.04)'
         }}>
           <div style={{
             height: 1,
@@ -322,24 +339,34 @@ export default function HomePage() {
                 Signal vs. Benchmark
               </p>
 
-              <FitModel
-                scores={{
-                  dominance: 0.88,
-                  extraversion: 0.49,
-                  patience: 0.35,
-                  formality: 0.67
-                }}
-                benchmarkScores={{
-                  dominance: 0.72,
-                  extraversion: 0.52,
-                  patience: 0.50,
-                  formality: 0.66
-                }}
-                size={140}
-                variant="dark"
-                animated={false}
-                showLabels={true}
-              />
+              <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                <div style={{
+                  position: 'absolute',
+                  width: 180,
+                  height: 180,
+                  borderRadius: '50%',
+                  background: 'radial-gradient(circle, rgba(37,99,235,0.18) 0%, transparent 70%)',
+                  pointerEvents: 'none'
+                }} />
+                <FitModel
+                  scores={{
+                    dominance: 0.88,
+                    extraversion: 0.49,
+                    patience: 0.35,
+                    formality: 0.67
+                  }}
+                  benchmarkScores={{
+                    dominance: 0.72,
+                    extraversion: 0.52,
+                    patience: 0.50,
+                    formality: 0.66
+                  }}
+                  size={180}
+                  variant="dark"
+                  animated={false}
+                  showLabels={true}
+                />
+              </div>
 
               <p style={{
                 fontSize: 9,
@@ -612,6 +639,8 @@ export default function HomePage() {
 
           </div>
         </div>
+
+        </div>{/* end zIndex wrapper */}
       </section>
 
       {/* ============================================
