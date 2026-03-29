@@ -243,7 +243,7 @@ export default function HomePage() {
               {/* Middle: Custom SVG radar — three polygon layers */}
               <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0, padding: '8px 0' }}>
                 {/* viewBox: cx=100 cy=100 maxR=72, with label overflow room */}
-                <svg viewBox="-25 -5 250 215" style={{ width: '100%', maxWidth: 240, minWidth: 180 }}>
+                <svg viewBox="-25 -5 250 215" style={{ width: '100%', maxWidth: 320 }}>
                   {/* Background rings at 50% and 100% radius */}
                   <polygon points="100.0,28.0 168.5,77.8 142.3,158.2 57.7,158.2 31.5,77.8"
                     fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="0.5" />
@@ -289,159 +289,132 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* RIGHT COLUMN — 60% — six blocks */}
+            {/* RIGHT COLUMN — 60% — 3-layer decision hierarchy */}
             <div className="report-card-right" style={{
               flex: 1, display: 'flex', flexDirection: 'column',
-              padding: '16px 20px', overflow: 'hidden'
+              padding: '18px 22px', overflow: 'hidden'
             }}>
 
-              {/* Block 1 — The Verdict */}
-              <div style={{ paddingBottom: 10, borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+              {/* ── LAYER 1: DECISION (anchor, immediate) ── */}
+              <div style={{ paddingBottom: 16, borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
                   <span style={{
                     fontSize: 64, fontFamily: '"Barlow Condensed", sans-serif',
                     fontWeight: 900, color: '#eeece6', lineHeight: 1, flexShrink: 0, letterSpacing: '-0.03em'
                   }}>93</span>
-                  <div>
-                    <p style={{ fontSize: 15, fontWeight: 600, color: '#3aa868', lineHeight: 1.2 }}>
-                      Strong Hire — with one execution risk
+                  <div style={{ paddingTop: 2 }}>
+                    <p style={{ fontSize: 16, fontWeight: 600, color: '#3aa868', lineHeight: 1.15, marginBottom: 5 }}>
+                      Strong hire — with one execution risk
                     </p>
-                    <p style={{ fontSize: 11, fontWeight: 300, color: 'rgba(238,236,230,0.4)', marginTop: 3 }}>
-                      Above role threshold on 4 of 5 dimensions
+                    <p style={{ fontSize: 11, fontWeight: 300, color: 'rgba(238,236,230,0.38)' }}>
+                      Pioneer archetype · 4 of 5 dimensions above threshold · 1 of 3 shortlisted
                     </p>
-                    <p style={{ fontSize: 10, fontWeight: 300, color: 'rgba(238,236,230,0.32)', marginTop: 2 }}>
-                      1 of 3 shortlisted candidates
-                    </p>
-                    <span style={{
-                      background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-                      borderRadius: 100, padding: '2px 8px',
-                      fontSize: 9, color: 'rgba(238,236,230,0.45)',
-                      marginTop: 4, display: 'inline-block'
-                    }}>Pioneer archetype</span>
                   </div>
                 </div>
               </div>
 
-              {/* Block 2 — Primary Tension */}
-              <div style={{ padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
-                <div style={{ borderLeft: '2px solid #c8a832', paddingLeft: 12 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: 9, fontWeight: 700, color: '#c8a832', letterSpacing: '0.14em', textTransform: 'uppercase' }}>
-                      Primary Tension
-                    </span>
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                      <span style={{ fontSize: 8, color: 'rgba(238,236,230,0.25)', letterSpacing: '0.06em', textTransform: 'uppercase', marginRight: 4 }}>FRICTION</span>
-                      <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#c8a832', display: 'inline-block' }} />
-                      <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', display: 'inline-block', marginLeft: 3 }} />
-                      <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', display: 'inline-block', marginLeft: 3 }} />
+              {/* ── LAYER 2: INSIGHT (where decisions are made) ── */}
+
+              {/* Core insight — Primary Tension, dominant */}
+              <div style={{ paddingTop: 16, paddingBottom: 16, borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
+                <p style={{ fontSize: 9, color: 'rgba(200,168,50,0.6)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 10 }}>
+                  Primary Tension
+                </p>
+                {/* Directional tension bar */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                  <span style={{ fontSize: 9, fontWeight: 600, color: 'rgba(74,142,255,0.65)', letterSpacing: '0.08em', textTransform: 'uppercase', flexShrink: 0 }}>
+                    Execution speed
+                  </span>
+                  <div style={{ flex: 1, height: 2, borderRadius: 1, background: 'linear-gradient(90deg, rgba(74,142,255,0.5) 0%, rgba(200,168,50,0.5) 100%)', position: 'relative' }}>
+                    <div style={{ position: 'absolute', left: '30%', top: '50%', transform: 'translateY(-50%)', color: 'rgba(238,236,230,0.4)', fontSize: 10 }}>→</div>
+                  </div>
+                  <span style={{ fontSize: 9, fontWeight: 600, color: 'rgba(200,168,50,0.65)', letterSpacing: '0.08em', textTransform: 'uppercase', flexShrink: 0 }}>
+                    Stakeholder alignment
+                  </span>
+                </div>
+                <p style={{ fontSize: 14, fontWeight: 500, color: '#eeece6', lineHeight: 1.4, marginBottom: 6 }}>
+                  Moves faster than the organization can align
+                </p>
+                <p style={{ fontSize: 11, fontWeight: 300, color: 'rgba(200,168,50,0.75)', marginBottom: 5 }}>
+                  → Risk of friction with the operating partner
+                </p>
+                <p style={{ fontSize: 10, fontWeight: 300, fontStyle: 'italic', color: 'rgba(238,236,230,0.35)' }}>
+                  Best in autonomous roles with clear ownership and speed.
+                </p>
+              </div>
+
+              {/* Hire If / Don't Hire If — the actual decision */}
+              <div style={{ paddingTop: 16, paddingBottom: 16, borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                  <div>
+                    <p style={{ fontSize: 9, color: '#3aa868', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 9 }}>✔ Hire if</p>
+                    {['Speed matters more than consensus', 'Clear ownership, low dependency'].map((t) => (
+                      <div key={t} style={{ borderLeft: '1.5px solid rgba(58,168,104,0.35)', paddingLeft: 8, fontSize: 11, fontWeight: 300, color: 'rgba(238,236,230,0.65)', lineHeight: 1.5, marginBottom: 6 }}>
+                        {t}
+                      </div>
+                    ))}
+                  </div>
+                  <div>
+                    <p style={{ fontSize: 9, color: '#e05a3a', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 9 }}>✖ Don&apos;t hire if</p>
+                    {['Alignment is critical before action', 'Stakeholders expect to be consulted'].map((t) => (
+                      <div key={t} style={{ borderLeft: '1.5px solid rgba(224,90,58,0.35)', paddingLeft: 8, fontSize: 11, fontWeight: 300, color: 'rgba(238,236,230,0.65)', lineHeight: 1.5, marginBottom: 6 }}>
+                        {t}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* The one question */}
+              <div style={{ paddingTop: 14, paddingBottom: 14, borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
+                <p style={{ fontSize: 9, color: 'rgba(238,236,230,0.25)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6 }}>
+                  The one thing to verify
+                </p>
+                <p style={{ fontSize: 12, fontWeight: 400, fontStyle: 'italic', color: 'rgba(238,236,230,0.68)', lineHeight: 1.55 }}>
+                  Can he slow down when needed — or does he only know how to go fast?
+                </p>
+              </div>
+
+              {/* Flex spacer — pushes evidence to bottom */}
+              <div style={{ flex: 1 }} />
+
+              {/* ── LAYER 3: EVIDENCE (de-emphasized, supporting) ── */}
+              <div style={{ paddingTop: 12, paddingBottom: 4, borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column' }}>
+
+                {/* Signal bars — visual, no deltas */}
+                <p style={{ fontSize: 9, color: 'rgba(238,236,230,0.2)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>
+                  Signal profile
+                </p>
+                {([
+                  { label: 'Execution', score: 82, pos: true },
+                  { label: 'Ownership', score: 74, pos: true },
+                  { label: 'Adaptability', score: 70, pos: true },
+                  { label: 'Collaboration', score: 62, pos: false },
+                  { label: 'D. Speed', score: 88, pos: true },
+                ] as Array<{ label: string; score: number; pos: boolean }>).map((dim) => (
+                  <div key={dim.label} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <span style={{ fontSize: 9, color: 'rgba(238,236,230,0.28)', width: 72, flexShrink: 0, letterSpacing: '0.05em' }}>{dim.label}</span>
+                    <div style={{ flex: 1, height: 3, background: 'rgba(255,255,255,0.06)', borderRadius: 2 }}>
+                      <div style={{
+                        width: `${dim.score}%`, height: '100%', borderRadius: 2,
+                        background: dim.pos ? 'rgba(74,142,255,0.4)' : 'rgba(224,90,58,0.55)'
+                      }} />
                     </div>
-                  </div>
-                  <p style={{ fontSize: 12, fontWeight: 500, color: '#eeece6', marginTop: 4 }}>
-                    Execution Speed vs. Stakeholder Alignment
-                  </p>
-                  <p style={{ fontSize: 11, fontWeight: 300, color: 'rgba(238,236,230,0.52)', marginTop: 2 }}>
-                    Kent will move faster than the operating partner expects.
-                  </p>
-                  <p style={{ fontSize: 10, fontWeight: 300, fontStyle: 'italic', color: 'rgba(238,236,230,0.38)', marginTop: 3 }}>
-                    Best fit: autonomous scope, direct reporting line, pace-first culture.
-                  </p>
-                  <p style={{ fontSize: 9, color: 'rgba(238,236,230,0.25)', letterSpacing: '0.06em', marginTop: 3 }}>
-                    AI synthesis · 94 behavioral signals
-                  </p>
-                </div>
-              </div>
-
-              {/* Block 3 — Signal Profile */}
-              <div style={{ padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
-                <p style={{ fontSize: 9, color: 'rgba(238,236,230,0.28)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 7 }}>
-                  Signal Profile
-                </p>
-                {([
-                  { label: 'Execution', score: 82, delta: '+8', pos: true },
-                  { label: 'Ownership', score: 74, delta: '+1', pos: true },
-                  { label: 'Adaptability', score: 70, delta: '+15', pos: true },
-                  { label: 'Collaboration', score: 62, delta: '−3', pos: false },
-                  { label: 'Decision Speed', score: 88, delta: '+21', pos: true },
-                ] as Array<{ label: string; score: number; delta: string; pos: boolean }>).map((dim) => (
-                  <div key={dim.label} style={{
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    padding: dim.pos ? '2px 0' : '2px 6px',
-                    background: dim.pos ? 'transparent' : 'rgba(224,90,58,0.06)',
-                    borderRadius: dim.pos ? 0 : 4,
-                    marginLeft: dim.pos ? 0 : -6,
-                    marginRight: dim.pos ? 0 : -6,
-                  }}>
-                    <span style={{ fontSize: 10, fontWeight: 300, color: dim.pos ? 'rgba(238,236,230,0.45)' : '#e05a3a', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                      {dim.label}
-                    </span>
-                    <span style={{ fontSize: 11, fontWeight: 500, color: dim.pos ? '#eeece6' : '#e05a3a' }}>
-                      {dim.score}{' '}
-                      <span style={{ fontSize: 10, fontWeight: dim.pos ? 300 : 700, color: dim.pos ? '#3aa868' : '#e05a3a' }}>
-                        {dim.delta}
-                      </span>
-                    </span>
+                    <span style={{ fontSize: 9, color: dim.pos ? 'rgba(238,236,230,0.32)' : 'rgba(224,90,58,0.7)', width: 20, textAlign: 'right', flexShrink: 0 }}>{dim.score}</span>
                   </div>
                 ))}
-              </div>
 
-              {/* Block 4 — Hire If / Do Not Hire If */}
-              <div style={{ padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  <div>
-                    <p style={{ fontSize: 9, color: '#3aa868', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 5 }}>Hire If</p>
-                    {['Pace over consensus', 'Autonomous scope, clear accountability'].map((t) => (
-                      <div key={t} style={{ borderLeft: '1.5px solid rgba(58,168,104,0.3)', paddingLeft: 7, fontSize: 10, fontWeight: 300, color: 'rgba(238,236,230,0.55)', lineHeight: 1.4, marginBottom: 3 }}>
-                        {t}
-                      </div>
-                    ))}
+                {/* Team alignment — dots only */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10 }}>
+                  <span style={{ fontSize: 9, color: 'rgba(238,236,230,0.2)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Team</span>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#c8a832', display: 'inline-block' }} />
+                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#c8a832', display: 'inline-block' }} />
+                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#3aa868', display: 'inline-block' }} />
                   </div>
-                  <div>
-                    <p style={{ fontSize: 9, color: '#e05a3a', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 5 }}>Do Not Hire If</p>
-                    {['Consensus required before decisions', 'Hiring manager expects consultation'].map((t) => (
-                      <div key={t} style={{ borderLeft: '1.5px solid rgba(224,90,58,0.3)', paddingLeft: 7, fontSize: 10, fontWeight: 300, color: 'rgba(238,236,230,0.55)', lineHeight: 1.4, marginBottom: 3 }}>
-                        {t}
-                      </div>
-                    ))}
-                  </div>
+                  <span style={{ fontSize: 9, fontWeight: 300, color: 'rgba(238,236,230,0.3)' }}>Mixed · 1 strong alignment · 2 friction risk</span>
                 </div>
-              </div>
 
-              {/* Block 5 — Team Alignment */}
-              <div style={{ padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 7 }}>
-                  <span style={{ fontSize: 9, color: 'rgba(238,236,230,0.28)', letterSpacing: '0.14em', textTransform: 'uppercase' }}>Team Alignment</span>
-                  <span style={{
-                    background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)',
-                    borderRadius: 100, padding: '1px 6px', fontSize: 8, color: 'rgba(238,236,230,0.35)'
-                  }}>MODE B</span>
-                </div>
-                {([
-                  { name: 'David Mercer', role: 'Hiring Manager', score: 74, color: '#c8a832', fill: 'rgba(200,168,50,0.1)', pts: '8.0,3.3 12.7,6.5 10.1,10.9 6.1,10.7 3.9,6.7' },
-                  { name: 'Sarah Chen', role: 'Project Manager', score: 61, color: '#c8a832', fill: 'rgba(200,168,50,0.1)', pts: '8.0,4.9 11.3,6.9 10.9,12.0 5.0,12.1 5.4,7.2' },
-                  { name: 'James Okafor', role: 'Site Supervisor', score: 88, color: '#3aa868', fill: 'rgba(58,168,104,0.1)', pts: '8.0,2.7 12.8,6.4 10.3,11.2 5.9,10.8 3.4,6.5' },
-                ] as Array<{ name: string; role: string; score: number; color: string; fill: string; pts: string }>).map((person) => (
-                  <div key={person.name} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '2px 0' }}>
-                    <svg width="16" height="16" viewBox="0 0 16 16" style={{ flexShrink: 0 }}>
-                      <polygon points="8,2 13.7,6.1 11.5,12.9 4.5,12.9 2.3,6.1" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="0.5" />
-                      <polygon points={person.pts} fill={person.fill} stroke={person.color} strokeWidth="1" />
-                    </svg>
-                    <span style={{ flex: 1, fontSize: 10, fontWeight: 500, color: '#eeece6' }}>
-                      {person.name}{' '}
-                      <span style={{ fontWeight: 300, color: 'rgba(238,236,230,0.38)' }}>· {person.role}</span>
-                    </span>
-                    <span style={{ fontSize: 11, fontWeight: 500, color: person.color }}>{person.score}</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Block 6 — The One Thing to Verify */}
-              <div style={{ paddingTop: 10, flex: 1, display: 'flex', flexDirection: 'column' }}>
-                <p style={{ fontSize: 9, color: 'rgba(238,236,230,0.28)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 5 }}>
-                  The One Thing to Verify
-                </p>
-                <p style={{ fontSize: 11, fontWeight: 300, fontStyle: 'italic', color: 'rgba(238,236,230,0.62)', lineHeight: 1.55 }}>
-                  Does Kent know when to slow down — or does he only know how to go fast?
-                </p>
               </div>
 
             </div>
