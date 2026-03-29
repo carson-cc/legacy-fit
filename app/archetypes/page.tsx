@@ -323,7 +323,7 @@ function CardPentagon({ name, color, hovered, sectionVisible, cardIndex }: { nam
     <svg
       width={size} height={size}
       viewBox={`0 0 ${size} ${size}`}
-      style={{ position: 'absolute', top: 14, right: 14, pointerEvents: 'none', transition: 'opacity 200ms ease', flexShrink: 0 }}
+      style={{ display: 'block', pointerEvents: 'none', transition: 'opacity 200ms ease', flexShrink: 0 }}
     >
       <polygon points={ring(maxR)} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="0.5" />
       <polygon points={ring(maxR * 0.5)} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="0.5" />
@@ -790,38 +790,38 @@ function ArchCard({ profile, catColor, catKey, onHover, sectionVisible, cardInde
         boxShadow: hov
           ? `0 8px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)`
           : 'inset 0 1px 0 rgba(255,255,255,0.04)',
-        height: 264,
+        minHeight: 240,
         overflow: 'hidden',
       }}
     >
-      <div style={{ padding: '16px 16px 0 16px', display: 'flex', flexDirection: 'column' }}>
-        {/* Pentagon — absolute top-right */}
-        <CardPentagon name={dn} color={catColor} hovered={hov} sectionVisible={sectionVisible} cardIndex={cardIndex} />
-
-        {/* Icon + name */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-          <div style={{
-            opacity: hov ? 1 : 0.55,
-            transition: 'opacity 150ms ease, filter 150ms ease',
-            filter: hov ? `drop-shadow(0 0 6px ${hexAlpha(catColor, 0.7)})` : 'none',
-            flexShrink: 0,
-          }}>
-            <Icon paths={ARCH_ICONS[dn] ?? []} size={18} stroke={catColor} />
+      <div style={{ padding: '14px 14px 0 14px', display: 'flex', flexDirection: 'column' }}>
+        {/* Top row: icon+name LEFT, pentagon RIGHT — flex, no absolute positioning */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+          {/* Left: icon stacked above name */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5, flex: 1, paddingRight: 10 }}>
+            <div style={{
+              opacity: hov ? 1 : 0.55,
+              transition: 'opacity 150ms ease, filter 150ms ease',
+              filter: hov ? `drop-shadow(0 0 6px ${hexAlpha(catColor, 0.7)})` : 'none',
+            }}>
+              <Icon paths={ARCH_ICONS[dn] ?? []} size={18} stroke={catColor} />
+            </div>
+            <div style={{
+              fontFamily: '"Barlow Condensed", system-ui, sans-serif',
+              fontSize: 19, fontWeight: 800, textTransform: 'uppercase',
+              letterSpacing: '0.03em', color: hov ? catColor : '#eeece6',
+              lineHeight: 1, transition: 'color 150ms ease',
+            }}>{dn}</div>
           </div>
-          <div style={{
-            fontFamily: '"Barlow Condensed", system-ui, sans-serif',
-            fontSize: 19, fontWeight: 800, textTransform: 'uppercase',
-            letterSpacing: '0.03em', color: hov ? catColor : '#eeece6',
-            lineHeight: 1, transition: 'color 150ms ease',
-            paddingRight: 72,
-          }}>{dn}</div>
+          {/* Right: pentagon — in flow, never overlapping text */}
+          <CardPentagon name={dn} color={catColor} hovered={hov} sectionVisible={sectionVisible} cardIndex={cardIndex} />
         </div>
 
         {/* One-liner */}
         {d && (
           <p style={{
             fontSize: 11.5, fontWeight: 300, color: 'rgba(238,236,230,0.60)',
-            lineHeight: 1.5, margin: '0 0 10px 0', paddingRight: 4,
+            lineHeight: 1.5, margin: '0 0 10px 0',
             fontFamily: '"DM Sans", -apple-system, sans-serif',
           }}>
             {d.oneLine}
@@ -1083,8 +1083,8 @@ type AxisColors = Record<AxisKey, string>
 type AxisShadows = Record<AxisKey, string>
 
 const DEFAULT_AXIS_COLORS: AxisColors = {
-  top: 'rgba(255,255,255,0.28)', bottom: 'rgba(255,255,255,0.28)',
-  left: 'rgba(255,255,255,0.28)', right: 'rgba(255,255,255,0.28)',
+  top: 'rgba(255,255,255,0.45)', bottom: 'rgba(255,255,255,0.45)',
+  left: 'rgba(255,255,255,0.45)', right: 'rgba(255,255,255,0.45)',
 }
 const DEFAULT_AXIS_SHADOWS: AxisShadows = {
   top: 'none', bottom: 'none', left: 'none', right: 'none',
@@ -1102,6 +1102,7 @@ export default function ArchetypesPage() {
   const [axisShadows,    setAxisShadows]    = useState<AxisShadows>(DEFAULT_AXIS_SHADOWS)
   const [selectedProfile, setSelectedProfile] = useState<string | null>(null)
   const [cardsDrawn,     setCardsDrawn]     = useState(false)
+  const [canvasWrapperSize, setCanvasWrapperSize] = useState(0)
 
   const ctaBandRef         = useRef<HTMLDivElement>(null)
   const cat0Ref            = useRef<HTMLDivElement>(null)
@@ -1147,6 +1148,17 @@ export default function ArchetypesPage() {
   useFadeInUp(cat1Ref, 60)
   useFadeInUp(cat2Ref, 120)
   useFadeInUp(cat3Ref, 180)
+
+  useEffect(() => {
+    const calc = () => {
+      const availableW = window.innerWidth - 400
+      const availableH = window.innerHeight - 160
+      setCanvasWrapperSize(Math.min(availableW, availableH))
+    }
+    calc()
+    window.addEventListener('resize', calc)
+    return () => window.removeEventListener('resize', calc)
+  }, [])
 
   useEffect(() => {
     const link = document.createElement('link')
@@ -1323,8 +1335,15 @@ export default function ArchetypesPage() {
       {/* ── BEHAVIORAL MAP — full-bleed surface ── */}
       <section style={{ position: 'relative', width: '100%', height: '100svh', overflow: 'hidden' }}>
 
-        {/* Canvas wrapper — full bleed */}
-        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0 }}>
+        {/* Canvas wrapper — centered square with corner label zones */}
+        <div style={{
+          position: 'absolute',
+          left: '50%', top: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: canvasWrapperSize > 0 ? canvasWrapperSize : '100%',
+          height: canvasWrapperSize > 0 ? canvasWrapperSize : '100%',
+          zIndex: 0,
+        }}>
           <RadarCanvas
             activeCat={activeCat}
             hoveredProfileName={hoveredProfile}
@@ -1393,10 +1412,10 @@ export default function ArchetypesPage() {
 
         {/* Corner category labels */}
         {([
-          { key: 'strategic_drive',   pos: { top: 72, left: 24 },    align: 'left'  },
-          { key: 'people_influence',  pos: { top: 72, right: 24 },   align: 'right' },
-          { key: 'process_structure', pos: { bottom: 20, left: 24 },  align: 'left'  },
-          { key: 'field_command',     pos: { bottom: 20, right: 24 }, align: 'right' },
+          { key: 'strategic_drive',   pos: { top: 16, left: 20 },    align: 'left'  },
+          { key: 'people_influence',  pos: { top: 16, right: 20 },   align: 'right' },
+          { key: 'process_structure', pos: { bottom: 16, left: 20 },  align: 'left'  },
+          { key: 'field_command',     pos: { bottom: 16, right: 20 }, align: 'right' },
         ] as const).map(({ key, pos, align }) => {
           const cat = getCat(key)
           const isDimmed  = hoveredCat !== null && hoveredCat !== key
@@ -1435,7 +1454,6 @@ export default function ArchetypesPage() {
               </div>
               {profiles.map(p => {
                 const dn = displayName(p.name)
-                const isDom = DOMINANT_ARCHETYPES.has(dn)
                 return (
                   <div key={p.name}
                     onMouseEnter={e => { e.stopPropagation(); setHovProf(dn) }}
@@ -1451,12 +1469,12 @@ export default function ArchetypesPage() {
                       display: 'inline-block', width: 5, height: 5,
                       borderRadius: '50%',
                       background: cat.color,
-                      opacity: isDom ? 0.85 : 0.45,
+                      opacity: 0.55,
                       flexShrink: 0,
                     }} />
                     <span style={{
-                      fontSize: 11, fontWeight: isDom ? 500 : 400,
-                      color: isDom ? 'rgba(238,236,230,0.92)' : 'rgba(238,236,230,0.5)',
+                      fontSize: 13, fontWeight: 400,
+                      color: 'rgba(238,236,230,0.72)',
                       fontFamily: '"DM Sans", -apple-system, sans-serif',
                       letterSpacing: '0.01em',
                     }}>{dn}</span>
