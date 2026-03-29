@@ -611,7 +611,7 @@ export default function HomePage() {
                   color: 'rgba(255,255,255,0.52)',
                   lineHeight: 1.65
                 }}>
-                  Strong execution and ownership signal. One thing to manage: the operating partner expects more structure than Kent naturally brings. Set that expectation before day one.
+                  Execution and ownership scores place Kent in the top decile for PE-backed CFO roles. Pace delta with the operating partner is the single flagged gap — address structurally before day one.
                 </p>
               </div>
 
