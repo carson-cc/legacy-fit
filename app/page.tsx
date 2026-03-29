@@ -44,16 +44,18 @@ export default function HomePage() {
     if (!container) return
 
     const handled = { current: false }
+    const scrollingAway = { current: false }
     let touchStartY = 0
 
     const tryReveal = (e: Event) => {
       if (container.scrollTop > 10 || handled.current) return
       handled.current = true
+      scrollingAway.current = true
       e.preventDefault()
       setShowWhy(true)
       setTimeout(() => {
         reportRef.current?.scrollIntoView({ behavior: 'smooth' })
-      }, 650)
+      }, 900)
     }
 
     const onWheel = (e: WheelEvent) => {
@@ -66,6 +68,10 @@ export default function HomePage() {
       if (touchStartY - e.changedTouches[0].clientY > 30) tryReveal(e)
     }
     const onScroll = () => {
+      if (scrollingAway.current) {
+        if (container.scrollTop > 50) scrollingAway.current = false
+        return
+      }
       if (container.scrollTop < 10) {
         handled.current = false
         setShowWhy(false)
@@ -398,7 +404,9 @@ export default function HomePage() {
             {/* LEFT — Role Fit */}
             <div style={{
               borderRight: '1px solid rgba(255,255,255,0.05)',
-              padding: '10px 16px 10px 20px'
+              padding: '10px 16px 10px 20px',
+              display: 'flex',
+              flexDirection: 'column'
             }}>
               <p style={{
                 fontSize: 9,
@@ -414,16 +422,16 @@ export default function HomePage() {
                 fontSize: 9,
                 color: 'rgba(255,255,255,0.32)',
                 lineHeight: 1.4,
-                marginBottom: 8
+                marginBottom: 0
               }}>
                 Above benchmark on execution and decision speed. Slight drop in collaboration.
               </p>
 
-              <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+              <div style={{ flex: 1, position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 140 }}>
                 <div style={{
                   position: 'absolute',
-                  width: 100,
-                  height: 100,
+                  width: 140,
+                  height: 140,
                   borderRadius: '50%',
                   background: 'radial-gradient(circle, rgba(37,99,235,0.08) 0%, transparent 70%)',
                   pointerEvents: 'none'
@@ -441,7 +449,7 @@ export default function HomePage() {
                     patience: 0.50,
                     formality: 0.66
                   }}
-                  size={120}
+                  size={160}
                   variant="dark"
                   animated={false}
                   showLabels={true}
@@ -548,31 +556,8 @@ export default function HomePage() {
                       opacity: 0.45
                     }} />
                   </div>
-                  <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.22)', lineHeight: 1.4 }}>
-                    {person.note}
-                  </p>
                 </div>
               ))}
-
-              <div style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: 8,
-                padding: '4px 0 8px',
-                borderBottom: '1px solid rgba(255,255,255,0.05)'
-              }}>
-                <span style={{
-                  width: 5,
-                  height: 5,
-                  borderRadius: '50%',
-                  background: '#EAB308',
-                  flexShrink: 0,
-                  marginTop: 3
-                }} />
-                <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.28)', lineHeight: 1.4 }}>
-                  <span style={{ color: 'rgba(255,255,255,0.46)', fontWeight: 600 }}>Execution Speed vs. Stakeholder Alignment:</span> slight mismatch — address before close.
-                </p>
-              </div>
 
               {/* Decision Frame */}
               <p style={{
