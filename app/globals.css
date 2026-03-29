@@ -454,22 +454,17 @@ button, a, input, select, textarea {
    SNAP SCROLLING — homepage only
    ================================================================ */
 
-html:has(.snap-page) {
-  scroll-snap-type: y mandatory;
+.snap-page {
+  height: 100vh;
   overflow-y: scroll;
-  height: 100%;
+  scroll-snap-type: y mandatory;
   scroll-behavior: smooth;
-}
-
-body:has(.snap-page) {
-  height: 100%;
-  overflow: hidden;
 }
 
 .snap-beat {
   scroll-snap-align: start;
   height: 100vh;
-  overflow: hidden;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -481,7 +476,7 @@ body:has(.snap-page) {
 .snap-beat-scroll {
   scroll-snap-align: start;
   min-height: 100vh;
-  overflow-y: auto;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -491,7 +486,7 @@ body:has(.snap-page) {
 }
 
 @media (max-width: 768px) {
-  html:has(.snap-page) {
+  .snap-page {
     scroll-snap-type: y proximity;
   }
   .snap-beat {
