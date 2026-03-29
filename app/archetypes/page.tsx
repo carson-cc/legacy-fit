@@ -178,60 +178,92 @@ function RadarCanvas({
     const cx = S / 2, cy = S / 2, R = cx - M
 
     ctx.clearRect(0, 0, S, S)
-    ctx.fillStyle = '#080808'
+
+    // Radial bg — subtle depth, center slightly lighter
+    const bgGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 1.2)
+    bgGrad.addColorStop(0, '#151515')
+    bgGrad.addColorStop(1, '#080808')
+    ctx.fillStyle = bgGrad
     ctx.fillRect(0, 0, S, S)
 
-    for (let i = 1; i <= 3; i++) {
+    const activeCat = activeCatRef.current
+
+    // Quadrant color washes — contextual tinting from corners
+    const washes = [
+      { qx: cx - R * 0.5, qy: M,       cat: 'strategic_drive'   },  // top-left  → Stabilizers
+      { qx: cx + R * 0.5, qy: M,       cat: 'people_influence'  },  // top-right → Catalysts
+      { qx: cx - R * 0.5, qy: S - M,   cat: 'process_structure' },  // bot-left  → Operators
+      { qx: cx + R * 0.5, qy: S - M,   cat: 'field_command'     },  // bot-right → Drivers
+    ]
+    washes.forEach(w => {
+      const c = getCat(w.cat)
+      const isOn = activeCat === null || activeCat === w.cat
+      const opacity = isOn ? 0.09 : 0.02
+      const grad = ctx.createRadialGradient(w.qx, w.qy, 0, w.qx, w.qy, R)
+      grad.addColorStop(0, hexAlpha(c.color, opacity))
+      grad.addColorStop(1, 'transparent')
+      ctx.fillStyle = grad
+      ctx.fillRect(0, 0, S, S)
+    })
+
+    // Rings — fading outward
+    for (let i = 1; i <= 4; i++) {
+      const op = (0.10 - (i / 4) * 0.07).toFixed(3)
       ctx.beginPath()
-      ctx.arc(cx, cy, R * i / 3, 0, Math.PI * 2)
-      ctx.strokeStyle = 'rgba(255,255,255,0.05)'
+      ctx.arc(cx, cy, R * i / 4, 0, Math.PI * 2)
+      ctx.strokeStyle = `rgba(255,255,255,${op})`
       ctx.lineWidth = 1; ctx.stroke()
     }
 
-    ctx.setLineDash([3, 6])
-    ctx.strokeStyle = 'rgba(255,255,255,0.07)'; ctx.lineWidth = 1
+    // Axes
+    ctx.setLineDash([2, 6])
+    ctx.strokeStyle = 'rgba(255,255,255,0.055)'; ctx.lineWidth = 1
     ctx.beginPath(); ctx.moveTo(M, cy); ctx.lineTo(S - M, cy); ctx.stroke()
     ctx.beginPath(); ctx.moveTo(cx, M); ctx.lineTo(cx, S - M); ctx.stroke()
     ctx.setLineDash([])
 
-    ctx.font = '500 11px system-ui, -apple-system'
-    ctx.fillStyle = 'rgba(255,255,255,0.16)'
-    ctx.textAlign = 'center';  ctx.fillText('PEOPLE',     cx,     M - 14)
-    ctx.textAlign = 'center';  ctx.fillText('OUTPUT',     cx,     S - M + 22)
-    ctx.textAlign = 'left';    ctx.fillText('DELIBERATE', M,      cy - 12)
-    ctx.textAlign = 'right';   ctx.fillText('URGENT',     S - M,  cy - 12)
-    ctx.textAlign = 'left'
+    const hovProf   = hoveredProfRef.current
+    const hoverProg = hovProf ? Math.min(1, (t - hoverStartRef.current) / 400) : 0
 
-    const activeCat  = activeCatRef.current
-    const hovProf    = hoveredProfRef.current
-    const hoverProg  = hovProf ? Math.min(1, (t - hoverStartRef.current) / 400) : 0
-
+    // Dots
     REFERENCE_PROFILES.forEach((p, i) => {
       const { x, y } = dotXY(p.coords.patience, p.coords.extraversion, S, M)
       const c = getCat(p.group)
       const isHovProf = p.name === hovProf
+      // Resting alpha ~0.50; dim to 0.08 when something else is focused
       const alpha = hovProf
-        ? (isHovProf ? 0.95 : 0.10)
-        : activeCat === null ? 0.68 : activeCat === p.group ? 0.95 : 0.12
+        ? (isHovProf ? 0.95 : 0.08)
+        : activeCat === null ? 0.50 : activeCat === p.group ? 0.92 : 0.08
       const isFocused = (activeCat !== null && activeCat === p.group) || isHovProf
       const pp    = pulseParams.current[i]
       const pulse = (Math.sin(t * 0.001 * pp.speed + pp.phase) + 1) / 2
 
       if (isHovProf && hoverProg > 0) drawCanvasPentagon(ctx, p, x, y, c.color, hoverProg)
 
-      if (alpha > 0.11) {
-        const pr = 6 + pulse * 18
-        const pa = (1 - pulse) * 0.30 * (isFocused ? 1.4 : 0.85)
+      // Bloom ring
+      if (alpha > 0.09) {
+        const pr = 5 + pulse * 15
+        const pa = (1 - pulse) * 0.26 * (isFocused ? 1.6 : 0.7)
         ctx.beginPath()
         ctx.arc(x, y, pr, 0, Math.PI * 2)
-        ctx.strokeStyle = hexAlpha(c.color, Math.min(pa * alpha, 1))
+        ctx.strokeStyle = hexAlpha(c.color, Math.min(pa * (alpha < 0.5 ? alpha * 1.4 : alpha), 0.45))
         ctx.lineWidth = 1; ctx.stroke()
       }
 
+      // Core dot
       ctx.beginPath()
-      ctx.arc(x, y, isHovProf ? 7 : 4.5, 0, Math.PI * 2)
+      ctx.arc(x, y, isHovProf ? 6.5 : 4, 0, Math.PI * 2)
       ctx.fillStyle = hexAlpha(c.color, alpha)
       ctx.fill()
+
+      // Contextual label — appears when category is focused (not on hover, tooltip handles that)
+      if (!isHovProf && activeCat !== null && activeCat === p.group && alpha > 0.5) {
+        ctx.font = '500 9px system-ui, -apple-system'
+        ctx.fillStyle = hexAlpha(c.color, alpha * 0.70)
+        ctx.textAlign = 'center'
+        ctx.fillText(p.name.toUpperCase(), x, y + 15)
+        ctx.textAlign = 'left'
+      }
     })
   }, [])
 
@@ -281,7 +313,7 @@ function RadarCanvas({
   }, [onHoverProfile, onHoverCat])
 
   return (
-    <div style={{ position: 'relative', width: 'clamp(300px, min(calc(100vh - 220px), calc(100vw - 550px)), 640px)', height: 'clamp(300px, min(calc(100vh - 220px), calc(100vw - 550px)), 640px)', zIndex: 1 }}>
+    <div style={{ position: 'relative', width: 'min(calc(100vh - 200px), 88vw, 700px)', height: 'min(calc(100vh - 200px), 88vw, 700px)', zIndex: 1 }}>
       <canvas
         ref={canvasRef}
         width={RADAR_SIZE} height={RADAR_SIZE}
@@ -492,11 +524,6 @@ const BG  = '#080808'
 const MAX = 1240
 const HERO_WORDS = ["YOU'VE", 'MET', 'THESE', 'PEOPLE.']
 
-// Left column: deliberate quadrants (Operators, Stabilizers)
-const LEFT_CATS  = ['process_structure', 'strategic_drive'] as const
-// Right column: urgent quadrants (Drivers, Catalysts)
-const RIGHT_CATS = ['field_command', 'people_influence'] as const
-
 export default function ArchetypesPage() {
   const [activeCat,      setActiveCat]      = useState<string | null>(null)
   const [hoveredProfile, setHoveredProfile] = useState<string | null>(null)
@@ -562,9 +589,6 @@ export default function ArchetypesPage() {
   const tickerNames = [...REFERENCE_PROFILES]
     .sort((a, b) => a.name.localeCompare(b.name))
     .map(p => p.name.toUpperCase())
-
-  const leftCats  = CATS.filter(c => (LEFT_CATS  as readonly string[]).includes(c.key))
-  const rightCats = CATS.filter(c => (RIGHT_CATS as readonly string[]).includes(c.key))
 
   return (
     <main ref={mainRef} style={{ background: BG, color: '#FFF', fontFamily: '"DM Sans", -apple-system, sans-serif', overflowX: 'hidden' }}>
@@ -655,60 +679,72 @@ export default function ArchetypesPage() {
         </div>
       </div>
 
-      {/* ── RADAR MAP — FULL VIEWPORT ── */}
+      {/* ── BEHAVIORAL MAP ── */}
       <section style={{ width: '100%', height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
-        {/* Title row — normal flow, never overlaps radar */}
-        <div style={{ flexShrink: 0, paddingTop: 80, paddingBottom: 16, textAlign: 'center' }}>
-          <p style={{ fontSize: 10, fontWeight: 500, color: 'rgba(255,255,255,0.22)', letterSpacing: '0.20em', textTransform: 'uppercase', marginBottom: 8 }}>The System</p>
-          <h2 style={{
-            fontFamily: '"Barlow Condensed", system-ui',
-            fontSize: 'clamp(24px, 2.8vw, 38px)',
-            fontWeight: 800, textTransform: 'uppercase',
-            letterSpacing: '-0.01em', lineHeight: 1.0,
-            color: '#FFF', marginBottom: 6, whiteSpace: 'nowrap',
-          }}>
-            Four types. One map.
-          </h2>
-          <p style={{ fontSize: 12, fontWeight: 300, color: 'rgba(255,255,255,0.32)', whiteSpace: 'nowrap' }}>
-            Two axes: Pace and People-orientation. Hover to explore.
+        {/* Eyebrow — minimal, non-competing */}
+        <div style={{ flexShrink: 0, paddingTop: 76, paddingBottom: 8, textAlign: 'center' }}>
+          <p style={{ fontSize: 10, fontWeight: 500, color: 'rgba(255,255,255,0.18)', letterSpacing: '0.22em', textTransform: 'uppercase', margin: 0 }}>
+            Four types · Pace × People-orientation
           </p>
         </div>
 
-        {/* Content row — radar fills remaining height, columns float on sides */}
-        <div style={{ flex: 1, minHeight: 0, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-
-          {/* Left column — Operators + Stabilizers */}
-          <div className="radar-col-left" style={{ position: 'absolute', left: 44, top: '50%', transform: 'translateY(-50%)', width: 210, zIndex: 2 }}>
-            <RadarColumn
-              groups={leftCats}
-              activeCat={activeCat}
-              hoveredProfile={hoveredProfile}
-              setActive={setActive}
-              setHovProf={setHovProf}
-            />
-          </div>
-
-          {/* Radar — as large as the available space allows */}
+        {/* Map — dominant, fills remaining height */}
+        <div style={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <RadarCanvas
             activeCat={activeCat}
             hoveredProfileName={hoveredProfile}
             onHoverCat={setActive}
             onHoverProfile={setHovProf}
           />
-
-          {/* Right column — Drivers + Catalysts */}
-          <div className="radar-col-right" style={{ position: 'absolute', right: 44, top: '50%', transform: 'translateY(-50%)', width: 210, zIndex: 2 }}>
-            <RadarColumn
-              groups={rightCats}
-              activeCat={activeCat}
-              hoveredProfile={hoveredProfile}
-              setActive={setActive}
-              setHovProf={setHovProf}
-            />
-          </div>
-
         </div>
+
+        {/* Legend strip — compact, low visual weight, contextual opacity */}
+        <div style={{ flexShrink: 0, paddingBottom: 28, paddingTop: 4 }}>
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            {CATS.map((cat, idx) => {
+              const isOn = activeCat === null || activeCat === cat.key
+              const catProfiles = REFERENCE_PROFILES.filter(p => p.group === cat.key).sort((a, b) => a.name.localeCompare(b.name))
+              return (
+                <div
+                  key={cat.key}
+                  onMouseEnter={() => setActive(cat.key)}
+                  onMouseLeave={() => setActive(null)}
+                  style={{
+                    padding: '9px 18px',
+                    borderLeft: idx > 0 ? '1px solid rgba(255,255,255,0.07)' : 'none',
+                    opacity: isOn ? 1 : 0.18,
+                    transition: 'opacity 400ms ease',
+                    cursor: 'default',
+                    minWidth: 120,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5 }}>
+                    <div style={{ width: 5, height: 5, borderRadius: '50%', background: cat.color, flexShrink: 0 }} />
+                    <span style={{
+                      fontFamily: '"Barlow Condensed", system-ui',
+                      fontSize: 11, fontWeight: 700,
+                      textTransform: 'uppercase', letterSpacing: '0.10em',
+                      color: cat.color,
+                    }}>{cat.label}</span>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1px 7px', maxWidth: 140 }}>
+                    {catProfiles.map(p => (
+                      <span key={p.name} style={{
+                        fontSize: 10, fontWeight: 300,
+                        color: 'rgba(255,255,255,0.28)',
+                        fontFamily: '"DM Sans", sans-serif',
+                        letterSpacing: '0.01em',
+                        whiteSpace: 'nowrap',
+                      }}>{p.name}</span>
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
       </section>
 
       {/* ── CTA + ARCHETYPE BLOCKS ── */}
@@ -800,7 +836,6 @@ export default function ArchetypesPage() {
           .nav-signin { display: none !important; }
           .nav-inner  { padding: 0 20px !important; }
           .nav-cta    { height: 36px !important; padding: 0 14px !important; }
-          .radar-col-left, .radar-col-right { display: none !important; }
         }
       `}</style>
 
