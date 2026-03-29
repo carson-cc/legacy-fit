@@ -5,16 +5,16 @@ import type { FitModelScores } from '@/app/components/FitModel'
 import Nav from '@/app/components/Nav'
 
 // ─── Brand tokens ────────────────────────────────────────────────────
-const BG    = '#080808'
+const BG    = '#000'
 const CARD  = '#0f0f0f'
-const TEXT  = '#eeece6'
-const MUTED = 'rgba(238,236,230,0.42)'
-const DIM   = 'rgba(238,236,230,0.18)'
+const TEXT  = 'rgba(255,255,255,0.88)'
+const MUTED = 'rgba(255,255,255,0.4)'
+const DIM   = 'rgba(255,255,255,0.18)'
 const BORD  = 'rgba(255,255,255,0.07)'
 const BLUE  = '#2563EB'
-const GREEN = '#3aa868'
-const AMBER = '#c8a832'
-const RED   = '#e05a3a'
+const GREEN = '#22C55E'
+const AMBER = '#EAB308'
+const RED   = '#EF4444'
 const FONT  = '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif'
 
 // ─── Profile data ────────────────────────────────────────────────────
@@ -439,6 +439,7 @@ export default function MethodPage() {
 
   return (
     <div className="snap-page" ref={snapContainerRef} style={{ background: BG, color: TEXT, fontFamily: FONT }}>
+      <style>{`.snap-page::-webkit-scrollbar{display:none}`}</style>
 
       {/* ── NAV ─────────────────────────────────────────────────────── */}
       <Nav activePage="profiles" />

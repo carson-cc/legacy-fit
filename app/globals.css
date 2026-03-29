@@ -491,6 +491,12 @@ button, a, input, select, textarea {
   overflow-y: scroll;
   scroll-snap-type: y mandatory;
   overscroll-behavior: none;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.snap-page::-webkit-scrollbar {
+  display: none;
 }
 
 .snap-beat {

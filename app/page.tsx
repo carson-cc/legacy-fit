@@ -113,6 +113,7 @@ export default function HomePage() {
 
   return (
     <div className="snap-page" ref={snapRef}>
+      <style>{`.snap-page::-webkit-scrollbar{display:none}`}</style>
 
       {/* FIXED NAV */}
       <Nav light={navLight} />
