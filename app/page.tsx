@@ -6,7 +6,10 @@ import { FitModel } from '@/app/components/FitModel'
 export default function HomePage() {
   const [navLight, setNavLight] = useState(false)
   const [lineDrawn, setLineDrawn] = useState(false)
+  const [showWhy, setShowWhy] = useState(false)
   const beat4Ref = useRef<HTMLDivElement>(null)
+  const snapRef = useRef<HTMLDivElement>(null)
+  const reportRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
     const lightSections = document.querySelectorAll('.beat-light')
@@ -36,8 +39,54 @@ export default function HomePage() {
     return () => obs.disconnect()
   }, [])
 
+  useEffect(() => {
+    const container = snapRef.current
+    if (!container) return
+
+    const handled = { current: false }
+    let touchStartY = 0
+
+    const tryReveal = (e: Event) => {
+      if (container.scrollTop > 10 || handled.current) return
+      handled.current = true
+      e.preventDefault()
+      setShowWhy(true)
+      setTimeout(() => {
+        reportRef.current?.scrollIntoView({ behavior: 'smooth' })
+      }, 650)
+    }
+
+    const onWheel = (e: WheelEvent) => {
+      if (e.deltaY > 0) tryReveal(e)
+    }
+    const onTouchStart = (e: TouchEvent) => {
+      touchStartY = e.touches[0].clientY
+    }
+    const onTouchEnd = (e: TouchEvent) => {
+      if (touchStartY - e.changedTouches[0].clientY > 30) tryReveal(e)
+    }
+    const onScroll = () => {
+      if (container.scrollTop < 10) {
+        handled.current = false
+        setShowWhy(false)
+      }
+    }
+
+    container.addEventListener('wheel', onWheel, { passive: false })
+    container.addEventListener('touchstart', onTouchStart, { passive: true })
+    container.addEventListener('touchend', onTouchEnd, { passive: false })
+    container.addEventListener('scroll', onScroll, { passive: true })
+
+    return () => {
+      container.removeEventListener('wheel', onWheel)
+      container.removeEventListener('touchstart', onTouchStart)
+      container.removeEventListener('touchend', onTouchEnd)
+      container.removeEventListener('scroll', onScroll)
+    }
+  }, [])
+
   return (
-    <div className="snap-page">
+    <div className="snap-page" ref={snapRef}>
 
       {/* FIXED NAV */}
       <nav style={{
@@ -101,22 +150,37 @@ export default function HomePage() {
       </nav>
 
       {/* ============================================
-          BEAT 1 — The Recognition
-          Black screen. One line. Nothing else.
+          BEAT 1 — The Recognition → The Shift
+          Second line animates in on first scroll attempt.
       ============================================ */}
       <section className="snap-beat" style={{ background: '#000' }}>
-        <p style={{
-          fontSize: 'clamp(36px, 5.5vw, 64px)',
-          fontWeight: 700,
-          color: 'rgba(255,255,255,0.88)',
-          letterSpacing: '-0.03em',
-          lineHeight: 1.05,
-          textAlign: 'center',
-          maxWidth: 700
-        }}>
-          You already know<br />
-          who&apos;s right for the role.
-        </p>
+        <div style={{ textAlign: 'center' }}>
+          <p style={{
+            fontSize: 'clamp(36px, 5.5vw, 64px)',
+            fontWeight: 700,
+            color: showWhy ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.88)',
+            letterSpacing: '-0.03em',
+            lineHeight: 1.05,
+            marginBottom: showWhy ? 18 : 0,
+            transition: 'color 500ms ease, margin-bottom 500ms ease'
+          }}>
+            You already know<br />
+            who&apos;s right for the role.
+          </p>
+          <p style={{
+            fontSize: 'clamp(36px, 5.5vw, 64px)',
+            fontWeight: 700,
+            color: '#FFFFFF',
+            letterSpacing: '-0.03em',
+            lineHeight: 1.05,
+            opacity: showWhy ? 1 : 0,
+            transform: showWhy ? 'translateY(0)' : 'translateY(10px)',
+            transition: 'opacity 450ms ease 80ms, transform 450ms ease 80ms',
+            pointerEvents: 'none'
+          }}>
+            Now show your client why.
+          </p>
+        </div>
 
         <div style={{
           position: 'absolute',
@@ -127,7 +191,8 @@ export default function HomePage() {
           flexDirection: 'column',
           alignItems: 'center',
           gap: 6,
-          opacity: 0.35
+          opacity: showWhy ? 0 : 0.35,
+          transition: 'opacity 300ms ease'
         }}>
           <div style={{
             width: 1,
@@ -146,41 +211,12 @@ export default function HomePage() {
       </section>
 
       {/* ============================================
-          BEAT 2 — The Shift
-          First line dims. Second line arrives.
-      ============================================ */}
-      <section className="snap-beat" style={{ background: '#000' }}>
-        <div style={{ textAlign: 'center' }}>
-          <p style={{
-            fontSize: 'clamp(32px, 5vw, 60px)',
-            fontWeight: 700,
-            color: 'rgba(255,255,255,0.2)',
-            letterSpacing: '-0.03em',
-            lineHeight: 1.05,
-            marginBottom: 16
-          }}>
-            You already know<br />
-            who&apos;s right for the role.
-          </p>
-          <p style={{
-            fontSize: 'clamp(32px, 5vw, 60px)',
-            fontWeight: 700,
-            color: '#FFFFFF',
-            letterSpacing: '-0.03em',
-            lineHeight: 1.05
-          }}>
-            Now show your client why.
-          </p>
-        </div>
-      </section>
-
-      {/* ============================================
           BEAT 3 — The Object
           The report appears. It just exists.
           snap-beat-scroll allows internal scroll
           if report exceeds viewport height.
       ============================================ */}
-      <section className="snap-beat-scroll" style={{ background: '#000', position: 'relative', overflow: 'hidden' }}>
+      <section ref={reportRef} className="snap-beat-scroll" style={{ background: '#000', position: 'relative', overflow: 'hidden' }}>
 
         {/* Radial glow — sits behind everything */}
         <div style={{
@@ -273,17 +309,17 @@ export default function HomePage() {
                 PE-Backed CFO · Velocity Growth Partners
               </p>
               <p style={{
-                fontSize: 20,
+                fontSize: 18,
                 fontWeight: 800,
                 color: '#FFFFFF',
                 letterSpacing: '-0.02em',
-                marginBottom: 8
+                marginBottom: 6
               }}>
                 Kent Morrison
               </p>
               <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12 }}>
                 <span style={{
-                  fontSize: 46,
+                  fontSize: 40,
                   fontWeight: 900,
                   color: '#FFFFFF',
                   letterSpacing: '-0.04em',
@@ -294,12 +330,12 @@ export default function HomePage() {
                 </span>
                 <div style={{ paddingBottom: 3 }}>
                   <p style={{
-                    fontSize: 16,
+                    fontSize: 14,
                     fontWeight: 700,
                     color: '#22C55E',
                     letterSpacing: '-0.02em',
                     lineHeight: 1.1,
-                    marginBottom: 3
+                    marginBottom: 2
                   }}>
                     Strong Hire — with one execution risk
                   </p>
@@ -318,9 +354,9 @@ export default function HomePage() {
               background: 'rgba(234,179,8,0.05)',
               border: '1px solid rgba(234,179,8,0.18)',
               borderRadius: 8,
-              padding: '12px 16px',
-              minWidth: 220,
-              maxWidth: 280
+              padding: '8px 14px',
+              minWidth: 200,
+              maxWidth: 260
             }}>
               <p style={{
                 fontSize: 9,
@@ -333,12 +369,12 @@ export default function HomePage() {
                 Primary Tension
               </p>
               <p style={{
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: 600,
                 color: 'rgba(255,255,255,0.62)',
                 letterSpacing: '-0.01em',
-                lineHeight: 1.3,
-                marginBottom: 5
+                lineHeight: 1.25,
+                marginBottom: 3
               }}>
                 Execution Speed vs.<br />Stakeholder Alignment
               </p>
@@ -362,7 +398,7 @@ export default function HomePage() {
             {/* LEFT — Role Fit */}
             <div style={{
               borderRight: '1px solid rgba(255,255,255,0.05)',
-              padding: '12px 20px 12px 24px'
+              padding: '10px 16px 10px 20px'
             }}>
               <p style={{
                 fontSize: 9,
@@ -370,15 +406,15 @@ export default function HomePage() {
                 color: 'rgba(255,255,255,0.16)',
                 letterSpacing: '0.14em',
                 textTransform: 'uppercase',
-                marginBottom: 6
+                marginBottom: 4
               }}>
                 Role Fit
               </p>
               <p style={{
-                fontSize: 10,
+                fontSize: 9,
                 color: 'rgba(255,255,255,0.32)',
-                lineHeight: 1.5,
-                marginBottom: 10
+                lineHeight: 1.4,
+                marginBottom: 8
               }}>
                 Above benchmark on execution and decision speed. Slight drop in collaboration.
               </p>
@@ -386,8 +422,8 @@ export default function HomePage() {
               <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                 <div style={{
                   position: 'absolute',
-                  width: 120,
-                  height: 120,
+                  width: 100,
+                  height: 100,
                   borderRadius: '50%',
                   background: 'radial-gradient(circle, rgba(37,99,235,0.08) 0%, transparent 70%)',
                   pointerEvents: 'none'
@@ -405,7 +441,7 @@ export default function HomePage() {
                     patience: 0.50,
                     formality: 0.66
                   }}
-                  size={140}
+                  size={120}
                   variant="dark"
                   animated={false}
                   showLabels={true}
@@ -423,7 +459,7 @@ export default function HomePage() {
             </div>
 
             {/* RIGHT — Execution Environment + Decision Frame + Insight + Probes */}
-            <div style={{ padding: '12px 24px 12px 20px' }}>
+            <div style={{ padding: '10px 20px 10px 16px' }}>
 
               <p style={{
                 fontSize: 9,
@@ -431,7 +467,7 @@ export default function HomePage() {
                 color: 'rgba(255,255,255,0.16)',
                 letterSpacing: '0.14em',
                 textTransform: 'uppercase',
-                marginBottom: 8
+                marginBottom: 6
               }}>
                 Execution Environment
               </p>
@@ -463,8 +499,8 @@ export default function HomePage() {
                 }
               ].map((person, i) => (
                 <div key={i} style={{
-                  marginBottom: 8,
-                  paddingBottom: 8,
+                  marginBottom: 6,
+                  paddingBottom: 6,
                   borderBottom: i < 2 ? '1px solid rgba(255,255,255,0.04)' : 'none'
                 }}>
                   <div style={{
@@ -522,7 +558,7 @@ export default function HomePage() {
                 display: 'flex',
                 alignItems: 'flex-start',
                 gap: 8,
-                padding: '6px 0 10px',
+                padding: '4px 0 8px',
                 borderBottom: '1px solid rgba(255,255,255,0.05)'
               }}>
                 <span style={{
@@ -545,7 +581,7 @@ export default function HomePage() {
                 color: 'rgba(255,255,255,0.16)',
                 letterSpacing: '0.14em',
                 textTransform: 'uppercase',
-                margin: '8px 0 6px'
+                margin: '5px 0 4px'
               }}>
                 Decision Frame
               </p>
@@ -554,7 +590,7 @@ export default function HomePage() {
                 border: '1px solid rgba(255,255,255,0.06)',
                 borderRadius: 8,
                 overflow: 'hidden',
-                marginBottom: 8
+                marginBottom: 5
               }}>
                 {[
                   {
@@ -573,7 +609,7 @@ export default function HomePage() {
                   <div key={i} style={{
                     display: 'flex',
                     gap: 10,
-                    padding: '6px 12px',
+                    padding: '5px 12px',
                     background: row.bg,
                     borderBottom: i === 0 ? '1px solid rgba(255,255,255,0.05)' : 'none'
                   }}>
@@ -589,7 +625,7 @@ export default function HomePage() {
                     }}>
                       {row.label}
                     </span>
-                    <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.42)', lineHeight: 1.45 }}>
+                    <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.42)', lineHeight: 1.45 }}>
                       {row.text}
                     </span>
                   </div>
@@ -601,8 +637,8 @@ export default function HomePage() {
                 background: 'rgba(37,99,235,0.04)',
                 border: '1px solid rgba(37,99,235,0.10)',
                 borderRadius: 8,
-                padding: '8px 12px',
-                marginBottom: 8
+                padding: '6px 10px',
+                marginBottom: 5
               }}>
                 <p style={{
                   fontSize: 9,
@@ -610,11 +646,11 @@ export default function HomePage() {
                   color: 'rgba(37,99,235,0.55)',
                   letterSpacing: '0.1em',
                   textTransform: 'uppercase',
-                  marginBottom: 4
+                  marginBottom: 3
                 }}>
                   Key Insight
                 </p>
-                <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.46)', lineHeight: 1.55 }}>
+                <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.46)', lineHeight: 1.5 }}>
                   Kent&apos;s execution and ownership scores are strong. The only flag is pace — the operating partner runs slower. Get ahead of that before he starts.
                 </p>
               </div>
@@ -626,7 +662,7 @@ export default function HomePage() {
                 color: 'rgba(255,255,255,0.16)',
                 letterSpacing: '0.14em',
                 textTransform: 'uppercase',
-                marginBottom: 6
+                marginBottom: 4
               }}>
                 Interview Probes
               </p>
@@ -642,8 +678,8 @@ export default function HomePage() {
                 }
               ].map((probe, i) => (
                 <div key={i} style={{
-                  marginBottom: 5,
-                  paddingLeft: 8,
+                  marginBottom: 3,
+                  paddingLeft: 7,
                   borderLeft: '2px solid rgba(37,99,235,0.16)'
                 }}>
                   <p style={{
@@ -656,7 +692,7 @@ export default function HomePage() {
                   }}>
                     {probe.risk}
                   </p>
-                  <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.32)', lineHeight: 1.45 }}>
+                  <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.32)', lineHeight: 1.4 }}>
                     {probe.q}
                   </p>
                 </div>
@@ -665,8 +701,8 @@ export default function HomePage() {
               <p style={{
                 fontSize: 9,
                 color: 'rgba(255,255,255,0.10)',
-                marginTop: 8,
-                paddingTop: 6,
+                marginTop: 5,
+                paddingTop: 4,
                 borderTop: '1px solid rgba(255,255,255,0.04)'
               }}>
                 94 signals · Benchmark confidence: High

@@ -458,7 +458,7 @@ button, a, input, select, textarea {
   height: 100vh;
   overflow-y: scroll;
   scroll-snap-type: y mandatory;
-  scroll-behavior: smooth;
+  overscroll-behavior: none;
 }
 
 .snap-beat {
