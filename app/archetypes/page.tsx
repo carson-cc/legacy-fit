@@ -105,7 +105,7 @@ function drawCanvasPentagon(
   dx: number, dy: number, color: string, progress: number,
 ) {
   const pts = pentagonVals(profile).map((v, i) => {
-    const r = (0.22 + v * 0.78) * 40
+    const r = (0.22 + v * 0.78) * (RADAR_SIZE / 16)
     return [dx + Math.cos(PENT_ANGLES[i]) * r, dy + Math.sin(PENT_ANGLES[i]) * r]
   })
   let perim = 0
@@ -140,8 +140,8 @@ function MiniPentagon({ vals, color, size = 20 }: { vals: number[]; color: strin
 }
 
 // ─── RADAR CANVAS ─────────────────────────────────────────────────────────────
-const RADAR_SIZE   = 640
-const RADAR_MARGIN = 64
+const RADAR_SIZE   = 720
+const RADAR_MARGIN = 72
 
 type TooltipState = { name: string; tagline: string; color: string; cssX: number; cssY: number }
 
@@ -215,9 +215,9 @@ function RadarCanvas({
       ctx.lineWidth = 1; ctx.stroke()
     }
 
-    // Axes
-    ctx.setLineDash([2, 6])
-    ctx.strokeStyle = 'rgba(255,255,255,0.055)'; ctx.lineWidth = 1
+    // Axes — hairline only, no text labels (corner overlays handle labeling)
+    ctx.setLineDash([2, 7])
+    ctx.strokeStyle = 'rgba(255,255,255,0.045)'; ctx.lineWidth = 1
     ctx.beginPath(); ctx.moveTo(M, cy); ctx.lineTo(S - M, cy); ctx.stroke()
     ctx.beginPath(); ctx.moveTo(cx, M); ctx.lineTo(cx, S - M); ctx.stroke()
     ctx.setLineDash([])
@@ -313,27 +313,71 @@ function RadarCanvas({
   }, [onHoverProfile, onHoverCat])
 
   return (
-    <div style={{ position: 'relative', width: 'min(calc(100vh - 200px), 88vw, 700px)', height: 'min(calc(100vh - 200px), 88vw, 700px)', zIndex: 1 }}>
+    <div style={{ position: 'relative', width: 'min(calc(100vh - 140px), 90vw, 720px)', height: 'min(calc(100vh - 140px), 90vw, 720px)', zIndex: 1 }}>
       <canvas
         ref={canvasRef}
         width={RADAR_SIZE} height={RADAR_SIZE}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
-        style={{ width: '100%', height: '100%', cursor: 'crosshair', borderRadius: 2 }}
+        style={{ width: '100%', height: '100%', cursor: 'crosshair', borderRadius: 2, display: 'block' }}
       />
+
+      {/* Corner quadrant labels — float over the map surface */}
+      {([
+        { key: 'strategic_drive',   pos: { top: 14, left: 14 },   align: 'left'  },
+        { key: 'people_influence',  pos: { top: 14, right: 14 },  align: 'right' },
+        { key: 'process_structure', pos: { bottom: 14, left: 14 },  align: 'left'  },
+        { key: 'field_command',     pos: { bottom: 14, right: 14 }, align: 'right' },
+      ] as const).map(({ key, pos, align }) => {
+        const cat = getCat(key)
+        const isOn = activeCat === null || activeCat === key
+        const profiles = REFERENCE_PROFILES
+          .filter(p => p.group === key)
+          .sort((a, b) => a.name.localeCompare(b.name))
+        return (
+          <div key={key}
+            onMouseEnter={() => onHoverCat(key)}
+            onMouseLeave={() => onHoverCat(null)}
+            style={{
+              position: 'absolute', ...pos,
+              textAlign: align as 'left' | 'right',
+              opacity: isOn ? 1 : 0.10,
+              transition: 'opacity 400ms ease',
+              zIndex: 3, cursor: 'default',
+              pointerEvents: 'all',
+            }}
+          >
+            <div style={{
+              fontFamily: '"Barlow Condensed", system-ui',
+              fontSize: 10, fontWeight: 700,
+              textTransform: 'uppercase', letterSpacing: '0.13em',
+              color: cat.color, marginBottom: 4, lineHeight: 1,
+            }}>{cat.label}</div>
+            {profiles.map(p => (
+              <div key={p.name} style={{
+                fontSize: 9.5, fontWeight: 300,
+                color: 'rgba(255,255,255,0.26)',
+                fontFamily: '"DM Sans", sans-serif',
+                letterSpacing: '0.01em', lineHeight: 1.6,
+              }}>{p.name}</div>
+            ))}
+          </div>
+        )
+      })}
+
       {tooltip && (
         <div style={{
           position: 'absolute',
-          left:  tooltip.cssX <= 320 ? tooltip.cssX + 14 : undefined,
-          right: tooltip.cssX >  320 ? `calc(100% - ${tooltip.cssX}px + 14px)` : undefined,
+          left:  tooltip.cssX <= 360 ? tooltip.cssX + 14 : undefined,
+          right: tooltip.cssX >  360 ? `calc(100% - ${tooltip.cssX}px + 14px)` : undefined,
           top: Math.max(0, tooltip.cssY - 22),
-          background: 'rgba(12,12,12,0.97)',
-          border: `1px solid ${hexAlpha(tooltip.color, 0.32)}`,
+          background: 'rgba(10,10,10,0.96)',
+          border: `1px solid ${hexAlpha(tooltip.color, 0.28)}`,
           borderRadius: 7, padding: '8px 12px',
           pointerEvents: 'none', zIndex: 10, minWidth: 130,
         }}>
           <div style={{ fontFamily: '"Barlow Condensed", system-ui', fontSize: 15, fontWeight: 800, textTransform: 'uppercase', color: tooltip.color, letterSpacing: '0.04em' }}>{tooltip.name}</div>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.44)', marginTop: 2, lineHeight: 1.4 }}>{tooltip.tagline.slice(0, 58)}</div>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.40)', marginTop: 2, lineHeight: 1.4 }}>{tooltip.tagline.slice(0, 58)}</div>
         </div>
       )}
     </div>
@@ -679,71 +723,31 @@ export default function ArchetypesPage() {
         </div>
       </div>
 
-      {/* ── BEHAVIORAL MAP ── */}
-      <section style={{ width: '100%', height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      {/* ── BEHAVIORAL MAP — full-bleed intelligence surface ── */}
+      <section style={{
+        width: '100%', height: '100vh',
+        position: 'relative', overflow: 'hidden',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
 
-        {/* Eyebrow — minimal, non-competing */}
-        <div style={{ flexShrink: 0, paddingTop: 76, paddingBottom: 8, textAlign: 'center' }}>
-          <p style={{ fontSize: 10, fontWeight: 500, color: 'rgba(255,255,255,0.18)', letterSpacing: '0.22em', textTransform: 'uppercase', margin: 0 }}>
-            Four types · Pace × People-orientation
-          </p>
-        </div>
+        {/* Eyebrow — floats, doesn't consume layout space */}
+        <p style={{
+          position: 'absolute', top: 72, left: 0, right: 0,
+          textAlign: 'center', margin: 0, zIndex: 2, pointerEvents: 'none',
+          fontSize: 9, fontWeight: 500,
+          color: 'rgba(255,255,255,0.16)',
+          letterSpacing: '0.22em', textTransform: 'uppercase',
+        }}>
+          Behavioral Map · Pace × People-orientation
+        </p>
 
-        {/* Map — dominant, fills remaining height */}
-        <div style={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <RadarCanvas
-            activeCat={activeCat}
-            hoveredProfileName={hoveredProfile}
-            onHoverCat={setActive}
-            onHoverProfile={setHovProf}
-          />
-        </div>
-
-        {/* Legend strip — compact, low visual weight, contextual opacity */}
-        <div style={{ flexShrink: 0, paddingBottom: 28, paddingTop: 4 }}>
-          <div style={{ display: 'flex', justifyContent: 'center' }}>
-            {CATS.map((cat, idx) => {
-              const isOn = activeCat === null || activeCat === cat.key
-              const catProfiles = REFERENCE_PROFILES.filter(p => p.group === cat.key).sort((a, b) => a.name.localeCompare(b.name))
-              return (
-                <div
-                  key={cat.key}
-                  onMouseEnter={() => setActive(cat.key)}
-                  onMouseLeave={() => setActive(null)}
-                  style={{
-                    padding: '9px 18px',
-                    borderLeft: idx > 0 ? '1px solid rgba(255,255,255,0.07)' : 'none',
-                    opacity: isOn ? 1 : 0.18,
-                    transition: 'opacity 400ms ease',
-                    cursor: 'default',
-                    minWidth: 120,
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5 }}>
-                    <div style={{ width: 5, height: 5, borderRadius: '50%', background: cat.color, flexShrink: 0 }} />
-                    <span style={{
-                      fontFamily: '"Barlow Condensed", system-ui',
-                      fontSize: 11, fontWeight: 700,
-                      textTransform: 'uppercase', letterSpacing: '0.10em',
-                      color: cat.color,
-                    }}>{cat.label}</span>
-                  </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1px 7px', maxWidth: 140 }}>
-                    {catProfiles.map(p => (
-                      <span key={p.name} style={{
-                        fontSize: 10, fontWeight: 300,
-                        color: 'rgba(255,255,255,0.28)',
-                        fontFamily: '"DM Sans", sans-serif',
-                        letterSpacing: '0.01em',
-                        whiteSpace: 'nowrap',
-                      }}>{p.name}</span>
-                    ))}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
+        {/* Map — the entire surface */}
+        <RadarCanvas
+          activeCat={activeCat}
+          hoveredProfileName={hoveredProfile}
+          onHoverCat={setActive}
+          onHoverProfile={setHovProf}
+        />
 
       </section>
 
