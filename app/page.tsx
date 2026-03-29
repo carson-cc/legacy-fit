@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
+import { FitModel } from '@/app/components/FitModel'
 
 export default function HomePage() {
   const [navLight, setNavLight] = useState(false)
@@ -195,7 +196,7 @@ export default function HomePage() {
 
         <div style={{
           width: '100%',
-          maxWidth: 900,
+          maxWidth: 1060,
           background: 'linear-gradient(160deg, #0F1825, #0A1018)',
           border: '1px solid rgba(255,255,255,0.09)',
           borderRadius: 16,
@@ -208,7 +209,7 @@ export default function HomePage() {
           }} />
 
           <div style={{
-            padding: '16px 24px',
+            padding: '14px 24px',
             borderBottom: '1px solid rgba(255,255,255,0.06)',
             display: 'flex',
             justifyContent: 'space-between',
@@ -217,138 +218,99 @@ export default function HomePage() {
             <span style={{
               fontSize: 9,
               fontWeight: 600,
-              color: 'rgba(255,255,255,0.2)',
-              letterSpacing: '0.14em',
+              color: 'rgba(255,255,255,0.22)',
+              letterSpacing: '0.1em',
               textTransform: 'uppercase'
             }}>
               Candidate Recommendation Report
             </span>
-            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.18)', fontWeight: 500, letterSpacing: '0.06em' }}>
+            <span style={{
+              fontSize: 10,
+              color: 'rgba(255,255,255,0.18)',
+              letterSpacing: '0.04em'
+            }}>
               Presented to client
             </span>
           </div>
 
+          {/* Main body — three columns */}
           <div style={{
             padding: 24,
             display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: 24
-          }} className="report-grid">
+            gridTemplateColumns: '1fr 1fr 1fr',
+            gap: 20
+          }} className="report-three-col">
 
-            {/* Left column */}
-            <div>
+            {/* COLUMN 1 — Role fit */}
+            <div style={{
+              borderRight: '1px solid rgba(255,255,255,0.06)',
+              paddingRight: 20
+            }}>
               <p style={{
-                fontSize: 20,
+                fontSize: 9,
+                fontWeight: 600,
+                color: 'rgba(255,255,255,0.2)',
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                marginBottom: 12
+              }}>
+                Role Fit
+              </p>
+
+              <p style={{
+                fontSize: 18,
                 fontWeight: 700,
                 color: '#FFFFFF',
                 letterSpacing: '-0.01em',
-                marginBottom: 3
+                marginBottom: 2
               }}>
                 Marcus Thompson
               </p>
               <p style={{
-                fontSize: 12,
-                color: 'rgba(255,255,255,0.35)',
-                marginBottom: 16
+                fontSize: 11,
+                color: 'rgba(255,255,255,0.32)',
+                marginBottom: 14
               }}>
-                Superintendent · Chicago · Gilbane Construction
+                Superintendent · Chicago · Gilbane
               </p>
 
               <div style={{
-                padding: '16px 0 12px',
-                borderTop: '1px solid rgba(255,255,255,0.06)',
-                borderBottom: '1px solid rgba(255,255,255,0.06)',
-                marginBottom: 12
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 10,
+                marginBottom: 12,
+                paddingBottom: 12,
+                borderBottom: '1px solid rgba(255,255,255,0.06)'
               }}>
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 14, marginBottom: 6 }}>
-                  <span style={{
-                    fontSize: 72,
-                    fontWeight: 900,
-                    color: '#FFFFFF',
-                    letterSpacing: '-0.04em',
-                    lineHeight: 1
-                  }}>93</span>
+                <span style={{
+                  fontSize: 52,
+                  fontWeight: 900,
+                  color: '#FFFFFF',
+                  letterSpacing: '-0.04em',
+                  lineHeight: 0.9,
+                  flexShrink: 0
+                }}>
+                  93
+                </span>
+                <div style={{ paddingTop: 4 }}>
                   <p style={{
-                    fontSize: 28,
-                    fontWeight: 800,
+                    fontSize: 18,
+                    fontWeight: 700,
                     color: '#22C55E',
                     letterSpacing: '-0.02em',
-                    lineHeight: 1,
-                    paddingBottom: 6
+                    marginBottom: 3
                   }}>
                     Strong Hire
                   </p>
-                </div>
-                <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>
-                  High confidence · Top 12% · Role benchmark active
-                </p>
-              </div>
-
-              <p style={{
-                fontSize: 12,
-                color: 'rgba(255,255,255,0.45)',
-                fontStyle: 'italic',
-                lineHeight: 1.65,
-                marginBottom: 12
-              }}>
-                Aligned with high-performing candidates in comparable field
-                leadership roles. Decisive under pressure, built for
-                environments where someone has to own the outcome.
-              </p>
-
-              {/* Decision Frame */}
-              <div style={{
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                borderRadius: 7,
-                padding: '12px 14px'
-              }}>
-                {[
-                  {
-                    label: 'HIRE IF',
-                    color: '#22C55E',
-                    text: 'The role requires independent execution and fast decisions without waiting for consensus.'
-                  },
-                  {
-                    label: 'DO NOT HIRE IF',
-                    color: '#EF4444',
-                    text: 'Success depends on consensus-driven decisions or cross-functional alignment before action.'
-                  }
-                ].map((row, i) => (
-                  <div key={i} style={{
-                    display: 'flex',
-                    gap: 10,
-                    padding: '7px 8px',
-                    borderRadius: 5,
-                    marginBottom: i === 0 ? 4 : 0,
-                    background: i === 0 ? 'rgba(34,197,94,0.05)' : 'rgba(239,68,68,0.05)'
+                  <p style={{
+                    fontSize: 10,
+                    color: 'rgba(255,255,255,0.28)'
                   }}>
-                    <span style={{
-                      fontSize: 9,
-                      fontWeight: 600,
-                      color: row.color,
-                      letterSpacing: '0.07em',
-                      textTransform: 'uppercase',
-                      width: 80,
-                      flexShrink: 0,
-                      marginTop: 2
-                    }}>
-                      {row.label}
-                    </span>
-                    <span style={{
-                      fontSize: 11,
-                      color: 'rgba(255,255,255,0.5)',
-                      lineHeight: 1.6
-                    }}>
-                      {row.text}
-                    </span>
-                  </div>
-                ))}
+                    Top 12% · High confidence
+                  </p>
+                </div>
               </div>
-            </div>
 
-            {/* Right column */}
-            <div>
               <p style={{
                 fontSize: 9,
                 color: 'rgba(255,255,255,0.2)',
@@ -357,55 +319,239 @@ export default function HomePage() {
                 textTransform: 'uppercase',
                 marginBottom: 8
               }}>
-                Benchmark Alignment
+                Signal vs. Benchmark
+              </p>
+
+              <FitModel
+                scores={{
+                  dominance: 0.88,
+                  extraversion: 0.49,
+                  patience: 0.35,
+                  formality: 0.67
+                }}
+                benchmarkScores={{
+                  dominance: 0.72,
+                  extraversion: 0.52,
+                  patience: 0.50,
+                  formality: 0.66
+                }}
+                size={140}
+                variant="dark"
+                animated={false}
+                showLabels={true}
+              />
+
+              <p style={{
+                fontSize: 9,
+                color: 'rgba(255,255,255,0.16)',
+                marginTop: 6,
+                textAlign: 'center'
+              }}>
+                Solid: Marcus · Dashed: Benchmark
+              </p>
+            </div>
+
+            {/* COLUMN 2 — Team compatibility */}
+            <div style={{
+              borderRight: '1px solid rgba(255,255,255,0.06)',
+              paddingRight: 20
+            }}>
+              <p style={{
+                fontSize: 9,
+                fontWeight: 600,
+                color: 'rgba(255,255,255,0.2)',
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                marginBottom: 12
+              }}>
+                Team Compatibility
               </p>
 
               {[
-                { label: 'EXECUTION',     value: 72, color: '#22C55E', warn: false },
-                { label: 'OWNERSHIP',     value: 67, color: '#22C55E', warn: false },
-                { label: 'ADAPTABILITY',  value: 65, color: '#22C55E', warn: false },
-                { label: 'COLLABORATION', value: 49, color: '#EF4444', warn: true  },
-                { label: 'DECISION SPEED',value: 85, color: '#22C55E', warn: false },
-              ].map((dim, i) => (
-                <div key={i} style={{ marginBottom: 8 }}>
+                {
+                  name: 'David Mercer',
+                  role: 'Direct Manager',
+                  score: 88,
+                  label: 'Strong alignment',
+                  color: '#22C55E',
+                  note: 'High overlap on execution and decision speed'
+                },
+                {
+                  name: 'Sarah Chen',
+                  role: 'Project Lead',
+                  score: 61,
+                  label: 'Watch for pace',
+                  color: '#EAB308',
+                  note: 'Marcus moves faster than her alignment style'
+                },
+                {
+                  name: 'Tom Ricci',
+                  role: 'Operations Director',
+                  score: 79,
+                  label: 'Compatible',
+                  color: '#22C55E',
+                  note: 'Shared ownership orientation'
+                }
+              ].map((person, i) => (
+                <div key={i} style={{
+                  marginBottom: 14,
+                  paddingBottom: 14,
+                  borderBottom: i < 2
+                    ? '1px solid rgba(255,255,255,0.05)'
+                    : 'none'
+                }}>
                   <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
-                    marginBottom: 4
+                    alignItems: 'flex-start',
+                    marginBottom: 5
                   }}>
-                    <span style={{
-                      fontSize: 9,
-                      color: dim.warn ? 'rgba(239,68,68,0.7)' : 'rgba(255,255,255,0.28)',
-                      letterSpacing: '0.08em',
-                      fontWeight: 600,
-                      textTransform: 'uppercase'
-                    }}>
-                      {dim.warn ? '⚠ ' : ''}{dim.label}
-                    </span>
+                    <div>
+                      <p style={{
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: '#FFFFFF',
+                        marginBottom: 1
+                      }}>
+                        {person.name}
+                      </p>
+                      <p style={{
+                        fontSize: 10,
+                        color: 'rgba(255,255,255,0.28)'
+                      }}>
+                        {person.role}
+                      </p>
+                    </div>
                     <span style={{
                       fontSize: 10,
-                      fontWeight: 700,
-                      color: dim.warn ? '#EF4444' : 'rgba(255,255,255,0.55)'
+                      fontWeight: 600,
+                      color: person.color
                     }}>
-                      {dim.value}
+                      {person.label}
                     </span>
                   </div>
+
                   <div style={{
                     height: 3,
-                    background: 'rgba(255,255,255,0.06)',
+                    background: 'rgba(255,255,255,0.07)',
                     borderRadius: 2,
-                    overflow: 'hidden'
+                    overflow: 'hidden',
+                    marginBottom: 5
                   }}>
                     <div style={{
                       height: '100%',
-                      width: `${dim.value}%`,
-                      background: dim.color,
+                      width: `${person.score}%`,
+                      background: person.color,
                       borderRadius: 2,
-                      opacity: dim.warn ? 0.6 : 0.8
+                      opacity: 0.8
                     }} />
                   </div>
+
+                  <p style={{
+                    fontSize: 10,
+                    color: 'rgba(255,255,255,0.28)',
+                    lineHeight: 1.5
+                  }}>
+                    {person.note}
+                  </p>
                 </div>
               ))}
+            </div>
+
+            {/* COLUMN 3 — Decision Frame + Key Insight */}
+            <div>
+              <p style={{
+                fontSize: 9,
+                fontWeight: 600,
+                color: 'rgba(255,255,255,0.2)',
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                marginBottom: 12
+              }}>
+                Decision Frame
+              </p>
+
+              <div style={{
+                background: 'rgba(0,0,0,0.3)',
+                border: '1px solid rgba(255,255,255,0.07)',
+                borderRadius: 8,
+                overflow: 'hidden',
+                marginBottom: 14
+              }}>
+                {[
+                  {
+                    label: 'HIRE IF',
+                    color: '#22C55E',
+                    bg: 'rgba(34,197,94,0.05)',
+                    text: 'Role requires independent execution and fast decisions.'
+                  },
+                  {
+                    label: 'DO NOT HIRE IF',
+                    color: '#EF4444',
+                    bg: 'rgba(239,68,68,0.05)',
+                    text: 'Success depends on consensus-first execution.'
+                  }
+                ].map((row, i) => (
+                  <div key={i} style={{
+                    display: 'flex',
+                    gap: 10,
+                    padding: '10px 12px',
+                    background: row.bg,
+                    borderBottom: i === 0
+                      ? '1px solid rgba(255,255,255,0.06)'
+                      : 'none'
+                  }}>
+                    <span style={{
+                      fontSize: 8,
+                      fontWeight: 800,
+                      color: row.color,
+                      letterSpacing: '0.1em',
+                      textTransform: 'uppercase',
+                      flexShrink: 0,
+                      width: 72,
+                      paddingTop: 2
+                    }}>
+                      {row.label}
+                    </span>
+                    <span style={{
+                      fontSize: 11,
+                      color: 'rgba(255,255,255,0.55)',
+                      lineHeight: 1.55
+                    }}>
+                      {row.text}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{
+                background: 'rgba(37,99,235,0.06)',
+                border: '1px solid rgba(37,99,235,0.15)',
+                borderRadius: 8,
+                padding: '12px 14px',
+                marginBottom: 14
+              }}>
+                <p style={{
+                  fontSize: 9,
+                  fontWeight: 600,
+                  color: '#2563EB',
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  marginBottom: 6
+                }}>
+                  Key Insight
+                </p>
+                <p style={{
+                  fontSize: 12,
+                  color: 'rgba(255,255,255,0.65)',
+                  lineHeight: 1.6,
+                  fontStyle: 'italic'
+                }}>
+                  &ldquo;Marcus scores 93 and aligns strongly with David.
+                  One condition: set pace expectations with Sarah
+                  before week one &mdash; not week six.&rdquo;
+                </p>
+              </div>
 
               <p style={{
                 fontSize: 9,
@@ -413,41 +559,57 @@ export default function HomePage() {
                 fontWeight: 600,
                 letterSpacing: '0.1em',
                 textTransform: 'uppercase',
-                margin: '14px 0 8px'
+                marginBottom: 8
               }}>
                 Interview Probes
               </p>
 
               {[
-                { dim: 'COLLABORATION', color: '#EF4444', text: 'Tell me about a time you committed to a direction before your team was aligned. What happened?' },
-                { dim: 'COLLABORATION', color: '#EF4444', text: 'Describe a situation where you had to slow down for stakeholder input. How did you handle it?' }
+                {
+                  risk: 'Decision Speed',
+                  q: 'Tell me about a time you committed before your team was aligned.'
+                },
+                {
+                  risk: 'Collaboration',
+                  q: 'Describe a time you had to slow down for stakeholder input.'
+                }
               ].map((probe, i) => (
                 <div key={i} style={{
-                  marginBottom: 8,
-                  paddingLeft: 10,
-                  borderLeft: `2px solid ${probe.color}`,
+                  marginBottom: 10,
+                  paddingLeft: 8,
+                  borderLeft: '2px solid rgba(37,99,235,0.3)'
                 }}>
                   <p style={{
-                    fontSize: 8,
-                    fontWeight: 700,
-                    color: probe.color,
-                    letterSpacing: '0.08em',
+                    fontSize: 9,
+                    fontWeight: 600,
+                    color: 'rgba(37,99,235,0.6)',
+                    letterSpacing: '0.07em',
                     textTransform: 'uppercase',
-                    marginBottom: 2,
-                    opacity: 0.7
+                    marginBottom: 3
                   }}>
-                    {probe.dim}
+                    {probe.risk}
                   </p>
                   <p style={{
                     fontSize: 11,
                     color: 'rgba(255,255,255,0.42)',
-                    lineHeight: 1.6
+                    lineHeight: 1.55
                   }}>
-                    {probe.text}
+                    {probe.q}
                   </p>
                 </div>
               ))}
+
+              <p style={{
+                fontSize: 9,
+                color: 'rgba(255,255,255,0.14)',
+                marginTop: 14,
+                paddingTop: 10,
+                borderTop: '1px solid rgba(255,255,255,0.05)'
+              }}>
+                94 signals · Benchmark confidence: High
+              </p>
             </div>
+
           </div>
         </div>
       </section>
