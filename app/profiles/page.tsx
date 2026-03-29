@@ -4,18 +4,17 @@ import { FitModel } from '@/app/components/FitModel'
 import type { FitModelScores } from '@/app/components/FitModel'
 
 // ─── Brand tokens ────────────────────────────────────────────────────
-const BG    = '#080808'
-const CARD  = '#0e0e0e'
-const TEXT  = '#eeece6'
-const MUTED = 'rgba(238,236,230,0.4)'
-const DIM   = 'rgba(238,236,230,0.18)'
+const BG    = '#000'
+const CARD  = '#0D1421'
+const TEXT  = 'rgba(255,255,255,0.88)'
+const MUTED = 'rgba(255,255,255,0.4)'
+const DIM   = 'rgba(255,255,255,0.18)'
 const BORD  = 'rgba(255,255,255,0.07)'
 const BLUE  = '#2563EB'
 const GREEN = '#22C55E'
 const AMBER = '#EAB308'
 const RED   = '#EF4444'
-const BC    = '"Barlow Condensed", system-ui'
-const DM    = '"DM Sans", -apple-system, sans-serif'
+const FONT  = '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif'
 
 // ─── Profile data ────────────────────────────────────────────────────
 // Scores are raw (dominance / extraversion / patience / formality).
@@ -220,7 +219,7 @@ function SimCard() {
       opacity: 1, transform: 'scale(1)',
       transition: 'opacity 200ms ease, transform 200ms ease, background 200ms ease, color 200ms ease',
       padding: '5px 12px', borderRadius: 100, cursor: 'default',
-      fontSize: 12, fontFamily: DM, fontWeight: isSelected ? 500 : 400,
+      fontSize: 12, fontFamily: FONT, fontWeight: isSelected ? 500 : 400,
       background: isSelected ? TEXT : 'transparent',
       color: isSelected ? '#0a0a0a' : MUTED,
       border: `1px solid ${isSelected ? 'transparent' : 'rgba(255,255,255,0.12)'}`,
@@ -247,7 +246,7 @@ function SimCard() {
       {(stage === 1 || stage === 2) && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
           <p style={{
-            fontSize: 10, fontFamily: DM, fontWeight: 300, color: MUTED,
+            fontSize: 10, fontFamily: FONT, fontWeight: 300, color: MUTED,
             letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: 16,
             transition: 'opacity 300ms ease', opacity: stage === 1 ? 1 : 0.4
           }}>
@@ -261,7 +260,7 @@ function SimCard() {
             ))}
           </div>
           <div style={{ flex: 1 }} />
-          <p style={{ fontSize: 9, fontFamily: DM, color: DIM, letterSpacing: '0.08em' }}>
+          <p style={{ fontSize: 9, fontFamily: FONT, color: DIM, letterSpacing: '0.08em' }}>
             {stage === 1
               ? `${picked1.length}/80 choices — selecting behaviors for this role`
               : `${picked2.length}/80 choices — selecting natural behaviors`}
@@ -272,14 +271,14 @@ function SimCard() {
       {/* Stage 3: adaptation gap */}
       {stage === 3 && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-          <p style={{ fontSize: 10, fontFamily: DM, fontWeight: 300, color: MUTED, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 20 }}>
+          <p style={{ fontSize: 10, fontFamily: FONT, fontWeight: 300, color: MUTED, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 20 }}>
             Adaptation gap
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 40px 1fr', gap: 0, flex: 1 }}>
             <div>
-              <p style={{ fontSize: 9, fontFamily: DM, color: BLUE, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 10 }}>In this role</p>
+              <p style={{ fontSize: 9, fontFamily: FONT, color: BLUE, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 10 }}>In this role</p>
               {SEL1.map(w => (
-                <div key={w} style={{ padding: '7px 12px', borderRadius: 100, background: TEXT, color: '#0a0a0a', fontSize: 12, fontFamily: DM, fontWeight: 500, marginBottom: 8, display: 'inline-block' }}>{w}</div>
+                <div key={w} style={{ padding: '7px 12px', borderRadius: 100, background: TEXT, color: '#0a0a0a', fontSize: 12, fontFamily: FONT, fontWeight: 500, marginBottom: 8, display: 'inline-block' }}>{w}</div>
               ))}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
@@ -292,13 +291,13 @@ function SimCard() {
               ))}
             </div>
             <div>
-              <p style={{ fontSize: 9, fontFamily: DM, color: MUTED, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 10 }}>Naturally</p>
+              <p style={{ fontSize: 9, fontFamily: FONT, color: MUTED, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 10 }}>Naturally</p>
               {SEL2.map(w => (
-                <div key={w} style={{ padding: '7px 12px', borderRadius: 100, border: `1px solid ${BORD}`, color: MUTED, fontSize: 12, fontFamily: DM, marginBottom: 8, display: 'inline-block' }}>{w}</div>
+                <div key={w} style={{ padding: '7px 12px', borderRadius: 100, border: `1px solid ${BORD}`, color: MUTED, fontSize: 12, fontFamily: FONT, marginBottom: 8, display: 'inline-block' }}>{w}</div>
               ))}
             </div>
           </div>
-          <p style={{ fontSize: 9, fontFamily: DM, color: DIM, letterSpacing: '0.08em', marginTop: 8 }}>
+          <p style={{ fontSize: 9, fontFamily: FONT, color: DIM, letterSpacing: '0.08em', marginTop: 8 }}>
             Gap between role demands and natural profile generates 94 behavioral signals
           </p>
         </div>
@@ -316,10 +315,10 @@ function SimCard() {
             />
           </svg>
           <div style={{ textAlign: 'center', marginTop: -76 }}>
-            <span style={{ fontFamily: BC, fontSize: 28, fontWeight: 700, color: TEXT }}>{score}</span>
+            <span style={{ fontFamily: FONT, fontSize: 28, fontWeight: 700, color: TEXT }}>{score}</span>
           </div>
           <div style={{ textAlign: 'center', marginTop: 30 }}>
-            <p style={{ fontSize: 10, fontFamily: DM, fontWeight: 300, color: MUTED, letterSpacing: '0.14em', textTransform: 'uppercase' }}>Behavioral fit score</p>
+            <p style={{ fontSize: 10, fontFamily: FONT, fontWeight: 300, color: MUTED, letterSpacing: '0.14em', textTransform: 'uppercase' }}>Behavioral fit score</p>
           </div>
         </div>
       )}
@@ -332,16 +331,16 @@ function SimCard() {
             transform: archIn ? 'none' : 'translateY(12px)',
             transition: 'opacity 500ms ease, transform 500ms ease',
           }}>
-            <p style={{ fontSize: 9, fontFamily: DM, color: MUTED, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 6 }}>Closest archetype match</p>
-            <p style={{ fontFamily: BC, fontSize: 32, fontWeight: 900, color: TEXT, letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 4 }}>The Operator</p>
-            <p style={{ fontSize: 12, fontFamily: DM, color: MUTED }}>Deliberate · Output-focused</p>
+            <p style={{ fontSize: 9, fontFamily: FONT, color: MUTED, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 6 }}>Closest archetype match</p>
+            <p style={{ fontFamily: FONT, fontSize: 32, fontWeight: 900, color: TEXT, letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 4 }}>The Operator</p>
+            <p style={{ fontSize: 12, fontFamily: FONT, color: MUTED }}>Deliberate · Output-focused</p>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {dimBars.map((d, i) => (
               <div key={d.label}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <span style={{ fontSize: 10, fontFamily: DM, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{d.label}</span>
-                  <span style={{ fontSize: 10, fontFamily: DM, color: MUTED }}>{d.val}%</span>
+                  <span style={{ fontSize: 10, fontFamily: FONT, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{d.label}</span>
+                  <span style={{ fontSize: 10, fontFamily: FONT, color: MUTED }}>{d.val}%</span>
                 </div>
                 <div style={{ height: 3, background: BORD, borderRadius: 2, overflow: 'hidden' }}>
                   <div style={{
@@ -354,7 +353,7 @@ function SimCard() {
               </div>
             ))}
           </div>
-          <p style={{ fontSize: 9, fontFamily: DM, color: DIM }}>From 20 reference profiles · 94 signals</p>
+          <p style={{ fontSize: 9, fontFamily: FONT, color: DIM }}>From 20 reference profiles · 94 signals</p>
         </div>
       )}
     </div>
@@ -379,15 +378,6 @@ export default function MethodPage() {
   const [tooltip, setTooltip] = useState<number | null>(null)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // Font loading
-  useEffect(() => {
-    if (document.getElementById('veltro-fonts')) return
-    const link = document.createElement('link')
-    link.id = 'veltro-fonts'
-    link.rel = 'stylesheet'
-    link.href = 'https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap'
-    document.head.appendChild(link)
-  }, [])
 
   // Profile rotation
   useEffect(() => {
@@ -420,23 +410,22 @@ export default function MethodPage() {
     background: BG,
   }
 
-  const eyebrow = (text: string): React.CSSProperties => ({
-    fontSize: 10, fontFamily: DM, fontWeight: 300, color: BLUE,
-    letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: 18,
+  const eyebrow = (_text: string): React.CSSProperties => ({
+    fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.25)',
+    letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 20,
   })
 
   return (
-    <div className="snap-page" style={{ background: BG, color: TEXT, fontFamily: DM }}>
+    <div className="snap-page" style={{ background: BG, color: TEXT, fontFamily: FONT }}>
 
       {/* ── NAV ─────────────────────────────────────────────────────── */}
       <nav style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
         padding: '18px 48px', display: 'flex', alignItems: 'center',
         justifyContent: 'space-between',
-        background: 'rgba(8,8,8,0.92)',
-        borderBottom: `1px solid ${BORD}`,
+        background: 'transparent',
       }}>
-        <a href="/" style={{ fontSize: 15, fontWeight: 700, color: TEXT, fontFamily: DM, textDecoration: 'none', letterSpacing: '-0.01em' }}>Veltro</a>
+        <a href="/" style={{ fontSize: 15, fontWeight: 700, color: TEXT, fontFamily: FONT, textDecoration: 'none', letterSpacing: '-0.01em' }}>Veltro</a>
         <div style={{ display: 'flex', gap: 28, alignItems: 'center' }}>
           {[
             { label: 'Sample Report', href: '/sample-report' },
@@ -444,14 +433,14 @@ export default function MethodPage() {
             { label: 'Sign in', href: '/login' },
           ].map(l => (
             <a key={l.label} href={l.href} style={{
-              fontSize: 13, fontFamily: DM,
+              fontSize: 13, fontFamily: FONT,
               color: l.label === 'Method' ? TEXT : MUTED,
               fontWeight: l.label === 'Method' ? 500 : 300,
               textDecoration: 'none',
             }}>{l.label}</a>
           ))}
           <a href="/sample-report" style={{
-            fontSize: 13, fontFamily: DM, fontWeight: 500, color: TEXT,
+            fontSize: 13, fontFamily: FONT, fontWeight: 500, color: TEXT,
             border: `1px solid ${BORD}`, padding: '7px 16px',
             borderRadius: 100, textDecoration: 'none',
           }}>See the report →</a>
@@ -472,30 +461,30 @@ export default function MethodPage() {
           <div style={fi(s1.inView)}>
             <p style={eyebrow('Method')}>Method</p>
             <h1 style={{
-              fontFamily: BC, fontSize: 'clamp(44px,5.5vw,72px)',
-              fontWeight: 900, color: TEXT, letterSpacing: '-0.02em',
-              lineHeight: 1.0, textTransform: 'uppercase', marginBottom: 24,
+              fontSize: 'clamp(36px,5.5vw,64px)',
+              fontWeight: 700, color: TEXT, letterSpacing: '-0.03em',
+              lineHeight: 1.05, marginBottom: 24,
             }}>
               Why the recommendation<br />holds up.
             </h1>
             <p style={{
-              fontSize: 17, fontFamily: DM, fontWeight: 300, color: MUTED,
+              fontSize: 17, fontFamily: FONT, fontWeight: 300, color: MUTED,
               lineHeight: 1.75, marginBottom: 10, maxWidth: 400,
             }}>
               The score isn&apos;t a personality label.
               It&apos;s a distance from a role-specific benchmark.
             </p>
-            <p style={{ fontSize: 11, fontFamily: DM, fontWeight: 300, color: DIM, marginBottom: 44, letterSpacing: '0.02em' }}>
+            <p style={{ fontSize: 11, fontFamily: FONT, fontWeight: 300, color: DIM, marginBottom: 44, letterSpacing: '0.02em' }}>
               Model v2.0 · Calibrated Mar 2026 · 2,245,096 respondents
             </p>
             <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
               <a href="/sample-report" style={{
                 display: 'inline-flex', alignItems: 'center',
-                background: TEXT, color: '#080808',
-                fontSize: 14, fontFamily: DM, fontWeight: 500,
-                padding: '12px 28px', borderRadius: 100, textDecoration: 'none',
+                background: '#FFFFFF', color: '#000000',
+                fontSize: 16, fontWeight: 700,
+                padding: '15px 36px', borderRadius: 9, textDecoration: 'none',
               }}>See a full recommendation</a>
-              <span style={{ fontSize: 13, fontFamily: DM, fontWeight: 300, color: MUTED }}>Scroll to see how it works ↓</span>
+              <span style={{ fontSize: 13, fontFamily: FONT, fontWeight: 300, color: MUTED }}>Scroll to see how it works ↓</span>
             </div>
           </div>
 
@@ -510,10 +499,10 @@ export default function MethodPage() {
                 padding: '13px 18px', borderBottom: `1px solid ${BORD}`,
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
               }}>
-                <span style={{ fontSize: 9, fontFamily: DM, fontWeight: 300, color: DIM, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+                <span style={{ fontSize: 9, fontFamily: FONT, fontWeight: 300, color: DIM, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
                   Role Benchmark
                 </span>
-                <span style={{ fontSize: 9, fontFamily: DM, fontWeight: 300, color: DIM, letterSpacing: '0.06em' }}>
+                <span style={{ fontSize: 9, fontFamily: FONT, fontWeight: 300, color: DIM, letterSpacing: '0.06em' }}>
                   Field Leadership
                 </span>
               </div>
@@ -557,10 +546,10 @@ export default function MethodPage() {
                     borderRadius: 8, padding: '10px 14px',
                     width: 220, pointerEvents: 'none', zIndex: 10, marginBottom: 8,
                   }}>
-                    <p style={{ fontSize: 11, fontFamily: DM, fontWeight: 500, color: TEXT, marginBottom: 4 }}>
+                    <p style={{ fontSize: 11, fontFamily: FONT, fontWeight: 500, color: TEXT, marginBottom: 4 }}>
                       {vertexHits[tooltip].label}
                     </p>
-                    <p style={{ fontSize: 11, fontFamily: DM, fontWeight: 300, color: MUTED, lineHeight: 1.5 }}>
+                    <p style={{ fontSize: 11, fontFamily: FONT, fontWeight: 300, color: MUTED, lineHeight: 1.5 }}>
                       {vertexHits[tooltip].desc}
                     </p>
                   </div>
@@ -577,17 +566,17 @@ export default function MethodPage() {
                   paddingTop: 10, borderTop: `1px solid ${BORD}`, marginBottom: 4,
                 }}>
                   <div>
-                    <p style={{ fontSize: 14, fontFamily: DM, fontWeight: 500, color: TEXT, marginBottom: 2 }}>{profile.name}</p>
-                    <p style={{ fontSize: 11, fontFamily: DM, fontWeight: 300, color: MUTED }}>{profile.role}</p>
+                    <p style={{ fontSize: 14, fontFamily: FONT, fontWeight: 500, color: TEXT, marginBottom: 2 }}>{profile.name}</p>
+                    <p style={{ fontSize: 11, fontFamily: FONT, fontWeight: 300, color: MUTED }}>{profile.role}</p>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <p style={{ fontFamily: BC, fontSize: 36, fontWeight: 900, color: TEXT, letterSpacing: '-0.04em', lineHeight: 1, marginBottom: 2 }}>
+                    <p style={{ fontFamily: FONT, fontSize: 36, fontWeight: 900, color: TEXT, letterSpacing: '-0.04em', lineHeight: 1, marginBottom: 2 }}>
                       {profile.score}
                     </p>
-                    <p style={{ fontSize: 10, fontFamily: DM, fontWeight: 500, color: profile.verdictColor }}>{profile.verdict}</p>
+                    <p style={{ fontSize: 10, fontFamily: FONT, fontWeight: 500, color: profile.verdictColor }}>{profile.verdict}</p>
                   </div>
                 </div>
-                <p style={{ fontSize: 9, fontFamily: DM, fontWeight: 300, color: DIM, letterSpacing: '0.04em' }}>
+                <p style={{ fontSize: 9, fontFamily: FONT, fontWeight: 300, color: DIM, letterSpacing: '0.04em' }}>
                   {profile.archetype} · Field Leadership Benchmark
                 </p>
               </div>
@@ -609,7 +598,7 @@ export default function MethodPage() {
               </div>
             </div>
 
-            <p style={{ fontSize: 9, fontFamily: DM, fontWeight: 300, color: DIM, textAlign: 'center', marginTop: 10, letterSpacing: '0.04em' }}>
+            <p style={{ fontSize: 9, fontFamily: FONT, fontWeight: 300, color: DIM, textAlign: 'center', marginTop: 10, letterSpacing: '0.04em' }}>
               Hover the chart to explore dimensions
             </p>
           </div>
@@ -630,14 +619,14 @@ export default function MethodPage() {
           <div style={fi(s2.inView)}>
             <p style={eyebrow('How it works')}>How it works</p>
             <h2 style={{
-              fontFamily: BC, fontSize: 'clamp(36px,4.5vw,56px)',
-              fontWeight: 800, color: TEXT, letterSpacing: '-0.01em',
-              textTransform: 'uppercase', lineHeight: 1.0, marginBottom: 20,
+              fontSize: 'clamp(32px,4.5vw,56px)',
+              fontWeight: 700, color: TEXT, letterSpacing: '-0.03em',
+              lineHeight: 1.05, marginBottom: 20,
             }}>
               Six minutes.<br />Ninety-four signals.
             </h2>
             <p style={{
-              fontSize: 14, fontFamily: DM, fontWeight: 300, color: MUTED,
+              fontSize: 14, fontFamily: FONT, fontWeight: 300, color: MUTED,
               lineHeight: 1.8, marginBottom: 40, maxWidth: 380,
             }}>
               A candidate sees two word lists. What they need to be in this role.
@@ -661,10 +650,10 @@ export default function MethodPage() {
                   borderRight: i % 2 === 0 ? `1px solid ${BORD}` : 'none',
                   borderBottom: i < 2 ? `1px solid ${BORD}` : 'none',
                 }}>
-                  <p style={{ fontFamily: BC, fontSize: 64, fontWeight: 900, color: TEXT, letterSpacing: '-0.04em', lineHeight: 1, marginBottom: 6 }}>
+                  <p style={{ fontSize: 64, fontWeight: 700, color: TEXT, letterSpacing: '-0.04em', lineHeight: 1, marginBottom: 6 }}>
                     {stat.n}
                   </p>
-                  <p style={{ fontSize: 11, fontFamily: DM, fontWeight: 300, color: MUTED }}>{stat.label}</p>
+                  <p style={{ fontSize: 11, fontFamily: FONT, fontWeight: 300, color: MUTED }}>{stat.label}</p>
                 </div>
               ))}
             </div>
@@ -691,18 +680,18 @@ export default function MethodPage() {
           <div style={fi(s3.inView)}>
             <p style={eyebrow('The team layer')}>The team layer</p>
             <h2 style={{
-              fontFamily: BC, fontSize: 'clamp(32px,4vw,52px)',
-              fontWeight: 800, color: TEXT, letterSpacing: '-0.01em',
-              textTransform: 'uppercase', lineHeight: 1.0, marginBottom: 24,
+              fontSize: 'clamp(28px,4vw,52px)',
+              fontWeight: 700, color: TEXT, letterSpacing: '-0.03em',
+              lineHeight: 1.05, marginBottom: 24,
             }}>
               Fit for the role.<br />Fit for the room.
             </h2>
-            <p style={{ fontSize: 14, fontFamily: DM, fontWeight: 300, color: MUTED, lineHeight: 1.8, marginBottom: 14 }}>
+            <p style={{ fontSize: 14, fontFamily: FONT, fontWeight: 300, color: MUTED, lineHeight: 1.8, marginBottom: 14 }}>
               The benchmark answers whether the candidate can do the job.
               The team layer answers whether they&apos;ll do it here — with
               this manager, these peers, in this environment.
             </p>
-            <p style={{ fontSize: 14, fontFamily: DM, fontWeight: 300, color: MUTED, lineHeight: 1.8, marginBottom: 36 }}>
+            <p style={{ fontSize: 14, fontFamily: FONT, fontWeight: 300, color: MUTED, lineHeight: 1.8, marginBottom: 36 }}>
               Profile the hiring manager and key stakeholders once.
               Every candidate is automatically scored against every stored
               profile — showing alignment and friction before the client meeting.
@@ -718,7 +707,7 @@ export default function MethodPage() {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={BLUE} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}>
                   <path d={item.icon} />
                 </svg>
-                <p style={{ fontSize: 13, fontFamily: DM, fontWeight: 300, color: MUTED, lineHeight: 1.65 }}>{item.text}</p>
+                <p style={{ fontSize: 13, fontFamily: FONT, fontWeight: 300, color: MUTED, lineHeight: 1.65 }}>{item.text}</p>
               </div>
             ))}
           </div>
@@ -727,7 +716,7 @@ export default function MethodPage() {
           <div style={{ ...fi(s3.inView, 150), display: 'flex', flexDirection: 'column', gap: 0 }}>
             <div style={{ background: CARD, border: `1px solid ${BORD}`, borderRadius: 16, padding: '20px 22px 16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <span style={{ fontSize: 9, fontFamily: DM, fontWeight: 300, color: DIM, letterSpacing: '0.12em', textTransform: 'uppercase' }}>Candidate vs. Hiring Manager</span>
+                <span style={{ fontSize: 9, fontFamily: FONT, fontWeight: 300, color: DIM, letterSpacing: '0.12em', textTransform: 'uppercase' }}>Candidate vs. Hiring Manager</span>
               </div>
 
               {/* Legend */}
@@ -744,7 +733,7 @@ export default function MethodPage() {
                         ? `repeating-linear-gradient(90deg,${item.color} 0,${item.color} 3px,transparent 3px,transparent 6px)`
                         : item.color,
                     }} />
-                    <span style={{ fontSize: 9, fontFamily: DM, fontWeight: 300, color: MUTED }}>{item.label}</span>
+                    <span style={{ fontSize: 9, fontFamily: FONT, fontWeight: 300, color: MUTED }}>{item.label}</span>
                   </div>
                 ))}
               </div>
@@ -771,15 +760,15 @@ export default function MethodPage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                       <div style={{ width: 5, height: 5, borderRadius: '50%', background: p.color, flexShrink: 0 }} />
                       <div style={{ flex: 1 }}>
-                        <span style={{ fontSize: 12, fontFamily: DM, fontWeight: 500, color: TEXT, marginRight: 6 }}>{p.name}</span>
-                        <span style={{ fontSize: 10, fontFamily: DM, fontWeight: 300, color: MUTED }}>{p.role}</span>
+                        <span style={{ fontSize: 12, fontFamily: FONT, fontWeight: 500, color: TEXT, marginRight: 6 }}>{p.name}</span>
+                        <span style={{ fontSize: 10, fontFamily: FONT, fontWeight: 300, color: MUTED }}>{p.role}</span>
                       </div>
-                      <span style={{ fontSize: 12, fontFamily: DM, fontWeight: 500, color: p.color, flexShrink: 0 }}>{p.pct}%</span>
+                      <span style={{ fontSize: 12, fontFamily: FONT, fontWeight: 500, color: p.color, flexShrink: 0 }}>{p.pct}%</span>
                     </div>
                     <div style={{ height: 3, background: BORD, borderRadius: 2, overflow: 'hidden', marginBottom: 4 }}>
                       <div style={{ height: '100%', width: `${p.pct}%`, background: p.color, borderRadius: 2 }} />
                     </div>
-                    <p style={{ fontSize: 10, fontFamily: DM, fontWeight: 300, color: DIM, paddingLeft: 13 }}>{p.sub}</p>
+                    <p style={{ fontSize: 10, fontFamily: FONT, fontWeight: 300, color: DIM, paddingLeft: 13 }}>{p.sub}</p>
                   </div>
                 ))}
               </div>
@@ -796,13 +785,13 @@ export default function MethodPage() {
           <div style={{ ...fi(s4.inView), textAlign: 'center', marginBottom: 64 }}>
             <p style={{ ...eyebrow('What we measure'), display: 'block' }}>What we measure</p>
             <h2 style={{
-              fontFamily: BC, fontSize: 'clamp(40px,5vw,64px)',
-              fontWeight: 900, color: TEXT, letterSpacing: '-0.02em',
-              textTransform: 'uppercase', lineHeight: 1.0, marginBottom: 16,
+              fontSize: 'clamp(36px,5vw,64px)',
+              fontWeight: 700, color: TEXT, letterSpacing: '-0.03em',
+              lineHeight: 1.05, marginBottom: 16,
             }}>
               Five dimensions.<br />Infinite signal.
             </h2>
-            <p style={{ fontSize: 15, fontFamily: DM, fontWeight: 300, color: MUTED, maxWidth: 480, margin: '0 auto' }}>
+            <p style={{ fontSize: 15, fontFamily: FONT, fontWeight: 300, color: MUTED, maxWidth: 480, margin: '0 auto' }}>
               Not personality labels. Behavioral distance from a benchmark.
             </p>
           </div>
@@ -847,10 +836,10 @@ export default function MethodPage() {
                 display: 'flex', flexDirection: 'column', gap: 14,
               }}>
                 <DimIcon dim={col.dim} />
-                <p style={{ fontFamily: BC, fontSize: 15, fontWeight: 800, color: TEXT, textTransform: 'uppercase', letterSpacing: '0.04em', lineHeight: 1.1 }}>
+                <p style={{ fontFamily: FONT, fontSize: 15, fontWeight: 800, color: TEXT, textTransform: 'uppercase', letterSpacing: '0.04em', lineHeight: 1.1 }}>
                   {col.dim}
                 </p>
-                <p style={{ fontSize: 11, fontFamily: DM, fontWeight: 300, color: MUTED, lineHeight: 1.65, flex: 1 }}>
+                <p style={{ fontSize: 11, fontFamily: FONT, fontWeight: 300, color: MUTED, lineHeight: 1.65, flex: 1 }}>
                   {col.desc}
                 </p>
                 {/* Sparkline — 4 bars showing high vs low */}
@@ -881,9 +870,9 @@ export default function MethodPage() {
           <div style={fi(s5.inView)}>
             <p style={eyebrow('During shortlisting')}>During shortlisting</p>
             <h2 style={{
-              fontFamily: BC, fontSize: 'clamp(36px,4.5vw,60px)',
-              fontWeight: 900, color: TEXT, letterSpacing: '-0.02em',
-              textTransform: 'uppercase', lineHeight: 1.0, marginBottom: 36,
+              fontSize: 'clamp(32px,4.5vw,60px)',
+              fontWeight: 700, color: TEXT, letterSpacing: '-0.03em',
+              lineHeight: 1.05, marginBottom: 36,
             }}>
               Send it to everyone<br />in the room.
             </h2>
@@ -900,33 +889,32 @@ export default function MethodPage() {
                   borderBottom: `0.5px solid rgba(255,255,255,0.08)`,
                   borderTop: i === 0 ? `0.5px solid rgba(255,255,255,0.08)` : 'none',
                 }}>
-                  <p style={{ fontSize: 15, fontFamily: DM, fontWeight: 500, color: TEXT, letterSpacing: '-0.01em', marginBottom: 3 }}>{item.step}</p>
-                  <p style={{ fontSize: 12, fontFamily: DM, fontWeight: 300, color: MUTED }}>{item.detail}</p>
+                  <p style={{ fontSize: 15, fontFamily: FONT, fontWeight: 500, color: TEXT, letterSpacing: '-0.01em', marginBottom: 3 }}>{item.step}</p>
+                  <p style={{ fontSize: 12, fontFamily: FONT, fontWeight: 300, color: MUTED }}>{item.detail}</p>
                 </div>
               ))}
             </div>
 
             {/* Hero line */}
             <p style={{
-              fontFamily: BC, fontSize: 'clamp(22px,2.6vw,30px)',
-              fontWeight: 800, color: TEXT, letterSpacing: '-0.01em',
-              textTransform: 'uppercase', lineHeight: 1.15,
-              marginBottom: 36, paddingTop: 4,
+              fontSize: 'clamp(22px,2.6vw,30px)',
+              fontWeight: 700, color: TEXT, letterSpacing: '-0.03em',
+              lineHeight: 1.1, marginBottom: 36,
             }}>
               Six minutes each.<br />You walk in knowing.
             </p>
 
             <a href="/sample-report" style={{
               display: 'inline-flex', alignItems: 'center',
-              background: TEXT, color: '#080808',
-              fontSize: 14, fontFamily: DM, fontWeight: 500,
-              padding: '13px 28px', borderRadius: 100, textDecoration: 'none',
+              background: '#FFFFFF', color: '#000000',
+              fontSize: 16, fontWeight: 700,
+              padding: '15px 36px', borderRadius: 9, textDecoration: 'none',
             }}>See the full report →</a>
           </div>
 
           {/* Right — three profile cards */}
           <div style={{ ...fi(s5.inView, 150), display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <p style={{ fontSize: 9, fontFamily: DM, fontWeight: 300, color: DIM, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 4 }}>The alignment picture</p>
+            <p style={{ fontSize: 9, fontFamily: FONT, fontWeight: 300, color: DIM, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 4 }}>The alignment picture</p>
             {[
               {
                 label: 'Candidate', name: 'Marcus Thompson', role: 'Superintendent',
@@ -955,11 +943,11 @@ export default function MethodPage() {
                   showLabels={false}
                 />
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: 8, fontFamily: DM, fontWeight: 300, color: DIM, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>{person.label}</p>
-                  <p style={{ fontSize: 13, fontFamily: DM, fontWeight: 500, color: TEXT, marginBottom: 1 }}>{person.name}</p>
-                  <p style={{ fontSize: 10, fontFamily: DM, fontWeight: 300, color: MUTED, marginBottom: 8 }}>{person.role}</p>
+                  <p style={{ fontSize: 8, fontFamily: FONT, fontWeight: 300, color: DIM, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>{person.label}</p>
+                  <p style={{ fontSize: 13, fontFamily: FONT, fontWeight: 500, color: TEXT, marginBottom: 1 }}>{person.name}</p>
+                  <p style={{ fontSize: 10, fontFamily: FONT, fontWeight: 300, color: MUTED, marginBottom: 8 }}>{person.role}</p>
                   <span style={{
-                    fontSize: 10, fontFamily: DM, fontWeight: 500,
+                    fontSize: 10, fontFamily: FONT, fontWeight: 500,
                     color: person.badgeColor,
                     background: `${person.badgeColor}18`,
                     border: `1px solid ${person.badgeColor}40`,
