@@ -1,45 +1,93 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { FitModel } from '@/app/components/FitModel'
+import type { FitModelScores } from '@/app/components/FitModel'
 import SignalTrace from '@/app/components/SignalTrace'
 
+// Raw FitModelScores that produce meaningfully distinct pentagon shapes.
+// deriveAxes: execution = dom*0.58 + form*0.42, ownership = dom*0.72 + pat*0.28,
+// adaptability = ext*0.22 + (1-form)*0.58 + (1-pat)*0.20,
+// collaboration = ext*0.68 + pat*0.32, decisionSpeed = dom*0.54 + (1-pat)*0.46
+const PROFILES: {
+  name: string
+  role: string
+  score: number
+  verdict: string
+  verdictColor: string
+  archetype: string
+  scores: FitModelScores
+}[] = [
+  {
+    name: 'Marcus Thompson',
+    role: 'Superintendent · Gilbane Construction',
+    score: 93,
+    verdict: 'Strong Hire',
+    verdictColor: '#22C55E',
+    archetype: 'Pioneer',
+    // exec≈0.83, own≈0.69, adapt≈0.37, collab≈0.27, dec≈0.84
+    scores: { dominance: 0.88, extraversion: 0.30, patience: 0.20, formality: 0.75 }
+  },
+  {
+    name: 'Elena Vasquez',
+    role: 'VP of Sales · Meridian Capital',
+    score: 87,
+    verdict: 'Strong Hire',
+    verdictColor: '#22C55E',
+    archetype: 'Diplomat',
+    // exec≈0.46, own≈0.51, adapt≈0.47, collab≈0.83, dec≈0.31
+    scores: { dominance: 0.40, extraversion: 0.85, patience: 0.78, formality: 0.55 }
+  },
+  {
+    name: 'James Whitfield',
+    role: 'CFO · Portco Holdings',
+    score: 78,
+    verdict: 'Proceed with Caution',
+    verdictColor: '#EAB308',
+    archetype: 'Operator',
+    // exec≈0.48, own≈0.68, adapt≈0.55, collab≈0.57, dec≈0.42
+    scores: { dominance: 0.62, extraversion: 0.45, patience: 0.82, formality: 0.28 }
+  },
+  {
+    name: 'Sarah Okonkwo',
+    role: 'Director of Operations · Apex Group',
+    score: 91,
+    verdict: 'Strong Hire',
+    verdictColor: '#22C55E',
+    archetype: 'Anchor',
+    // exec≈0.30, own≈0.40, adapt≈0.63, collab≈0.77, dec≈0.28
+    scores: { dominance: 0.28, extraversion: 0.80, patience: 0.72, formality: 0.32 }
+  }
+]
+
+// Benchmark — same across all rotations, shown as dashed muted outline.
+// exec≈0.70, own≈0.66, adapt≈0.41, collab≈0.51, dec≈0.62
+const BENCHMARK: FitModelScores = {
+  dominance: 0.72, extraversion: 0.52, patience: 0.50, formality: 0.66
+}
+
 export default function MethodPage() {
-  const [dataVisible, setDataVisible] = useState(false)
-  const dataRef = useRef<HTMLDivElement>(null)
-  const [signalTraceWidth, setSignalTraceWidth] = useState(600)
-  const signalRef = useRef<HTMLDivElement>(null)
+  const [activeProfile, setActiveProfile] = useState(0)
+  const [fading, setFading] = useState(false)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
-    const el = dataRef.current
-    if (!el) return
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setDataVisible(true)
-          obs.disconnect()
-        }
-      },
-      { threshold: 0.3 }
-    )
-    obs.observe(el)
-    return () => obs.disconnect()
+    intervalRef.current = setInterval(() => {
+      setFading(true)
+      setTimeout(() => {
+        setActiveProfile(prev => (prev + 1) % PROFILES.length)
+        setFading(false)
+      }, 300)
+    }, 3500)
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
   }, [])
 
-  useEffect(() => {
-    const el = signalRef.current
-    if (!el) return
-    const ro = new ResizeObserver(([entry]) => {
-      setSignalTraceWidth(Math.min(600, entry.contentRect.width - 48))
-    })
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [])
+  const profile = PROFILES[activeProfile]
 
   return (
-    <div style={{background: '#0B0F14', minHeight: '100vh'}}>
+    <div className="snap-page">
 
-      {/* NAV */}
+      {/* FIXED NAV */}
       <nav style={{
         position: 'fixed',
         top: 0, left: 0, right: 0,
@@ -67,11 +115,9 @@ export default function MethodPage() {
           ].map(link => (
             <a key={link.label} href={link.href} style={{
               fontSize: 13,
-              color: link.label === 'Method'
-                ? '#FFFFFF'
-                : 'rgba(255,255,255,0.4)',
-              textDecoration: 'none',
-              fontWeight: link.label === 'Method' ? 600 : 400
+              color: link.label === 'Method' ? '#FFFFFF' : 'rgba(255,255,255,0.4)',
+              fontWeight: link.label === 'Method' ? 600 : 400,
+              textDecoration: 'none'
             }}>
               {link.label}
             </a>
@@ -90,20 +136,22 @@ export default function MethodPage() {
 
       {/* =============================================
           SECTION 1 — HERO
-          Two-column. Copy left. FitModel right.
+          Two column. Copy left. Rotating profile card right.
+          Pentagon shows candidate shape vs fixed benchmark outline.
       ============================================= */}
-      <section style={{
-        minHeight: '100vh',
+      <section className="hero-grid snap-beat" style={{
+        background: '#0B0F14',
         display: 'grid',
-        gridTemplateColumns: '1fr 520px',
+        gridTemplateColumns: '1fr 480px',
         gap: 60,
         alignItems: 'center',
-        padding: '120px 48px 80px',
+        padding: '0 48px',
+        width: '100%',
         maxWidth: 1200,
         margin: '0 auto'
-      }} className="hero-grid">
+      }}>
 
-        {/* Left */}
+        {/* Left — copy */}
         <div>
           <p style={{
             fontSize: 11, fontWeight: 600, color: '#2563EB',
@@ -133,7 +181,6 @@ export default function MethodPage() {
           }}>
             Model v2.0 · Calibrated Mar 2026 · 2,245,096 respondents
           </p>
-
           <div style={{display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap'}}>
             <a href="/sample-report" style={{
               display: 'inline-flex', alignItems: 'center',
@@ -144,23 +191,29 @@ export default function MethodPage() {
             }}>
               See a full recommendation
             </a>
-            <a href="#score-build" style={{
-              fontSize: 14, color: 'rgba(255,255,255,0.4)',
-              textDecoration: 'none'
+            <span style={{
+              fontSize: 14, color: 'rgba(255,255,255,0.35)'
             }}>
-              See how it works ↓
-            </a>
+              Scroll to see how it works ↓
+            </span>
           </div>
         </div>
 
-        {/* Right — FitModel card */}
+        {/* Right — rotating profile card */}
         <div style={{
-          background: '#0D1421',
-          border: '1px solid rgba(255,255,255,0.08)',
+          background: 'linear-gradient(160deg,#0F1825 0%,#0A1018 100%)',
+          border: '1px solid rgba(255,255,255,0.09)',
           borderRadius: 16,
           overflow: 'hidden',
-          boxShadow: '0 24px 80px rgba(0,0,0,0.6)'
+          boxShadow: [
+            '0 0 0 1px rgba(255,255,255,0.05)',
+            '0 40px 80px rgba(0,0,0,0.7)',
+            '0 0 80px rgba(37,99,235,0.07)'
+          ].join(',')
         }}>
+          {/* Blue accent line at top */}
+          <div style={{height: 1, background: 'rgba(37,99,235,0.4)'}}/>
+
           <div style={{
             padding: '14px 20px',
             borderBottom: '1px solid rgba(255,255,255,0.06)',
@@ -175,87 +228,144 @@ export default function MethodPage() {
             }}>
               Role Benchmark
             </span>
-            <div style={{display: 'flex', gap: 5}}>
-              {[0,1,2].map(i => (
-                <div key={i} style={{
-                  width: 6, height: 6, borderRadius: '50%',
-                  background: i === 0
-                    ? '#2563EB'
-                    : 'rgba(255,255,255,0.12)'
-                }}/>
-              ))}
+            <span style={{
+              fontSize: 9, fontWeight: 600,
+              color: 'rgba(255,255,255,0.18)',
+              letterSpacing: '0.06em'
+            }}>
+              Field Leadership
+            </span>
+          </div>
+
+          {/* Pentagon with ambient glow */}
+          <div style={{
+            padding: '24px 24px 12px',
+            display: 'flex',
+            justifyContent: 'center',
+            position: 'relative'
+          }}>
+            <div style={{
+              position: 'absolute',
+              top: '50%', left: '50%',
+              transform: 'translate(-50%,-50%)',
+              width: 240, height: 240,
+              borderRadius: '50%',
+              background: 'radial-gradient(circle,rgba(37,99,235,0.14) 0%,transparent 70%)',
+              pointerEvents: 'none'
+            }}/>
+            <div style={{
+              opacity: fading ? 0 : 1,
+              transition: 'opacity 300ms ease',
+              position: 'relative',
+              zIndex: 1
+            }}>
+              <FitModel
+                scores={profile.scores}
+                benchmarkScores={BENCHMARK}
+                size={220}
+                variant="dark"
+                animated={false}
+              />
             </div>
           </div>
 
-          <div style={{padding: '24px 24px 12px', display: 'flex', justifyContent: 'center'}}>
-            <FitModel
-              scores={{
-                dominance: 0.72,
-                extraversion: 0.52,
-                patience: 0.50,
-                formality: 0.66
-              }}
-              size={260}
-              variant="dark"
-              animated={true}
-            />
+          {/* Candidate identity */}
+          <div style={{
+            padding: '0 20px 16px',
+            opacity: fading ? 0 : 1,
+            transition: 'opacity 300ms ease'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+              paddingTop: 12,
+              borderTop: '1px solid rgba(255,255,255,0.06)',
+              marginBottom: 8
+            }}>
+              <div>
+                <p style={{
+                  fontSize: 14, fontWeight: 700,
+                  color: '#FFFFFF', marginBottom: 2
+                }}>
+                  {profile.name}
+                </p>
+                <p style={{fontSize: 11, color: 'rgba(255,255,255,0.35)'}}>
+                  {profile.role}
+                </p>
+              </div>
+              <div style={{textAlign: 'right'}}>
+                <p style={{
+                  fontSize: 28, fontWeight: 900,
+                  color: '#FFFFFF', letterSpacing: '-0.03em',
+                  lineHeight: 1, marginBottom: 2
+                }}>
+                  {profile.score}
+                </p>
+                <p style={{
+                  fontSize: 11, fontWeight: 600,
+                  color: profile.verdictColor
+                }}>
+                  {profile.verdict}
+                </p>
+              </div>
+            </div>
+            <span style={{fontSize: 10, color: 'rgba(255,255,255,0.22)'}}>
+              {profile.archetype} · Field Leadership Benchmark
+            </span>
           </div>
 
-          <div style={{padding: '0 20px 20px'}}>
-            {[
-              {name: 'Execution',     val: 'benchmark'},
-              {name: 'Ownership',     val: 'benchmark'},
-              {name: 'Adaptability',  val: 'benchmark'},
-              {name: 'Collaboration', val: 'benchmark'},
-              {name: 'Decision Speed',val: 'benchmark'}
-            ].map((dim, i) => (
-              <div key={i} style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '10px 0',
-                borderBottom: i < 4
-                  ? '1px solid rgba(255,255,255,0.05)'
-                  : 'none'
-              }}>
-                <span style={{
-                  fontSize: 13, color: 'rgba(255,255,255,0.65)'
-                }}>
-                  {dim.name}
-                </span>
-                <span style={{
-                  fontSize: 11, fontWeight: 600,
-                  color: '#2563EB', letterSpacing: '0.04em'
-                }}>
-                  {dim.val}
-                </span>
-              </div>
+          {/* Dot indicators */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            gap: 6,
+            padding: '0 0 16px'
+          }}>
+            {PROFILES.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => {
+                  if (intervalRef.current) clearInterval(intervalRef.current)
+                  setFading(true)
+                  setTimeout(() => {
+                    setActiveProfile(i)
+                    setFading(false)
+                  }, 300)
+                }}
+                style={{
+                  width: i === activeProfile ? 18 : 6,
+                  height: 6,
+                  borderRadius: 3,
+                  background: i === activeProfile
+                    ? '#2563EB'
+                    : 'rgba(255,255,255,0.15)',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: 0,
+                  transition: 'all 300ms ease'
+                }}
+              />
             ))}
-            <p style={{
-              fontSize: 10, color: 'rgba(255,255,255,0.18)',
-              marginTop: 14, textAlign: 'center'
-            }}>
-              Scroll to see the candidate signal emerge against the benchmark
-            </p>
           </div>
         </div>
       </section>
 
       {/* =============================================
           SECTION 2 — HOW THE SCORE IS BUILT
-          Visual equation: 80 → 94 → 5 → 1
+          80 → 94 → 5 → 1. Two column.
       ============================================= */}
-      <section id="score-build" style={{
-        minHeight: '90vh',
+      <section className="score-build-grid snap-beat" style={{
+        background: '#000',
         display: 'grid',
         gridTemplateColumns: '1fr 1fr',
         gap: 64,
         alignItems: 'center',
-        padding: '80px 48px',
+        padding: '0 48px',
+        width: '100%',
         maxWidth: 1100,
-        margin: '0 auto',
-        background: '#000'
-      }} className="score-build-grid">
+        margin: '0 auto'
+      }}>
 
         {/* Left — visual equation */}
         <div>
@@ -296,17 +406,15 @@ export default function MethodPage() {
               <div key={i} style={{
                 fontSize: 20,
                 color: 'rgba(37,99,235,0.45)',
-                padding: '3px 0 3px 8px'
-              }}>
-                →
-              </div>
+                padding: '2px 0 2px 8px'
+              }}>→</div>
             )
             return (
               <div key={i} style={{
                 display: 'flex',
                 alignItems: 'baseline',
                 gap: 16,
-                padding: '14px 0',
+                padding: '12px 0',
                 borderBottom: i < 6
                   ? '1px solid rgba(255,255,255,0.05)'
                   : 'none'
@@ -373,103 +481,231 @@ export default function MethodPage() {
           }}>
             The gap between the two lists is the adaptation
             signal — where someone performs differently from
-            their natural style. That gap matters under pressure.
+            their natural style. That gap surfaces under pressure.
           </p>
           <p style={{
             fontSize: 15, color: 'rgba(255,255,255,0.45)',
             lineHeight: 1.8
           }}>
-            94 signals map across five dimensions and are
-            scored against the active role benchmark.
-            The result is a fit score — a precise distance
-            from the target, not a personality type.
+            94 signals map across five dimensions and score
+            against the active role benchmark. The result is
+            a fit score — a precise distance from the target.
           </p>
         </div>
       </section>
 
       {/* =============================================
-          SECTION 3 — SIGNAL TRACE
-          The structured output visualization
+          SECTION 3 — TEAM SIGNAL
+          Can they perform in this environment?
+          Copy left. Signal trace + team compatibility right.
       ============================================= */}
-      <section ref={signalRef} style={{
-        minHeight: '80vh',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '80px 48px',
-        background: '#0D1117'
+      <section className="snap-beat" style={{
+        background: '#0D1117',
+        padding: '0 48px',
+        width: '100%'
       }}>
         <div style={{
-          maxWidth: 800,
+          maxWidth: 1000,
           margin: '0 auto',
-          width: '100%'
-        }}>
-          <p style={{
-            fontSize: 11, fontWeight: 600, color: '#2563EB',
-            letterSpacing: '0.1em', textTransform: 'uppercase',
-            marginBottom: 12, textAlign: 'center'
-          }}>
-            Signal Pattern
-          </p>
-          <h2 style={{
-            fontSize: 'clamp(26px,3.5vw,38px)',
-            fontWeight: 700, color: '#FFFFFF',
-            letterSpacing: '-0.02em', marginBottom: 10,
-            textAlign: 'center'
-          }}>
-            94 signals. One score.
-          </h2>
-          <p style={{
-            fontSize: 15, color: 'rgba(255,255,255,0.4)',
-            lineHeight: 1.65, marginBottom: 48,
-            textAlign: 'center', maxWidth: 480,
-            margin: '0 auto 48px'
-          }}>
-            Every candidate produces the same structured output.
-            Green is above benchmark. Red is below.
-            Each lane is one dimension.
-          </p>
+          width: '100%',
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: 64,
+          alignItems: 'center'
+        }} className="signal-grid">
 
-          <SignalTrace
-            candidateScores={{
-              dominance: 0.72,
-              extraversion: 0.52,
-              patience: 0.50,
-              formality: 0.66
-            }}
-            width={signalTraceWidth}
-          />
+          {/* Left — copy */}
+          <div>
+            <p style={{
+              fontSize: 11, fontWeight: 600, color: '#2563EB',
+              letterSpacing: '0.1em', textTransform: 'uppercase',
+              marginBottom: 16
+            }}>
+              Team Signal
+            </p>
+            <h2 style={{
+              fontSize: 'clamp(26px,3.5vw,38px)',
+              fontWeight: 700, color: '#FFFFFF',
+              letterSpacing: '-0.02em', marginBottom: 20
+            }}>
+              Can they perform<br />in this environment?
+            </h2>
+            <p style={{
+              fontSize: 15, color: 'rgba(255,255,255,0.45)',
+              lineHeight: 1.8, marginBottom: 16
+            }}>
+              The role benchmark answers whether the candidate
+              can do the job. The team layer answers whether
+              they&apos;ll do it here — with this manager,
+              these peers, in this environment.
+            </p>
+            <p style={{
+              fontSize: 15, color: 'rgba(255,255,255,0.45)',
+              lineHeight: 1.8, marginBottom: 24
+            }}>
+              Profile the hiring manager and key stakeholders
+              once per client. Every candidate is automatically
+              scored against every stored profile — showing
+              where alignment is strong and where friction emerges.
+            </p>
+            {[
+              'Hiring manager profiled once. Active on every future candidate.',
+              'Peer and board member profiles stack automatically.',
+              'Friction surfaces before onboarding, not after.'
+            ].map((point, i) => (
+              <div key={i} style={{
+                display: 'flex',
+                gap: 10,
+                alignItems: 'flex-start',
+                marginBottom: 10
+              }}>
+                <div style={{
+                  width: 5, height: 5,
+                  borderRadius: '50%',
+                  background: '#2563EB',
+                  flexShrink: 0,
+                  marginTop: 7
+                }}/>
+                <p style={{
+                  fontSize: 13,
+                  color: 'rgba(255,255,255,0.45)',
+                  lineHeight: 1.6
+                }}>
+                  {point}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {/* Right — signal trace card */}
+          <div style={{
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(255,255,255,0.07)',
+            borderRadius: 12,
+            padding: '20px 20px 16px'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 16
+            }}>
+              <span style={{
+                fontSize: 9, fontWeight: 600,
+                color: 'rgba(255,255,255,0.25)',
+                letterSpacing: '0.1em', textTransform: 'uppercase'
+              }}>
+                Signal Pattern vs. Benchmark
+              </span>
+              <div style={{display: 'flex', gap: 12, alignItems: 'center'}}>
+                <div style={{display: 'flex', gap: 5, alignItems: 'center'}}>
+                  <div style={{width: 16, height: 2, background: '#22C55E', borderRadius: 1}}/>
+                  <span style={{fontSize: 9, color: 'rgba(255,255,255,0.3)'}}>Candidate</span>
+                </div>
+                <div style={{display: 'flex', gap: 5, alignItems: 'center'}}>
+                  <div style={{
+                    width: 16, height: 2,
+                    background: 'repeating-linear-gradient(90deg,rgba(255,255,255,0.4) 0px,rgba(255,255,255,0.4) 4px,transparent 4px,transparent 8px)',
+                    borderRadius: 1
+                  }}/>
+                  <span style={{fontSize: 9, color: 'rgba(255,255,255,0.3)'}}>Benchmark</span>
+                </div>
+              </div>
+            </div>
+
+            <SignalTrace
+              candidateScores={PROFILES[0].scores}
+              benchmarkScores={BENCHMARK}
+              width={340}
+              variant="dark"
+              animated={true}
+            />
+
+            {/* Team compatibility strip */}
+            <div style={{
+              marginTop: 16,
+              paddingTop: 14,
+              borderTop: '1px solid rgba(255,255,255,0.06)'
+            }}>
+              <p style={{
+                fontSize: 9, fontWeight: 600,
+                color: 'rgba(255,255,255,0.2)',
+                letterSpacing: '0.1em', textTransform: 'uppercase',
+                marginBottom: 10
+              }}>
+                Team Compatibility
+              </p>
+              {[
+                {name: 'David Mercer', role: 'Hiring Manager', pct: 88, color: '#22C55E'},
+                {name: 'Sarah Chen',   role: 'Project Lead',   pct: 61, color: '#EAB308'},
+                {name: 'Tom Ricci',    role: 'Ops Director',   pct: 79, color: '#22C55E'}
+              ].map((person, i) => (
+                <div key={i} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  marginBottom: 7
+                }}>
+                  <span style={{
+                    fontSize: 11, color: 'rgba(255,255,255,0.5)',
+                    width: 110, flexShrink: 0
+                  }}>
+                    {person.name}
+                  </span>
+                  <div style={{
+                    flex: 1, height: 3,
+                    background: 'rgba(255,255,255,0.06)',
+                    borderRadius: 2, overflow: 'hidden'
+                  }}>
+                    <div style={{
+                      height: '100%',
+                      width: `${person.pct}%`,
+                      background: person.color,
+                      opacity: 0.75,
+                      borderRadius: 2
+                    }}/>
+                  </div>
+                  <span style={{
+                    fontSize: 10, fontWeight: 600,
+                    color: person.color, width: 32,
+                    textAlign: 'right', flexShrink: 0
+                  }}>
+                    {person.pct}%
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
       {/* =============================================
-          SECTION 4 — FIVE DIMENSIONS
-          What the model actually measures
+          SECTION 4 — WHAT WE MEASURE
+          Five dimensions. Two column grid. Blue left borders.
       ============================================= */}
-      <section style={{
-        minHeight: '80vh',
-        padding: '80px 48px',
-        background: '#000'
+      <section className="snap-beat" style={{
+        background: '#000',
+        padding: '0 48px',
+        width: '100%'
       }}>
-        <div style={{maxWidth: 960, margin: '0 auto'}}>
+        <div style={{maxWidth: 960, margin: '0 auto', width: '100%'}}>
           <p style={{
             fontSize: 11, fontWeight: 600, color: '#2563EB',
             letterSpacing: '0.1em', textTransform: 'uppercase',
             marginBottom: 12
           }}>
-            Five Dimensions
+            What We Measure
           </p>
           <h2 style={{
             fontSize: 'clamp(26px,3.5vw,38px)',
             fontWeight: 700, color: '#FFFFFF',
             letterSpacing: '-0.02em', marginBottom: 12
           }}>
-            Each one role-relevant.
+            Five dimensions. Each one role-relevant.
           </h2>
           <p style={{
             fontSize: 15, color: 'rgba(255,255,255,0.4)',
-            marginBottom: 48, maxWidth: 480, lineHeight: 1.65
+            marginBottom: 40, maxWidth: 520, lineHeight: 1.65
           }}>
             Not general personality traits. The five dimensions
             most predictive of performance variation across
@@ -506,8 +742,8 @@ export default function MethodPage() {
               <div key={i} style={{
                 paddingLeft: 18,
                 borderLeft: '2px solid rgba(37,99,235,0.4)',
-                paddingBottom: 28,
-                marginBottom: 28,
+                paddingBottom: 24,
+                marginBottom: 24,
                 borderBottom: '1px solid rgba(255,255,255,0.05)'
               }}>
                 <p style={{
@@ -517,7 +753,8 @@ export default function MethodPage() {
                   {dim.name}
                 </p>
                 <p style={{
-                  fontSize: 13, color: 'rgba(255,255,255,0.45)',
+                  fontSize: 13,
+                  color: 'rgba(255,255,255,0.45)',
                   lineHeight: 1.65
                 }}>
                   {dim.desc}
@@ -529,355 +766,226 @@ export default function MethodPage() {
       </section>
 
       {/* =============================================
-          SECTION 5 — WHERE IT FITS IN THE SEARCH
-          Timeline + three steps
+          SECTION 5 — WHERE VELTRO FITS + DATA CLOSE
+          Vertical timeline left. Five numbers + close right.
       ============================================= */}
-      <section style={{
-        minHeight: '80vh',
-        padding: '80px 48px',
-        background: '#0D1117'
+      <section className="process-grid snap-beat" style={{
+        background: '#0D1117',
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: 80,
+        alignItems: 'center',
+        padding: '0 48px',
+        width: '100%',
+        maxWidth: 1100,
+        margin: '0 auto'
       }}>
-        <div style={{maxWidth: 960, margin: '0 auto'}}>
+
+        {/* Left — vertical timeline */}
+        <div>
           <p style={{
             fontSize: 11, fontWeight: 600, color: '#2563EB',
             letterSpacing: '0.1em', textTransform: 'uppercase',
-            marginBottom: 12
+            marginBottom: 16
           }}>
             The Search Process
           </p>
           <h2 style={{
             fontSize: 'clamp(26px,3.5vw,38px)',
             fontWeight: 700, color: '#FFFFFF',
-            letterSpacing: '-0.02em', marginBottom: 12
+            letterSpacing: '-0.02em', marginBottom: 48
           }}>
             Where Veltro fits.
           </h2>
-          <p style={{
-            fontSize: 15, color: 'rgba(255,255,255,0.4)',
-            marginBottom: 64, maxWidth: 480, lineHeight: 1.65
-          }}>
-            One step at shortlist. No change to how you run
-            the search. Everything changes in the client meeting.
-          </p>
 
-          {/* Timeline */}
-          <div style={{position: 'relative', marginBottom: 64}}>
-            {/* Base line */}
+          <div style={{position: 'relative', paddingLeft: 32}}>
+            {/* Base vertical line */}
             <div style={{
-              position: 'absolute', top: 19,
-              left: '12.5%', right: '12.5%',
-              height: 1,
+              position: 'absolute',
+              left: 6, top: 8, bottom: 8,
+              width: 1,
               background: 'rgba(255,255,255,0.08)'
             }}/>
-            {/* Active segment Sourcing → Client Meeting */}
+            {/* Active segment — Shortlist to Client Meeting */}
             <div style={{
-              position: 'absolute', top: 19,
-              left: '37.5%', width: '50%',
-              height: 1, background: '#2563EB',
-              boxShadow: '0 0 8px rgba(37,99,235,0.4)'
+              position: 'absolute',
+              left: 6,
+              top: '47%',
+              height: '40%',
+              width: 1,
+              background: '#2563EB',
+              boxShadow: '0 0 8px rgba(37,99,235,0.6)'
             }}/>
 
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(4,1fr)',
-              position: 'relative'
-            }}>
-              {[
-                {label: 'Kickoff',        active: false, veltro: false},
-                {label: 'Sourcing',       active: false, veltro: false},
-                {label: 'Shortlist',      active: true,  veltro: true },
-                {label: 'Client Meeting', active: true,  veltro: false}
-              ].map((step, i) => (
-                <div key={i} style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: 10
-                }}>
+            {[
+              {
+                label: 'Kickoff',
+                copy: 'Define the role. Confirm the benchmark.',
+                active: false,
+                veltro: false
+              },
+              {
+                label: 'Sourcing',
+                copy: 'Build the candidate pool.',
+                active: false,
+                veltro: false
+              },
+              {
+                label: 'Shortlist',
+                copy: 'Send the evaluation. Six minutes per candidate.',
+                active: true,
+                veltro: true
+              },
+              {
+                label: 'Client Meeting',
+                copy: 'Open the report. The room decides.',
+                active: true,
+                veltro: false
+              }
+            ].map((step, i) => (
+              <div key={i} style={{
+                display: 'flex',
+                gap: 20,
+                marginBottom: i < 3 ? 32 : 0,
+                position: 'relative'
+              }}>
+                {/* Node */}
+                <div style={{
+                  position: 'absolute',
+                  left: -32, top: 6,
+                  width: 13, height: 13,
+                  borderRadius: '50%',
+                  background: step.active ? '#2563EB' : 'rgba(255,255,255,0.12)',
+                  boxShadow: step.active
+                    ? '0 0 0 3px rgba(37,99,235,0.2), 0 0 12px rgba(37,99,235,0.5)'
+                    : 'none',
+                  zIndex: 1
+                }}/>
+                <div>
                   <div style={{
-                    width: 14, height: 14,
-                    borderRadius: '50%',
-                    background: step.active
-                      ? '#2563EB'
-                      : 'rgba(255,255,255,0.12)',
-                    boxShadow: step.active
-                      ? '0 0 12px rgba(37,99,235,0.5)'
-                      : 'none',
-                    flexShrink: 0,
-                    zIndex: 1,
-                    position: 'relative'
-                  }}/>
+                    display: 'flex', gap: 10,
+                    alignItems: 'center', marginBottom: 4
+                  }}>
+                    <p style={{
+                      fontSize: 14,
+                      fontWeight: step.active ? 700 : 500,
+                      color: step.active ? '#FFFFFF' : 'rgba(255,255,255,0.35)',
+                      letterSpacing: '-0.01em'
+                    }}>
+                      {step.label}
+                    </p>
+                    {step.veltro && (
+                      <span style={{
+                        fontSize: 8, fontWeight: 700,
+                        color: '#2563EB',
+                        background: 'rgba(37,99,235,0.12)',
+                        border: '1px solid rgba(37,99,235,0.3)',
+                        padding: '2px 6px', borderRadius: 4,
+                        letterSpacing: '0.08em',
+                        textTransform: 'uppercase'
+                      }}>
+                        Veltro activates
+                      </span>
+                    )}
+                  </div>
                   <p style={{
                     fontSize: 12,
                     color: step.active
-                      ? '#FFFFFF'
-                      : 'rgba(255,255,255,0.28)',
-                    fontWeight: step.active ? 600 : 400,
-                    textAlign: 'center'
+                      ? 'rgba(255,255,255,0.45)'
+                      : 'rgba(255,255,255,0.2)',
+                    lineHeight: 1.5
                   }}>
-                    {step.label}
+                    {step.copy}
                   </p>
-                  {step.veltro && (
-                    <div style={{
-                      background: 'rgba(37,99,235,0.12)',
-                      border: '1px solid rgba(37,99,235,0.3)',
-                      borderRadius: 5,
-                      padding: '3px 8px',
-                      fontSize: 9, fontWeight: 600,
-                      color: '#2563EB',
-                      letterSpacing: '0.08em',
-                      textTransform: 'uppercase'
-                    }}>
-                      Veltro activates
-                    </div>
-                  )}
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Three steps */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3,1fr)',
-            gap: 36
-          }} className="process-steps-grid">
-            {[
-              {
-                num: '01',
-                stage: 'At shortlist',
-                headline: 'Send the candidate a link.',
-                copy: 'Six minutes. No login. Any device. Automatic on submission.'
-              },
-              {
-                num: '02',
-                stage: 'Before the meeting',
-                headline: 'Get the scored result.',
-                copy: 'Fit score, benchmark comparison, confidence level, strengths and risks.'
-              },
-              {
-                num: '03',
-                stage: 'In the meeting',
-                headline: 'Open the report.',
-                copy: 'Score, fit, risks, interview probes. The meeting ends in a decision.'
-              }
-            ].map(step => (
-              <div key={step.num}>
-                <div style={{
-                  display: 'flex', gap: 10,
-                  alignItems: 'center', marginBottom: 10
-                }}>
-                  <span style={{
-                    fontSize: 10, fontWeight: 700,
-                    color: '#2563EB', letterSpacing: '0.08em'
-                  }}>
-                    {step.num}
-                  </span>
-                  <span style={{
-                    fontSize: 10, fontWeight: 600,
-                    color: 'rgba(255,255,255,0.25)',
-                    letterSpacing: '0.08em',
-                    textTransform: 'uppercase'
-                  }}>
-                    {step.stage}
-                  </span>
-                </div>
-                <p style={{
-                  fontSize: 15, fontWeight: 600,
-                  color: '#FFFFFF', marginBottom: 6,
-                  letterSpacing: '-0.01em'
-                }}>
-                  {step.headline}
-                </p>
-                <p style={{
-                  fontSize: 13,
-                  color: 'rgba(255,255,255,0.4)',
-                  lineHeight: 1.65
-                }}>
-                  {step.copy}
-                </p>
               </div>
             ))}
           </div>
         </div>
-      </section>
 
-      {/* =============================================
-          SECTION 6 — DATASET ADDITION VISUAL + CLOSE
-          Numbers stack up to 2,245,096
-      ============================================= */}
-      <section style={{
-        minHeight: '90vh',
-        padding: '80px 48px 100px',
-        background: '#000'
-      }}>
-        <div style={{maxWidth: 800, margin: '0 auto'}}>
+        {/* Right — five numbers + close */}
+        <div>
+          <p style={{
+            fontSize: 11, fontWeight: 600, color: '#2563EB',
+            letterSpacing: '0.1em', textTransform: 'uppercase',
+            marginBottom: 24
+          }}>
+            Backed by real data
+          </p>
 
-          {/* Addition visual */}
-          <div ref={dataRef}>
-            <p style={{
-              fontSize: 11, fontWeight: 600, color: '#2563EB',
-              letterSpacing: '0.1em', textTransform: 'uppercase',
-              marginBottom: 12
-            }}>
-              The Dataset
-            </p>
-            <h2 style={{
-              fontSize: 'clamp(26px,3.5vw,38px)',
-              fontWeight: 700, color: '#FFFFFF',
-              letterSpacing: '-0.02em', marginBottom: 40
-            }}>
-              Built on real behavioral data.<br />Not a black box.
-            </h2>
-
-            <div style={{maxWidth: 560, marginBottom: 56}}>
-              {[
-                {n: '307,313',  label: 'General population norm dataset'},
-                {n: '922,541',  label: 'Five-factor model validation dataset'},
-                {n: '49,159',   label: 'Occupational norm dataset'},
-                {n: '658,770',  label: 'Cross-validation cohort (4 studies)'},
-                {n: '307,313',  label: 'Additional validation cohort'},
-              ].map((row, i) => (
-                <div key={i} style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '11px 0',
-                  borderBottom: '1px solid rgba(255,255,255,0.05)',
-                  opacity: dataVisible ? 1 : 0,
-                  transform: dataVisible
-                    ? 'translateX(0)'
-                    : 'translateX(-16px)',
-                  transition: `opacity 320ms ease-out ${i * 120}ms,
-                               transform 320ms ease-out ${i * 120}ms`
-                }}>
-                  <span style={{
-                    fontSize: 13,
-                    color: 'rgba(255,255,255,0.35)',
-                    maxWidth: 380, lineHeight: 1.5
-                  }}>
-                    {row.label}
-                  </span>
-                  <span style={{
-                    fontSize: 16, fontWeight: 600,
-                    color: 'rgba(255,255,255,0.55)',
-                    fontVariantNumeric: 'tabular-nums',
-                    letterSpacing: '-0.01em',
-                    flexShrink: 0, marginLeft: 16
-                  }}>
-                    {row.n}
-                  </span>
-                </div>
-              ))}
-
-              {/* Total — arrives last */}
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '16px 0',
-                borderTop: '2px solid rgba(37,99,235,0.4)',
-                marginTop: 4,
-                opacity: dataVisible ? 1 : 0,
-                transition: 'opacity 400ms ease-out 700ms'
+          {/* Five numbers — 2-col grid, last item spans both */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '24px 32px',
+            marginBottom: 48
+          }}>
+            {[
+              {val: '2.2M+', label: 'People in the dataset',  sub: 'General adult population norms'},
+              {val: '94',    label: 'Signals per evaluation', sub: 'Extracted from structured inputs'},
+              {val: '5',     label: 'Dimensions scored',      sub: 'Role-relevant behavioral factors'},
+              {val: '8',     label: 'Peer-reviewed studies',  sub: 'Across four validation cohorts'},
+              {val: '6 min', label: 'Per candidate',          sub: 'No login. Any device.'}
+            ].map((stat, i) => (
+              <div key={i} style={{
+                gridColumn: i === 4 ? 'span 2' : 'span 1'
               }}>
-                <span style={{
-                  fontSize: 14, fontWeight: 700,
-                  color: '#FFFFFF'
-                }}>
-                  Total respondents
-                </span>
-                <span style={{
-                  fontSize: 'clamp(28px,4vw,44px)',
+                <p style={{
+                  fontSize: i === 4
+                    ? 'clamp(24px,3vw,36px)'
+                    : 'clamp(28px,3.5vw,42px)',
                   fontWeight: 900, color: '#FFFFFF',
                   letterSpacing: '-0.03em',
-                  fontVariantNumeric: 'tabular-nums'
+                  lineHeight: 1, marginBottom: 6
                 }}>
-                  2,245,096
-                </span>
+                  {stat.val}
+                </p>
+                <p style={{
+                  fontSize: 12, color: 'rgba(255,255,255,0.45)',
+                  marginBottom: 2
+                }}>
+                  {stat.label}
+                </p>
+                <p style={{fontSize: 10, color: 'rgba(255,255,255,0.2)'}}>
+                  {stat.sub}
+                </p>
               </div>
-
-              <p style={{
-                fontSize: 13,
-                color: 'rgba(255,255,255,0.25)',
-                lineHeight: 1.65, marginTop: 14,
-                fontStyle: 'italic',
-                opacity: dataVisible ? 1 : 0,
-                transition: 'opacity 300ms ease-out 900ms'
-              }}>
-                General adult population norms — not job applicants,
-                not proprietary samples.
-              </p>
-            </div>
-
-            {/* Three supporting stats */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3,1fr)',
-              gap: 32, marginBottom: 72,
-              paddingTop: 32,
-              borderTop: '1px solid rgba(255,255,255,0.06)'
-            }} className="data-stats-grid">
-              {[
-                {val: '94',    label: 'Signals per evaluation'},
-                {val: '8',     label: 'Peer-reviewed studies'},
-                {val: '6 min', label: 'Per candidate'}
-              ].map((stat, i) => (
-                <div key={i}>
-                  <p style={{
-                    fontSize: 'clamp(28px,3.5vw,40px)',
-                    fontWeight: 800, color: 'rgba(255,255,255,0.7)',
-                    letterSpacing: '-0.03em',
-                    lineHeight: 1, marginBottom: 8
-                  }}>
-                    {stat.val}
-                  </p>
-                  <p style={{fontSize: 12, color: 'rgba(255,255,255,0.3)'}}>
-                    {stat.label}
-                  </p>
-                </div>
-              ))}
-            </div>
+            ))}
           </div>
 
-          {/* Divider */}
           <div style={{
             height: 1,
             background: 'rgba(255,255,255,0.07)',
-            marginBottom: 64
+            marginBottom: 32
           }}/>
 
-          {/* Close */}
-          <div style={{textAlign: 'center', maxWidth: 480, margin: '0 auto'}}>
-            <p style={{
-              fontSize: 'clamp(22px,3vw,30px)',
-              fontWeight: 600,
-              color: 'rgba(255,255,255,0.88)',
-              letterSpacing: '-0.02em',
-              lineHeight: 1.4, marginBottom: 12
-            }}>
-              This doesn&apos;t replace your judgment.<br />
-              It structures it.
-            </p>
-            <p style={{
-              fontSize: 15,
-              color: 'rgba(255,255,255,0.3)',
-              marginBottom: 36
-            }}>
-              You still decide. This shows your client why.
-            </p>
-            <a href="/sample-report" style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              background: '#FFFFFF', color: '#000000',
-              fontSize: 15, fontWeight: 700,
-              padding: '13px 28px', borderRadius: 8,
-              textDecoration: 'none'
-            }}>
-              See the full report →
-            </a>
-          </div>
-
+          <p style={{
+            fontSize: 'clamp(18px,2.2vw,22px)',
+            fontWeight: 600,
+            color: 'rgba(255,255,255,0.85)',
+            letterSpacing: '-0.02em',
+            lineHeight: 1.45,
+            marginBottom: 10
+          }}>
+            This doesn&apos;t replace your judgment.
+            <br/>It structures it.
+          </p>
+          <p style={{
+            fontSize: 14,
+            color: 'rgba(255,255,255,0.3)',
+            marginBottom: 24
+          }}>
+            You still decide. This shows your client why.
+          </p>
+          <a href="/sample-report" style={{
+            display: 'inline-flex', alignItems: 'center',
+            background: '#FFFFFF', color: '#000',
+            fontSize: 14, fontWeight: 700,
+            padding: '12px 24px', borderRadius: 8,
+            textDecoration: 'none'
+          }}>
+            See the full report →
+          </a>
         </div>
       </section>
 

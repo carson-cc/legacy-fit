@@ -543,6 +543,39 @@ button, a, input, select, textarea {
   }
 }
 
+/* ================================================================
+   PROFILES / METHOD PAGE — SNAP + RESPONSIVE v2
+   ================================================================ */
+
+@media (max-width: 1024px) {
+  .hero-grid {
+    grid-template-columns: 1fr !important;
+    height: auto !important;
+    min-height: 100vh !important;
+    padding-top: 100px !important;
+    padding-bottom: 60px !important;
+  }
+  .hero-grid > div:last-child {
+    max-width: 480px;
+    margin: 0 auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .score-build-grid,
+  .signal-grid,
+  .process-grid {
+    grid-template-columns: 1fr !important;
+    height: auto !important;
+    min-height: 100vh !important;
+    padding-top: 100px !important;
+    padding-bottom: 60px !important;
+  }
+  .dimensions-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
 /* Kill dev artifacts */
 [data-nextjs-dialog-overlay],
 [data-next-badge],
