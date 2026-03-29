@@ -199,12 +199,12 @@ export default function HomePage() {
         <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
 
         <p style={{
-          fontSize: 11,
+          fontSize: 10,
           fontWeight: 600,
           color: 'rgba(255,255,255,0.25)',
           letterSpacing: '0.12em',
           textTransform: 'uppercase',
-          marginBottom: 20,
+          marginBottom: 12,
           textAlign: 'center',
           flexShrink: 0
         }}>
@@ -226,7 +226,7 @@ export default function HomePage() {
           }} />
 
           <div style={{
-            padding: '10px 24px',
+            padding: '8px 24px',
             borderBottom: '1px solid rgba(255,255,255,0.06)',
             display: 'flex',
             justifyContent: 'space-between',
@@ -252,7 +252,7 @@ export default function HomePage() {
 
           {/* TOP BLOCK — The Call */}
           <div style={{
-            padding: '16px 28px 14px',
+            padding: '12px 28px 10px',
             borderBottom: '1px solid rgba(255,255,255,0.06)',
             display: 'grid',
             gridTemplateColumns: '1fr auto',
@@ -268,22 +268,22 @@ export default function HomePage() {
                 color: 'rgba(255,255,255,0.16)',
                 letterSpacing: '0.14em',
                 textTransform: 'uppercase',
-                marginBottom: 8
+                marginBottom: 6
               }}>
                 PE-Backed CFO · Velocity Growth Partners
               </p>
               <p style={{
-                fontSize: 22,
+                fontSize: 20,
                 fontWeight: 800,
                 color: '#FFFFFF',
                 letterSpacing: '-0.02em',
-                marginBottom: 10
+                marginBottom: 8
               }}>
                 Kent Morrison
               </p>
               <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12 }}>
                 <span style={{
-                  fontSize: 54,
+                  fontSize: 46,
                   fontWeight: 900,
                   color: '#FFFFFF',
                   letterSpacing: '-0.04em',
@@ -292,14 +292,14 @@ export default function HomePage() {
                 }}>
                   93
                 </span>
-                <div style={{ paddingBottom: 4 }}>
+                <div style={{ paddingBottom: 3 }}>
                   <p style={{
-                    fontSize: 18,
+                    fontSize: 16,
                     fontWeight: 700,
                     color: '#22C55E',
                     letterSpacing: '-0.02em',
                     lineHeight: 1.1,
-                    marginBottom: 4
+                    marginBottom: 3
                   }}>
                     Strong Hire — with one execution risk
                   </p>
@@ -362,7 +362,7 @@ export default function HomePage() {
             {/* LEFT — Role Fit */}
             <div style={{
               borderRight: '1px solid rgba(255,255,255,0.05)',
-              padding: '16px 24px 16px 28px'
+              padding: '12px 20px 12px 24px'
             }}>
               <p style={{
                 fontSize: 9,
@@ -370,15 +370,15 @@ export default function HomePage() {
                 color: 'rgba(255,255,255,0.16)',
                 letterSpacing: '0.14em',
                 textTransform: 'uppercase',
-                marginBottom: 8
+                marginBottom: 6
               }}>
                 Role Fit
               </p>
               <p style={{
-                fontSize: 11,
+                fontSize: 10,
                 color: 'rgba(255,255,255,0.32)',
-                lineHeight: 1.55,
-                marginBottom: 14
+                lineHeight: 1.5,
+                marginBottom: 10
               }}>
                 Above benchmark on execution and decision speed. Slight drop in collaboration.
               </p>
@@ -386,8 +386,8 @@ export default function HomePage() {
               <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                 <div style={{
                   position: 'absolute',
-                  width: 140,
-                  height: 140,
+                  width: 120,
+                  height: 120,
                   borderRadius: '50%',
                   background: 'radial-gradient(circle, rgba(37,99,235,0.08) 0%, transparent 70%)',
                   pointerEvents: 'none'
@@ -405,7 +405,7 @@ export default function HomePage() {
                     patience: 0.50,
                     formality: 0.66
                   }}
-                  size={160}
+                  size={140}
                   variant="dark"
                   animated={false}
                   showLabels={true}
@@ -415,7 +415,7 @@ export default function HomePage() {
               <p style={{
                 fontSize: 9,
                 color: 'rgba(255,255,255,0.12)',
-                marginTop: 8,
+                marginTop: 6,
                 textAlign: 'center'
               }}>
                 Solid: Kent · Dashed: Benchmark
@@ -423,7 +423,7 @@ export default function HomePage() {
             </div>
 
             {/* RIGHT — Execution Environment + Decision Frame + Insight + Probes */}
-            <div style={{ padding: '16px 28px 16px 24px' }}>
+            <div style={{ padding: '12px 24px 12px 20px' }}>
 
               <p style={{
                 fontSize: 9,
@@ -431,7 +431,7 @@ export default function HomePage() {
                 color: 'rgba(255,255,255,0.16)',
                 letterSpacing: '0.14em',
                 textTransform: 'uppercase',
-                marginBottom: 10
+                marginBottom: 8
               }}>
                 Execution Environment
               </p>
@@ -463,15 +463,15 @@ export default function HomePage() {
                 }
               ].map((person, i) => (
                 <div key={i} style={{
-                  marginBottom: 10,
-                  paddingBottom: 10,
+                  marginBottom: 8,
+                  paddingBottom: 8,
                   borderBottom: i < 2 ? '1px solid rgba(255,255,255,0.04)' : 'none'
                 }}>
                   <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'flex-start',
-                    marginBottom: 4
+                    marginBottom: 3
                   }}>
                     <div>
                       <p style={{
@@ -502,7 +502,7 @@ export default function HomePage() {
                     background: 'rgba(255,255,255,0.05)',
                     borderRadius: 2,
                     overflow: 'hidden',
-                    marginBottom: 4
+                    marginBottom: 3
                   }}>
                     <div style={{
                       height: '100%',
@@ -512,7 +512,7 @@ export default function HomePage() {
                       opacity: 0.45
                     }} />
                   </div>
-                  <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.22)', lineHeight: 1.45 }}>
+                  <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.22)', lineHeight: 1.4 }}>
                     {person.note}
                   </p>
                 </div>
@@ -522,7 +522,7 @@ export default function HomePage() {
                 display: 'flex',
                 alignItems: 'flex-start',
                 gap: 8,
-                padding: '8px 0 12px',
+                padding: '6px 0 10px',
                 borderBottom: '1px solid rgba(255,255,255,0.05)'
               }}>
                 <span style={{
@@ -533,7 +533,7 @@ export default function HomePage() {
                   flexShrink: 0,
                   marginTop: 3
                 }} />
-                <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.28)', lineHeight: 1.45 }}>
+                <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.28)', lineHeight: 1.4 }}>
                   <span style={{ color: 'rgba(255,255,255,0.46)', fontWeight: 600 }}>Execution Speed vs. Stakeholder Alignment:</span> slight mismatch — address before close.
                 </p>
               </div>
@@ -545,7 +545,7 @@ export default function HomePage() {
                 color: 'rgba(255,255,255,0.16)',
                 letterSpacing: '0.14em',
                 textTransform: 'uppercase',
-                margin: '12px 0 8px'
+                margin: '8px 0 6px'
               }}>
                 Decision Frame
               </p>
@@ -554,7 +554,7 @@ export default function HomePage() {
                 border: '1px solid rgba(255,255,255,0.06)',
                 borderRadius: 8,
                 overflow: 'hidden',
-                marginBottom: 12
+                marginBottom: 8
               }}>
                 {[
                   {
@@ -573,7 +573,7 @@ export default function HomePage() {
                   <div key={i} style={{
                     display: 'flex',
                     gap: 10,
-                    padding: '8px 12px',
+                    padding: '6px 12px',
                     background: row.bg,
                     borderBottom: i === 0 ? '1px solid rgba(255,255,255,0.05)' : 'none'
                   }}>
@@ -589,7 +589,7 @@ export default function HomePage() {
                     }}>
                       {row.label}
                     </span>
-                    <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.42)', lineHeight: 1.5 }}>
+                    <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.42)', lineHeight: 1.45 }}>
                       {row.text}
                     </span>
                   </div>
@@ -601,8 +601,8 @@ export default function HomePage() {
                 background: 'rgba(37,99,235,0.04)',
                 border: '1px solid rgba(37,99,235,0.10)',
                 borderRadius: 8,
-                padding: '10px 12px',
-                marginBottom: 12
+                padding: '8px 12px',
+                marginBottom: 8
               }}>
                 <p style={{
                   fontSize: 9,
@@ -610,11 +610,11 @@ export default function HomePage() {
                   color: 'rgba(37,99,235,0.55)',
                   letterSpacing: '0.1em',
                   textTransform: 'uppercase',
-                  marginBottom: 5
+                  marginBottom: 4
                 }}>
                   Key Insight
                 </p>
-                <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.46)', lineHeight: 1.6 }}>
+                <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.46)', lineHeight: 1.55 }}>
                   Kent&apos;s execution and ownership scores are strong. The only flag is pace — the operating partner runs slower. Get ahead of that before he starts.
                 </p>
               </div>
@@ -626,7 +626,7 @@ export default function HomePage() {
                 color: 'rgba(255,255,255,0.16)',
                 letterSpacing: '0.14em',
                 textTransform: 'uppercase',
-                marginBottom: 8
+                marginBottom: 6
               }}>
                 Interview Probes
               </p>
@@ -642,7 +642,7 @@ export default function HomePage() {
                 }
               ].map((probe, i) => (
                 <div key={i} style={{
-                  marginBottom: 7,
+                  marginBottom: 5,
                   paddingLeft: 8,
                   borderLeft: '2px solid rgba(37,99,235,0.16)'
                 }}>
@@ -652,11 +652,11 @@ export default function HomePage() {
                     color: 'rgba(37,99,235,0.45)',
                     letterSpacing: '0.08em',
                     textTransform: 'uppercase',
-                    marginBottom: 3
+                    marginBottom: 2
                   }}>
                     {probe.risk}
                   </p>
-                  <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.32)', lineHeight: 1.5 }}>
+                  <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.32)', lineHeight: 1.45 }}>
                     {probe.q}
                   </p>
                 </div>
@@ -665,8 +665,8 @@ export default function HomePage() {
               <p style={{
                 fontSize: 9,
                 color: 'rgba(255,255,255,0.10)',
-                marginTop: 10,
-                paddingTop: 8,
+                marginTop: 8,
+                paddingTop: 6,
                 borderTop: '1px solid rgba(255,255,255,0.04)'
               }}>
                 94 signals · Benchmark confidence: High

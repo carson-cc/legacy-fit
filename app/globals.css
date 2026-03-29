@@ -482,7 +482,7 @@ button, a, input, select, textarea {
   align-items: center;
   justify-content: center;
   position: relative;
-  padding: 60px 40px;
+  padding: 40px 40px;
 }
 
 @media (max-width: 768px) {
