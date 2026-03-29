@@ -425,7 +425,7 @@ export default function MethodPage() {
   })
 
   return (
-    <div style={{ background: BG, color: TEXT, fontFamily: DM }}>
+    <div className="snap-page" style={{ background: BG, color: TEXT, fontFamily: DM }}>
 
       {/* ── NAV ─────────────────────────────────────────────────────── */}
       <nav style={{
