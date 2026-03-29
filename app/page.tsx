@@ -219,6 +219,8 @@ export default function HomePage() {
           .report-card-body  { flex-direction: column !important; }
           .report-card-left  { width: 100% !important; border-right: none !important; border-bottom: 1px solid rgba(255,255,255,0.07) !important; }
           .report-card-right { padding: 16px !important; }
+          .report-card-right::-webkit-scrollbar { display: none }
+          .report-card-right { scrollbar-width: none }
         }
         .team-row { transition: background 150ms ease; border-radius: 6px; padding: 5px 6px; margin: 0 -6px; cursor: default; }
         .team-row:hover { background: rgba(255,255,255,0.04) !important; }
@@ -487,166 +489,172 @@ export default function HomePage() {
                   )}
                 </div>
 
-                {/* Operating Style */}
-                <div style={fade(cardMounted, 460)}>
-                  <p style={{ fontSize: 8, color: 'rgba(238,236,230,0.16)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 5 }}>
-                    Operating Style
-                  </p>
-                  <p style={{ fontSize: 10, fontWeight: 700, color: 'rgba(238,236,230,0.58)', marginBottom: 4, letterSpacing: '-0.01em' }}>
-                    Pioneer — Execution-first operator
-                  </p>
-                  <p style={{ fontSize: 9, color: 'rgba(238,236,230,0.34)', lineHeight: 1.55, margin: 0 }}>
-                    Moves first, drives without waiting for full alignment. High in pace, lower in cross-functional coordination.
-                  </p>
-                </div>
 
               </div>
 
               {/* ── RIGHT: Decision panel ── */}
               <div className="report-card-right" style={{
-                flex: 1,
-                display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-                padding: '18px 22px', overflow: 'hidden',
+                flex: 1, minHeight: 0,
+                display: 'flex', flexDirection: 'column',
+                padding: '0 22px', overflowY: 'auto',
               }}>
 
-                {/* 1 — VERDICT (green-dominant, score muted) */}
-                <div style={{ flexShrink: 0, paddingBottom: 12, borderBottom: `1px solid ${DIV}`, ...fade(cardMounted, 0) }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
-                        <p style={{
-                          margin: 0,
-                          fontSize: 13, fontWeight: 800, fontFamily: CONDENSED,
-                          color: GREEN, letterSpacing: '0.08em', textTransform: 'uppercase',
-                        }}>Strong Hire</p>
-                        <span style={{
-                          fontSize: 8, padding: '2px 6px', borderRadius: 4,
-                          background: 'rgba(58,168,104,0.1)', border: '1px solid rgba(58,168,104,0.2)',
-                          color: 'rgba(58,168,104,0.7)', letterSpacing: '0.06em', textTransform: 'uppercase',
-                          fontWeight: 600,
-                        }}>Risk: Manageable</span>
-                      </div>
-                      <p style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 500, color: TEXT, lineHeight: 1.3 }}>
-                        Strong operator — thrives in low-friction, high-autonomy environments
+                {/* S1 — Headline */}
+                <div style={{ padding: '14px 0', ...fade(cardMounted, 0) }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+                    <div style={{ flex: 1 }}>
+                      <p style={{
+                        margin: 0,
+                        fontSize: 'clamp(14px, 1.5vw, 17px)', fontWeight: 600, color: TEXT, lineHeight: 1.3,
+                      }}>
+                        Strong hire — high-velocity operator with manageable pacing risk
                       </p>
-                      <p style={{ margin: 0, fontSize: 10, color: 'rgba(238,236,230,0.30)' }}>
+                      <p style={{ margin: '6px 0 0', fontSize: 11, color: 'rgba(238,236,230,0.35)' }}>
                         Top 1 of 3 shortlisted · 4 of 5 dimensions above benchmark
                       </p>
                     </div>
-                    <span style={{
-                      fontSize: 52, fontFamily: CONDENSED, fontWeight: 900,
-                      color: 'rgba(238,236,230,0.18)', lineHeight: 1, flexShrink: 0,
-                    }}>93</span>
+                    <div style={{ flexShrink: 0, textAlign: 'right' as const }}>
+                      <span style={{ display: 'block', fontSize: 56, fontFamily: CONDENSED, fontWeight: 900, color: '#ffffff', lineHeight: 1 }}>93</span>
+                      <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)' }}>Top 5% vs. benchmark</span>
+                    </div>
                   </div>
                 </div>
 
-                {/* 2 — PRIMARY WATCHOUT (amber, not red — contextual, not disqualifying) */}
-                <div style={{ flexShrink: 0, paddingBottom: 12, borderBottom: `1px solid ${DIV}`, ...fade(cardMounted, 80) }}>
-                  <p style={{ margin: '0 0 5px', fontSize: 8, color: FAINT, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+                {/* S2 — Primary Watchout (consolidated with Thrives In / Watch For) */}
+                <div style={{ padding: '14px 0', borderTop: '1px solid rgba(255,255,255,0.07)', ...fade(cardMounted, 80) }}>
+                  <p style={{ margin: '0 0 5px', fontSize: 9, color: FAINT, letterSpacing: '0.16em', textTransform: 'uppercase' }}>
                     Primary Watchout
                   </p>
-                  <p style={{ margin: '0 0 4px', fontSize: 15, fontWeight: 600, color: TEXT, lineHeight: 1.3 }}>
-                    Moves faster than the organization can absorb
+                  <p style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 500, color: TEXT }}>
+                    Moves faster than the organization can absorb.
                   </p>
-                  <p style={{ margin: '0 0 6px', fontSize: 11, color: AMBER, lineHeight: 1.45, fontWeight: 300 }}>
-                    Likely pacing friction with Operating Partner — manageable with early alignment on decision cadence
+                  <p style={{ margin: '0 0 10px', fontSize: 11, color: 'rgba(238,236,230,0.45)', lineHeight: 1.45 }}>
+                    Pioneer profile + high-autonomy role = pace mismatch with stakeholders who expect consultation.
                   </p>
-                  <p style={{ margin: 0, fontSize: 9, color: 'rgba(238,236,230,0.25)', letterSpacing: '0.04em' }}>
-                    Contextual risk · Affects one relationship · Not a hiring veto
-                  </p>
-                </div>
-
-                {/* 3 — THRIVES IN / WATCH FOR (renamed from Works/Breaks) */}
-                <div style={{ flexShrink: 0, paddingBottom: 12, borderBottom: `1px solid ${DIV}`, ...fade(cardMounted, 150) }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                    <div style={{ borderLeft: '1.5px solid rgba(58,168,104,0.25)', paddingLeft: 9 }}>
-                      <p style={{ margin: '0 0 6px', fontSize: 8, color: GREEN, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                        Thrives In
-                      </p>
-                      {[
-                        'CEO grants autonomous execution without full consensus',
-                        'Ownership is clear, stakeholder drag is low',
-                      ].map(t => (
-                        <p key={t} style={{ margin: '0 0 4px', fontSize: 10, color: 'rgba(238,236,230,0.55)', lineHeight: 1.45 }}>{t}</p>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 10 }}>
+                    <div>
+                      <p style={{ margin: '0 0 5px', fontSize: 8, color: GREEN, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Thrives In</p>
+                      {['CEO grants autonomous execution', 'Ownership is clear, stakeholder drag is low'].map(t => (
+                        <p key={t} style={{ margin: '0 0 4px', fontSize: 11, color: 'rgba(238,236,230,0.62)', lineHeight: 1.4, borderLeft: '1.5px solid rgba(58,168,104,0.3)', paddingLeft: 7 }}>{t}</p>
                       ))}
                     </div>
-                    <div style={{ borderLeft: '1.5px solid rgba(200,168,50,0.25)', paddingLeft: 9 }}>
-                      <p style={{ margin: '0 0 6px', fontSize: 8, color: AMBER, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                        Watch For
-                      </p>
-                      {[
-                        'Operating Partner expects closer coordination on pacing',
-                        'Decisions require partner-wide alignment before action',
-                      ].map(t => (
-                        <p key={t} style={{ margin: '0 0 4px', fontSize: 10, color: 'rgba(238,236,230,0.55)', lineHeight: 1.45 }}>{t}</p>
+                    <div>
+                      <p style={{ margin: '0 0 5px', fontSize: 8, color: AMBER, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Watch For</p>
+                      {['Operating Partner expects coordination on pacing', 'Decisions require partner-wide alignment'].map(t => (
+                        <p key={t} style={{ margin: '0 0 4px', fontSize: 11, color: 'rgba(238,236,230,0.62)', lineHeight: 1.4, borderLeft: '1.5px solid rgba(200,168,50,0.3)', paddingLeft: 7 }}>{t}</p>
                       ))}
                     </div>
                   </div>
                 </div>
 
-                {/* 4 — TEAM DYNAMICS (hover links to radar) */}
-                <div style={{ flexShrink: 0, paddingBottom: 10, borderBottom: `1px solid ${DIV}`, ...fade(cardMounted, 220) }}>
+                {/* S3 — Team Dynamics (pill rows, hover links to radar) */}
+                <div style={{ padding: '14px 0', borderTop: '1px solid rgba(255,255,255,0.07)', ...fade(cardMounted, 160) }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
-                    <p style={{ margin: 0, fontSize: 8, color: FAINT, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-                      Team Dynamics
-                    </p>
-                    <p style={{ margin: 0, fontSize: 9, color: 'rgba(238,236,230,0.28)', fontStyle: 'italic' }}>
-                      Strong fit · One relationship needs early alignment
-                    </p>
+                    <p style={{ margin: 0, fontSize: 9, color: FAINT, letterSpacing: '0.16em', textTransform: 'uppercase' }}>Team Dynamics</p>
+                    <p style={{ margin: 0, fontSize: 9, color: 'rgba(238,236,230,0.28)' }}>Strong fit · One relationship to address</p>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-                    {TEAM.map(({ role, status, statusColor, note }, i) => (
-                      <div
-                        key={role}
-                        className="team-row"
-                        onMouseEnter={() => setHoveredTeam(role)}
-                        onMouseLeave={() => setHoveredTeam(null)}
-                        style={{
-                          paddingTop: i > 0 ? 7 : 0,
-                          borderTop: i > 0 ? '1px solid rgba(255,255,255,0.04)' : 'none',
-                          marginTop: i > 0 ? 2 : 0,
-                        }}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 2 }}>
-                          <span style={{ fontSize: 10, fontWeight: 600, color: 'rgba(238,236,230,0.68)' }}>{role}</span>
-                          <span style={{
-                            fontSize: 8, fontWeight: 600, color: statusColor,
-                            letterSpacing: '0.05em', textTransform: 'uppercase',
-                            transition: 'color 150ms ease',
-                          }}>{status}</span>
-                        </div>
-                        <p style={{ margin: 0, fontSize: 9, color: 'rgba(238,236,230,0.33)', lineHeight: 1.45 }}>{note}</p>
+                  {[
+                    {
+                      role: 'CEO',
+                      pill: 'STRONG ALIGNMENT',
+                      pillBg: 'rgba(58,168,104,0.12)', pillBorder: 'rgba(58,168,104,0.25)', pillColor: GREEN,
+                      note: 'Will experience Kent as decisive and effective.',
+                    },
+                    {
+                      role: 'Operating Partner',
+                      pill: 'PACING GAP',
+                      pillBg: 'rgba(200,168,50,0.12)', pillBorder: 'rgba(200,168,50,0.25)', pillColor: AMBER,
+                      note: 'Friction on pacing — manageable with early alignment on decision cadence.',
+                    },
+                    {
+                      role: 'Board',
+                      pill: 'MODERATE FIT',
+                      pillBg: 'rgba(255,255,255,0.05)', pillBorder: 'rgba(255,255,255,0.12)', pillColor: 'rgba(238,236,230,0.5)',
+                      note: 'May want structured communication cadence. Low risk if expectations are set.',
+                    },
+                  ].map(({ role, pill, pillBg, pillBorder, pillColor, note }) => (
+                    <div
+                      key={role}
+                      className="team-row"
+                      onMouseEnter={() => setHoveredTeam(role)}
+                      onMouseLeave={() => setHoveredTeam(null)}
+                      style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '6px 0' }}
+                    >
+                      <span style={{
+                        borderRadius: 4, padding: '2px 8px', fontSize: 9, fontWeight: 600,
+                        letterSpacing: '0.08em', textTransform: 'uppercase' as const,
+                        background: pillBg, border: `1px solid ${pillBorder}`, color: pillColor,
+                        flexShrink: 0, minWidth: 110, textAlign: 'center' as const, display: 'inline-block',
+                      }}>{pill}</span>
+                      <div>
+                        <p style={{ margin: '0 0 2px', fontSize: 12, fontWeight: 500, color: TEXT }}>{role}</p>
+                        <p style={{ margin: 0, fontSize: 11, color: 'rgba(238,236,230,0.42)', lineHeight: 1.4 }}>{note}</p>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
 
-                {/* 5 — SIGNAL PROFILE (evidence, compressed) */}
-                <div style={{ flex: 1, overflow: 'hidden', paddingTop: 8, ...fade(cardMounted, 300) }}>
-                  <p style={{ margin: '0 0 6px', fontSize: 8, color: 'rgba(238,236,230,0.16)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+                {/* S4 — Signal Profile */}
+                <div style={{ padding: '14px 0', borderTop: '1px solid rgba(255,255,255,0.07)', ...fade(cardMounted, 240) }}>
+                  <p style={{ margin: '0 0 8px', fontSize: 9, color: FAINT, letterSpacing: '0.16em', textTransform: 'uppercase' }}>
                     Signal Profile
                   </p>
                   {AXES.map((ax) => (
-                    <div key={ax.key} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                      <span style={{ fontSize: 8, color: 'rgba(238,236,230,0.24)', width: 68, flexShrink: 0 }}>
-                        {ax.svgLabel}
+                    <div key={ax.key} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                      <span style={{ fontSize: 9, color: 'rgba(238,236,230,0.24)', width: 90, flexShrink: 0 }}>
+                        {ax.fullLabel}
                       </span>
-                      <div style={{ flex: 1, height: 2, background: 'rgba(255,255,255,0.05)', borderRadius: 2 }}>
+                      <div style={{ flex: 1, height: 4, background: 'rgba(255,255,255,0.05)', borderRadius: 2 }}>
                         <div style={{
                           width: `${ax.score}%`, height: '100%', borderRadius: 2,
                           background: ax.above ? 'rgba(74,142,255,0.36)' : 'rgba(200,168,50,0.45)',
-                          transition: 'background 200ms ease',
                         }} />
                       </div>
                       <span style={{
-                        fontSize: 8,
+                        fontSize: 9,
                         color: ax.above ? 'rgba(238,236,230,0.26)' : 'rgba(200,168,50,0.6)',
-                        width: 18, textAlign: 'right', flexShrink: 0,
+                        width: 18, textAlign: 'right' as const, flexShrink: 0,
                       }}>
                         {ax.score}
                       </span>
                     </div>
                   ))}
+                </div>
+
+                {/* S5 — How to De-Risk */}
+                <div style={{ padding: '14px 0', borderTop: '1px solid rgba(255,255,255,0.07)', ...fade(cardMounted, 300) }}>
+                  <p style={{ margin: '0 0 8px', fontSize: 9, color: AMBER, letterSpacing: '0.16em', textTransform: 'uppercase' }}>
+                    How to De-Risk
+                  </p>
+                  {[
+                    "Align on decision cadence with Operating Partner before day one.",
+                    "Define which decisions require escalation and which don't.",
+                    "Set board communication expectations in onboarding.",
+                  ].map((item) => (
+                    <p key={item} style={{
+                      margin: '0 0 6px', fontSize: 11, color: 'rgba(238,236,230,0.62)', lineHeight: 1.5,
+                      borderLeft: '1.5px solid rgba(200,168,50,0.25)', paddingLeft: 8,
+                    }}>{item}</p>
+                  ))}
+                </div>
+
+                {/* S6 — Operating Style */}
+                <div style={{ padding: '14px 0 18px', borderTop: '1px solid rgba(255,255,255,0.07)', ...fade(cardMounted, 360) }}>
+                  <p style={{ margin: '0 0 8px', fontSize: 9, color: FAINT, letterSpacing: '0.16em', textTransform: 'uppercase' }}>
+                    Operating Style
+                  </p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                    <span style={{
+                      fontFamily: CONDENSED, fontWeight: 700, fontSize: 13,
+                      color: '#c45030', textTransform: 'uppercase' as const, letterSpacing: '0.06em',
+                      background: 'rgba(196,80,48,0.1)', border: '1px solid rgba(196,80,48,0.2)',
+                      borderRadius: 4, padding: '3px 10px',
+                    }}>Pioneer</span>
+                    <span style={{ fontSize: 12, color: 'rgba(238,236,230,0.7)' }}>Execution-first operator</span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: 11, color: 'rgba(238,236,230,0.42)', lineHeight: 1.6 }}>
+                    Moves first, drives without waiting for full alignment. High pace, lower in cross-functional coordination.
+                  </p>
                 </div>
 
               </div>
