@@ -280,7 +280,7 @@ function RadarCanvas({
   }, [onHoverProfile, onHoverCat])
 
   return (
-    <div style={{ position: 'relative', width: 'clamp(280px, min(calc(100vw - 570px), calc(100vh - 100px)), 640px)', height: 'clamp(280px, min(calc(100vw - 570px), calc(100vh - 100px)), 640px)', zIndex: 1 }}>
+    <div style={{ position: 'relative', width: 'clamp(300px, min(calc(100vh - 220px), calc(100vw - 550px)), 640px)', height: 'clamp(300px, min(calc(100vh - 220px), calc(100vw - 550px)), 640px)', zIndex: 1 }}>
       <canvas
         ref={canvasRef}
         width={RADAR_SIZE} height={RADAR_SIZE}
@@ -686,56 +686,58 @@ export default function ArchetypesPage() {
       </div>
 
       {/* ── RADAR MAP — FULL VIEWPORT ── */}
-      <section style={{
-        position: 'relative', width: '100%', height: '100vh',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        overflow: 'hidden',
-      }}>
-        {/* Headline — centered at top, above radar */}
-        <div style={{ position: 'absolute', top: 80, left: '50%', transform: 'translateX(-50%)', zIndex: 2, textAlign: 'center' }}>
-          <p style={{ fontSize: 10, fontWeight: 500, color: 'rgba(255,255,255,0.22)', letterSpacing: '0.20em', textTransform: 'uppercase', marginBottom: 10 }}>The System</p>
+      <section style={{ width: '100%', height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+
+        {/* Title row — normal flow, never overlaps radar */}
+        <div style={{ flexShrink: 0, paddingTop: 80, paddingBottom: 16, textAlign: 'center' }}>
+          <p style={{ fontSize: 10, fontWeight: 500, color: 'rgba(255,255,255,0.22)', letterSpacing: '0.20em', textTransform: 'uppercase', marginBottom: 8 }}>The System</p>
           <h2 style={{
             fontFamily: '"Barlow Condensed", system-ui',
-            fontSize: 'clamp(28px, 3vw, 42px)',
+            fontSize: 'clamp(24px, 2.8vw, 38px)',
             fontWeight: 800, textTransform: 'uppercase',
             letterSpacing: '-0.01em', lineHeight: 1.0,
-            color: '#FFF', marginBottom: 10, whiteSpace: 'nowrap',
+            color: '#FFF', marginBottom: 6, whiteSpace: 'nowrap',
           }}>
             Four types. One map.
           </h2>
-          <p style={{ fontSize: 12, fontWeight: 300, color: 'rgba(255,255,255,0.35)', lineHeight: 1.6, margin: 0, whiteSpace: 'nowrap' }}>
+          <p style={{ fontSize: 12, fontWeight: 300, color: 'rgba(255,255,255,0.32)', whiteSpace: 'nowrap' }}>
             Two axes: Pace and People-orientation. Hover to explore.
           </p>
         </div>
 
-        {/* Left column — Operators + Stabilizers (deliberate quadrant) */}
-        <div className="radar-col-left" style={{ position: 'absolute', left: 44, top: '50%', transform: 'translateY(-50%)', width: 220, zIndex: 2 }}>
-          <RadarColumn
-            groups={leftCats}
-            activeCat={activeCat}
-            hoveredProfile={hoveredProfile}
-            setActive={setActive}
-            setHovProf={setHovProf}
-          />
-        </div>
+        {/* Content row — radar fills remaining height, columns float on sides */}
+        <div style={{ flex: 1, minHeight: 0, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
 
-        {/* Radar — centered */}
-        <RadarCanvas
-          activeCat={activeCat}
-          hoveredProfileName={hoveredProfile}
-          onHoverCat={setActive}
-          onHoverProfile={setHovProf}
-        />
+          {/* Left column — Operators + Stabilizers */}
+          <div className="radar-col-left" style={{ position: 'absolute', left: 44, top: '50%', transform: 'translateY(-50%)', width: 210, zIndex: 2 }}>
+            <RadarColumn
+              groups={leftCats}
+              activeCat={activeCat}
+              hoveredProfile={hoveredProfile}
+              setActive={setActive}
+              setHovProf={setHovProf}
+            />
+          </div>
 
-        {/* Right column — Drivers + Catalysts (urgent quadrant) */}
-        <div className="radar-col-right" style={{ position: 'absolute', right: 44, top: '50%', transform: 'translateY(-50%)', width: 220, zIndex: 2 }}>
-          <RadarColumn
-            groups={rightCats}
+          {/* Radar — as large as the available space allows */}
+          <RadarCanvas
             activeCat={activeCat}
-            hoveredProfile={hoveredProfile}
-            setActive={setActive}
-            setHovProf={setHovProf}
+            hoveredProfileName={hoveredProfile}
+            onHoverCat={setActive}
+            onHoverProfile={setHovProf}
           />
+
+          {/* Right column — Drivers + Catalysts */}
+          <div className="radar-col-right" style={{ position: 'absolute', right: 44, top: '50%', transform: 'translateY(-50%)', width: 210, zIndex: 2 }}>
+            <RadarColumn
+              groups={rightCats}
+              activeCat={activeCat}
+              hoveredProfile={hoveredProfile}
+              setActive={setActive}
+              setHovProf={setHovProf}
+            />
+          </div>
+
         </div>
       </section>
 
