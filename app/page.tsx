@@ -196,11 +196,11 @@ export default function HomePage() {
         <div style={{
           width: '100%',
           maxWidth: 900,
-          background: '#0D1421',
+          background: 'linear-gradient(160deg, #0F1825, #0A1018)',
           border: '1px solid rgba(255,255,255,0.09)',
           borderRadius: 16,
           overflow: 'hidden',
-          boxShadow: '0 40px 120px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.04)'
+          boxShadow: '0 60px 140px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.06), inset 0 1px 0 rgba(255,255,255,0.04)'
         }}>
           <div style={{
             height: 1,
@@ -217,14 +217,14 @@ export default function HomePage() {
             <span style={{
               fontSize: 9,
               fontWeight: 600,
-              color: 'rgba(255,255,255,0.22)',
-              letterSpacing: '0.1em',
+              color: 'rgba(255,255,255,0.2)',
+              letterSpacing: '0.14em',
               textTransform: 'uppercase'
             }}>
               Candidate Recommendation Report
             </span>
-            <span style={{ fontSize: 11, color: '#2563EB', fontWeight: 500 }}>
-              Share report →
+            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.18)', fontWeight: 500, letterSpacing: '0.06em' }}>
+              Presented to client
             </span>
           </div>
 
@@ -255,35 +255,33 @@ export default function HomePage() {
               </p>
 
               <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 14,
-                padding: '12px 0',
+                padding: '16px 0 12px',
                 borderTop: '1px solid rgba(255,255,255,0.06)',
                 borderBottom: '1px solid rgba(255,255,255,0.06)',
                 marginBottom: 12
               }}>
-                <span style={{
-                  fontSize: 40,
-                  fontWeight: 800,
-                  color: '#FFFFFF',
-                  letterSpacing: '-0.03em',
-                  lineHeight: 1
-                }}>93</span>
-                <div>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 14, marginBottom: 6 }}>
+                  <span style={{
+                    fontSize: 72,
+                    fontWeight: 900,
+                    color: '#FFFFFF',
+                    letterSpacing: '-0.04em',
+                    lineHeight: 1
+                  }}>93</span>
                   <p style={{
-                    fontSize: 20,
-                    fontWeight: 700,
+                    fontSize: 28,
+                    fontWeight: 800,
                     color: '#22C55E',
                     letterSpacing: '-0.02em',
-                    marginBottom: 3
+                    lineHeight: 1,
+                    paddingBottom: 6
                   }}>
                     Strong Hire
                   </p>
-                  <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>
-                    High confidence · Top 12% · Role benchmark active
-                  </p>
                 </div>
+                <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>
+                  High confidence · Top 12% · Role benchmark active
+                </p>
               </div>
 
               <p style={{
@@ -320,10 +318,10 @@ export default function HomePage() {
                   <div key={i} style={{
                     display: 'flex',
                     gap: 10,
-                    padding: '5px 0',
-                    borderTop: i > 0
-                      ? '1px solid rgba(255,255,255,0.05)'
-                      : 'none'
+                    padding: '7px 8px',
+                    borderRadius: 5,
+                    marginBottom: i === 0 ? 4 : 0,
+                    background: i === 0 ? 'rgba(34,197,94,0.05)' : 'rgba(239,68,68,0.05)'
                   }}>
                     <span style={{
                       fontSize: 9,
@@ -363,46 +361,48 @@ export default function HomePage() {
               </p>
 
               {[
-                { label: 'EXECUTION',     value: 72, delta: '+8',  color: '#22C55E', warn: false },
-                { label: 'OWNERSHIP',     value: 67, delta: '+1',  color: '#22C55E', warn: false },
-                { label: 'ADAPTABILITY',  value: 65, delta: '+15', color: '#22C55E', warn: false },
-                { label: 'COLLABORATION', value: 49, delta: '−3',  color: '#EF4444', warn: true  },
-                { label: 'DECISION SPEED',value: 85, delta: '+21', color: '#22C55E', warn: false },
+                { label: 'EXECUTION',     value: 72, color: '#22C55E', warn: false },
+                { label: 'OWNERSHIP',     value: 67, color: '#22C55E', warn: false },
+                { label: 'ADAPTABILITY',  value: 65, color: '#22C55E', warn: false },
+                { label: 'COLLABORATION', value: 49, color: '#EF4444', warn: true  },
+                { label: 'DECISION SPEED',value: 85, color: '#22C55E', warn: false },
               ].map((dim, i) => (
-                <div key={i} style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '4px 0',
-                  borderBottom: i < 4
-                    ? '1px solid rgba(255,255,255,0.04)'
-                    : 'none'
-                }}>
-                  <span style={{
-                    fontSize: 10,
-                    color: dim.warn
-                      ? 'rgba(239,68,68,0.6)'
-                      : 'rgba(255,255,255,0.28)',
-                    letterSpacing: '0.06em',
-                    fontWeight: 600
+                <div key={i} style={{ marginBottom: 8 }}>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginBottom: 4
                   }}>
-                    {dim.warn ? '⚠ ' : ''}{dim.label}
-                  </span>
-                  <div style={{ display: 'flex', gap: 7, alignItems: 'center' }}>
                     <span style={{
-                      fontSize: 12,
+                      fontSize: 9,
+                      color: dim.warn ? 'rgba(239,68,68,0.7)' : 'rgba(255,255,255,0.28)',
+                      letterSpacing: '0.08em',
                       fontWeight: 600,
-                      color: 'rgba(255,255,255,0.6)'
+                      textTransform: 'uppercase'
+                    }}>
+                      {dim.warn ? '⚠ ' : ''}{dim.label}
+                    </span>
+                    <span style={{
+                      fontSize: 10,
+                      fontWeight: 700,
+                      color: dim.warn ? '#EF4444' : 'rgba(255,255,255,0.55)'
                     }}>
                       {dim.value}
                     </span>
-                    <span style={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      color: dim.color
-                    }}>
-                      {dim.delta}
-                    </span>
+                  </div>
+                  <div style={{
+                    height: 3,
+                    background: 'rgba(255,255,255,0.06)',
+                    borderRadius: 2,
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{
+                      height: '100%',
+                      width: `${dim.value}%`,
+                      background: dim.color,
+                      borderRadius: 2,
+                      opacity: dim.warn ? 0.6 : 0.8
+                    }} />
                   </div>
                 </div>
               ))}
@@ -419,19 +419,33 @@ export default function HomePage() {
               </p>
 
               {[
-                'Tell me about a time you committed to a direction before your team was aligned. What happened?',
-                'Describe a situation where you had to slow down for stakeholder input. How did you handle it?'
+                { dim: 'COLLABORATION', color: '#EF4444', text: 'Tell me about a time you committed to a direction before your team was aligned. What happened?' },
+                { dim: 'COLLABORATION', color: '#EF4444', text: 'Describe a situation where you had to slow down for stakeholder input. How did you handle it?' }
               ].map((probe, i) => (
-                <p key={i} style={{
-                  fontSize: 11,
-                  color: 'rgba(255,255,255,0.42)',
-                  lineHeight: 1.6,
-                  marginBottom: 6,
-                  paddingLeft: 8,
-                  borderLeft: '2px solid rgba(37,99,235,0.3)'
+                <div key={i} style={{
+                  marginBottom: 8,
+                  paddingLeft: 10,
+                  borderLeft: `2px solid ${probe.color}`,
                 }}>
-                  {probe}
-                </p>
+                  <p style={{
+                    fontSize: 8,
+                    fontWeight: 700,
+                    color: probe.color,
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                    marginBottom: 2,
+                    opacity: 0.7
+                  }}>
+                    {probe.dim}
+                  </p>
+                  <p style={{
+                    fontSize: 11,
+                    color: 'rgba(255,255,255,0.42)',
+                    lineHeight: 1.6
+                  }}>
+                    {probe.text}
+                  </p>
+                </div>
               ))}
             </div>
           </div>
