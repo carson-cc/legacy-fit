@@ -780,91 +780,122 @@ function ArchCard({ profile, catColor, catKey, onHover, sectionVisible, cardInde
   cardIndex: number
 }) {
   const [hov, setHov] = useState(false)
+  const dn = displayName(profile.name)
   return (
     <div
+      className="arch-card"
       onMouseEnter={() => { setHov(true); onHover(catKey) }}
       onMouseLeave={() => { setHov(false); onHover(null) }}
       style={{
         background: '#131313',
         border: `1px solid ${hov ? hexAlpha(catColor, 0.20) : 'rgba(255,255,255,0.06)'}`,
         borderTop: `2px solid ${hov ? catColor : 'rgba(255,255,255,0.06)'}`,
-        borderRadius: 11, padding: '20px 18px 18px',
+        borderRadius: 11,
         cursor: 'default',
         transform: hov ? 'translateY(-2px)' : 'translateY(0)',
         transition: 'transform 150ms ease, border-color 150ms ease',
-        display: 'flex', flexDirection: 'column', gap: 10,
         width: 240, flexShrink: 0,
         scrollSnapAlign: 'start', touchAction: 'pan-x',
         position: 'relative',
         boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+        height: 240,
+        overflow: 'hidden',
       }}
     >
-      <CardPentagon name={displayName(profile.name)} color={catColor} hovered={hov} sectionVisible={sectionVisible} cardIndex={cardIndex} />
-      <div style={{
-        opacity: hov ? 1 : 0.62,
-        transition: 'opacity 150ms ease, filter 150ms ease',
-        filter: hov ? `drop-shadow(0 0 5px ${hexAlpha(catColor, 0.65)})` : 'none',
-      }}>
-        <Icon paths={ARCH_ICONS[displayName(profile.name)] ?? []} size={20} stroke={catColor} />
-      </div>
-      <div>
-        <div style={{
-          fontFamily: '"Barlow Condensed", system-ui',
-          fontSize: 20, fontWeight: 800, textTransform: 'uppercase',
-          letterSpacing: '0.02em',
-          color: hov ? catColor : 'rgba(255,255,255,0.88)',
-          lineHeight: 1.1, transition: 'color 150ms ease',
-          paddingRight: 88,
-        }}>{displayName(profile.name)}</div>
-        {ARCH_ESSENCE[displayName(profile.name)] && (
+      {/* Scrollable inner content */}
+      <div style={{ padding: '18px 18px 0 18px', display: 'flex', flexDirection: 'column', gap: 0 }}>
+        {/* Pentagon — absolute top-right */}
+        <CardPentagon name={dn} color={catColor} hovered={hov} sectionVisible={sectionVisible} cardIndex={cardIndex} />
+
+        {/* Icon + name row */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 4 }}>
+          <div style={{
+            opacity: hov ? 1 : 0.62,
+            transition: 'opacity 150ms ease, filter 150ms ease',
+            filter: hov ? `drop-shadow(0 0 5px ${hexAlpha(catColor, 0.65)})` : 'none',
+            paddingTop: 1, flexShrink: 0,
+          }}>
+            <Icon paths={ARCH_ICONS[dn] ?? []} size={20} stroke={catColor} />
+          </div>
+          <div style={{
+            fontFamily: '"Barlow Condensed", system-ui, sans-serif',
+            fontSize: 18, fontWeight: 800, textTransform: 'uppercase',
+            letterSpacing: '0.02em',
+            color: hov ? catColor : '#eeece6',
+            lineHeight: 1.1, transition: 'color 150ms ease',
+            paddingRight: 88,
+          }}>{dn}</div>
+        </div>
+
+        {/* Essence line */}
+        {ARCH_ESSENCE[dn] && (
           <div style={{
             fontSize: 10, fontWeight: 400, color: catColor,
             textTransform: 'uppercase', letterSpacing: '0.14em',
-            marginTop: 2, marginBottom: 6,
-            fontFamily: '"DM Sans", sans-serif',
+            marginBottom: 8,
+            fontFamily: '"DM Sans", -apple-system, sans-serif',
           }}>
-            {ARCH_ESSENCE[displayName(profile.name)]}
+            {ARCH_ESSENCE[dn]}
           </div>
         )}
-        <div>
-          <p style={{ fontSize: 12, fontWeight: 300, color: 'rgba(255,255,255,0.62)', lineHeight: 1.65, margin: '0 0 6px 0', fontFamily: '"DM Sans", sans-serif' }}>
-            {ARCH_COPY[displayName(profile.name)]?.blurb ?? profile.essence}
+
+        {/* Blurb */}
+        <p style={{
+          fontSize: 12, fontWeight: 300, color: 'rgba(255,255,255,0.62)',
+          lineHeight: 1.65, margin: '0 0 0 0',
+          fontFamily: '"DM Sans", -apple-system, sans-serif',
+        }}>
+          {ARCH_COPY[dn]?.blurb ?? profile.essence}
+        </p>
+
+        {/* Risk line */}
+        {ARCH_COPY[dn]?.risk && (
+          <p style={{
+            fontSize: 12, fontWeight: 300, fontStyle: 'italic',
+            color: 'rgba(238,236,230,0.38)',
+            lineHeight: 1.5, margin: '6px 0 0 0',
+            fontFamily: '"DM Sans", -apple-system, sans-serif',
+          }}>
+            — {ARCH_COPY[dn].risk}
           </p>
-          {ARCH_COPY[displayName(profile.name)]?.risk && (
-            <p style={{
-              fontSize: 12, fontWeight: 300, fontStyle: 'italic',
-              color: 'rgba(238,236,230,0.38)',
-              lineHeight: 1.5, margin: '8px 0 0 0',
-              fontFamily: '"DM Sans", sans-serif',
-            }}>
-              — {ARCH_COPY[displayName(profile.name)].risk}
-            </p>
-          )}
-        </div>
-      </div>
-      {/* Decision signal — reveals on hover */}
-      <div style={{
-        borderTop: '1px solid rgba(255,255,255,0.07)',
-        marginTop: 12,
-        paddingTop: 10,
-        maxHeight: hov ? 80 : 0,
-        overflow: 'hidden',
-        opacity: hov ? 1 : 0,
-        transition: 'max-height 200ms ease, opacity 200ms ease',
-      }}>
-        {DECISION_SIGNALS[displayName(profile.name)] && (
-          <>
-            <div style={{ borderLeft: '1.5px solid rgba(58,168,104,0.4)', paddingLeft: 8, marginBottom: 5 }}>
-              <span style={{ fontSize: 8, color: '#3aa868', textTransform: 'uppercase', letterSpacing: '0.12em', display: 'block', marginBottom: 2 }}>BEST IN</span>
-              <span style={{ fontSize: 11, fontWeight: 300, color: 'rgba(238,236,230,0.7)', fontFamily: '"DM Sans", sans-serif' }}>{DECISION_SIGNALS[displayName(profile.name)].bestIn}</span>
-            </div>
-            <div style={{ borderLeft: '1.5px solid rgba(200,168,50,0.4)', paddingLeft: 8 }}>
-              <span style={{ fontSize: 8, color: '#c8a832', textTransform: 'uppercase', letterSpacing: '0.12em', display: 'block', marginBottom: 2 }}>WATCH FOR</span>
-              <span style={{ fontSize: 11, fontWeight: 300, color: 'rgba(238,236,230,0.7)', fontFamily: '"DM Sans", sans-serif' }}>{DECISION_SIGNALS[displayName(profile.name)].watchFor}</span>
-            </div>
-          </>
         )}
       </div>
+
+      {/* Decision signal — absolutely positioned at bottom, opacity-only reveal */}
+      {DECISION_SIGNALS[dn] && (
+        <div style={{
+          position: 'absolute',
+          bottom: 0, left: 0, right: 0,
+          padding: '20px 18px 14px',
+          background: 'linear-gradient(to bottom, transparent, #131313 30%)',
+          opacity: hov ? 1 : 0,
+          transition: 'opacity 200ms ease',
+          pointerEvents: hov ? 'auto' : 'none',
+        }}>
+          <div style={{ borderLeft: '1.5px solid rgba(58,168,104,0.4)', paddingLeft: 8, marginBottom: 5 }}>
+            <span style={{
+              fontSize: 8, color: '#3aa868', textTransform: 'uppercase',
+              letterSpacing: '0.12em', display: 'block', marginBottom: 2,
+              fontFamily: '"DM Sans", -apple-system, sans-serif', fontWeight: 400,
+            }}>BEST IN</span>
+            <span style={{
+              fontSize: 11, fontWeight: 300, color: 'rgba(238,236,230,0.7)',
+              fontFamily: '"DM Sans", -apple-system, sans-serif',
+            }}>{DECISION_SIGNALS[dn].bestIn}</span>
+          </div>
+          <div style={{ borderLeft: '1.5px solid rgba(200,168,50,0.4)', paddingLeft: 8 }}>
+            <span style={{
+              fontSize: 8, color: '#c8a832', textTransform: 'uppercase',
+              letterSpacing: '0.12em', display: 'block', marginBottom: 2,
+              fontFamily: '"DM Sans", -apple-system, sans-serif', fontWeight: 400,
+            }}>WATCH FOR</span>
+            <span style={{
+              fontSize: 11, fontWeight: 300, color: 'rgba(238,236,230,0.7)',
+              fontFamily: '"DM Sans", -apple-system, sans-serif',
+            }}>{DECISION_SIGNALS[dn].watchFor}</span>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -968,7 +999,7 @@ function WhatChanges() {
 
   return (
     <div ref={ref} style={{
-      padding: 'clamp(32px, 4vh, 52px) clamp(20px, 5vw, 44px)',
+      padding: 'clamp(48px, 6vh, 72px) clamp(20px, 5vw, 44px) clamp(32px, 4vh, 52px)',
       borderBottom: '1px solid rgba(255,255,255,0.07)',
       maxWidth: 900,
       margin: '0 auto',
@@ -1229,32 +1260,32 @@ export default function ArchetypesPage() {
 
         {/* Framing text + subtitle — centered top */}
         <div style={{
-          position: 'absolute', top: 60, left: '50%', transform: 'translateX(-50%)',
+          position: 'absolute', top: 24, left: '50%', transform: 'translateX(-50%)',
           textAlign: 'center', pointerEvents: 'none', zIndex: 2, whiteSpace: 'nowrap',
+          display: 'flex', flexDirection: 'column', gap: 6,
         }}>
           <p style={{
-            margin: 0, fontSize: 9, fontWeight: 500, letterSpacing: '0.22em',
-            textTransform: 'uppercase', color: 'rgba(255,255,255,0.14)',
+            margin: 0, fontSize: 10, fontWeight: 300, letterSpacing: '0.22em',
+            textTransform: 'uppercase', color: 'rgba(238,236,230,0.32)',
+            fontFamily: '"DM Sans", -apple-system, sans-serif',
           }}>
             BEHAVIORAL MAP
           </p>
           <p style={{
-            margin: '4px 0 0 0', fontSize: 14, fontWeight: 300, fontStyle: 'italic',
-            color: 'rgba(238,236,230,0.42)', fontFamily: '"DM Sans", sans-serif',
+            margin: 0, fontSize: 16, fontWeight: 300,
+            color: 'rgba(238,236,230,0.75)', fontFamily: '"DM Sans", -apple-system, sans-serif',
           }}>
             Every person you&#39;ve ever hired sits somewhere on this map.
           </p>
           <p style={{
-            margin: '7px 0 0 0', fontSize: 11, fontWeight: 300,
-            color: 'rgba(238,236,230,0.30)', fontFamily: '"DM Sans", sans-serif',
-            letterSpacing: '0.01em',
+            margin: 0, fontSize: 13, fontWeight: 300, fontStyle: 'italic',
+            color: 'rgba(238,236,230,0.42)', fontFamily: '"DM Sans", -apple-system, sans-serif',
           }}>
             Speed of execution × orientation toward people vs. output.
           </p>
           <p style={{
-            margin: '8px 0 0 0', fontSize: 9, fontWeight: 300,
-            color: 'rgba(238,236,230,0.18)', fontFamily: '"DM Sans", sans-serif',
-            letterSpacing: '0.08em', textTransform: 'uppercase',
+            margin: 0, fontSize: 12, fontWeight: 300, fontStyle: 'italic',
+            color: 'rgba(238,236,230,0.28)', fontFamily: '"DM Sans", -apple-system, sans-serif',
           }}>
             Use this to understand how candidates will behave in your environment.
           </p>
@@ -1360,9 +1391,9 @@ export default function ArchetypesPage() {
                       transition: 'opacity 150ms ease',
                     }} />
                     <span style={{
-                      fontSize: 10, fontWeight: isDom ? 500 : 400,
+                      fontSize: 11, fontWeight: isDom ? 500 : 400,
                       color: isDom ? 'rgba(238,236,230,0.92)' : 'rgba(238,236,230,0.5)',
-                      fontFamily: '"DM Sans", sans-serif',
+                      fontFamily: '"DM Sans", -apple-system, sans-serif',
                       letterSpacing: '0.01em',
                       transition: 'color 150ms ease',
                     }}>{dn}</span>
@@ -1381,35 +1412,49 @@ export default function ArchetypesPage() {
         <WhatChanges />
 
         {/* CTA band */}
-        <div ref={ctaBandRef} style={{ borderTop: '1px solid rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: '#0f0f0f', padding: 'clamp(32px, 5vh, 52px) clamp(20px, 5vw, 40px)' }}>
+        <div ref={ctaBandRef} style={{
+          borderTop: '1px solid rgba(255,255,255,0.07)',
+          borderBottom: '1px solid rgba(255,255,255,0.07)',
+          background: '#0f0f0f',
+          padding: 'clamp(48px, 6vh, 72px) clamp(20px, 5vw, 40px)',
+        }}>
           <div style={{ maxWidth: 'min(1240px, calc(100vw - clamp(40px, 8vw, 160px)))', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 40, flexWrap: 'wrap' }}>
             <div>
-              <h2 style={{ fontFamily: '"Barlow Condensed", system-ui', fontSize: 'clamp(36px, 5vw, 56px)', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.01em', lineHeight: 1.0, color: '#FFF', marginBottom: 10 }}>
-                Find yours in six minutes.
+              <h2 style={{
+                fontFamily: '"Barlow Condensed", system-ui, sans-serif',
+                fontSize: 'clamp(28px, 3.5vw, 42px)', fontWeight: 900, textTransform: 'uppercase',
+                letterSpacing: '-0.01em', lineHeight: 1.0, color: '#eeece6', marginBottom: 10, margin: '0 0 10px 0',
+              }}>
+                FIND YOURS IN SIX MINUTES.
               </h2>
-              <p style={{ fontSize: 14, fontWeight: 300, color: 'rgba(255,255,255,0.32)' }}>
+              <p style={{
+                fontSize: 14, fontWeight: 300, color: 'rgba(238,236,230,0.45)', margin: 0,
+                fontFamily: '"DM Sans", -apple-system, sans-serif',
+              }}>
                 {REFERENCE_PROFILES.length} archetypes. 94 signals. One honest answer.
               </p>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flexShrink: 0 }}>
               <a href="/invite-self" style={{
-                height: 44, padding: '0 24px', borderRadius: 8,
-                background: '#FFF', color: BG, fontSize: 14, fontWeight: 600,
+                padding: '13px 32px', borderRadius: 100,
+                background: '#eeece6', color: '#080808', fontSize: 14, fontWeight: 500,
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                 textDecoration: 'none', transition: 'opacity 150ms ease',
+                fontFamily: '"DM Sans", -apple-system, sans-serif',
               }}
                 onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
                 onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
               >Start the assessment</a>
               <a href="/sample-report" style={{
-                height: 44, padding: '0 24px', borderRadius: 8,
-                background: 'transparent', color: 'rgba(255,255,255,0.48)',
-                border: '1px solid rgba(255,255,255,0.12)',
-                fontSize: 14, fontWeight: 400, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                padding: '13px 32px', borderRadius: 100,
+                background: 'transparent', color: 'rgba(238,236,230,0.55)',
+                border: '1px solid rgba(255,255,255,0.14)',
+                fontSize: 14, fontWeight: 500, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                 textDecoration: 'none', transition: 'border-color 150ms ease, color 150ms ease',
+                fontFamily: '"DM Sans", -apple-system, sans-serif',
               }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.26)'; e.currentTarget.style.color = '#FFF' }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'; e.currentTarget.style.color = 'rgba(255,255,255,0.48)' }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.28)'; e.currentTarget.style.color = 'rgba(238,236,230,1)' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.14)'; e.currentTarget.style.color = 'rgba(238,236,230,0.55)' }}
               >View sample report →</a>
             </div>
           </div>
@@ -1420,18 +1465,21 @@ export default function ArchetypesPage() {
           {grouped.map((g, idx) => (
             <div key={g.key}>
               <div ref={catRefs[idx]} style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
                 paddingBottom: 18, borderBottom: `1px solid ${hexAlpha(g.color, 0.14)}`,
-                marginBottom: 20, flexWrap: 'wrap', gap: 12,
+                marginBottom: 16, flexWrap: 'wrap', gap: 12,
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <Icon paths={CAT_ICONS[g.key] ?? []} size={22} stroke={g.color} />
-                  <span style={{ fontFamily: '"Barlow Condensed", system-ui', fontSize: 26, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: g.color }}>
+                <div>
+                  <span style={{ fontFamily: '"Barlow Condensed", system-ui, sans-serif', fontWeight: 800, fontSize: 26, textTransform: 'uppercase', letterSpacing: '0.04em', color: g.color }}>
                     {g.label}
                   </span>
-                  <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.28)', fontWeight: 300 }}>{g.descriptor}</span>
+                  <span style={{ fontFamily: '"DM Sans", -apple-system, sans-serif', fontWeight: 300, fontSize: 13, color: 'rgba(238,236,230,0.42)', marginLeft: 12 }}>
+                    {g.descriptor}
+                  </span>
                 </div>
-                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.18)', letterSpacing: '0.06em' }}>{g.axisNote}</span>
+                <span style={{ fontFamily: '"DM Sans", -apple-system, sans-serif', fontWeight: 300, fontSize: 11, color: 'rgba(238,236,230,0.28)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                  {g.axisNote}
+                </span>
               </div>
               <HScrollRow>
                 {g.profiles.map((p, i) => (
@@ -1478,7 +1526,7 @@ export default function ArchetypesPage() {
         }
       `}</style>
 
-      {/* DOT NAV */}
+      {/* DOT NAV — 3 sections: Hero, Behavioral Map, Archetypes */}
       <div style={{
         position: 'fixed',
         right: 24,
@@ -1488,18 +1536,39 @@ export default function ArchetypesPage() {
         display: 'flex',
         flexDirection: 'column',
         gap: 10,
-        pointerEvents: 'none',
+        pointerEvents: 'auto',
       }}>
-        {[0, 1, 2].map(i => (
-          <div key={i} style={{
-            width: 5,
-            height: 5,
-            borderRadius: '50%',
-            background: activeSection === i
-              ? 'rgba(255,255,255,0.75)'
-              : 'rgba(255,255,255,0.2)',
-            transition: 'all 300ms ease',
-          }} />
+        {(['Hero', 'Behavioral Map', 'Archetypes'] as const).map((label, i) => (
+          <div key={i} style={{ position: 'relative', display: 'flex', alignItems: 'center' }}
+            onClick={() => {
+              const main = mainRef.current
+              if (!main) return
+              const sections = main.querySelectorAll(':scope > section')
+              sections[i]?.scrollIntoView({ behavior: 'smooth' })
+            }}
+          >
+            {/* Label tooltip */}
+            <span style={{
+              position: 'absolute', right: 16,
+              fontSize: 9, fontWeight: 300, color: 'rgba(238,236,230,0.45)',
+              fontFamily: '"DM Sans", -apple-system, sans-serif',
+              textTransform: 'uppercase', letterSpacing: '0.12em',
+              whiteSpace: 'nowrap',
+              opacity: activeSection === i ? 1 : 0,
+              transition: 'opacity 250ms ease',
+              pointerEvents: 'none',
+            }}>{label}</span>
+            <div style={{
+              width: activeSection === i ? 6 : 5,
+              height: activeSection === i ? 6 : 5,
+              borderRadius: '50%',
+              background: activeSection === i
+                ? 'rgba(255,255,255,0.75)'
+                : 'rgba(255,255,255,0.2)',
+              transition: 'all 300ms ease',
+              cursor: 'pointer',
+            }} />
+          </div>
         ))}
       </div>
 
