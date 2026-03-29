@@ -56,24 +56,24 @@ const PENT_VALUES: Record<string, number[]> = {
   Veteran:     [70, 85, 60, 72, 52],
 }
 
-// ─── DECISION SIGNALS ─────────────────────────────────────────────────────────
-const DECISION_SIGNALS: Record<string, { bestIn: string; watchFor: string }> = {
-  Conductor:   { bestIn: 'Roles with no clear owner yet.',                                    watchFor: 'Filling space others needed to grow into.' },
-  Pioneer:     { bestIn: 'Roles that need someone to start without a roadmap.',               watchFor: 'Leaving before the work is solid.' },
-  Purist:      { bestIn: 'Roles where the standard is the job.',                              watchFor: 'Protecting quality past the point of diminishing return.' },
-  Renegade:    { bestIn: 'Roles that need a new direction, not a better process.',            watchFor: 'Breaking alignment to prove a point.' },
-  Igniter:     { bestIn: 'Roles that need energy and momentum quickly.',                      watchFor: 'Moving on before the momentum becomes output.' },
-  Diplomat:    { bestIn: 'Roles that live between competing interests.',                      watchFor: 'Keeping peace when a hard call is needed.' },
-  Rainmaker:   { bestIn: 'Roles where relationships are the product.',                        watchFor: 'Losing focus after the win.' },
-  Unifier:     { bestIn: 'Fractured teams that need trust rebuilt.',                          watchFor: 'Holding the group together past when it should change.' },
-  Anchor:      { bestIn: 'Roles that need someone steady, not someone fast.',                 watchFor: 'Holding firm when the situation actually needs to shift.' },
-  Navigator:   { bestIn: 'Complex situations where the plan is half the job.',                watchFor: 'Over-preparing when speed matters more.' },
-  Sentinel:    { bestIn: 'Roles where missing something is worse than moving slowly.',        watchFor: 'Slowing the whole system to prevent one miss.' },
-  Steward:     { bestIn: 'Roles where consistency compounds over time.',                      watchFor: 'Running the same play after the game has changed.' },
-  Expert:      { bestIn: 'Roles where depth of knowledge is the differentiator.',             watchFor: 'Being hard to access for people without the same background.' },
-  Executor:    { bestIn: 'Roles that need strategy turned into action fast.',                 watchFor: 'Executing the wrong direction very well.' },
-  Trailblazer: { bestIn: "Roles that need someone to raise what's possible.",                watchFor: 'Getting restless once things stabilize.' },
-  Veteran:     { bestIn: 'Roles where judgment built over time is the asset.',               watchFor: 'Reading a new situation through an old lens.' },
+// ─── ARCH DATA ────────────────────────────────────────────────────────────────
+const ARCH_DATA: Record<string, { oneLine: string; strength: string; failureMode: string; bestIn: string; watchFor: string }> = {
+  Conductor:   { oneLine: 'Takes control before anyone else does.',         strength: 'Establishes direction where no one else has claimed it.',               failureMode: 'Overrides others before they had a chance to act.',             bestIn: 'Early-stage or restructuring roles with no clear owner.',               watchFor: 'Crowding out the development of people beneath them.' },
+  Pioneer:     { oneLine: 'Starts before anyone else is ready.',            strength: 'Builds from scratch without needing a complete picture first.',          failureMode: 'Moves on before the foundation holds.',                        bestIn: 'Roles that require starting without a roadmap or precedent.',           watchFor: 'Leaving work half-done when the next challenge appears.' },
+  Purist:      { oneLine: 'Holds the line on quality without compromise.',  strength: 'Catches what would embarrass the organization later.',                   failureMode: 'Slows progress past where quality still compounds.',            bestIn: 'Roles where the standard literally is the job.',                        watchFor: 'Protecting quality that no longer matters at current speed.' },
+  Renegade:    { oneLine: 'Pushes for a fundamentally different direction.',strength: 'Surfaces options the group has stopped considering.',                    failureMode: 'Breaks alignment to prove they were right.',                   bestIn: 'Roles needing a new direction, not a better version of the current.',   watchFor: 'Creating disruption as a default rather than a tool.' },
+  Igniter:     { oneLine: 'Creates momentum in rooms that have gone quiet.',strength: 'Gets people moving when everyone else is waiting for permission.',        failureMode: 'Leaves before momentum turns into sustained output.',           bestIn: 'Stalled or early-stage environments that need energy fast.',            watchFor: 'Confusing activity with progress.' },
+  Diplomat:    { oneLine: 'Keeps people working together under pressure.',  strength: 'Finds agreement where others create conflict.',                          failureMode: 'Avoids decisions that would disrupt the current balance.',     bestIn: 'Cross-functional roles that live between competing interests.',         watchFor: 'Preserving harmony when a hard call is what the situation needs.' },
+  Rainmaker:   { oneLine: 'Wins through relationships.',                    strength: 'Builds trust fast and converts it into real results.',                   failureMode: 'Focus disappears after the initial win.',                      bestIn: 'Roles where the relationship itself is the product.',                   watchFor: 'Leaving execution to someone else after they\'ve closed.' },
+  Unifier:     { oneLine: 'Rebuilds trust inside fractured teams.',         strength: 'Sees where alignment has broken before it shows up in output.',          failureMode: 'Holds the group together past when it should change.',         bestIn: 'Teams that need cohesion rebuilt before they can perform again.',       watchFor: 'Protecting harmony when the team actually needs restructuring.' },
+  Anchor:      { oneLine: 'Stays reliable when everything else is not.',   strength: 'Keeps output consistent under pressure that breaks others.',             failureMode: 'Holds firm when the situation requires movement.',             bestIn: 'Roles that need someone steady and dependable, not someone fast.',      watchFor: 'Resisting change because the current approach still technically works.' },
+  Navigator:   { oneLine: 'Thinks it through before anyone else moves.',   strength: 'Builds plans that account for what others miss.',                        failureMode: 'Prepares longer than the window actually allows.',             bestIn: 'Complex situations where the plan itself is half the work.',            watchFor: 'Over-engineering the approach when speed matters more.' },
+  Sentinel:    { oneLine: 'Catches what everyone else walks past.',         strength: 'Identifies risk before it becomes a problem the organization regrets.',  failureMode: 'Slows the whole system to prevent one miss.',                  bestIn: 'Roles where missing something is worse than moving slowly.',            watchFor: 'Creating bottlenecks that cost more than the errors they prevent.' },
+  Steward:     { oneLine: 'Runs what works, consistently.',                 strength: 'Maintains performance where others would let it slip.',                  failureMode: 'Keeps running the same play after the game has changed.',      bestIn: 'Roles where consistency compounds over time.',                          watchFor: 'Optimizing a process that should be replaced, not refined.' },
+  Expert:      { oneLine: 'Operates from depth others don\'t have.',        strength: 'Solves problems that require real expertise, not pattern-matching.',     failureMode: 'Hard to access for people who don\'t share the same depth.',   bestIn: 'Roles where knowledge itself is the primary differentiator.',           watchFor: 'Being right in a way that doesn\'t land with the people who need to act.' },
+  Executor:    { oneLine: 'Turns decisions into action without delay.',     strength: 'Closes the gap between strategy and visible results.',                   failureMode: 'Executes before the direction is fully validated.',            bestIn: 'Roles that need strategy turned into action without losing momentum.',   watchFor: 'Moving confidently in the wrong direction.' },
+  Trailblazer: { oneLine: 'Raises what the team thinks is possible.',       strength: 'Shows the group what they\'re actually capable of.',                    failureMode: 'Gets restless the moment things begin to stabilize.',          bestIn: 'Environments that need someone to push beyond current ceilings.',       watchFor: 'Needing the next challenge before the current one is secure.' },
+  Veteran:     { oneLine: 'Reads situations through experience others lack.',strength: 'Catches what first-timers miss because they\'ve seen this before.',     failureMode: 'Maps a new situation onto an old pattern that no longer fits.',bestIn: 'Roles where judgment built over time is the actual asset.',             watchFor: 'Assuming the playbook from ten years ago still applies.' },
 }
 
 // ─── ICONS ────────────────────────────────────────────────────────────────────
@@ -153,44 +153,24 @@ function getDotXY(p: typeof REFERENCE_PROFILES[0], w: number, h: number, M: numb
   return dotXY(p.coords.patience, p.coords.extraversion, w, h, M)
 }
 
-// ─── ARCH ESSENCE ─────────────────────────────────────────────────────────────
+// ─── ARCH ESSENCE (group label shown on card) ─────────────────────────────────
 const ARCH_ESSENCE: Record<string, string> = {
-  Conductor:   'COMMANDS WITHOUT FILLING SPACE',
-  Pioneer:     'STARTS BEFORE IT\'S READY',
-  Purist:      'HOLDS THE LINE ON QUALITY',
-  Renegade:    'FORCES THE DIFFERENT DIRECTION',
-  Igniter:     'CREATES MOMENTUM FAST',
-  Diplomat:    'KEEPS EVERYONE ALIGNED',
-  Rainmaker:   'WINS THROUGH RELATIONSHIPS',
-  Unifier:     'HOLDS THE TEAM TOGETHER',
-  Anchor:      'STABLE UNDER ANY PRESSURE',
-  Navigator:   'THINKS BEFORE MOVING',
-  Sentinel:    'CATCHES WHAT OTHERS MISS',
-  Steward:     'RUNS WHAT WORKS CONSISTENTLY',
-  Expert:      'OPERATES FROM DEEP KNOWLEDGE',
-  Executor:    'TURNS DECISIONS INTO ACTION',
-  Trailblazer: 'RAISES WHAT\'S POSSIBLE',
-  Veteran:     'GUIDES FROM EXPERIENCE',
-}
-
-// ─── ARCH COPY ────────────────────────────────────────────────────────────────
-const ARCH_COPY: Record<string, { blurb: string; risk: string }> = {
-  Conductor:   { blurb: 'Takes control quickly.',                           risk: 'Overrides others before they step in.' },
-  Pioneer:     { blurb: 'Starts fast without waiting for clarity.',         risk: 'Moves on before the work holds.' },
-  Purist:      { blurb: 'Holds the line on quality.',                       risk: 'Slows progress to protect the standard.' },
-  Renegade:    { blurb: 'Pushes for a different direction.',                risk: 'Breaks alignment to force change.' },
-  Igniter:     { blurb: 'Creates momentum quickly.',                        risk: 'Leaves before it turns into output.' },
-  Diplomat:    { blurb: 'Keeps people aligned.',                            risk: 'Avoids hard calls to preserve relationships.' },
-  Rainmaker:   { blurb: 'Wins through relationships.',                      risk: 'Focus drops after the initial win.' },
-  Unifier:     { blurb: 'Holds the team together.',                         risk: 'Maintains alignment when change is needed.' },
-  Anchor:      { blurb: 'Keeps things stable under pressure.',              risk: 'Holds steady when change is needed.' },
-  Navigator:   { blurb: 'Thinks it through before moving.',                 risk: 'Takes longer than the situation allows.' },
-  Sentinel:    { blurb: 'Catches what could go wrong.',                     risk: 'Slows things down to avoid misses.' },
-  Steward:     { blurb: 'Runs what works consistently.',                    risk: 'Keeps the same approach after it stops working.' },
-  Expert:      { blurb: 'Operates from deep knowledge.',                    risk: 'Hard to follow without the same depth.' },
-  Executor:    { blurb: 'Turns decisions into action quickly.',              risk: 'Executes before the direction is fully right.' },
-  Trailblazer: { blurb: "Raises the level of what's possible.",             risk: 'Gets restless once things become routine.' },
-  Veteran:     { blurb: 'Leans on experience to guide decisions.',           risk: 'Relies on past patterns when the situation has changed.' },
+  Conductor:   'DRIVERS',
+  Pioneer:     'DRIVERS',
+  Purist:      'DRIVERS',
+  Renegade:    'DRIVERS',
+  Igniter:     'CATALYSTS',
+  Diplomat:    'CATALYSTS',
+  Rainmaker:   'CATALYSTS',
+  Unifier:     'CATALYSTS',
+  Anchor:      'OPERATORS',
+  Navigator:   'OPERATORS',
+  Sentinel:    'OPERATORS',
+  Steward:     'OPERATORS',
+  Expert:      'STABILIZERS',
+  Executor:    'STABILIZERS',
+  Trailblazer: 'STABILIZERS',
+  Veteran:     'STABILIZERS',
 }
 
 function Icon({ paths, size = 20, stroke = 'currentColor' }: { paths: string[]; size?: number; stroke?: string }) {
@@ -691,17 +671,26 @@ function RadarCanvas({
       {tooltip && (
         <div style={{
           position: 'absolute',
-          left:  tooltip.cssX < window.innerWidth * 0.6 ? tooltip.cssX + 14 : undefined,
-          right: tooltip.cssX >= window.innerWidth * 0.6 ? `calc(100% - ${tooltip.cssX}px + 14px)` : undefined,
-          top: Math.max(8, tooltip.cssY - 22),
-          background: '#0f0f0f',
-          border: '1px solid rgba(255,255,255,0.12)',
+          left:  tooltip.cssX < window.innerWidth * 0.6 ? tooltip.cssX + 16 : undefined,
+          right: tooltip.cssX >= window.innerWidth * 0.6 ? `calc(100% - ${tooltip.cssX}px + 16px)` : undefined,
+          top: Math.max(72, tooltip.cssY - 18),
+          background: '#111',
+          border: `1px solid rgba(255,255,255,0.10)`,
+          borderTop: `2px solid ${tooltip.color}`,
           borderRadius: 8, padding: '10px 14px',
-          pointerEvents: 'none', zIndex: 20, whiteSpace: 'nowrap',
+          pointerEvents: 'none', zIndex: 20,
+          maxWidth: 220,
         }}>
-          <div style={{ fontFamily: '"Barlow Condensed", system-ui', fontSize: 13, fontWeight: 700, textTransform: 'uppercase', color: '#eeece6', letterSpacing: '0.04em' }}>{tooltip.name}</div>
-          <div style={{ fontSize: 11, fontWeight: 300, color: 'rgba(238,236,230,0.52)', marginTop: 2, lineHeight: 1.4, fontFamily: '"DM Sans", sans-serif' }}>{tooltip.tagline.slice(0, 72)}</div>
-          <div style={{ fontSize: 9, color: tooltip.color, textTransform: 'uppercase', letterSpacing: '0.12em', marginTop: 4, fontFamily: '"DM Sans", sans-serif' }}>
+          <div style={{ fontFamily: '"Barlow Condensed", system-ui', fontSize: 14, fontWeight: 800, textTransform: 'uppercase', color: '#eeece6', letterSpacing: '0.05em', marginBottom: 4 }}>{tooltip.name}</div>
+          <div style={{ fontSize: 11.5, fontWeight: 300, color: 'rgba(238,236,230,0.65)', lineHeight: 1.45, fontFamily: '"DM Sans", sans-serif', marginBottom: 6 }}>
+            {ARCH_DATA[tooltip.name]?.oneLine ?? tooltip.tagline}
+          </div>
+          {ARCH_DATA[tooltip.name] && (
+            <div style={{ fontSize: 10.5, fontWeight: 300, fontStyle: 'italic', color: 'rgba(238,236,230,0.35)', lineHeight: 1.4, fontFamily: '"DM Sans", sans-serif', borderTop: '1px solid rgba(255,255,255,0.07)', paddingTop: 6 }}>
+              {ARCH_DATA[tooltip.name].failureMode}
+            </div>
+          )}
+          <div style={{ fontSize: 9, color: tooltip.color, textTransform: 'uppercase', letterSpacing: '0.12em', marginTop: 6, fontFamily: '"DM Sans", sans-serif', fontWeight: 500 }}>
             {getCat(REFERENCE_PROFILES.find(p => displayName(p.name) === tooltip.name || p.name === tooltip.name)?.group ?? '')?.label}
           </div>
         </div>
@@ -781,6 +770,7 @@ function ArchCard({ profile, catColor, catKey, onHover, sectionVisible, cardInde
 }) {
   const [hov, setHov] = useState(false)
   const dn = displayName(profile.name)
+  const d = ARCH_DATA[dn]
   return (
     <div
       className="arch-card"
@@ -788,113 +778,122 @@ function ArchCard({ profile, catColor, catKey, onHover, sectionVisible, cardInde
       onMouseLeave={() => { setHov(false); onHover(null) }}
       style={{
         background: '#131313',
-        border: `1px solid ${hov ? hexAlpha(catColor, 0.20) : 'rgba(255,255,255,0.06)'}`,
-        borderTop: `2px solid ${hov ? catColor : 'rgba(255,255,255,0.06)'}`,
+        border: `1px solid ${hov ? hexAlpha(catColor, 0.22) : 'rgba(255,255,255,0.06)'}`,
+        borderTop: `2px solid ${hov ? catColor : hexAlpha(catColor, 0.28)}`,
         borderRadius: 11,
         cursor: 'default',
-        transform: hov ? 'translateY(-2px)' : 'translateY(0)',
-        transition: 'transform 150ms ease, border-color 150ms ease',
+        transform: hov ? 'translateY(-3px)' : 'translateY(0)',
+        transition: 'transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease',
         width: 240, flexShrink: 0,
         scrollSnapAlign: 'start', touchAction: 'pan-x',
         position: 'relative',
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
-        height: 240,
+        boxShadow: hov
+          ? `0 8px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)`
+          : 'inset 0 1px 0 rgba(255,255,255,0.04)',
+        height: 264,
         overflow: 'hidden',
       }}
     >
-      {/* Scrollable inner content */}
-      <div style={{ padding: '18px 18px 0 18px', display: 'flex', flexDirection: 'column', gap: 0 }}>
+      <div style={{ padding: '16px 16px 0 16px', display: 'flex', flexDirection: 'column' }}>
         {/* Pentagon — absolute top-right */}
         <CardPentagon name={dn} color={catColor} hovered={hov} sectionVisible={sectionVisible} cardIndex={cardIndex} />
 
-        {/* Icon + name row */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 4 }}>
+        {/* Icon + name */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
           <div style={{
-            opacity: hov ? 1 : 0.62,
+            opacity: hov ? 1 : 0.55,
             transition: 'opacity 150ms ease, filter 150ms ease',
-            filter: hov ? `drop-shadow(0 0 5px ${hexAlpha(catColor, 0.65)})` : 'none',
-            paddingTop: 1, flexShrink: 0,
+            filter: hov ? `drop-shadow(0 0 6px ${hexAlpha(catColor, 0.7)})` : 'none',
+            flexShrink: 0,
           }}>
-            <Icon paths={ARCH_ICONS[dn] ?? []} size={20} stroke={catColor} />
+            <Icon paths={ARCH_ICONS[dn] ?? []} size={18} stroke={catColor} />
           </div>
           <div style={{
             fontFamily: '"Barlow Condensed", system-ui, sans-serif',
-            fontSize: 18, fontWeight: 800, textTransform: 'uppercase',
-            letterSpacing: '0.02em',
-            color: hov ? catColor : '#eeece6',
-            lineHeight: 1.1, transition: 'color 150ms ease',
-            paddingRight: 88,
+            fontSize: 19, fontWeight: 800, textTransform: 'uppercase',
+            letterSpacing: '0.03em', color: hov ? catColor : '#eeece6',
+            lineHeight: 1, transition: 'color 150ms ease',
+            paddingRight: 72,
           }}>{dn}</div>
         </div>
 
-        {/* Essence line */}
-        {ARCH_ESSENCE[dn] && (
-          <div style={{
-            fontSize: 10, fontWeight: 400, color: catColor,
-            textTransform: 'uppercase', letterSpacing: '0.14em',
-            marginBottom: 8,
+        {/* One-liner */}
+        {d && (
+          <p style={{
+            fontSize: 11.5, fontWeight: 300, color: 'rgba(238,236,230,0.60)',
+            lineHeight: 1.5, margin: '0 0 10px 0', paddingRight: 4,
             fontFamily: '"DM Sans", -apple-system, sans-serif',
-            paddingRight: 88,
-            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
           }}>
-            {ARCH_ESSENCE[dn]}
+            {d.oneLine}
+          </p>
+        )}
+
+        {/* Separator */}
+        <div style={{ height: 1, background: `rgba(255,255,255,0.06)`, marginBottom: 10 }} />
+
+        {/* Strength */}
+        {d && (
+          <div style={{ display: 'flex', gap: 7, alignItems: 'flex-start', marginBottom: 7 }}>
+            <span style={{
+              fontFamily: '"Barlow Condensed", system-ui', fontSize: 13, fontWeight: 700,
+              color: catColor, lineHeight: 1.3, flexShrink: 0, marginTop: 1,
+            }}>+</span>
+            <span style={{
+              fontSize: 11, fontWeight: 400, color: 'rgba(238,236,230,0.72)',
+              lineHeight: 1.45, fontFamily: '"DM Sans", -apple-system, sans-serif',
+            }}>{d.strength}</span>
           </div>
         )}
 
-        {/* Blurb */}
-        <p style={{
-          fontSize: 12, fontWeight: 300, color: 'rgba(255,255,255,0.62)',
-          lineHeight: 1.65, margin: '0 0 0 0',
-          fontFamily: '"DM Sans", -apple-system, sans-serif',
-        }}>
-          {ARCH_COPY[dn]?.blurb ?? profile.essence}
-        </p>
-
-        {/* Risk line */}
-        {ARCH_COPY[dn]?.risk && (
-          <p style={{
-            fontSize: 12, fontWeight: 300, fontStyle: 'italic',
-            color: 'rgba(238,236,230,0.38)',
-            lineHeight: 1.5, margin: '6px 0 0 0',
-            fontFamily: '"DM Sans", -apple-system, sans-serif',
-          }}>
-            — {ARCH_COPY[dn].risk}
-          </p>
+        {/* Failure mode */}
+        {d && (
+          <div style={{ display: 'flex', gap: 7, alignItems: 'flex-start' }}>
+            <span style={{
+              fontFamily: '"Barlow Condensed", system-ui', fontSize: 13, fontWeight: 700,
+              color: 'rgba(200,140,60,0.75)', lineHeight: 1.3, flexShrink: 0, marginTop: 1,
+            }}>−</span>
+            <span style={{
+              fontSize: 11, fontWeight: 300, fontStyle: 'italic',
+              color: 'rgba(238,236,230,0.42)',
+              lineHeight: 1.45, fontFamily: '"DM Sans", -apple-system, sans-serif',
+            }}>{d.failureMode}</span>
+          </div>
         )}
       </div>
 
-      {/* Decision signal — absolutely positioned at bottom, opacity-only reveal */}
-      {DECISION_SIGNALS[dn] && (
+      {/* Hover panel — BEST IN + WATCH FOR, slides up from bottom */}
+      {d && (
         <div style={{
           position: 'absolute',
           bottom: 0, left: 0, right: 0,
-          padding: '20px 18px 14px',
-          background: 'linear-gradient(to bottom, transparent, #131313 30%)',
+          padding: '28px 16px 14px',
+          background: `linear-gradient(to bottom, transparent, ${hexAlpha('#131313', 0.96)} 28%)`,
           opacity: hov ? 1 : 0,
-          transition: 'opacity 200ms ease',
+          transform: hov ? 'translateY(0)' : 'translateY(6px)',
+          transition: 'opacity 180ms ease, transform 180ms ease',
           pointerEvents: hov ? 'auto' : 'none',
         }}>
-          <div style={{ borderLeft: '1.5px solid rgba(58,168,104,0.4)', paddingLeft: 8, marginBottom: 5 }}>
+          <div style={{ display: 'flex', gap: 7, alignItems: 'flex-start', marginBottom: 6 }}>
             <span style={{
-              fontSize: 8, color: '#3aa868', textTransform: 'uppercase',
-              letterSpacing: '0.12em', display: 'block', marginBottom: 2,
-              fontFamily: '"DM Sans", -apple-system, sans-serif', fontWeight: 400,
+              fontSize: 8, fontWeight: 500, color: '#3aa868', textTransform: 'uppercase',
+              letterSpacing: '0.14em', fontFamily: '"DM Sans", -apple-system, sans-serif',
+              flexShrink: 0, paddingTop: 1,
             }}>BEST IN</span>
             <span style={{
-              fontSize: 11, fontWeight: 300, color: 'rgba(238,236,230,0.7)',
-              fontFamily: '"DM Sans", -apple-system, sans-serif',
-            }}>{DECISION_SIGNALS[dn].bestIn}</span>
+              fontSize: 10.5, fontWeight: 300, color: 'rgba(238,236,230,0.65)',
+              lineHeight: 1.4, fontFamily: '"DM Sans", -apple-system, sans-serif',
+            }}>{d.bestIn}</span>
           </div>
-          <div style={{ borderLeft: '1.5px solid rgba(200,168,50,0.4)', paddingLeft: 8 }}>
+          <div style={{ display: 'flex', gap: 7, alignItems: 'flex-start' }}>
             <span style={{
-              fontSize: 8, color: '#c8a832', textTransform: 'uppercase',
-              letterSpacing: '0.12em', display: 'block', marginBottom: 2,
-              fontFamily: '"DM Sans", -apple-system, sans-serif', fontWeight: 400,
-            }}>WATCH FOR</span>
+              fontSize: 8, fontWeight: 500, color: '#c8a832', textTransform: 'uppercase',
+              letterSpacing: '0.14em', fontFamily: '"DM Sans", -apple-system, sans-serif',
+              flexShrink: 0, paddingTop: 1,
+            }}>RISK</span>
             <span style={{
-              fontSize: 11, fontWeight: 300, color: 'rgba(238,236,230,0.7)',
-              fontFamily: '"DM Sans", -apple-system, sans-serif',
-            }}>{DECISION_SIGNALS[dn].watchFor}</span>
+              fontSize: 10.5, fontWeight: 300, color: 'rgba(238,236,230,0.65)',
+              lineHeight: 1.4, fontFamily: '"DM Sans", -apple-system, sans-serif',
+            }}>{d.watchFor}</span>
           </div>
         </div>
       )}
@@ -977,11 +976,11 @@ function RadarColumn({ groups, activeCat, hoveredProfile, setActive, setHovProf 
 }
 
 // ─── WHAT CHANGES ─────────────────────────────────────────────────────────────
-const WHAT_CHANGES = [
-  "Know who will outperform in this role before the first interview. Not after a bad hire.",
-  "Know where friction lives before onboarding. Not after the first 90 days.",
-  "Know whether this candidate fits this specific manager — not just the role in the abstract.",
-  "Know in six minutes what a reference check takes three weeks to surface. If it surfaces at all.",
+const WHAT_CHANGES: { text: string; note: string }[] = [
+  { text: "Know who will outperform in this role before the first interview.", note: "Not after a failed 90-day ramp." },
+  { text: "Identify where friction will surface before onboarding starts.", note: "Not during the exit conversation." },
+  { text: "Know whether this person fits this manager, this team, and this moment.", note: "Not just the job description." },
+  { text: "Surface what a reference check takes three weeks to find.", note: "In six minutes. If it finds it at all." },
 ]
 
 function WhatChanges() {
@@ -993,7 +992,7 @@ function WhatChanges() {
     if (!el) return
     const obs = new IntersectionObserver(
       ([entry]) => { if (entry.isIntersecting) { setVisible(true); obs.disconnect() } },
-      { threshold: 0.15 }
+      { threshold: 0.12 }
     )
     obs.observe(el)
     return () => obs.disconnect()
@@ -1001,51 +1000,67 @@ function WhatChanges() {
 
   return (
     <div ref={ref} style={{
-      padding: 'clamp(48px, 6vh, 72px) clamp(20px, 5vw, 44px) clamp(32px, 4vh, 52px)',
-      borderBottom: '1px solid rgba(255,255,255,0.07)',
-      maxWidth: 900,
+      padding: 'clamp(56px, 7vh, 88px) clamp(20px, 5vw, 44px) clamp(40px, 5vh, 64px)',
+      maxWidth: 860,
       margin: '0 auto',
       width: '100%',
       boxSizing: 'border-box',
     }}>
+      <p style={{ fontSize: 10, fontWeight: 300, color: 'rgba(238,236,230,0.25)', letterSpacing: '0.22em', textTransform: 'uppercase', margin: '0 0 16px 0', fontFamily: '"DM Sans", sans-serif' }}>
+        WHAT THIS CHANGES
+      </p>
       <h2 style={{
         fontFamily: '"Barlow Condensed", system-ui',
         fontWeight: 900,
-        fontSize: 'clamp(22px, 2.8vw, 34px)',
+        fontSize: 'clamp(28px, 3.4vw, 44px)',
         color: '#eeece6',
         textTransform: 'uppercase',
         letterSpacing: '-0.01em',
-        margin: '0 0 28px 0',
+        lineHeight: 0.95,
+        margin: '0 0 36px 0',
       }}>
-        What this actually changes.
+        The difference between<br />a good hire and a costly one.
       </h2>
-      {WHAT_CHANGES.map((text, i) => (
+      {WHAT_CHANGES.map(({ text, note }, i) => (
         <div key={i} style={{
           display: 'flex',
           alignItems: 'flex-start',
-          gap: 20,
-          padding: '16px 0',
-          borderBottom: i < WHAT_CHANGES.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+          gap: 22,
+          padding: '18px 0',
+          borderBottom: i < WHAT_CHANGES.length - 1 ? '1px solid rgba(255,255,255,0.055)' : 'none',
           opacity: visible ? 1 : 0,
-          transform: visible ? 'translateY(0)' : 'translateY(12px)',
-          transition: `opacity 400ms ease ${i * 80}ms, transform 400ms ease ${i * 80}ms`,
+          transform: visible ? 'translateY(0)' : 'translateY(16px)',
+          transition: `opacity 420ms ease ${i * 90}ms, transform 420ms ease ${i * 90}ms`,
         }}>
           <span style={{
             fontFamily: '"Barlow Condensed", system-ui',
-            fontWeight: 700,
-            fontSize: 20,
-            color: 'rgba(255,255,255,0.13)',
-            width: 36,
+            fontWeight: 800,
+            fontSize: 18,
+            color: 'rgba(255,255,255,0.10)',
+            width: 28,
             flexShrink: 0,
-            paddingTop: 2,
+            paddingTop: 3,
+            letterSpacing: '0.02em',
           }}>0{i + 1}</span>
-          <p style={{
-            fontSize: 14,
-            fontWeight: 400,
-            color: 'rgba(238,236,230,0.8)',
-            lineHeight: 1.65,
-            margin: 0,
-          }}>{text}</p>
+          <div>
+            <p style={{
+              fontSize: 15,
+              fontWeight: 500,
+              color: 'rgba(238,236,230,0.88)',
+              lineHeight: 1.5,
+              margin: '0 0 4px 0',
+              fontFamily: '"DM Sans", -apple-system, sans-serif',
+            }}>{text}</p>
+            <p style={{
+              fontSize: 13,
+              fontWeight: 300,
+              fontStyle: 'italic',
+              color: 'rgba(238,236,230,0.32)',
+              lineHeight: 1.5,
+              margin: 0,
+              fontFamily: '"DM Sans", -apple-system, sans-serif',
+            }}>{note}</p>
+          </div>
         </div>
       ))}
     </div>
@@ -1196,24 +1211,37 @@ export default function ArchetypesPage() {
         <div style={{ position: 'absolute', top: '50%', left: '50%', width: 640, height: 640, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.022) 0%, transparent 70%)', animation: 'heroPulse 4s ease-out 2s infinite', pointerEvents: 'none' }} />
 
         <div style={{ position: 'relative', maxWidth: 'min(900px, calc(100vw - clamp(40px, 8vw, 160px)))', width: '100%', margin: '0 auto', marginTop: '-10vh' }}>
-          <p style={{ fontSize: 10, fontWeight: 300, color: 'rgba(238,236,230,0.32)', letterSpacing: '0.22em', textTransform: 'uppercase', margin: '0 0 20px 0' }}>
+          <p style={{ fontSize: 10, fontWeight: 300, color: 'rgba(238,236,230,0.28)', letterSpacing: '0.22em', textTransform: 'uppercase', margin: '0 0 22px 0', fontFamily: '"DM Sans", sans-serif' }}>
             BEHAVIORAL ARCHETYPES
           </p>
           <h1 style={{
             fontFamily: '"Barlow Condensed", system-ui',
             fontWeight: 900, textTransform: 'uppercase',
-            letterSpacing: '-0.01em', lineHeight: 0.9, margin: 0,
+            letterSpacing: '-0.01em', lineHeight: 0.88, margin: 0,
             fontSize: 'clamp(52px, 7vw, 88px)',
             color: '#eeece6',
           }}>
-            You already know these people.
+            You already know<br />these people.
           </h1>
-          <p style={{ fontSize: 16, fontWeight: 300, color: 'rgba(238,236,230,0.52)', maxWidth: 400, marginTop: 22, lineHeight: 1.65, margin: '22px 0 0 0', fontFamily: '"DM Sans", sans-serif' }}>
-            We made the patterns behind them visible.
+          <p style={{
+            fontSize: 16, fontWeight: 300, color: 'rgba(238,236,230,0.55)',
+            maxWidth: 480, lineHeight: 1.65,
+            margin: '24px 0 0 0', fontFamily: '"DM Sans", sans-serif',
+          }}>
+            You&#39;ve hired them, managed them, and watched where they broke.<br />
+            We made the pattern systematic.
           </p>
-          <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 32, flexWrap: 'wrap' }}>
+          <p style={{
+            fontSize: 13, fontWeight: 300, fontStyle: 'italic',
+            color: 'rgba(238,236,230,0.28)',
+            maxWidth: 400, lineHeight: 1.65,
+            margin: '12px 0 0 0', fontFamily: '"DM Sans", sans-serif',
+          }}>
+            16 archetypes. Every strength has a cost. Every pattern is predictable.
+          </p>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 36, flexWrap: 'wrap' }}>
             <a href="/invite-self" style={{
-              padding: '12px 28px', borderRadius: 100,
+              padding: '13px 30px', borderRadius: 100,
               background: '#eeece6', color: '#080808', fontSize: 14, fontWeight: 500,
               display: 'inline-flex', alignItems: 'center', textDecoration: 'none', transition: 'opacity 150ms ease',
               fontFamily: '"DM Sans", sans-serif',
@@ -1222,16 +1250,16 @@ export default function ArchetypesPage() {
               onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
             >Start the assessment</a>
             <a href="#archetypes" style={{
-              padding: '12px 28px', borderRadius: 100,
-              background: 'transparent', color: 'rgba(238,236,230,0.55)',
-              border: '1px solid rgba(255,255,255,0.14)',
-              fontSize: 14, fontWeight: 500, display: 'inline-flex', alignItems: 'center',
+              padding: '13px 30px', borderRadius: 100,
+              background: 'transparent', color: 'rgba(238,236,230,0.50)',
+              border: '1px solid rgba(255,255,255,0.12)',
+              fontSize: 14, fontWeight: 400, display: 'inline-flex', alignItems: 'center',
               textDecoration: 'none', transition: 'border-color 150ms ease, color 150ms ease',
               fontFamily: '"DM Sans", sans-serif',
             }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.28)'; e.currentTarget.style.color = 'rgba(238,236,230,1)' }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.14)'; e.currentTarget.style.color = 'rgba(238,236,230,0.55)' }}
-            >Browse all {REFERENCE_PROFILES.length}</a>
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'; e.currentTarget.style.color = 'rgba(238,236,230,0.50)' }}
+            >Browse all {REFERENCE_PROFILES.length} archetypes</a>
           </div>
         </div>
 
@@ -1243,6 +1271,53 @@ export default function ArchetypesPage() {
           <p style={{ fontSize: 9, fontWeight: 400, color: 'rgba(238,236,230,0.3)', letterSpacing: '0.2em', textTransform: 'uppercase', margin: 0 }}>Scroll</p>
         </div>
 
+      </section>
+
+      {/* ── ARCHETYPES — cards, before map ── */}
+      <section id="archetypes" style={{ padding: 0, background: BG }}>
+        {/* Section header */}
+        <div style={{ padding: 'clamp(52px, 7vh, 80px) clamp(20px, 5vw, 40px) 0', maxWidth: 'min(1320px, calc(100vw - clamp(40px, 8vw, 160px)))', margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+          <p style={{ fontSize: 10, fontWeight: 300, color: 'rgba(238,236,230,0.25)', letterSpacing: '0.22em', textTransform: 'uppercase', margin: '0 0 14px 0', fontFamily: '"DM Sans", sans-serif' }}>
+            16 ARCHETYPES
+          </p>
+          <h2 style={{
+            fontFamily: '"Barlow Condensed", system-ui', fontWeight: 900, textTransform: 'uppercase',
+            fontSize: 'clamp(32px, 4vw, 52px)', letterSpacing: '-0.01em', lineHeight: 0.92,
+            color: '#eeece6', margin: '0 0 12px 0',
+          }}>Every hire follows one of these patterns.</h2>
+          <p style={{ fontSize: 13, fontWeight: 300, color: 'rgba(238,236,230,0.38)', margin: 0, fontFamily: '"DM Sans", sans-serif', lineHeight: 1.6, maxWidth: 480 }}>
+            Each has a predictable strength. Each has a predictable cost. Hover any card to see where they break.
+          </p>
+        </div>
+        {/* Archetype blocks */}
+        <div ref={archetypeBlocksRef} style={{ padding: 'clamp(32px, 5vh, 56px) clamp(20px, 5vw, 40px) clamp(52px, 7vh, 80px)', maxWidth: 'min(1320px, calc(100vw - clamp(40px, 8vw, 160px)))', margin: '0 auto', width: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 48 }}>
+          {grouped.map((g, idx) => (
+            <div key={g.key}>
+              <div ref={catRefs[idx]} style={{
+                display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
+                paddingBottom: 14, borderBottom: `1px solid ${hexAlpha(g.color, 0.18)}`,
+                marginBottom: 16, flexWrap: 'wrap', gap: 12,
+              }}>
+                <div>
+                  <span style={{ fontFamily: '"Barlow Condensed", system-ui, sans-serif', fontWeight: 800, fontSize: 22, textTransform: 'uppercase', letterSpacing: '0.06em', color: g.color }}>
+                    {g.label}
+                  </span>
+                  <span style={{ fontFamily: '"DM Sans", -apple-system, sans-serif', fontWeight: 300, fontSize: 12, color: 'rgba(238,236,230,0.38)', marginLeft: 10 }}>
+                    {g.descriptor}
+                  </span>
+                </div>
+                <span style={{ fontFamily: '"DM Sans", -apple-system, sans-serif', fontWeight: 300, fontSize: 10, color: 'rgba(238,236,230,0.22)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                  {g.axisNote}
+                </span>
+              </div>
+              <HScrollRow>
+                {g.profiles.map((p, i) => (
+                  <ArchCard key={p.name} profile={p} catColor={g.color} catKey={g.key} onHover={setActive} sectionVisible={cardsDrawn} cardIndex={idx * 4 + i} />
+                ))}
+              </HScrollRow>
+            </div>
+          ))}
+        </div>
       </section>
 
       {/* ── BEHAVIORAL MAP — full-bleed surface ── */}
@@ -1275,13 +1350,13 @@ export default function ArchetypesPage() {
           </p>
           <p style={{
             margin: 0, fontSize: 14, fontWeight: 300,
-            color: 'rgba(238,236,230,0.60)', fontFamily: '"DM Sans", -apple-system, sans-serif',
+            color: 'rgba(238,236,230,0.55)', fontFamily: '"DM Sans", -apple-system, sans-serif',
           }}>
-            Every person you&#39;ve ever hired sits somewhere on this map.
+            Hover any dot — see where they sit and how they behave.
           </p>
         </div>
 
-        {/* Axis labels — DOM so they can animate */}
+        {/* Axis labels */}
         <span style={{
           position: 'absolute', left: '50%', top: 112, transform: 'translateX(-50%)',
           fontSize: 11, fontWeight: 300, color: axisColors.top,
@@ -1316,7 +1391,7 @@ export default function ArchetypesPage() {
           transition: 'color 250ms ease',
         }}>URGENT →</span>
 
-        {/* Corner category labels — STABILIZERS top-left */}
+        {/* Corner category labels */}
         {([
           { key: 'strategic_drive',   pos: { top: 72, left: 24 },    align: 'left'  },
           { key: 'people_influence',  pos: { top: 72, right: 24 },   align: 'right' },
@@ -1378,14 +1453,12 @@ export default function ArchetypesPage() {
                       background: cat.color,
                       opacity: isDom ? 0.85 : 0.45,
                       flexShrink: 0,
-                      transition: 'opacity 150ms ease',
                     }} />
                     <span style={{
                       fontSize: 11, fontWeight: isDom ? 500 : 400,
                       color: isDom ? 'rgba(238,236,230,0.92)' : 'rgba(238,236,230,0.5)',
                       fontFamily: '"DM Sans", -apple-system, sans-serif',
                       letterSpacing: '0.01em',
-                      transition: 'color 150ms ease',
                     }}>{dn}</span>
                   </div>
                 )
@@ -1396,32 +1469,31 @@ export default function ArchetypesPage() {
 
       </section>
 
-      {/* ── CTA + ARCHETYPE BLOCKS ── */}
-      <section id="archetypes" style={{ padding: 0 }}>
-        {/* ── WHAT THIS ACTUALLY CHANGES ── */}
+      {/* ── WHAT CHANGES + CTA ── */}
+      <section style={{ padding: 0, background: BG }}>
         <WhatChanges />
 
         {/* CTA band */}
         <div ref={ctaBandRef} style={{
           borderTop: '1px solid rgba(255,255,255,0.07)',
           borderBottom: '1px solid rgba(255,255,255,0.07)',
-          background: '#0f0f0f',
+          background: '#0c0c0c',
           padding: 'clamp(48px, 6vh, 72px) clamp(20px, 5vw, 40px)',
         }}>
           <div style={{ maxWidth: 'min(1240px, calc(100vw - clamp(40px, 8vw, 160px)))', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 40, flexWrap: 'wrap' }}>
             <div>
               <h2 style={{
                 fontFamily: '"Barlow Condensed", system-ui, sans-serif',
-                fontSize: 'clamp(28px, 3.5vw, 42px)', fontWeight: 900, textTransform: 'uppercase',
-                letterSpacing: '-0.01em', lineHeight: 1.0, color: '#eeece6', marginBottom: 10, margin: '0 0 10px 0',
+                fontSize: 'clamp(28px, 3.5vw, 44px)', fontWeight: 900, textTransform: 'uppercase',
+                letterSpacing: '-0.01em', lineHeight: 0.95, color: '#eeece6', margin: '0 0 12px 0',
               }}>
-                FIND YOURS IN SIX MINUTES.
+                FIND YOUR PATTERN<br />IN SIX MINUTES.
               </h2>
               <p style={{
-                fontSize: 14, fontWeight: 300, color: 'rgba(238,236,230,0.45)', margin: 0,
-                fontFamily: '"DM Sans", -apple-system, sans-serif',
+                fontSize: 13, fontWeight: 300, color: 'rgba(238,236,230,0.40)', margin: 0,
+                fontFamily: '"DM Sans", -apple-system, sans-serif', lineHeight: 1.6,
               }}>
-                {REFERENCE_PROFILES.length} archetypes. 94 signals. One honest answer.
+                {REFERENCE_PROFILES.length} archetypes. 94 signals. One honest result.
               </p>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flexShrink: 0 }}>
@@ -1437,57 +1509,26 @@ export default function ArchetypesPage() {
               >Start the assessment</a>
               <a href="/sample-report" style={{
                 padding: '13px 32px', borderRadius: 100,
-                background: 'transparent', color: 'rgba(238,236,230,0.55)',
-                border: '1px solid rgba(255,255,255,0.14)',
-                fontSize: 14, fontWeight: 500, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                background: 'transparent', color: 'rgba(238,236,230,0.50)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                fontSize: 14, fontWeight: 400, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                 textDecoration: 'none', transition: 'border-color 150ms ease, color 150ms ease',
                 fontFamily: '"DM Sans", -apple-system, sans-serif',
               }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.28)'; e.currentTarget.style.color = 'rgba(238,236,230,1)' }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.14)'; e.currentTarget.style.color = 'rgba(238,236,230,0.55)' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'; e.currentTarget.style.color = 'rgba(238,236,230,0.50)' }}
               >View sample report →</a>
             </div>
           </div>
         </div>
-
-        {/* Archetype blocks */}
-        <div ref={archetypeBlocksRef} style={{ padding: 'clamp(40px, 6vh, 72px) clamp(20px, 5vw, 40px) clamp(60px, 8vh, 100px)', maxWidth: 'min(1320px, calc(100vw - clamp(40px, 8vw, 160px)))', margin: '0 auto', width: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 48 }}>
-          {grouped.map((g, idx) => (
-            <div key={g.key}>
-              <div ref={catRefs[idx]} style={{
-                display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
-                paddingBottom: 18, borderBottom: `1px solid ${hexAlpha(g.color, 0.14)}`,
-                marginBottom: 16, flexWrap: 'wrap', gap: 12,
-              }}>
-                <div>
-                  <span style={{ fontFamily: '"Barlow Condensed", system-ui, sans-serif', fontWeight: 800, fontSize: 26, textTransform: 'uppercase', letterSpacing: '0.04em', color: g.color }}>
-                    {g.label}
-                  </span>
-                  <span style={{ fontFamily: '"DM Sans", -apple-system, sans-serif', fontWeight: 300, fontSize: 13, color: 'rgba(238,236,230,0.42)', marginLeft: 12 }}>
-                    {g.descriptor}
-                  </span>
-                </div>
-                <span style={{ fontFamily: '"DM Sans", -apple-system, sans-serif', fontWeight: 300, fontSize: 11, color: 'rgba(238,236,230,0.28)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                  {g.axisNote}
-                </span>
-              </div>
-              <HScrollRow>
-                {g.profiles.map((p, i) => (
-                  <ArchCard key={p.name} profile={p} catColor={g.color} catKey={g.key} onHover={setActive} sectionVisible={cardsDrawn} cardIndex={idx * 4 + i} />
-                ))}
-              </HScrollRow>
-            </div>
-          ))}
-        </div>
-
-        {/* Footer */}
-        <footer style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '20px clamp(20px, 5vw, 40px)' }}>
-          <div style={{ maxWidth: 'min(1240px, calc(100vw - clamp(40px, 8vw, 160px)))', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.14)' }}>{PRODUCT_NAME} by Legacy Workforce · © 2026</span>
-            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.14)' }}>{COMPANY_EMAIL}</span>
-          </div>
-        </footer>
       </section>
+
+      <footer style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '20px clamp(20px, 5vw, 40px)', background: BG }}>
+        <div style={{ maxWidth: 'min(1240px, calc(100vw - clamp(40px, 8vw, 160px)))', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.14)' }}>{PRODUCT_NAME} by Legacy Workforce · © 2026</span>
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.14)' }}>{COMPANY_EMAIL}</span>
+        </div>
+      </footer>
 
       <style>{`
         @keyframes heroPulse {
@@ -1516,7 +1557,7 @@ export default function ArchetypesPage() {
         }
       `}</style>
 
-      {/* DOT NAV — 3 sections: Hero, Behavioral Map, Archetypes */}
+      {/* DOT NAV — 4 sections */}
       <div style={{
         position: 'fixed',
         right: 24,
@@ -1528,7 +1569,7 @@ export default function ArchetypesPage() {
         gap: 10,
         pointerEvents: 'auto',
       }}>
-        {(['Hero', 'Behavioral Map', 'Archetypes'] as const).map((label, i) => (
+        {(['Hero', 'Archetypes', 'Map', 'What Changes'] as const).map((label, i) => (
           <div key={i} style={{ position: 'relative', display: 'flex', alignItems: 'center' }}
             onClick={() => {
               const main = mainRef.current
