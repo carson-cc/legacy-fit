@@ -18,14 +18,14 @@ const FONT  = '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", san
 // ─── Stage timing (ms) ───────────────────────────────────────────────
 // Adjust these to change the pacing of the animation loop
 const STAGE_MS: Record<number, number> = {
-  1: 1600, // Role Alignment
-  2: 1700, // Candidate Input
-  3: 1800, // Signal Extraction
-  4: 1800, // Scoring & Ranking
-  5: 1800, // Adaptation Gap
-  6: 2600, // Archetype Profile
+  1: 2800, // Role Alignment
+  2: 3000, // Candidate Input
+  3: 3200, // Signal Extraction
+  4: 3200, // Scoring & Ranking
+  5: 3200, // Adaptation Gap
+  6: 4000, // Archetype Profile
 }
-const HOLD_MS = 800 // pause at end of loop before restarting
+const HOLD_MS = 1500 // pause at end of loop before restarting
 
 // ─── Content ─────────────────────────────────────────────────────────
 const STAGE_LABELS = [
