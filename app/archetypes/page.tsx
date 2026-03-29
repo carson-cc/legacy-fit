@@ -79,10 +79,15 @@ function seeded(s: string) {
   return ((h >>> 0) % 1000) / 1000
 }
 
-function dotXY(patience: number, extraversion: number, size: number, margin: number) {
+// Maps behavioral coords onto a centered square plot within a (potentially rectangular) canvas
+function dotXY(patience: number, extraversion: number, w: number, h: number, margin: number) {
+  const side  = Math.min(w, h)
+  const ox    = (w - side) / 2
+  const oy    = (h - side) / 2
+  const inner = side - margin * 2
   return {
-    x: margin + (1 - patience) * (size - margin * 2),
-    y: margin + (1 - extraversion) * (size - margin * 2),
+    x: ox + margin + (1 - patience)    * inner,
+    y: oy + margin + (1 - extraversion) * inner,
   }
 }
 
@@ -104,10 +109,10 @@ function drawPentagonRaw(
   ctx: CanvasRenderingContext2D,
   vals: number[], dx: number, dy: number,
   color: string, progress: number,
-  strokeWidth = 1.5, fillAlpha = 0.09, strokeAlpha = 0.75, radiusScale = 1.0,
+  strokeWidth = 1.5, fillAlpha = 0.09, strokeAlpha = 0.75, radiusScale = 1.0, side = RADAR_SIZE,
 ) {
   const pts = vals.map((v, i) => {
-    const r = (0.22 + v * 0.78) * (RADAR_SIZE / 16) * radiusScale
+    const r = (0.22 + v * 0.78) * (side / 16) * radiusScale
     return [dx + Math.cos(PENT_ANGLES[i]) * r, dy + Math.sin(PENT_ANGLES[i]) * r]
   })
   let perim = 0
@@ -130,13 +135,13 @@ function drawPentagonRaw(
 function drawCanvasPentagon(
   ctx: CanvasRenderingContext2D,
   profile: typeof REFERENCE_PROFILES[0],
-  dx: number, dy: number, color: string, progress: number,
+  dx: number, dy: number, color: string, progress: number, side = RADAR_SIZE,
 ) {
-  drawPentagonRaw(ctx, pentagonVals(profile), dx, dy, color, progress, 1.5, 0.09, 0.75)
+  drawPentagonRaw(ctx, pentagonVals(profile), dx, dy, color, progress, 1.5, 0.09, 0.75, 1.0, side)
 }
 
 // Compute average pentagon vals + dot centroid for a group
-function groupAverage(groupKey: string, S: number, M: number) {
+function groupAverage(groupKey: string, w: number, h: number, M: number) {
   const ps = REFERENCE_PROFILES.filter(p => p.group === groupKey)
   if (!ps.length) return null
   const avgVals = [0, 0, 0, 0, 0]
@@ -146,7 +151,7 @@ function groupAverage(groupKey: string, S: number, M: number) {
     ap += p.coords.patience / ps.length
     ae += p.coords.extraversion / ps.length
   })
-  const { x, y } = dotXY(ap, ae, S, M)
+  const { x, y } = dotXY(ap, ae, w, h, M)
   return { vals: avgVals, x, y }
 }
 
@@ -180,6 +185,7 @@ function RadarCanvas({
 }) {
   const canvasRef          = useRef<HTMLCanvasElement>(null)
   const rafRef             = useRef(0)
+  const dimsRef            = useRef({ w: 720, h: 720 })
   const activeCatRef       = useRef<string | null>(null)
   const hoveredProfRef     = useRef<string | null>(null)
   const hoverStartRef      = useRef<number>(0)
@@ -188,6 +194,21 @@ function RadarCanvas({
     cat: string | null; startT: number; endT: number; nextT: number; idx: number
   }>({ cat: null, startT: 0, endT: 0, nextT: 2200, idx: -1 })
   const [tooltip, setTooltip] = useState<TooltipState | null>(null)
+
+  // Keep canvas pixel dimensions in sync with CSS size
+  useEffect(() => {
+    const canvas = canvasRef.current; if (!canvas) return
+    const sync = () => {
+      const r = canvas.getBoundingClientRect()
+      canvas.width  = Math.round(r.width)
+      canvas.height = Math.round(r.height)
+      dimsRef.current = { w: canvas.width, h: canvas.height }
+    }
+    sync()
+    const obs = new ResizeObserver(sync)
+    obs.observe(canvas)
+    return () => obs.disconnect()
+  }, [])
 
   useEffect(() => {
     activeCatRef.current = activeCat
@@ -206,21 +227,28 @@ function RadarCanvas({
   )
 
   const drawFrame = useCallback((t: number, ctx: CanvasRenderingContext2D) => {
-    const S = RADAR_SIZE, M = RADAR_MARGIN
-    const cx = S / 2, cy = S / 2, R = cx - M
+    const { w, h } = dimsRef.current
+    // Square plot region centered in the (potentially wide) canvas
+    const side = Math.min(w, h)
+    const M    = Math.round(side * 0.095)   // ~9.5% margin of the plot square
+    const ox   = (w - side) / 2             // horizontal offset for centering
+    const oy   = (h - side) / 2             // vertical offset
+    const cx   = w / 2                      // canvas center x
+    const cy   = h / 2                      // canvas center y
+    const R    = side / 2 - M               // plot radius
 
-    ctx.clearRect(0, 0, S, S)
+    ctx.clearRect(0, 0, w, h)
 
-    // ── Background: radial depth, center brighter than edges ──
-    const bgGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 1.3)
-    bgGrad.addColorStop(0, '#171717')
-    bgGrad.addColorStop(0.6, '#0f0f0f')
+    // ── Background: fills full canvas, radial depth from center ──
+    const bgGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(w, h) * 0.7)
+    bgGrad.addColorStop(0, '#181818')
+    bgGrad.addColorStop(0.5, '#0f0f0f')
     bgGrad.addColorStop(1, '#080808')
     ctx.fillStyle = bgGrad
-    ctx.fillRect(0, 0, S, S)
+    ctx.fillRect(0, 0, w, h)
 
-    const activeCat = activeCatRef.current
-    const hovProf   = hoveredProfRef.current
+    const activeCat    = activeCatRef.current
+    const hovProf      = hoveredProfRef.current
     const isInteracting = activeCat !== null || hovProf !== null
 
     // ── Ambient animation: slow group cycling ──
@@ -234,7 +262,6 @@ function RadarCanvas({
         amb.nextT  = t + 2600 + 1400 + seeded(CATS[amb.idx].key) * 1200
       }
     } else {
-      // Reset ambient when user interacts
       amb.nextT = t + 3000
     }
     let ambCat: string | null = null
@@ -246,29 +273,29 @@ function RadarCanvas({
       if (ambAlpha > 0.005) ambCat = amb.cat
     }
 
-    // ── Quadrant color washes ──
+    // ── Quadrant color washes — extend to full canvas corners ──
     const washes = [
       { qx: cx - R * 0.55, qy: cy - R * 0.55, cat: 'strategic_drive'   },
       { qx: cx + R * 0.55, qy: cy - R * 0.55, cat: 'people_influence'  },
       { qx: cx - R * 0.55, qy: cy + R * 0.55, cat: 'process_structure' },
       { qx: cx + R * 0.55, qy: cy + R * 0.55, cat: 'field_command'     },
     ]
-    washes.forEach(w => {
-      const c   = getCat(w.cat)
-      const isAmbient = ambCat === w.cat
-      const isActive  = activeCat === w.cat
-      const opacity = isActive ? 0.13
+    washes.forEach(ww => {
+      const c        = getCat(ww.cat)
+      const isActive  = activeCat === ww.cat
+      const isAmbient = ambCat === ww.cat
+      const opacity   = isActive ? 0.14
         : activeCat !== null ? 0.018
-        : isAmbient ? 0.07 + ambAlpha * 0.06
-        : 0.05
-      const grad = ctx.createRadialGradient(w.qx, w.qy, 0, w.qx, w.qy, R * 0.95)
+        : isAmbient ? 0.07 + ambAlpha * 0.07
+        : 0.045
+      const grad = ctx.createRadialGradient(ww.qx, ww.qy, 0, ww.qx, ww.qy, R * 1.1)
       grad.addColorStop(0, hexAlpha(c.color, opacity))
       grad.addColorStop(1, 'transparent')
       ctx.fillStyle = grad
-      ctx.fillRect(0, 0, S, S)
+      ctx.fillRect(0, 0, w, h)
     })
 
-    // ── Rings: inner more visible than outer ──
+    // ── Rings: inner brighter, outer fading ──
     for (let i = 1; i <= 4; i++) {
       const op = (0.11 - (i - 1) * 0.024).toFixed(3)
       ctx.beginPath()
@@ -277,56 +304,54 @@ function RadarCanvas({
       ctx.lineWidth = 1; ctx.stroke()
     }
 
-    // ── Axes: directional hairlines with subtle labels ──
+    // ── Axes: hairlines from plot edge to plot edge ──
+    const px0 = ox + M, px1 = ox + side - M
+    const py0 = oy + M, py1 = oy + side - M
     ctx.setLineDash([2, 8])
     ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 1
-    ctx.beginPath(); ctx.moveTo(M, cy); ctx.lineTo(S - M, cy); ctx.stroke()
-    ctx.beginPath(); ctx.moveTo(cx, M); ctx.lineTo(cx, S - M); ctx.stroke()
+    ctx.beginPath(); ctx.moveTo(px0, cy); ctx.lineTo(px1, cy); ctx.stroke()
+    ctx.beginPath(); ctx.moveTo(cx, py0); ctx.lineTo(cx, py1); ctx.stroke()
     ctx.setLineDash([])
-    // Axis direction labels
+    // Directional labels at axis ends
     ctx.font = '500 9px system-ui, -apple-system'
     ctx.fillStyle = 'rgba(255,255,255,0.11)'
     ctx.textAlign = 'center'
-    ctx.fillText('PEOPLE', cx, M - 16)
-    ctx.fillText('OUTPUT', cx, S - M + 22)
+    ctx.fillText('PEOPLE', cx, py0 - 14)
+    ctx.fillText('OUTPUT', cx, py1 + 21)
     ctx.textAlign = 'left'
-    ctx.fillText('FAST →', S - M + 8, cy - 4)
+    ctx.fillText('FAST →', px1 + 8, cy - 4)
     ctx.textAlign = 'right'
-    ctx.fillText('← DELIBERATE', M - 8, cy - 4)
+    ctx.fillText('← DELIBERATE', px0 - 8, cy - 4)
     ctx.textAlign = 'left'
 
-    // ── Group pentagon layer: drawn BEFORE dots ──
+    // ── Group pentagon layer (drawn before dots) ──
     const groupProgress = activeCat ? Math.min(1, (t - groupFocusStartRef.current) / 300) : 0
 
     if (activeCat !== null && groupProgress > 0.01) {
       const gc = getCat(activeCat)
-
-      // Member pentagons (semi-transparent, 20–35% opacity)
       REFERENCE_PROFILES
         .filter(p => p.group === activeCat)
         .forEach(p => {
-          const { x, y } = dotXY(p.coords.patience, p.coords.extraversion, S, M)
+          const { x, y } = dotXY(p.coords.patience, p.coords.extraversion, w, h, M)
           drawPentagonRaw(ctx, pentagonVals(p), x, y, gc.color,
-            groupProgress, 1.2, 0.06, 0.28)
+            groupProgress, 1.2, 0.06, 0.28, 1.0, side)
         })
-
-      // Group average pentagon: thicker stroke, slightly larger, centrally placed
-      const avg = groupAverage(activeCat, S, M)
+      const avg = groupAverage(activeCat, w, h, M)
       if (avg) {
         drawPentagonRaw(ctx, avg.vals, avg.x, avg.y, gc.color,
-          groupProgress, 2.2, 0.04, 0.50, 1.15)
+          groupProgress, 2.2, 0.04, 0.50, 1.15, side)
       }
     }
 
-    // Ambient: faint pentagons when group is ambience-highlighted
+    // Ambient: faint member pentagons
     if (ambCat !== null && ambAlpha > 0.01) {
       const ac = getCat(ambCat)
       REFERENCE_PROFILES
         .filter(p => p.group === ambCat)
         .forEach(p => {
-          const { x, y } = dotXY(p.coords.patience, p.coords.extraversion, S, M)
+          const { x, y } = dotXY(p.coords.patience, p.coords.extraversion, w, h, M)
           drawPentagonRaw(ctx, pentagonVals(p), x, y, ac.color,
-            ambAlpha * 0.5, 1.0, 0.03, 0.14)
+            ambAlpha * 0.5, 1.0, 0.03, 0.14, 1.0, side)
         })
     }
 
@@ -334,12 +359,11 @@ function RadarCanvas({
     const hoverProg = hovProf ? Math.min(1, (t - hoverStartRef.current) / 200) : 0
 
     REFERENCE_PROFILES.forEach((p, i) => {
-      const { x, y } = dotXY(p.coords.patience, p.coords.extraversion, S, M)
-      const c = getCat(p.group)
+      const { x, y } = dotXY(p.coords.patience, p.coords.extraversion, w, h, M)
+      const c          = getCat(p.group)
       const isHovProf  = p.name === hovProf
       const isAmbGroup = p.group === ambCat
 
-      // Base alpha
       const alpha = hovProf
         ? (isHovProf ? 0.96 : 0.07)
         : activeCat !== null
@@ -350,12 +374,10 @@ function RadarCanvas({
 
       const isFocused = (activeCat !== null && activeCat === p.group) || isHovProf
 
-      // Individual hover pentagon — draw below dot
       if (isHovProf && hoverProg > 0) {
-        drawCanvasPentagon(ctx, p, x, y, c.color, hoverProg)
+        drawCanvasPentagon(ctx, p, x, y, c.color, hoverProg, side)
       }
 
-      // Pulse bloom — restrained when ambient, fuller when focused
       const pp    = pulseParams.current[i]
       const pulse = (Math.sin(t * 0.001 * pp.speed + pp.phase) + 1) / 2
       if (alpha > 0.08) {
@@ -367,19 +389,16 @@ function RadarCanvas({
         ctx.lineWidth = 1; ctx.stroke()
       }
 
-      // Center-proximity depth: dots closer to center are slightly larger/crisper
       const distFromCenter = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2) / R
       const depthScale = 1 - distFromCenter * 0.18
       const baseR = isHovProf ? 6 : isAmbGroup && !isInteracting ? 4 + ambAlpha * 0.8 : 3.8
       const dotR  = baseR * depthScale + (isHovProf ? 0 : (1 - depthScale) * 0.5)
 
-      // Core dot
       ctx.beginPath()
       ctx.arc(x, y, dotR, 0, Math.PI * 2)
       ctx.fillStyle = hexAlpha(c.color, alpha)
       ctx.fill()
 
-      // Contextual name labels — group hover only
       if (!isHovProf && activeCat !== null && activeCat === p.group && groupProgress > 0.5) {
         ctx.font = '500 9px system-ui, -apple-system'
         ctx.fillStyle = hexAlpha(c.color, groupProgress * 0.65)
@@ -401,17 +420,18 @@ function RadarCanvas({
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current; if (!canvas) return
     const rect   = canvas.getBoundingClientRect()
-    const scaleX = RADAR_SIZE / rect.width
-    const scaleY = RADAR_SIZE / rect.height
-    const mx     = (e.clientX - rect.left) * scaleX
-    const my     = (e.clientY - rect.top)  * scaleY
+    const { w, h } = dimsRef.current
+    // Map CSS mouse coords → canvas pixel coords
+    const mx = (e.clientX - rect.left) * (w / rect.width)
+    const my = (e.clientY - rect.top)  * (h / rect.height)
+    const M  = Math.round(Math.min(w, h) * 0.095)
 
     let foundProf: string | null = null
     let foundCat:  string | null = null
-    let minD = 24
+    let minD = 26  // hit radius in canvas px
 
     REFERENCE_PROFILES.forEach(p => {
-      const { x, y } = dotXY(p.coords.patience, p.coords.extraversion, RADAR_SIZE, RADAR_MARGIN)
+      const { x, y } = dotXY(p.coords.patience, p.coords.extraversion, w, h, M)
       const d = Math.sqrt((mx - x) ** 2 + (my - y) ** 2)
       if (d < minD) { minD = d; foundProf = p.name; foundCat = p.group }
     })
@@ -419,9 +439,10 @@ function RadarCanvas({
     if (foundProf) {
       onHoverProfile(foundProf)
       const prof = REFERENCE_PROFILES.find(p => p.name === foundProf)!
-      const { x: dotX, y: dotY } = dotXY(prof.coords.patience, prof.coords.extraversion, RADAR_SIZE, RADAR_MARGIN)
-      const cssX = dotX * (rect.width  / RADAR_SIZE)
-      const cssY = dotY * (rect.height / RADAR_SIZE)
+      const { x: dotX, y: dotY } = dotXY(prof.coords.patience, prof.coords.extraversion, w, h, M)
+      // Convert back to CSS px for tooltip positioning
+      const cssX = dotX * (rect.width  / w)
+      const cssY = dotY * (rect.height / h)
       const c = getCat(prof.group)
       setTooltip({ name: prof.name, tagline: prof.essence, color: c.color, cssX, cssY })
     } else {
@@ -436,64 +457,20 @@ function RadarCanvas({
   }, [onHoverProfile, onHoverCat])
 
   return (
-    <div style={{ position: 'relative', width: 'min(72vh, 86vw, 720px)', height: 'min(72vh, 86vw, 720px)', zIndex: 1 }}>
+    // Full-bleed: canvas fills its parent section absolutely
+    <div style={{ position: 'absolute', inset: 0 }}>
       <canvas
         ref={canvasRef}
-        width={RADAR_SIZE} height={RADAR_SIZE}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
-        style={{ width: '100%', height: '100%', cursor: 'crosshair', borderRadius: 2, display: 'block' }}
+        style={{ width: '100%', height: '100%', cursor: 'crosshair', display: 'block' }}
       />
-
-      {/* Corner quadrant labels — float over the map surface */}
-      {([
-        { key: 'strategic_drive',   pos: { top: 14, left: 14 },   align: 'left'  },
-        { key: 'people_influence',  pos: { top: 14, right: 14 },  align: 'right' },
-        { key: 'process_structure', pos: { bottom: 14, left: 14 },  align: 'left'  },
-        { key: 'field_command',     pos: { bottom: 14, right: 14 }, align: 'right' },
-      ] as const).map(({ key, pos, align }) => {
-        const cat = getCat(key)
-        const isOn = activeCat === null || activeCat === key
-        const profiles = REFERENCE_PROFILES
-          .filter(p => p.group === key)
-          .sort((a, b) => a.name.localeCompare(b.name))
-        return (
-          <div key={key}
-            onMouseEnter={() => onHoverCat(key)}
-            onMouseLeave={() => onHoverCat(null)}
-            style={{
-              position: 'absolute', ...pos,
-              textAlign: align as 'left' | 'right',
-              opacity: isOn ? 1 : 0.10,
-              transition: 'opacity 400ms ease',
-              zIndex: 3, cursor: 'default',
-              pointerEvents: 'all',
-            }}
-          >
-            <div style={{
-              fontFamily: '"Barlow Condensed", system-ui',
-              fontSize: 10, fontWeight: 700,
-              textTransform: 'uppercase', letterSpacing: '0.13em',
-              color: cat.color, marginBottom: 4, lineHeight: 1,
-            }}>{cat.label}</div>
-            {profiles.map(p => (
-              <div key={p.name} style={{
-                fontSize: 9.5, fontWeight: 300,
-                color: 'rgba(255,255,255,0.26)',
-                fontFamily: '"DM Sans", sans-serif',
-                letterSpacing: '0.01em', lineHeight: 1.6,
-              }}>{p.name}</div>
-            ))}
-          </div>
-        )
-      })}
-
       {tooltip && (
         <div style={{
           position: 'absolute',
-          left:  tooltip.cssX <= 360 ? tooltip.cssX + 14 : undefined,
-          right: tooltip.cssX >  360 ? `calc(100% - ${tooltip.cssX}px + 14px)` : undefined,
-          top: Math.max(0, tooltip.cssY - 22),
+          left:  tooltip.cssX < window.innerWidth * 0.6 ? tooltip.cssX + 14 : undefined,
+          right: tooltip.cssX >= window.innerWidth * 0.6 ? `calc(100% - ${tooltip.cssX}px + 14px)` : undefined,
+          top: Math.max(8, tooltip.cssY - 22),
           background: 'rgba(10,10,10,0.96)',
           border: `1px solid ${hexAlpha(tooltip.color, 0.28)}`,
           borderRadius: 7, padding: '8px 12px',
@@ -855,25 +832,10 @@ export default function ArchetypesPage() {
         </div>
       </div>
 
-      {/* ── BEHAVIORAL MAP — full-bleed intelligence surface ── */}
-      <section style={{
-        width: '100%', height: '100vh',
-        position: 'relative', overflow: 'hidden',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>
+      {/* ── BEHAVIORAL MAP — full-bleed surface ── */}
+      <section style={{ width: '100%', height: '100vh', position: 'relative', overflow: 'hidden' }}>
 
-        {/* Eyebrow — floats, doesn't consume layout space */}
-        <p style={{
-          position: 'absolute', top: 72, left: 0, right: 0,
-          textAlign: 'center', margin: 0, zIndex: 2, pointerEvents: 'none',
-          fontSize: 9, fontWeight: 500,
-          color: 'rgba(255,255,255,0.16)',
-          letterSpacing: '0.22em', textTransform: 'uppercase',
-        }}>
-          Behavioral Map · Pace × People-orientation
-        </p>
-
-        {/* Map — the entire surface */}
+        {/* Full-bleed canvas layer */}
         <RadarCanvas
           activeCat={activeCat}
           hoveredProfileName={hoveredProfile}
@@ -881,15 +843,64 @@ export default function ArchetypesPage() {
           onHoverProfile={setHovProf}
         />
 
-        {/* Interpretation line — floats below map, absolute so it doesn't shift layout */}
+        {/* Eyebrow */}
         <p style={{
-          position: 'absolute', bottom: 22, left: 0, right: 0,
-          textAlign: 'center', margin: 0,
-          fontSize: 11, fontWeight: 300,
-          color: 'rgba(255,255,255,0.16)',
-          letterSpacing: '0.01em',
-          fontFamily: '"DM Sans", sans-serif',
-          pointerEvents: 'none', zIndex: 2,
+          position: 'absolute', top: 72, left: 0, right: 0, margin: 0,
+          textAlign: 'center', zIndex: 2, pointerEvents: 'none',
+          fontSize: 9, fontWeight: 500, letterSpacing: '0.22em',
+          textTransform: 'uppercase', color: 'rgba(255,255,255,0.14)',
+        }}>
+          Behavioral Map · Pace × People-orientation
+        </p>
+
+        {/* Corner category labels — at actual section corners, floating over canvas */}
+        {([
+          { key: 'strategic_drive',   pos: { top: 88, left: 32 },    align: 'left'  },
+          { key: 'people_influence',  pos: { top: 88, right: 32 },   align: 'right' },
+          { key: 'process_structure', pos: { bottom: 36, left: 32 },   align: 'left'  },
+          { key: 'field_command',     pos: { bottom: 36, right: 32 },  align: 'right' },
+        ] as const).map(({ key, pos, align }) => {
+          const cat = getCat(key)
+          const isOn = activeCat === null || activeCat === key
+          const profiles = REFERENCE_PROFILES
+            .filter(p => p.group === key)
+            .sort((a, b) => a.name.localeCompare(b.name))
+          return (
+            <div key={key}
+              onMouseEnter={() => setActive(key)}
+              onMouseLeave={() => setActive(null)}
+              style={{
+                position: 'absolute', ...pos,
+                textAlign: align as 'left' | 'right',
+                opacity: isOn ? 1 : 0.09,
+                transition: 'opacity 400ms ease',
+                zIndex: 4, cursor: 'default',
+              }}
+            >
+              <div style={{
+                fontFamily: '"Barlow Condensed", system-ui',
+                fontSize: 10, fontWeight: 700,
+                textTransform: 'uppercase', letterSpacing: '0.13em',
+                color: cat.color, marginBottom: 5, lineHeight: 1,
+              }}>{cat.label}</div>
+              {profiles.map(p => (
+                <div key={p.name} style={{
+                  fontSize: 9.5, fontWeight: 300, lineHeight: 1.7,
+                  color: 'rgba(255,255,255,0.24)',
+                  fontFamily: '"DM Sans", sans-serif',
+                  letterSpacing: '0.01em',
+                }}>{p.name}</div>
+              ))}
+            </div>
+          )
+        })}
+
+        {/* Interpretation line */}
+        <p style={{
+          position: 'absolute', bottom: 20, left: 0, right: 0, margin: 0,
+          textAlign: 'center', zIndex: 2, pointerEvents: 'none',
+          fontSize: 11, fontWeight: 300, letterSpacing: '0.01em',
+          color: 'rgba(255,255,255,0.15)', fontFamily: '"DM Sans", sans-serif',
         }}>
           Position reflects speed of execution and orientation toward people vs. output.
         </p>
