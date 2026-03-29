@@ -6,7 +6,6 @@ import Nav from '@/app/components/Nav'
 // ── Tokens ────────────────────────────────────────────────────────────────────
 const GREEN     = '#3aa868'
 const AMBER     = '#c8a832'
-const RED       = '#e05a3a'
 const BLUE      = '#4a8eff'
 const TEXT      = '#eeece6'
 const SUB       = 'rgba(238,236,230,0.42)'
@@ -15,52 +14,41 @@ const DIV       = 'rgba(255,255,255,0.06)'
 const CONDENSED = '"Barlow Condensed", sans-serif'
 
 // ── Dimension data ────────────────────────────────────────────────────────────
-// score = candidate, benchmark = role minimum, delta = difference
 const AXES = [
   {
-    key: 'execution',
-    svgLabel: 'Execution',  fullLabel: 'Execution',
+    key: 'execution', svgLabel: 'Execution', fullLabel: 'Execution',
     score: 82, benchmark: 75, delta: +7, above: true,
-    interp:   'Above benchmark by +7',
-    impl:     'Drives execution without needing direction. An asset in environments with clear mandates.',
+    interp: 'Above benchmark by +7',
+    impl: 'Drives execution without needing direction. An asset in environments with clear mandates.',
     lx: 100, ly: 16, anchor: 'middle', baseline: 'auto',
-    teamLink: 'CEO',
   },
   {
-    key: 'ownership',
-    svgLabel: 'Ownership',  fullLabel: 'Ownership',
+    key: 'ownership', svgLabel: 'Ownership', fullLabel: 'Ownership',
     score: 74, benchmark: 72, delta: +2, above: true,
-    interp:   'At benchmark (+2)',
-    impl:     'Takes accountability. Meets the bar — does not significantly exceed it. Monitor in high-stakes roles.',
+    interp: 'At benchmark (+2)',
+    impl: 'Takes accountability. Meets the bar — does not significantly exceed it. Monitor in high-stakes roles.',
     lx: 178, ly: 80, anchor: 'start', baseline: 'middle',
-    teamLink: 'Board',
   },
   {
-    key: 'adaptability',
-    svgLabel: 'Adapt.',     fullLabel: 'Adaptability',
+    key: 'adaptability', svgLabel: 'Adapt.', fullLabel: 'Adaptability',
     score: 70, benchmark: 65, delta: +5, above: true,
-    interp:   'Above benchmark by +5',
-    impl:     'Handles shifting scope without losing execution edge. Resilient to ambiguity.',
+    interp: 'Above benchmark by +5',
+    impl: 'Handles shifting scope without losing execution edge. Resilient to ambiguity.',
     lx: 150, ly: 170, anchor: 'start', baseline: 'hanging',
-    teamLink: null,
   },
   {
-    key: 'collaboration',
-    svgLabel: 'Collab.',    fullLabel: 'Collaboration',
+    key: 'collaboration', svgLabel: 'Collab.', fullLabel: 'Collaboration',
     score: 62, benchmark: 68, delta: -6, above: false,
-    interp:   'Below benchmark by −6',
-    impl:     'Prefers independent execution over cross-functional coordination. The only gap — and the source of the pacing risk.',
-    lx: 50,  ly: 170, anchor: 'end', baseline: 'hanging',
-    teamLink: 'Board',
+    interp: 'Below benchmark by −6',
+    impl: 'Prefers independent execution over cross-functional coordination. The only gap — and the source of the pacing risk.',
+    lx: 50, ly: 170, anchor: 'end', baseline: 'hanging',
   },
   {
-    key: 'decisionSpeed',
-    svgLabel: 'Dec. Speed', fullLabel: 'Decision Speed',
+    key: 'decisionSpeed', svgLabel: 'Dec. Speed', fullLabel: 'Decision Speed',
     score: 88, benchmark: 78, delta: +10, above: true,
-    interp:   'Significantly above benchmark (+10)',
-    impl:     'Largest delta on the screen. Moves faster than most environments expect. Primary source of Operating Partner friction.',
-    lx: 20,  ly: 80, anchor: 'end', baseline: 'middle',
-    teamLink: 'Operating Partner',
+    interp: 'Significantly above benchmark (+10)',
+    impl: 'Largest delta on the screen. Moves faster than most environments expect. Primary source of Operating Partner friction.',
+    lx: 20, ly: 80, anchor: 'end', baseline: 'middle',
   },
 ]
 
@@ -76,43 +64,61 @@ const polyPts = (vals: number[]) =>
 const ringPts = (pct: number) =>
   AXES.map((_, i) => { const p = vertex(pct, i); return `${p.x},${p.y}` }).join(' ')
 
-const CAND_VALS      = AXES.map(a => a.score)
-const BENCH_VALS     = AXES.map(a => a.benchmark)
-const RING_50        = ringPts(50)
-const RING_100       = ringPts(100)
+const CAND_VALS  = AXES.map(a => a.score)
+const BENCH_VALS = AXES.map(a => a.benchmark)
+const RING_50    = ringPts(50)
+const RING_100   = ringPts(100)
 
-// Shortlist comparison ghosts — proves "Top 1 of 3"
-// Candidate B: strong collaboration but lagging speed/execution
-// Candidate C: balanced but weaker across the board on pace dimensions
+// Candidate polygon perimeter for stroke-dashoffset draw-in animation
+const CAND_PERIMETER = (() => {
+  let p = 0
+  for (let i = 0; i < 5; i++) {
+    const a = vertex(CAND_VALS[i], i)
+    const b = vertex(CAND_VALS[(i + 1) % 5], (i + 1) % 5)
+    p += Math.hypot(b.x - a.x, b.y - a.y)
+  }
+  return Math.ceil(p) + 4
+})()
+
+// Shortlist comparison ghosts
 const SHORTLIST = [
   { label: 'Cand. B', vals: [70, 65, 60, 72, 66], color: 'rgba(255,255,255,0.12)', dash: '5 4' },
   { label: 'Cand. C', vals: [73, 68, 64, 67, 58], color: 'rgba(255,255,255,0.08)', dash: '3 4' },
 ]
 
-// ── Team dynamics ─────────────────────────────────────────────────────────────
-// "Pacing gap" (amber) instead of "Friction risk" (red) — contextual, not disqualifying
+// Team dynamics — used for axisKey lookup (effectiveHovAxis)
 const TEAM = [
+  { role: 'CEO',               axisKey: 'execution'    },
+  { role: 'Operating Partner', axisKey: 'decisionSpeed'},
+  { role: 'Board',             axisKey: 'collaboration'},
+]
+
+// Right-panel team rows (pill display data)
+const TEAM_ROWS = [
   {
-    role: 'CEO', subtitle: 'Direct Report',
-    status: 'Strong alignment', statusColor: GREEN,
-    note: 'Will likely be experienced as decisive and highly effective. No material friction expected.',
-    axisKey: 'execution',
+    role: 'CEO', pill: 'STRONG ALIGNMENT', axisKey: 'execution',
+    pillBg: 'rgba(58,168,104,0.12)', pillBorder: 'rgba(58,168,104,0.25)', pillColor: GREEN,
+    note: 'Will experience Kent as decisive and effective.',
   },
   {
-    role: 'Operating Partner', subtitle: null,
-    status: 'Pacing gap', statusColor: AMBER,
-    note: 'Will likely move faster than expected. Friction is about timing, not competence — manageable with early alignment.',
-    axisKey: 'decisionSpeed',
+    role: 'Operating Partner', pill: 'PACING GAP', axisKey: 'decisionSpeed',
+    pillBg: 'rgba(200,168,50,0.12)', pillBorder: 'rgba(200,168,50,0.25)', pillColor: AMBER,
+    note: 'Friction on pacing — manageable with early alignment on decision cadence.',
   },
   {
-    role: 'Board', subtitle: null,
-    status: 'Moderate fit', statusColor: FAINT,
-    note: 'May expect more structured communication cadence. Low friction risk if reporting expectations are set.',
-    axisKey: 'collaboration',
+    role: 'Board', pill: 'MODERATE FIT', axisKey: 'collaboration',
+    pillBg: 'rgba(255,255,255,0.05)', pillBorder: 'rgba(255,255,255,0.12)', pillColor: 'rgba(238,236,230,0.5)',
+    note: 'May want structured communication cadence. Low risk if expectations are set.',
   },
 ]
 
-// Stagger fade helper
+// Team hover → radar axis highlight mapping
+const TEAM_AXES: Record<string, { key: string; color: 'blue' | 'amber' }[]> = {
+  'CEO':               [{ key: 'execution', color: 'blue' }, { key: 'ownership', color: 'blue' }],
+  'Operating Partner': [{ key: 'decisionSpeed', color: 'amber' }],
+  'Board':             [{ key: 'collaboration', color: 'amber' }],
+}
+
 const fade = (mounted: boolean, delay: number): React.CSSProperties => ({
   opacity:    mounted ? 1 : 0,
   transform:  mounted ? 'translateY(0)' : 'translateY(5px)',
@@ -121,20 +127,29 @@ const fade = (mounted: boolean, delay: number): React.CSSProperties => ({
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function HomePage() {
-  const [navLight,      setNavLight]      = useState(false)
-  const [lineDrawn,     setLineDrawn]     = useState(false)
-  const [showWhy,       setShowWhy]       = useState(false)
-  const [activeSection, setActiveSection] = useState(0)
-  const [cardMounted,   setCardMounted]   = useState(false)
-  const [hoveredAxis,   setHoveredAxis]   = useState<string | null>(null)
-  const [hoveredTeam,   setHoveredTeam]   = useState<string | null>(null)
-  const [compMode,      setCompMode]      = useState<'benchmark' | 'shortlist'>('benchmark')
-  const [scrollThumb,   setScrollThumb]   = useState({ top: 0, height: 32, visible: false })
+  const [navLight,        setNavLight]        = useState(false)
+  const [lineDrawn,       setLineDrawn]       = useState(false)
+  const [showWhy,         setShowWhy]         = useState(false)
+  const [activeSection,   setActiveSection]   = useState(0)
+  const [cardMounted,     setCardMounted]     = useState(false)
+  const [hoveredAxis,     setHoveredAxis]     = useState<string | null>(null)
+  const [hoveredTeam,     setHoveredTeam]     = useState<string | null>(null)
+  const [hoveredWatchout, setHoveredWatchout] = useState(false)
+  const [compMode,        setCompMode]        = useState<'benchmark' | 'shortlist'>('benchmark')
+  const [scrollThumb,     setScrollThumb]     = useState({ top: 0, height: 32, visible: false })
+  const [scoreDisplay,    setScoreDisplay]    = useState(85)
+  const [radarPhase,      setRadarPhase]      = useState(0)   // 0=idle, 1=drawing, 2=bench visible
+  const [pulseActive,     setPulseActive]     = useState(false)
+  const [tabIndicator,    setTabIndicator]    = useState({ left: 0, width: 0 })
 
-  const beat4Ref   = useRef<HTMLDivElement>(null)
-  const snapRef    = useRef<HTMLDivElement>(null)
-  const reportRef  = useRef<HTMLElement | null>(null)
-  const rightColRef= useRef<HTMLDivElement>(null)
+  const beat4Ref        = useRef<HTMLDivElement>(null)
+  const snapRef         = useRef<HTMLDivElement>(null)
+  const reportRef       = useRef<HTMLElement | null>(null)
+  const rightColRef     = useRef<HTMLDivElement>(null)
+  const hasAnimated     = useRef(false)
+  const tabRef0         = useRef<HTMLButtonElement>(null)
+  const tabRef1         = useRef<HTMLButtonElement>(null)
+  const tabContainerRef = useRef<HTMLDivElement>(null)
 
   // Nav light
   useEffect(() => {
@@ -169,9 +184,9 @@ export default function HomePage() {
       e.preventDefault(); setShowWhy(true)
       setTimeout(() => { reportRef.current?.scrollIntoView({ behavior: 'smooth' }) }, 900)
     }
-    const onWheel      = (e: WheelEvent)  => { if (e.deltaY > 0) tryReveal(e) }
-    const onTouchStart = (e: TouchEvent)  => { touchStartY = e.touches[0].clientY }
-    const onTouchEnd   = (e: TouchEvent)  => { if (touchStartY - e.changedTouches[0].clientY > 30) tryReveal(e) }
+    const onWheel      = (e: WheelEvent) => { if (e.deltaY > 0) tryReveal(e) }
+    const onTouchStart = (e: TouchEvent) => { touchStartY = e.touches[0].clientY }
+    const onTouchEnd   = (e: TouchEvent) => { if (touchStartY - e.changedTouches[0].clientY > 30) tryReveal(e) }
     const onScroll     = () => {
       if (scrollingAway.current) { if (container.scrollTop > 50) scrollingAway.current = false; return }
       if (container.scrollTop < 10) { handled.current = false; setShowWhy(false) }
@@ -206,7 +221,33 @@ export default function HomePage() {
     return () => clearTimeout(t)
   }, [])
 
-  // Custom scroll indicator — init after mount
+  // Score count-up + radar entrance — fires once when card section enters viewport
+  useEffect(() => {
+    const el = reportRef.current as Element | null; if (!el) return
+    const obs = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !hasAnimated.current) {
+        hasAnimated.current = true
+        // Score: 85 → 93 over 500ms ease-out cubic
+        const start = performance.now()
+        const tick = (now: number) => {
+          const t = Math.min(1, (now - start) / 500)
+          const ease = 1 - Math.pow(1 - t, 3)
+          setScoreDisplay(Math.round(85 + 8 * ease))
+          if (t < 1) requestAnimationFrame(tick)
+        }
+        requestAnimationFrame(tick)
+        // Radar 3-moment entrance
+        setRadarPhase(1)                                 // moment 1: candidate polygon draws in
+        setTimeout(() => setRadarPhase(2), 800)          // moment 2: benchmark fades in
+        setTimeout(() => setPulseActive(true),  1200)    // moment 3: decision speed pulses
+        setTimeout(() => setPulseActive(false), 1600)
+      }
+    }, { threshold: 0.4 })
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
+
+  // Custom scroll indicator — init after card mount
   useEffect(() => {
     const el = rightColRef.current; if (!el) return
     if (el.scrollHeight > el.clientHeight) {
@@ -214,6 +255,16 @@ export default function HomePage() {
       setScrollThumb({ top: 0, height: h, visible: true })
     }
   }, [cardMounted])
+
+  // Tab sliding indicator position
+  useEffect(() => {
+    const container = tabContainerRef.current
+    const activeEl = (compMode === 'benchmark' ? tabRef0 : tabRef1).current
+    if (!container || !activeEl) return
+    const cRect = container.getBoundingClientRect()
+    const eRect = activeEl.getBoundingClientRect()
+    setTabIndicator({ left: eRect.left - cRect.left, width: eRect.width })
+  }, [compMode, cardMounted])
 
   const onRightScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const el = e.currentTarget
@@ -223,12 +274,21 @@ export default function HomePage() {
     setScrollThumb({ top: ratio * (el.clientHeight - h), height: h, visible: true })
   }
 
-  // Determine active axis highlight (team hover overrides axis hover)
-  const effectiveHovAxis = hoveredTeam
-    ? TEAM.find(t => t.role === hoveredTeam)?.axisKey ?? null
-    : hoveredAxis
-
-  const hovAxData = AXES.find(a => a.key === effectiveHovAxis) ?? null
+  // ── Active radar highlights ──────────────────────────────────────────────────
+  // Priority: team hover > watchout hover > direct axis hover
+  const activeHighlights = new Map<string, 'blue' | 'amber'>()
+  if (hoveredTeam) {
+    ;(TEAM_AXES[hoveredTeam] ?? []).forEach(({ key, color }) => activeHighlights.set(key, color))
+  } else if (hoveredWatchout) {
+    activeHighlights.set('decisionSpeed', 'amber')
+    activeHighlights.set('collaboration', 'amber')
+  } else if (hoveredAxis) {
+    const ax = AXES.find(a => a.key === hoveredAxis)
+    activeHighlights.set(hoveredAxis, ax?.above !== false ? 'blue' : 'amber')
+  }
+  const anyHighlight = activeHighlights.size > 0
+  // Callout panel: only direct axis hover (not team/watchout — those respond in the radar)
+  const hovAxData = hoveredAxis ? (AXES.find(a => a.key === hoveredAxis) ?? null) : null
 
   return (
     <div className="snap-page" ref={snapRef}>
@@ -243,6 +303,8 @@ export default function HomePage() {
         .team-row { transition: background 150ms ease; border-radius: 6px; padding: 5px 6px; margin: 0 -6px; cursor: default; }
         .team-row:hover { background: rgba(255,255,255,0.04) !important; }
         .comp-btn { cursor: pointer; background: none; border: none; padding: 0; }
+        .watchout-block { cursor: default; border-radius: 4px; transition: background 150ms ease; }
+        .watchout-block:hover { background: rgba(255,255,255,0.02); }
       `}</style>
 
       <Nav light={navLight} />
@@ -298,16 +360,16 @@ export default function HomePage() {
             boxShadow: '0 0 0 1px rgba(255,255,255,0.06), 0 32px 80px rgba(0,0,0,0.6)',
           }}>
 
-            {/* TOP BAR */}
+            {/* HEADER RAIL — permanently visible, never scrolls */}
             <div style={{
-              height: 40, padding: '0 24px', flexShrink: 0,
-              borderBottom: `1px solid ${DIV}`,
+              height: 38, padding: '0 20px', flexShrink: 0,
+              borderBottom: '1px solid rgba(255,255,255,0.07)',
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             }}>
-              <span style={{ fontSize: 10, color: FAINT, letterSpacing: '0.16em', textTransform: 'uppercase' }}>
+              <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.28)', letterSpacing: '0.16em', textTransform: 'uppercase' }}>
                 Candidate Recommendation Report
               </span>
-              <span style={{ fontSize: 10, color: FAINT, letterSpacing: '0.16em', textTransform: 'uppercase' }}>
+              <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.22)', letterSpacing: '0.16em', textTransform: 'uppercase' }}>
                 Presented to client · Mar 14, 2026
               </span>
             </div>
@@ -334,23 +396,33 @@ export default function HomePage() {
                         Kent Morrison
                       </p>
                     </div>
-                    {/* Comparison toggle */}
-                    <div style={{ display: 'flex', gap: 16, flexShrink: 0, marginTop: 4 }}>
-                      {(['benchmark', 'shortlist'] as const).map(mode => (
+                    {/* Comparison toggle — sliding underline indicator */}
+                    <div ref={tabContainerRef} style={{ position: 'relative', display: 'inline-flex', gap: 16, flexShrink: 0, marginTop: 4 }}>
+                      {(['benchmark', 'shortlist'] as const).map((mode, idx) => (
                         <button
                           key={mode}
+                          ref={idx === 0 ? tabRef0 : tabRef1}
                           className="comp-btn"
                           onClick={() => setCompMode(mode)}
                           style={{
                             fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase',
-                            color: compMode === mode ? 'rgba(238,236,230,0.82)' : 'rgba(238,236,230,0.3)',
-                            borderBottom: compMode === mode ? '1px solid rgba(238,236,230,0.82)' : '1px solid transparent',
-                            paddingBottom: 2,
+                            color: compMode === mode ? 'rgba(238,236,230,0.88)' : 'rgba(238,236,230,0.32)',
+                            transition: 'color 200ms ease',
                           }}
                         >
                           {mode === 'benchmark' ? 'vs. Role' : 'vs. Shortlist'}
                         </button>
                       ))}
+                      {/* Sliding indicator bar */}
+                      {tabIndicator.width > 0 && (
+                        <div style={{
+                          position: 'absolute', bottom: -2, height: '1.5px',
+                          background: 'rgba(238,236,230,0.8)', borderRadius: 1,
+                          left: tabIndicator.left, width: tabIndicator.width,
+                          transition: 'left 200ms ease, width 200ms ease',
+                          pointerEvents: 'none',
+                        }} />
+                      )}
                     </div>
                   </div>
                 </div>
@@ -360,7 +432,7 @@ export default function HomePage() {
                   <svg
                     viewBox="-35 -5 260 215"
                     style={{ width: '100%', height: '100%' }}
-                    onMouseLeave={() => { setHoveredAxis(null) }}
+                    onMouseLeave={() => setHoveredAxis(null)}
                   >
                     {/* Grid rings */}
                     <polygon points={RING_50}  fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="0.5" />
@@ -369,18 +441,29 @@ export default function HomePage() {
                     {/* Axis lines + labels + hit areas */}
                     {AXES.map((ax, i) => {
                       const tip = vertex(100, i)
-                      const isHov = effectiveHovAxis === ax.key
+                      const highlightColor = activeHighlights.get(ax.key)
+                      const isHighlighted  = !!highlightColor
+                      const isDimmed       = anyHighlight && !isHighlighted
+                      const isPulse        = ax.key === 'decisionSpeed' && pulseActive
+
+                      const axisStroke = isDimmed
+                        ? 'rgba(255,255,255,0.06)'
+                        : isHighlighted
+                          ? (highlightColor === 'amber' ? 'rgba(200,168,50,0.6)' : 'rgba(37,99,235,0.7)')
+                          : isPulse ? 'rgba(37,99,235,0.7)'
+                          : 'rgba(255,255,255,0.05)'
+                      const labelFill = isDimmed
+                        ? 'rgba(238,236,230,0.14)'
+                        : (isHighlighted || isPulse) ? 'rgba(238,236,230,0.85)'
+                        : 'rgba(238,236,230,0.32)'
+
                       return (
-                        <g key={ax.key}
-                          onMouseEnter={() => setHoveredAxis(ax.key)}
-                          style={{ cursor: 'default' }}
-                        >
+                        <g key={ax.key} onMouseEnter={() => setHoveredAxis(ax.key)} style={{ cursor: 'default' }}>
                           <line x1={CENTER} y1={CENTER} x2={tip.x} y2={tip.y}
-                            stroke={isHov ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.05)'}
-                            strokeWidth="0.75"
-                            style={{ transition: 'stroke 150ms ease' }}
+                            stroke={axisStroke}
+                            strokeWidth={isHighlighted || isPulse ? '1' : '0.75'}
+                            style={{ transition: 'stroke 200ms ease, stroke-width 200ms ease' }}
                           />
-                          {/* Wide invisible hit area */}
                           <line x1={CENTER} y1={CENTER} x2={tip.x} y2={tip.y}
                             stroke="transparent" strokeWidth="20" />
                           <text
@@ -388,8 +471,8 @@ export default function HomePage() {
                             textAnchor={ax.anchor as 'middle' | 'start' | 'end'}
                             dominantBaseline={ax.baseline as 'auto' | 'middle' | 'hanging'}
                             fontSize="9"
-                            fill={isHov ? 'rgba(238,236,230,0.85)' : 'rgba(238,236,230,0.32)'}
-                            style={{ transition: 'fill 150ms ease' }}
+                            fill={labelFill}
+                            style={{ transition: 'fill 200ms ease' }}
                           >
                             {ax.svgLabel}
                           </text>
@@ -397,21 +480,22 @@ export default function HomePage() {
                       )
                     })}
 
-                    {/* ─ Benchmark mode ─ */}
+                    {/* ─ Benchmark polygon — fades in at radar phase 2 ─ */}
                     {compMode === 'benchmark' && (
-                      <>
-                        <polygon
-                          points={polyPts(BENCH_VALS)}
-                          fill="rgba(255,255,255,0.02)"
-                          stroke="rgba(255,255,255,0.25)"
-                          strokeWidth="1.5"
-                          strokeDasharray="4 3"
-                        />
-                        <text x="100" y="30" textAnchor="middle" fontSize="8" fill="rgba(255,255,255,0.2)">Role</text>
-                      </>
+                      <polygon
+                        points={polyPts(BENCH_VALS)}
+                        fill="rgba(255,255,255,0.015)"
+                        stroke="rgba(255,255,255,0.32)"
+                        strokeWidth="1.2"
+                        strokeDasharray="6 4"
+                        style={{
+                          opacity: radarPhase >= 2 ? 1 : 0,
+                          transition: 'opacity 400ms ease',
+                        }}
+                      />
                     )}
 
-                    {/* ─ Shortlist mode — ghost outlines ─ */}
+                    {/* ─ Shortlist ghosts ─ */}
                     {compMode === 'shortlist' && SHORTLIST.map((ghost, idx) => (
                       <polygon
                         key={ghost.label}
@@ -421,91 +505,106 @@ export default function HomePage() {
                         strokeWidth="1"
                         strokeDasharray={ghost.dash}
                         style={{
-                          opacity: cardMounted ? 1 : 0,
+                          opacity: radarPhase >= 1 ? 1 : 0,
                           transition: `opacity 500ms ease ${300 + idx * 80}ms`,
                         }}
                       />
                     ))}
 
-                    {/* Candidate polygon — animates in */}
+                    {/* ─ Candidate polygon — draws in clockwise via stroke-dashoffset ─ */}
                     <polygon
                       points={polyPts(CAND_VALS)}
-                      fill="rgba(74,142,255,0.09)"
+                      fill={`rgba(74,142,255,${radarPhase >= 1 ? 0.09 : 0})`}
                       stroke={BLUE}
                       strokeWidth="2"
-                      style={{
-                        opacity: cardMounted ? 1 : 0,
-                        transition: 'opacity 600ms ease 420ms',
-                      }}
+                      strokeDasharray={CAND_PERIMETER}
+                      strokeDashoffset={radarPhase >= 1 ? 0 : CAND_PERIMETER}
+                      style={{ transition: 'stroke-dashoffset 800ms ease-out, fill 800ms ease-out' }}
                     />
 
-                    {/* Vertex dots */}
+                    {/* ─ Vertex dots + delta labels (on top of polygons) ─ */}
                     {AXES.map((ax, i) => {
-                      const p = vertex(ax.score, i)
-                      const isHov = effectiveHovAxis === ax.key
+                      const pt             = vertex(ax.score, i)
+                      const highlightColor = activeHighlights.get(ax.key)
+                      const isHighlighted  = !!highlightColor
+                      const isPulse        = ax.key === 'decisionSpeed' && pulseActive
+                      const dotR           = isHighlighted ? 7 : isPulse ? 5.5 : 3
+                      const dotFill        = isHighlighted
+                        ? (highlightColor === 'amber' ? AMBER : BLUE)
+                        : BLUE
+                      const showLabel      = (isHighlighted && !!hoveredTeam) || isPulse
+                      const labelColor     = isPulse && !isHighlighted ? BLUE : (highlightColor === 'amber' ? AMBER : BLUE)
+                      const deltaStr       = ax.delta > 0 ? `+${ax.delta}` : `${ax.delta}`
+                      const lx             = pt.x > CENTER + 4 ? pt.x + 10 : pt.x < CENTER - 4 ? pt.x - 10 : pt.x
+                      const ly             = pt.y > CENTER + 4 ? pt.y + 12 : pt.y - 12
+                      const anchor         = pt.x > CENTER + 4 ? 'start' : pt.x < CENTER - 4 ? 'end' : 'middle'
                       return (
-                        <circle key={ax.key} cx={p.x} cy={p.y}
-                          r={isHov ? 4.5 : 3}
-                          fill={isHov ? '#fff' : BLUE}
-                          style={{
-                            opacity: cardMounted ? 1 : 0,
-                            transition: `opacity 600ms ease 420ms, r 150ms ease, fill 150ms ease`,
-                          }}
-                        />
+                        <g key={ax.key}>
+                          <circle cx={pt.x} cy={pt.y} r={dotR} fill={dotFill}
+                            style={{
+                              opacity: radarPhase >= 1 ? 1 : 0,
+                              transition: 'opacity 600ms ease 420ms, r 200ms ease, fill 200ms ease',
+                            }}
+                          />
+                          {showLabel && (
+                            <text x={lx} y={ly} textAnchor={anchor as 'start' | 'end' | 'middle'}
+                              fontSize="8" fontWeight="600" fill={labelColor}>
+                              {deltaStr} vs benchmark
+                            </text>
+                          )}
+                        </g>
                       )
                     })}
                   </svg>
                 </div>
 
-                {/* Callout / axis detail / comparison note */}
-                <div style={{ ...fade(cardMounted, 380), minHeight: 56 }}>
-                  {hovAxData ? (
-                    // Axis hover detail
-                    <div style={{ borderLeft: `2px solid ${hovAxData.above ? BLUE : AMBER}`, paddingLeft: 10 }}>
-                      <p style={{ margin: '0 0 2px', fontSize: 10, fontWeight: 700, color: TEXT }}>{hovAxData.fullLabel}</p>
-                      <p style={{ margin: '0 0 3px', fontSize: 9, fontWeight: 600, color: hovAxData.above ? BLUE : AMBER }}>{hovAxData.interp}</p>
-                      <p style={{ margin: 0, fontSize: 9, color: SUB, lineHeight: 1.45 }}>{hovAxData.impl}</p>
-                    </div>
-                  ) : compMode === 'shortlist' ? (
-                    // Shortlist comparison note
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                      <p style={{ margin: '0 0 4px', fontSize: 8, color: FAINT, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                        Kent vs. shortlist
-                      </p>
-                      {[
-                        { text: '↑ Leads on Decision Speed by +18–22pts', pos: true },
-                        { text: '↑ Stronger execution profile than both', pos: true },
-                        { text: '↓ Lower collaboration vs. Cand. B', pos: false },
-                      ].map(({ text, pos }) => (
-                        <div key={text} style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
-                          <span style={{ fontSize: 9, color: pos ? 'rgba(74,142,255,0.7)' : AMBER, flexShrink: 0 }}>
-                            {text.slice(0, 1)}
-                          </span>
-                          <span style={{ fontSize: 9, color: FAINT, lineHeight: 1.4 }}>{text.slice(2)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    // Default benchmark callouts
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                      {[
-                        { label: 'Decision Speed', delta: +10, above: true },
-                        { label: 'Execution',      delta: +7,  above: true },
-                        { label: 'Collaboration',  delta: -6,  above: false },
-                      ].map(({ label, delta, above }) => (
-                        <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <span style={{ fontSize: 9, color: above ? 'rgba(74,142,255,0.7)' : AMBER, flexShrink: 0 }}>
-                            {above ? '↑' : '↓'}
-                          </span>
-                          <span style={{ fontSize: 9, color: FAINT }}>
-                            {label} — {above ? `+${delta}` : `${delta}`} vs. benchmark
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                {/* Legend + callout area */}
+                <div style={fade(cardMounted, 380)}>
+                  {/* Integrated legend */}
+                  <div style={{ display: 'flex', gap: 14, marginBottom: 10 }}>
+                    <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.32)' }}>— Candidate</span>
+                    <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.32)' }}>- - Role benchmark</span>
+                  </div>
+                  {/* Axis callout */}
+                  <div style={{ minHeight: 48 }}>
+                    {hovAxData ? (
+                      <div style={{ borderLeft: `2px solid ${hovAxData.above ? BLUE : AMBER}`, paddingLeft: 10 }}>
+                        <p style={{ margin: '0 0 2px', fontSize: 10, fontWeight: 700, color: TEXT }}>{hovAxData.fullLabel}</p>
+                        <p style={{ margin: '0 0 3px', fontSize: 9, fontWeight: 600, color: hovAxData.above ? BLUE : AMBER }}>{hovAxData.interp}</p>
+                        <p style={{ margin: 0, fontSize: 9, color: SUB, lineHeight: 1.45 }}>{hovAxData.impl}</p>
+                      </div>
+                    ) : compMode === 'shortlist' ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        <p style={{ margin: '0 0 4px', fontSize: 8, color: FAINT, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                          Kent vs. shortlist
+                        </p>
+                        {[
+                          { text: '↑ Leads on Decision Speed by +18–22pts', pos: true },
+                          { text: '↑ Stronger execution profile than both', pos: true },
+                          { text: '↓ Lower collaboration vs. Cand. B', pos: false },
+                        ].map(({ text, pos }) => (
+                          <div key={text} style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+                            <span style={{ fontSize: 9, color: pos ? 'rgba(74,142,255,0.7)' : AMBER, flexShrink: 0 }}>{text.slice(0, 1)}</span>
+                            <span style={{ fontSize: 9, color: FAINT, lineHeight: 1.4 }}>{text.slice(2)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        {[
+                          { label: 'Decision Speed', delta: +10, above: true },
+                          { label: 'Execution',      delta: +7,  above: true },
+                          { label: 'Collaboration',  delta: -6,  above: false },
+                        ].map(({ label, delta, above }) => (
+                          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ fontSize: 9, color: above ? 'rgba(74,142,255,0.7)' : AMBER, flexShrink: 0 }}>{above ? '↑' : '↓'}</span>
+                            <span style={{ fontSize: 9, color: FAINT }}>{label} — {above ? `+${delta}` : `${delta}`} vs. benchmark</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-
 
               </div>
 
@@ -540,14 +639,21 @@ export default function HomePage() {
                         </p>
                       </div>
                       <div style={{ flexShrink: 0, textAlign: 'right' as const }}>
-                        <span style={{ display: 'block', fontSize: 56, fontFamily: CONDENSED, fontWeight: 900, color: '#ffffff', lineHeight: 1 }}>93</span>
+                        <span style={{ display: 'block', fontSize: 56, fontFamily: CONDENSED, fontWeight: 900, color: '#ffffff', lineHeight: 1 }}>
+                          {scoreDisplay}
+                        </span>
                         <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginTop: 6, display: 'block' }}>Top 5% vs. benchmark</span>
                       </div>
                     </div>
                   </div>
 
-                  {/* S2 — Primary Watchout (consolidated with Thrives In / Watch For) */}
-                  <div style={{ padding: '14px 0', borderTop: '1px solid rgba(255,255,255,0.09)', ...fade(cardMounted, 80) }}>
+                  {/* S2 — Primary Watchout */}
+                  <div
+                    className="watchout-block"
+                    onMouseEnter={() => setHoveredWatchout(true)}
+                    onMouseLeave={() => setHoveredWatchout(false)}
+                    style={{ padding: '14px 0', borderTop: '1px solid rgba(255,255,255,0.09)', ...fade(cardMounted, 80) }}
+                  >
                     <p style={{ margin: '0 0 5px', fontSize: 9, color: FAINT, letterSpacing: '0.16em', textTransform: 'uppercase' }}>
                       Primary Watchout
                     </p>
@@ -573,51 +679,39 @@ export default function HomePage() {
                     </div>
                   </div>
 
-                  {/* S3 — Team Dynamics (pill rows, hover links to radar) */}
+                  {/* S3 — Team Dynamics */}
                   <div style={{ padding: '14px 0', borderTop: '1px solid rgba(255,255,255,0.09)', ...fade(cardMounted, 160) }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
                       <p style={{ margin: 0, fontSize: 9, color: FAINT, letterSpacing: '0.16em', textTransform: 'uppercase' }}>Team Dynamics</p>
                       <p style={{ margin: 0, fontSize: 9, color: 'rgba(238,236,230,0.28)' }}>Strong fit · One relationship to address</p>
                     </div>
-                    {[
-                      {
-                        role: 'CEO',
-                        pill: 'STRONG ALIGNMENT',
-                        pillBg: 'rgba(58,168,104,0.12)', pillBorder: 'rgba(58,168,104,0.25)', pillColor: GREEN,
-                        note: 'Will experience Kent as decisive and effective.',
-                      },
-                      {
-                        role: 'Operating Partner',
-                        pill: 'PACING GAP',
-                        pillBg: 'rgba(200,168,50,0.12)', pillBorder: 'rgba(200,168,50,0.25)', pillColor: AMBER,
-                        note: 'Friction on pacing — manageable with early alignment on decision cadence.',
-                      },
-                      {
-                        role: 'Board',
-                        pill: 'MODERATE FIT',
-                        pillBg: 'rgba(255,255,255,0.05)', pillBorder: 'rgba(255,255,255,0.12)', pillColor: 'rgba(238,236,230,0.5)',
-                        note: 'May want structured communication cadence. Low risk if expectations are set.',
-                      },
-                    ].map(({ role, pill, pillBg, pillBorder, pillColor, note }) => (
-                      <div
-                        key={role}
-                        className="team-row"
-                        onMouseEnter={() => setHoveredTeam(role)}
-                        onMouseLeave={() => setHoveredTeam(null)}
-                        style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '6px 0' }}
-                      >
-                        <span style={{
-                          borderRadius: 4, padding: '2px 8px', fontSize: 9, fontWeight: 600,
-                          letterSpacing: '0.08em', textTransform: 'uppercase' as const,
-                          background: pillBg, border: `1px solid ${pillBorder}`, color: pillColor,
-                          flexShrink: 0, minWidth: 110, textAlign: 'center' as const, display: 'inline-block',
-                        }}>{pill}</span>
-                        <div>
-                          <p style={{ margin: '0 0 2px', fontSize: 12, fontWeight: 500, color: TEXT }}>{role}</p>
-                          <p style={{ margin: 0, fontSize: 11, color: 'rgba(238,236,230,0.42)', lineHeight: 1.4 }}>{note}</p>
+                    {TEAM_ROWS.map(({ role, pill, axisKey, pillBg, pillBorder, pillColor, note }) => {
+                      // Reverse: radar axis hover highlights the relevant team row
+                      const reverseHighlight = hoveredAxis === axisKey
+                      return (
+                        <div
+                          key={role}
+                          className="team-row"
+                          onMouseEnter={() => setHoveredTeam(role)}
+                          onMouseLeave={() => setHoveredTeam(null)}
+                          style={{
+                            display: 'flex', alignItems: 'flex-start', gap: 10, padding: '6px 0',
+                            background: reverseHighlight ? 'rgba(255,255,255,0.025)' : undefined,
+                          }}
+                        >
+                          <span style={{
+                            borderRadius: 4, padding: '2px 8px', fontSize: 9, fontWeight: 600,
+                            letterSpacing: '0.08em', textTransform: 'uppercase' as const,
+                            background: pillBg, border: `1px solid ${pillBorder}`, color: pillColor,
+                            flexShrink: 0, minWidth: 110, textAlign: 'center' as const, display: 'inline-block',
+                          }}>{pill}</span>
+                          <div>
+                            <p style={{ margin: '0 0 2px', fontSize: 12, fontWeight: 500, color: TEXT }}>{role}</p>
+                            <p style={{ margin: 0, fontSize: 11, color: 'rgba(238,236,230,0.42)', lineHeight: 1.4 }}>{note}</p>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
 
                   {/* S4 — Signal Profile */}
@@ -671,10 +765,15 @@ export default function HomePage() {
                     </p>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                       <span style={{
-                        fontFamily: CONDENSED, fontWeight: 700, fontSize: 13,
-                        color: '#c45030', textTransform: 'uppercase' as const, letterSpacing: '0.06em',
-                        background: 'rgba(196,80,48,0.1)', border: '1px solid rgba(196,80,48,0.2)',
-                        borderRadius: 4, padding: '3px 10px',
+                        background: 'rgba(196,80,48,0.1)',
+                        border: '1px solid rgba(196,80,48,0.22)',
+                        color: '#c45030',
+                        borderRadius: 4,
+                        padding: '2px 8px',
+                        fontSize: 10,
+                        fontWeight: 600,
+                        letterSpacing: '0.05em',
+                        textTransform: 'uppercase' as const,
                       }}>Pioneer</span>
                       <span style={{ fontSize: 12, color: 'rgba(238,236,230,0.7)' }}>Execution-first operator</span>
                     </div>
