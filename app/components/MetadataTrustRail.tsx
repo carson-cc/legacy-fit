@@ -10,7 +10,6 @@ const DEFAULT_SIGNALS = [
   'Based on 94 behavioral signals',
   'Role benchmark active',
   'Recommendation generated from calibrated signal analysis',
-  'IPIP-NEO validated',
 ]
 
 export default function MetadataTrustRail({

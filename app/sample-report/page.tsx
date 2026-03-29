@@ -276,15 +276,28 @@ export default function SampleReportPage() {
                 <div>
                   <Label text="Recommendation" />
                   <p style={{ margin: '8px 0 0', fontSize: 24, fontWeight: 700, color: TEXT }}>Strong Hire</p>
-                </div>
-                <div className="rpt-two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                  <div>
-                    <Label text="Fit Strength" />
-                    <p style={{ margin: '8px 0 0', fontSize: 16, fontWeight: 600, color: GREEN }}>High</p>
-                  </div>
-                  <div>
-                    <Label text="Fit Tier" />
-                    <p style={{ margin: '8px 0 0', fontSize: 16, fontWeight: 600, color: TEXT }}>Strong Fit</p>
+                  <div style={{
+                    marginTop: 10,
+                    paddingTop: 10,
+                    borderTop: '1px solid rgba(255,255,255,0.08)'
+                  }}>
+                    <p style={{
+                      fontSize: 17,
+                      fontWeight: 700,
+                      color: '#FFFFFF',
+                      letterSpacing: '-0.01em',
+                      marginBottom: 3
+                    }}>
+                      Pioneer
+                    </p>
+                    <p style={{
+                      fontSize: 12,
+                      color: 'rgba(255,255,255,0.4)',
+                      lineHeight: 1.5,
+                      fontStyle: 'italic'
+                    }}>
+                      Moves first. Decides fast. Drives outcomes without waiting for alignment.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -302,9 +315,58 @@ export default function SampleReportPage() {
                 <p style={{ margin: '12px 0 0', fontSize: 16, lineHeight: 1.7, color: SUBTLE }}>
                   Strong signal alignment with role benchmark requirements. Pattern matches Pioneer archetype — decisive under pressure, high execution drive, built for field environments where someone has to step forward and own the outcome.
                 </p>
+                <div style={{
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: 8,
+                  padding: '16px 20px',
+                  margin: '16px 0'
+                }}>
+                  {[
+                    {
+                      label: 'HIRE IF',
+                      color: '#22C55E',
+                      text: 'The role requires independent execution and fast decisions without waiting for team consensus.'
+                    },
+                    {
+                      label: 'DO NOT HIRE IF',
+                      color: '#EF4444',
+                      text: 'Success depends on consensus-driven decisions, process rigor, or cross-functional alignment before action.'
+                    }
+                  ].map((row, i) => (
+                    <div key={i} style={{
+                      display: 'flex',
+                      gap: 14,
+                      alignItems: 'flex-start',
+                      padding: '8px 0',
+                      borderTop: i > 0
+                        ? '1px solid rgba(255,255,255,0.06)'
+                        : 'none'
+                    }}>
+                      <span style={{
+                        fontSize: 9,
+                        fontWeight: 600,
+                        color: row.color,
+                        letterSpacing: '0.08em',
+                        textTransform: 'uppercase',
+                        whiteSpace: 'nowrap',
+                        marginTop: 2,
+                        minWidth: 88
+                      }}>
+                        {row.label}
+                      </span>
+                      <span style={{
+                        fontSize: 13,
+                        color: 'rgba(255,255,255,0.65)',
+                        lineHeight: 1.6
+                      }}>
+                        {row.text}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
               <div style={{ borderTop: `1px solid ${DIVIDER}`, paddingTop: 16, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {['Based on 80 behavioral signals', 'Role benchmark active', 'IPIP-NEO validated'].map((item, i) => (
+                {['Based on 80 behavioral signals', 'Role benchmark active'].map((item, i) => (
                   <span key={item} style={{ fontSize: 11, color: SUBTLE }}>
                     {i > 0 && <span style={{ margin: '0 8px', color: DIVIDER }}>·</span>}
                     {item}
@@ -447,17 +509,16 @@ export default function SampleReportPage() {
               The hiring manager completed the same 6-minute assessment. This section shows candidate–manager behavioral compatibility.
             </p>
 
-            <div className="rpt-team-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, marginBottom: 28 }}>
-              {[
-                { name: 'Marcus Thompson', role: 'Candidate · Pioneer', scores: CANDIDATE_FIT },
-                { name: 'David Mercer',    role: 'Hiring Manager · Diplomat', scores: HM_FIT },
-              ].map(person => (
-                <div key={person.name} style={{ textAlign: 'center' }}>
-                  <p style={{ margin: '0 0 2px', fontSize: 14, fontWeight: 700, color: TEXT }}>{person.name}</p>
-                  <p style={{ margin: '0 0 16px', fontSize: 12, color: SUBTLE }}>{person.role}</p>
-                  <FitModelViz scores={person.scores} benchmark={null} />
-                </div>
-              ))}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 28 }}>
+              <FitModelViz scores={CANDIDATE_FIT} benchmark={HM_FIT} />
+              <p style={{
+                fontSize: 11,
+                color: 'rgba(255,255,255,0.3)',
+                textAlign: 'center',
+                marginTop: 8
+              }}>
+                Solid line: Marcus Thompson · Dashed line: David Mercer (HM)
+              </p>
             </div>
 
             <div style={{ display: 'grid', gap: 10 }}>
@@ -495,7 +556,7 @@ export default function SampleReportPage() {
           {/* Footer */}
           <footer style={{ paddingTop: 24, borderTop: `1px solid ${DIVIDER}` }}>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 0, marginBottom: 12, alignItems: 'center' }}>
-              {['Report ID: a4f2c8d1', 'IPIP-NEO validated', 'Assessment completed Mar 14, 2026'].map((item, i) => (
+              {['Report ID: a4f2c8d1', 'Assessment completed Mar 14, 2026'].map((item, i) => (
                 <span key={item} style={{ fontSize: 11, color: SUBTLE }}>
                   {i > 0 && <span style={{ margin: '0 8px', opacity: 0.4 }}>·</span>}
                   {item}

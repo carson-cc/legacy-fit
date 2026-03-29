@@ -10,8 +10,8 @@ import {
 } from '@/app/components/profiles/helpers'
 
 const DIMS = ['dominance', 'extraversion', 'patience', 'formality'] as const
-const DIM_LABELS = ['Drive', 'Social', 'Patience', 'Structure'] as const
-const DIM_TECHNICAL = ['Dominance', 'Extraversion', 'Patience', 'Formality'] as const
+const DIM_LABELS = ['Drive', 'Social', 'Pace', 'Structure'] as const
+const DIM_TECHNICAL = ['Execution', 'Collaboration', 'Adaptability', 'Ownership'] as const
 
 export function generateStaticParams() {
   return REFERENCE_PROFILES.map(p => ({ name: p.name.toLowerCase() }))

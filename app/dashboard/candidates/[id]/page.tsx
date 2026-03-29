@@ -593,7 +593,6 @@ export default function CandidateDetailPage() {
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 0, alignItems: 'center' }}>
           {[
             `Report ID: ${candidate.resultId?.slice(0, 8) ?? 'N/A'}`,
-            'IPIP-NEO validated',
             `Assessment completed ${fmtDate(candidate.completedAt)}`,
           ].map((item, i) => (
             <span key={item} style={{ fontSize: 11, color: '#BFBFBF' }}>

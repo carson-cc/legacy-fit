@@ -1,27 +1,44 @@
 'use client'
-import { useEffect, useState } from 'react'
+
+import { useEffect, useState, useRef } from 'react'
 
 export default function HomePage() {
   const [navLight, setNavLight] = useState(false)
+  const [lineDrawn, setLineDrawn] = useState(false)
+  const beat4Ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const lightBeats = document.querySelectorAll(
-      '#beat-light-start, #beat-light-end'
-    )
+    const lightSections = document.querySelectorAll('.beat-light')
     const obs = new IntersectionObserver(
       (entries) => {
-        const anyVisible = entries.some(e => e.isIntersecting)
-        setNavLight(anyVisible)
+        setNavLight(entries.some(e => e.isIntersecting))
       },
       { threshold: 0.1 }
     )
-    lightBeats.forEach(el => obs.observe(el))
+    lightSections.forEach(el => obs.observe(el))
+    return () => obs.disconnect()
+  }, [])
+
+  useEffect(() => {
+    const el = beat4Ref.current
+    if (!el) return
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setLineDrawn(true)
+          obs.disconnect()
+        }
+      },
+      { threshold: 0.6 }
+    )
+    obs.observe(el)
     return () => obs.disconnect()
   }, [])
 
   return (
-    <>
-      {/* ── FIXED NAV ─────────────────────────────────────────── */}
+    <div className="snap-page">
+
+      {/* FIXED NAV */}
       <nav style={{
         position: 'fixed',
         top: 0, left: 0, right: 0,
@@ -34,7 +51,6 @@ export default function HomePage() {
           ? 'rgba(245,245,240,0.96)'
           : 'transparent',
         backdropFilter: navLight ? 'blur(12px)' : 'none',
-        WebkitBackdropFilter: navLight ? 'blur(12px)' : 'none',
         transition: 'all 300ms ease'
       }}>
         <span style={{
@@ -46,79 +62,61 @@ export default function HomePage() {
         }}>
           Veltro
         </span>
-
-        <div className="nav-links-desktop" style={{
-          display: 'flex',
-          gap: 24,
-          alignItems: 'center'
-        }}>
+        <div className="nav-links-desktop" style={{ display: 'flex', gap: 28, alignItems: 'center' }}>
+          {[
+            { label: 'Sample Report', href: '/sample-report' },
+            { label: 'Method', href: '/profiles' },
+            { label: 'Sign in', href: '/login' }
+          ].map(link => (
+            <a key={link.label} href={link.href} style={{
+              fontSize: 13,
+              color: navLight
+                ? 'rgba(0,0,0,0.4)'
+                : 'rgba(255,255,255,0.4)',
+              textDecoration: 'none',
+              transition: 'color 300ms ease'
+            }}>
+              {link.label}
+            </a>
+          ))}
           <a href="/sample-report" style={{
             fontSize: 13,
-            color: navLight
-              ? 'rgba(0,0,0,0.4)'
-              : 'rgba(255,255,255,0.4)',
+            fontWeight: 600,
+            color: navLight ? '#000' : '#fff',
+            background: navLight
+              ? 'rgba(0,0,0,0.06)'
+              : 'rgba(255,255,255,0.1)',
+            border: `1px solid ${navLight
+              ? 'rgba(0,0,0,0.12)'
+              : 'rgba(255,255,255,0.15)'}`,
+            padding: '7px 14px',
+            borderRadius: 6,
             textDecoration: 'none',
-            transition: 'color 300ms ease'
+            transition: 'all 300ms ease'
           }}>
-            Sample Report
-          </a>
-          <a href="/profiles" style={{
-            fontSize: 13,
-            color: navLight
-              ? 'rgba(0,0,0,0.4)'
-              : 'rgba(255,255,255,0.4)',
-            textDecoration: 'none',
-            transition: 'color 300ms ease'
-          }}>
-            Method
-          </a>
-          <a href="/login" style={{
-            fontSize: 13,
-            color: navLight
-              ? 'rgba(0,0,0,0.4)'
-              : 'rgba(255,255,255,0.4)',
-            textDecoration: 'none',
-            transition: 'color 300ms ease'
-          }}>
-            Sign in
+            See the report →
           </a>
         </div>
-
-        <a href="/sample-report" style={{
-          fontSize: 13,
-          fontWeight: 600,
-          color: navLight ? '#000' : '#fff',
-          background: navLight
-            ? 'rgba(0,0,0,0.06)'
-            : 'rgba(255,255,255,0.1)',
-          border: `1px solid ${navLight
-            ? 'rgba(0,0,0,0.12)'
-            : 'rgba(255,255,255,0.15)'}`,
-          padding: '7px 14px',
-          borderRadius: 6,
-          textDecoration: 'none',
-          transition: 'all 300ms ease'
-        }}>
-          See the report →
-        </a>
       </nav>
 
-      {/* ── BEAT 1 — The Recognition ──────────────────────────── */}
-      <section className="beat" style={{ background: '#000' }}>
+      {/* ============================================
+          BEAT 1 — The Recognition
+          Black screen. One line. Nothing else.
+      ============================================ */}
+      <section className="snap-beat" style={{ background: '#000' }}>
         <p style={{
-          fontSize: 'clamp(32px, 5vw, 52px)',
-          fontWeight: 600,
+          fontSize: 'clamp(36px, 5.5vw, 64px)',
+          fontWeight: 700,
           color: 'rgba(255,255,255,0.88)',
           letterSpacing: '-0.03em',
-          lineHeight: 1.1,
+          lineHeight: 1.05,
           textAlign: 'center',
-          maxWidth: 620
+          maxWidth: 700
         }}>
           You already know<br />
           who&apos;s right for the role.
         </p>
 
-        {/* Scroll indicator */}
         <div style={{
           position: 'absolute',
           bottom: 36,
@@ -133,72 +131,84 @@ export default function HomePage() {
           <div style={{
             width: 1,
             height: 32,
-            background: 'linear-gradient(180deg, rgba(255,255,255,0.6), transparent)'
+            background: 'linear-gradient(180deg,rgba(255,255,255,0.6),transparent)'
           }} />
           <span style={{
             fontSize: 9,
             letterSpacing: '0.12em',
             textTransform: 'uppercase',
             color: 'rgba(255,255,255,0.5)'
-          }}>Scroll</span>
+          }}>
+            Scroll
+          </span>
         </div>
       </section>
 
-      {/* ── BEAT 2 — The Shift ────────────────────────────────── */}
-      <section className="beat" style={{ background: '#000' }}>
+      {/* ============================================
+          BEAT 2 — The Shift
+          First line dims. Second line arrives.
+      ============================================ */}
+      <section className="snap-beat" style={{ background: '#000' }}>
         <div style={{ textAlign: 'center' }}>
           <p style={{
-            fontSize: 'clamp(28px, 4.5vw, 48px)',
-            fontWeight: 600,
-            color: 'rgba(255,255,255,0.28)',
+            fontSize: 'clamp(32px, 5vw, 60px)',
+            fontWeight: 700,
+            color: 'rgba(255,255,255,0.2)',
             letterSpacing: '-0.03em',
-            lineHeight: 1.1,
-            marginBottom: 18
+            lineHeight: 1.05,
+            marginBottom: 16
           }}>
             You already know<br />
             who&apos;s right for the role.
           </p>
           <p style={{
-            fontSize: 'clamp(28px, 4.5vw, 48px)',
+            fontSize: 'clamp(32px, 5vw, 60px)',
             fontWeight: 700,
             color: '#FFFFFF',
             letterSpacing: '-0.03em',
-            lineHeight: 1.1
+            lineHeight: 1.05
           }}>
             Now show your client why.
           </p>
         </div>
       </section>
 
-      {/* ── BEAT 3 — The Object ───────────────────────────────── */}
-      <section className="beat" style={{ background: '#000', gap: 24 }}>
+      {/* ============================================
+          BEAT 3 — The Object
+          The report appears. It just exists.
+          snap-beat-scroll allows internal scroll
+          if report exceeds viewport height.
+      ============================================ */}
+      <section className="snap-beat-scroll" style={{ background: '#000' }}>
         <p style={{
           fontSize: 11,
           fontWeight: 600,
           color: 'rgba(255,255,255,0.25)',
           letterSpacing: '0.12em',
-          textTransform: 'uppercase'
+          textTransform: 'uppercase',
+          marginBottom: 20,
+          textAlign: 'center',
+          flexShrink: 0
         }}>
           What your client sees
         </p>
 
         <div style={{
           width: '100%',
-          maxWidth: 640,
+          maxWidth: 900,
           background: '#0D1421',
           border: '1px solid rgba(255,255,255,0.09)',
-          borderRadius: 14,
-          overflow: 'hidden'
+          borderRadius: 16,
+          overflow: 'hidden',
+          boxShadow: '0 40px 120px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.04)'
         }}>
-          {/* Top gradient bar */}
           <div style={{
-            height: 2,
-            background: 'linear-gradient(90deg, #2563EB, #22C55E)'
+            height: 1,
+            background: 'rgba(37,99,235,0.4)'
           }} />
 
-          {/* Report header */}
           <div style={{
-            padding: '14px 22px',
+            padding: '16px 24px',
             borderBottom: '1px solid rgba(255,255,255,0.06)',
             display: 'flex',
             justifyContent: 'space-between',
@@ -213,25 +223,18 @@ export default function HomePage() {
             }}>
               Candidate Recommendation Report
             </span>
-            <span style={{
-              fontSize: 11,
-              color: '#2563EB',
-              fontWeight: 500
-            }}>
+            <span style={{ fontSize: 11, color: '#2563EB', fontWeight: 500 }}>
               Share report →
             </span>
           </div>
 
-          {/* Report body — two columns desktop, single mobile */}
-          <div
-            className="report-body-grid"
-            style={{
-              padding: 22,
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: 20
-            }}
-          >
+          <div style={{
+            padding: 24,
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: 24
+          }} className="report-grid">
+
             {/* Left column */}
             <div>
               <p style={{
@@ -239,7 +242,7 @@ export default function HomePage() {
                 fontWeight: 700,
                 color: '#FFFFFF',
                 letterSpacing: '-0.01em',
-                marginBottom: 2
+                marginBottom: 3
               }}>
                 Marcus Thompson
               </p>
@@ -251,7 +254,6 @@ export default function HomePage() {
                 Superintendent · Chicago · Gilbane Construction
               </p>
 
-              {/* Verdict row */}
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -262,7 +264,7 @@ export default function HomePage() {
                 marginBottom: 12
               }}>
                 <span style={{
-                  fontSize: 38,
+                  fontSize: 40,
                   fontWeight: 800,
                   color: '#FFFFFF',
                   letterSpacing: '-0.03em',
@@ -291,9 +293,9 @@ export default function HomePage() {
                 lineHeight: 1.65,
                 marginBottom: 12
               }}>
-                Aligned with high-performing candidates in comparable
-                field leadership roles. Decisive under pressure, built
-                for environments where someone has to own the outcome.
+                Aligned with high-performing candidates in comparable field
+                leadership roles. Decisive under pressure, built for
+                environments where someone has to own the outcome.
               </p>
 
               {/* Decision Frame */}
@@ -319,7 +321,9 @@ export default function HomePage() {
                     display: 'flex',
                     gap: 10,
                     padding: '5px 0',
-                    borderTop: i > 0 ? '1px solid rgba(255,255,255,0.05)' : 'none'
+                    borderTop: i > 0
+                      ? '1px solid rgba(255,255,255,0.05)'
+                      : 'none'
                   }}>
                     <span style={{
                       fontSize: 9,
@@ -327,7 +331,7 @@ export default function HomePage() {
                       color: row.color,
                       letterSpacing: '0.07em',
                       textTransform: 'uppercase',
-                      width: 76,
+                      width: 80,
                       flexShrink: 0,
                       marginTop: 2
                     }}>
@@ -359,18 +363,20 @@ export default function HomePage() {
               </p>
 
               {[
-                { label: 'EXECUTION',      value: 72, delta: '+8',  color: '#22C55E', warn: false },
-                { label: 'OWNERSHIP',      value: 67, delta: '+1',  color: '#22C55E', warn: false },
-                { label: 'ADAPTABILITY',   value: 65, delta: '+15', color: '#22C55E', warn: false },
-                { label: 'COLLABORATION',  value: 49, delta: '−3',  color: '#EF4444', warn: true  },
-                { label: 'DECISION SPEED', value: 85, delta: '+21', color: '#22C55E', warn: false },
+                { label: 'EXECUTION',     value: 72, delta: '+8',  color: '#22C55E', warn: false },
+                { label: 'OWNERSHIP',     value: 67, delta: '+1',  color: '#22C55E', warn: false },
+                { label: 'ADAPTABILITY',  value: 65, delta: '+15', color: '#22C55E', warn: false },
+                { label: 'COLLABORATION', value: 49, delta: '−3',  color: '#EF4444', warn: true  },
+                { label: 'DECISION SPEED',value: 85, delta: '+21', color: '#22C55E', warn: false },
               ].map((dim, i) => (
                 <div key={i} style={{
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
                   padding: '4px 0',
-                  borderBottom: i < 4 ? '1px solid rgba(255,255,255,0.04)' : 'none'
+                  borderBottom: i < 4
+                    ? '1px solid rgba(255,255,255,0.04)'
+                    : 'none'
                 }}>
                   <span style={{
                     fontSize: 10,
@@ -432,44 +438,75 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── BEAT 4 — The Consequence ──────────────────────────── */}
-      <section className="beat" style={{ background: '#000' }}>
-        <p style={{
-          fontSize: 'clamp(22px, 3.5vw, 32px)',
-          fontWeight: 400,
-          color: 'rgba(255,255,255,0.5)',
-          letterSpacing: '-0.02em',
-          fontStyle: 'italic',
-          maxWidth: 560,
-          textAlign: 'center',
-          lineHeight: 1.5
-        }}>
-          <strong style={{
-            color: 'rgba(255,255,255,0.85)',
-            fontWeight: 600,
-            fontStyle: 'normal'
-          }}>
-            So you don&apos;t hear
-          </strong>
-          <br />
-          &ldquo;let&apos;s see more candidates.&rdquo;
-        </p>
-      </section>
-
-      {/* ── BEAT 5 — The Break ────────────────────────────────── */}
-      <section className="beat" id="beat-light-start" style={{ background: '#F5F5F0' }}>
+      {/* ============================================
+          BEAT 4 — The Consequence
+          One line. The specific fear.
+      ============================================ */}
+      <section
+        className="snap-beat"
+        style={{ background: '#000' }}
+        ref={beat4Ref}
+      >
         <div style={{ textAlign: 'center' }}>
           <p style={{
-            fontSize: 'clamp(28px, 4vw, 44px)',
+            fontSize: 'clamp(24px, 3.5vw, 36px)',
             fontWeight: 600,
-            color: 'rgba(0,0,0,0.25)',
+            color: 'rgba(255,255,255,0.82)',
+            letterSpacing: '-0.02em',
+            marginBottom: 12
+          }}>
+            So you don&apos;t hear
+          </p>
+          <p style={{
+            fontSize: 'clamp(24px, 3.5vw, 36px)',
+            fontWeight: 500,
+            color: 'rgba(255,255,255,0.4)',
+            letterSpacing: '-0.02em',
+            fontStyle: 'italic'
+          }}>
+            &ldquo;let&apos;s see more candidates.&rdquo;
+          </p>
+        </div>
+
+        {/* Drawing line */}
+        <div style={{
+          position: 'absolute',
+          bottom: 48,
+          left: '10%',
+          right: '10%',
+          height: 1,
+          overflow: 'hidden'
+        }}>
+          <div style={{
+            height: '100%',
+            background: 'rgba(255,255,255,0.12)',
+            transformOrigin: 'left',
+            transform: lineDrawn ? 'scaleX(1)' : 'scaleX(0)',
+            transition: 'transform 600ms ease-out'
+          }} />
+        </div>
+      </section>
+
+      {/* ============================================
+          BEAT 5 — The Break
+          Hard cut to light. Two lines. Nothing else.
+      ============================================ */}
+      <section
+        className="snap-beat beat-light"
+        style={{ background: '#F5F5F0' }}
+      >
+        <div style={{ textAlign: 'center' }}>
+          <p style={{
+            fontSize: 'clamp(28px, 4vw, 48px)',
+            fontWeight: 600,
+            color: 'rgba(0,0,0,0.22)',
             letterSpacing: '-0.03em',
             marginBottom: 14
           }}>
             This isn&apos;t an assessment.
           </p>
           <p style={{
-            fontSize: 'clamp(28px, 4vw, 44px)',
+            fontSize: 'clamp(28px, 4vw, 48px)',
             fontWeight: 700,
             color: '#000000',
             letterSpacing: '-0.03em'
@@ -479,305 +516,95 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── BEAT 6 — The Moment ───────────────────────────────── */}
+      {/* ============================================
+          BEAT 6 — The Close
+          Ghost report behind the text. One CTA.
+      ============================================ */}
       <section
-        className="beat"
-        id="beat-light-end"
-        style={{
-          background: '#F5F5F0',
-          alignItems: 'flex-start',
-          padding: '80px 15%',
-          textAlign: 'left'
-        }}
+        className="snap-beat"
+        style={{ background: '#000', position: 'relative', overflow: 'hidden' }}
       >
-        <div style={{ maxWidth: 640 }}>
-          {[
-            { text: 'Eight weeks in. Your candidate is right for the role.', muted: false, strong: false },
-            { text: 'The client met someone internally.',                    muted: false, strong: false },
-            { text: "Now they're not sure.",                                  muted: false, strong: false },
-            { text: 'SPACER',                                                 muted: false, strong: false },
-            { text: 'This is where most searches break.',                    muted: true,  strong: false },
-            { text: 'Not because the candidate is wrong.',                   muted: true,  strong: false },
-            { text: "Because the case isn't clear.",                          muted: true,  strong: false },
-            { text: 'SPACER',                                                 muted: false, strong: false },
-            { text: 'This is what Veltro is for.',                          muted: false, strong: true  },
-          ].map((line, i) => {
-            if (line.text === 'SPACER') return <div key={i} style={{ height: 28 }} />
-            return (
-              <p key={i} style={{
-                fontSize: 'clamp(17px, 2.2vw, 22px)',
-                color: line.strong
-                  ? '#000000'
-                  : line.muted
-                    ? 'rgba(0,0,0,0.35)'
-                    : 'rgba(0,0,0,0.7)',
-                fontWeight: line.strong ? 700 : 400,
-                lineHeight: 1.85,
-                letterSpacing: '-0.01em'
-              }}>
-                {line.text}
-              </p>
-            )
-          })}
-        </div>
-      </section>
-
-      {/* ── BEAT 7 — The Contrast ─────────────────────────────── */}
-      <section className="beat" style={{ background: '#000' }}>
-        <div
-          className="contrast-grid"
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: 1,
-            background: 'rgba(255,255,255,0.07)',
-            borderRadius: 12,
-            overflow: 'hidden',
-            width: '100%',
-            maxWidth: 700
-          }}
-        >
-          {/* Left — what they hear today */}
-          <div style={{ background: '#0A0A0A', padding: 28 }}>
-            <p style={{
-              fontSize: 10,
-              fontWeight: 600,
-              color: 'rgba(255,255,255,0.2)',
-              letterSpacing: '0.1em',
-              textTransform: 'uppercase',
-              marginBottom: 20
-            }}>
-              What they hear today
-            </p>
-            {[
-              '\u201cStrong background for the role.\u201d',
-              '\u201cGood operating fit, we think.\u201d',
-              '\u201cWe\u2019re confident in this one.\u201d',
-              '\u201cWe think he can do the job.\u201d'
-            ].map((q, i) => (
-              <p key={i} style={{
-                fontSize: 14,
-                color: 'rgba(255,255,255,0.28)',
-                fontStyle: 'italic',
-                lineHeight: 1.7,
-                marginBottom: 6
-              }}>
-                {q}
-              </p>
-            ))}
-            <p style={{
-              fontSize: 12,
-              color: 'rgba(255,255,255,0.16)',
-              fontStyle: 'italic',
-              marginTop: 16,
-              paddingTop: 14,
-              borderTop: '1px solid rgba(255,255,255,0.06)'
-            }}>
-              Sounds fine. Doesn&apos;t hold up when the client gets nervous.
-            </p>
-          </div>
-
-          {/* Right — what they see with Veltro */}
+        {/* Ghost report — subliminal, behind everything */}
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: '75%',
+          maxWidth: 680,
+          opacity: 0.05,
+          filter: 'blur(4px)',
+          pointerEvents: 'none',
+          userSelect: 'none'
+        }}>
           <div style={{
             background: '#0D1421',
-            padding: 28,
-            borderLeft: '1px solid rgba(37,99,235,0.2)'
+            border: '1px solid rgba(255,255,255,0.15)',
+            borderRadius: 14,
+            padding: 32
           }}>
-            <p style={{
-              fontSize: 10,
-              fontWeight: 600,
-              color: '#2563EB',
-              letterSpacing: '0.1em',
-              textTransform: 'uppercase',
-              marginBottom: 20
-            }}>
-              What they see with Veltro
+            <p style={{ fontSize: 22, fontWeight: 700, color: '#fff', marginBottom: 6 }}>
+              Marcus Thompson
             </p>
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 20 }}>
+              Superintendent · Chicago · Gilbane Construction
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
+              <span style={{ fontSize: 48, fontWeight: 800, color: '#fff' }}>93</span>
+              <span style={{ fontSize: 24, fontWeight: 700, color: '#22C55E' }}>Strong Hire</span>
+            </div>
             {[
-              {
-                title: '93 \u2014 Strong Hire',
-                sub: 'Top performers score 85+. Marcus is at 93.'
-              },
-              {
-                title: 'Compatible with the team',
-                sub: 'High overlap on collaboration. One friction point \u2014 addressable in onboarding.'
-              },
-              {
-                title: '3 interview probes, ready',
-                sub: 'Targeted questions tied to specific risks.'
-              }
-            ].map((item, i) => (
-              <div key={i} style={{ marginBottom: 16 }}>
-                <p style={{
-                  fontSize: 14,
-                  fontWeight: 600,
-                  color: '#FFFFFF',
-                  marginBottom: 3
-                }}>
-                  {item.title}
-                </p>
-                <p style={{
-                  fontSize: 12,
-                  color: 'rgba(255,255,255,0.45)',
-                  lineHeight: 1.55
-                }}>
-                  {item.sub}
-                </p>
+              'EXECUTION +8',
+              'OWNERSHIP +1',
+              'ADAPTABILITY +15',
+              'COLLABORATION −3',
+              'DECISION SPEED +21'
+            ].map((d, i) => (
+              <div key={i} style={{
+                fontSize: 11,
+                color: 'rgba(255,255,255,0.4)',
+                padding: '4px 0',
+                borderBottom: '1px solid rgba(255,255,255,0.05)'
+              }}>
+                {d}
               </div>
             ))}
-            <p style={{
-              fontSize: 12,
-              color: 'rgba(255,255,255,0.25)',
-              fontStyle: 'italic',
-              marginTop: 16,
-              paddingTop: 14,
-              borderTop: '1px solid rgba(255,255,255,0.06)'
-            }}>
-              The resume got you to this meeting.<br />
-              This gets you out of it with a yes.
-            </p>
           </div>
         </div>
-      </section>
 
-      {/* ── BEAT 8 — The Simplicity ───────────────────────────── */}
-      <section className="beat" style={{ background: '#000', gap: 28 }}>
-        <p style={{
-          fontSize: 'clamp(26px, 3.5vw, 38px)',
-          fontWeight: 700,
-          color: '#FFFFFF',
-          letterSpacing: '-0.03em',
-          textAlign: 'center'
-        }}>
-          It fits inside your search.
-        </p>
+        {/* Foreground */}
         <div style={{
+          position: 'relative',
+          zIndex: 1,
+          textAlign: 'center',
           display: 'flex',
           flexDirection: 'column',
-          gap: 10,
-          maxWidth: 500,
-          textAlign: 'center'
+          alignItems: 'center',
+          gap: 24
         }}>
-          {[
-            { strong: 'Send the candidate a link.', rest: ' Six minutes. No login.' },
-            { strong: 'Get the scored result.',     rest: ' Automatically.' },
-            { strong: 'Open it in the meeting.',    rest: ' The room decides.' }
-          ].map((step, i) => (
-            <p key={i} style={{
-              fontSize: 'clamp(16px, 2vw, 19px)',
-              color: 'rgba(255,255,255,0.45)',
-              lineHeight: 1.6
+          <div>
+            <p style={{
+              fontSize: 'clamp(32px, 5vw, 56px)',
+              fontWeight: 700,
+              color: 'rgba(255,255,255,0.88)',
+              letterSpacing: '-0.03em',
+              lineHeight: 1.05,
+              marginBottom: 12
             }}>
-              <strong style={{
-                color: 'rgba(255,255,255,0.82)',
-                fontWeight: 500
-              }}>
-                {step.strong}
-              </strong>
-              {step.rest}
+              You already know.
             </p>
-          ))}
-        </div>
-      </section>
+            <p style={{
+              fontSize: 'clamp(32px, 5vw, 56px)',
+              fontWeight: 700,
+              color: 'rgba(255,255,255,0.22)',
+              letterSpacing: '-0.03em',
+              lineHeight: 1.05
+            }}>
+              Now show them.
+            </p>
+          </div>
 
-      {/* ── BEAT 9 — The Depth ────────────────────────────────── */}
-      <section className="beat" style={{ background: '#000', gap: 16 }}>
-        <p style={{
-          fontSize: 'clamp(20px, 2.8vw, 26px)',
-          fontWeight: 500,
-          color: 'rgba(255,255,255,0.78)',
-          letterSpacing: '-0.02em',
-          maxWidth: 540,
-          lineHeight: 1.5,
-          textAlign: 'center',
-          marginBottom: 8
-        }}>
-          Add the people they&apos;ll work with.
-          <br />
-          Every report shows who they fit &mdash;
-          <br />
-          and where friction may show up.
-        </p>
-        <p style={{
-          fontSize: 14,
-          color: 'rgba(255,255,255,0.3)',
-          maxWidth: 440,
-          lineHeight: 1.65,
-          textAlign: 'center'
-        }}>
-          Capture the hiring manager once.
-          Active on every candidate for that client, forever.
-        </p>
-      </section>
-
-      {/* ── BEAT 10 — The Proof ───────────────────────────────── */}
-      <section className="beat" style={{ background: '#000', gap: 24 }}>
-        <p style={{
-          fontSize: 14,
-          color: 'rgba(255,255,255,0.3)',
-          fontStyle: 'italic'
-        }}>
-          Built on real behavioral data.
-        </p>
-        <div style={{
-          display: 'flex',
-          gap: 'clamp(24px, 5vw, 64px)',
-          alignItems: 'flex-end',
-          flexWrap: 'wrap',
-          justifyContent: 'center'
-        }}>
-          {[
-            { val: '2.2M',  label: 'People in the dataset' },
-            { val: '94',    label: 'Signals per candidate' },
-            { val: '5',     label: 'Dimensions scored' },
-            { val: '6 min', label: 'Per evaluation' }
-          ].map((stat, i) => (
-            <div key={i} style={{ textAlign: 'center' }}>
-              <p style={{
-                fontSize: 'clamp(36px, 5vw, 56px)',
-                fontWeight: 800,
-                color: '#FFFFFF',
-                letterSpacing: '-0.04em',
-                lineHeight: 1
-              }}>
-                {stat.val}
-              </p>
-              <p style={{
-                fontSize: 12,
-                color: 'rgba(255,255,255,0.3)',
-                marginTop: 6
-              }}>
-                {stat.label}
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── BEAT 11 — The CTA ─────────────────────────────────── */}
-      <section className="beat" style={{ background: '#000', gap: 16 }}>
-        <p style={{
-          fontSize: 11,
-          fontWeight: 600,
-          color: 'rgba(255,255,255,0.25)',
-          letterSpacing: '0.12em',
-          textTransform: 'uppercase'
-        }}>
-          The deliverable
-        </p>
-        <p style={{
-          fontSize: 'clamp(24px, 3.5vw, 34px)',
-          fontWeight: 700,
-          color: '#FFFFFF',
-          letterSpacing: '-0.02em',
-          textAlign: 'center',
-          marginBottom: 8
-        }}>
-          The report your client sees.
-        </p>
-        <a
-          href="/sample-report"
-          style={{
+          <a href="/sample-report" style={{
             display: 'inline-flex',
             alignItems: 'center',
             background: '#FFFFFF',
@@ -788,43 +615,17 @@ export default function HomePage() {
             borderRadius: 9,
             textDecoration: 'none',
             letterSpacing: '-0.01em',
-            marginBottom: 12
-          }}
-        >
-          Open sample report →
-        </a>
-        <p style={{
-          fontSize: 12,
-          color: 'rgba(255,255,255,0.22)'
-        }}>
-          Used in real client meetings to make the final call.
-        </p>
-      </section>
+            maxWidth: 320
+          }}>
+            Open sample report →
+          </a>
 
-      {/* ── BEAT 12 — The Close ───────────────────────────────── */}
-      <section className="beat" style={{ background: '#000' }}>
-        <div style={{ textAlign: 'center' }}>
-          <p style={{
-            fontSize: 'clamp(32px, 5vw, 52px)',
-            fontWeight: 700,
-            color: 'rgba(255,255,255,0.88)',
-            letterSpacing: '-0.03em',
-            lineHeight: 1.1,
-            marginBottom: 14
-          }}>
-            You already know.
-          </p>
-          <p style={{
-            fontSize: 'clamp(32px, 5vw, 52px)',
-            fontWeight: 700,
-            color: 'rgba(255,255,255,0.28)',
-            letterSpacing: '-0.03em',
-            lineHeight: 1.1
-          }}>
-            Now show them.
+          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.2)' }}>
+            Used in real client meetings to make the final call.
           </p>
         </div>
       </section>
-    </>
+
+    </div>
   )
 }

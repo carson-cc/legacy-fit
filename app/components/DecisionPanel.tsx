@@ -261,7 +261,6 @@ export default function DecisionPanel({
               `Based on ${totalSignals || 94} behavioral signals`,
               'Role benchmark active',
               'Recommendation generated from calibrated signal analysis',
-              'IPIP-NEO validated',
             ]}
           />
         </div>

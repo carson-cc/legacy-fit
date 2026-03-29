@@ -450,6 +450,67 @@ button, a, input, select, textarea {
   }
 }
 
+/* ================================================================
+   SNAP SCROLLING — homepage only
+   ================================================================ */
+
+html:has(.snap-page) {
+  scroll-snap-type: y mandatory;
+  overflow-y: scroll;
+  height: 100%;
+  scroll-behavior: smooth;
+}
+
+body:has(.snap-page) {
+  height: 100%;
+  overflow: hidden;
+}
+
+.snap-beat {
+  scroll-snap-align: start;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: 80px 48px;
+}
+
+.snap-beat-scroll {
+  scroll-snap-align: start;
+  min-height: 100vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: 60px 40px;
+}
+
+@media (max-width: 768px) {
+  html:has(.snap-page) {
+    scroll-snap-type: y proximity;
+  }
+  .snap-beat {
+    padding: 80px 24px;
+  }
+  .snap-beat-scroll {
+    padding: 60px 20px;
+  }
+  .report-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .contrast-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
 /* Kill dev artifacts */
 [data-nextjs-dialog-overlay],
 [data-next-badge],

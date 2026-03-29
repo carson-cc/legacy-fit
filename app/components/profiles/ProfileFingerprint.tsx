@@ -51,16 +51,16 @@ export default function ProfileFingerprint({ d, e, p, f, color, size }: Props) {
       {!isSm && (
         <>
           <text x={cx} y={cy - maxR - 16} textAnchor="middle" fill="rgba(255,255,255,0.32)" fontSize={9} fontWeight={600} fontFamily="system-ui" letterSpacing="0.1em">DRIVE</text>
-          <text x={cx} y={cy - maxR - 6} textAnchor="middle" fill="rgba(255,255,255,0.12)" fontSize={7} fontFamily="system-ui">(Dominance)</text>
+          <text x={cx} y={cy - maxR - 6} textAnchor="middle" fill="rgba(255,255,255,0.12)" fontSize={7} fontFamily="system-ui">(Execution)</text>
 
           <text x={cx + maxR + 10} y={cy - 4} textAnchor="start" fill="rgba(255,255,255,0.32)" fontSize={9} fontWeight={600} fontFamily="system-ui" letterSpacing="0.1em">SOCIAL</text>
-          <text x={cx + maxR + 10} y={cy + 7} textAnchor="start" fill="rgba(255,255,255,0.12)" fontSize={7} fontFamily="system-ui">(Extraversion)</text>
+          <text x={cx + maxR + 10} y={cy + 7} textAnchor="start" fill="rgba(255,255,255,0.12)" fontSize={7} fontFamily="system-ui">(Collaboration)</text>
 
-          <text x={cx} y={cy + maxR + 16} textAnchor="middle" fill="rgba(255,255,255,0.32)" fontSize={9} fontWeight={600} fontFamily="system-ui" letterSpacing="0.1em">PATIENCE</text>
-          <text x={cx} y={cy + maxR + 26} textAnchor="middle" fill="rgba(255,255,255,0.12)" fontSize={7} fontFamily="system-ui">(Patience)</text>
+          <text x={cx} y={cy + maxR + 16} textAnchor="middle" fill="rgba(255,255,255,0.32)" fontSize={9} fontWeight={600} fontFamily="system-ui" letterSpacing="0.1em">PACE</text>
+          <text x={cx} y={cy + maxR + 26} textAnchor="middle" fill="rgba(255,255,255,0.12)" fontSize={7} fontFamily="system-ui">(Adaptability)</text>
 
           <text x={cx - maxR - 10} y={cy - 4} textAnchor="end" fill="rgba(255,255,255,0.32)" fontSize={9} fontWeight={600} fontFamily="system-ui" letterSpacing="0.1em">STRUCTURE</text>
-          <text x={cx - maxR - 10} y={cy + 7} textAnchor="end" fill="rgba(255,255,255,0.12)" fontSize={7} fontFamily="system-ui">(Formality)</text>
+          <text x={cx - maxR - 10} y={cy + 7} textAnchor="end" fill="rgba(255,255,255,0.12)" fontSize={7} fontFamily="system-ui">(Ownership)</text>
         </>
       )}
     </svg>

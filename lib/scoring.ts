@@ -115,8 +115,8 @@ function computeFit(
     fitLow: Math.max(0, fitPct - band),
     fitHigh: Math.min(100, fitPct + band),
     nearThreshold,
-    thresholdNote: Math.abs(fitPct - 85) <= band ? 'Borderline Strong Fit — within confidence margin'
-                 : Math.abs(fitPct - 70) <= band ? 'Borderline Explore Further/Needs Discussion — within confidence margin'
+    thresholdNote: Math.abs(fitPct - 85) <= band ? 'Borderline Strong Hire — within confidence margin'
+                 : Math.abs(fitPct - 70) <= band ? 'Borderline Proceed with Caution/Do Not Hire — within confidence margin'
                  : null,
   }
 }
@@ -124,10 +124,9 @@ function computeFit(
 // ── Recommendation system ──────────────────────────────────────
 
 export function fitLabel(fitPct: number): string {
-  if (fitPct >= 85) return 'Strong Fit'
-  if (fitPct >= 70) return 'Explore Further'
-  if (fitPct >= 55) return 'Needs Discussion'
-  return 'Low Fit'
+  if (fitPct >= 85) return 'Strong Hire'
+  if (fitPct >= 70) return 'Proceed with Caution'
+  return 'Do Not Hire'
 }
 
 export function getModelConfidence(fitPct: number): 'High' | 'Medium' | 'Low' {

@@ -3,7 +3,7 @@ import "./globals.css"
 
 export const metadata: Metadata = {
   title: "Veltro — Hiring Decision Engine",
-  description: "Veltro turns behavioral reads into scored reports — giving retained search firms a deliverable their clients can hold and act on.",
+  description: "Veltro turns a read on a candidate into a scored report — giving search and staffing firms a deliverable their clients can hold and act on.",
 }
 
 export default function RootLayout({
