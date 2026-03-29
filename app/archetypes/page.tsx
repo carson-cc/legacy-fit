@@ -56,6 +56,14 @@ const PENT_VALUES: Record<string, number[]> = {
   Veteran:     [70, 85, 60, 72, 52],
 }
 
+// ─── CATEGORY COMPOSITE PENTAGON VALS (0–1, Execution/Ownership/Adaptability/Collaboration/DecisionSpeed) ──
+const CATEGORY_COMPOSITE_VALS: Record<string, number[]> = {
+  field_command:     [0.80, 0.75, 0.69, 0.53, 0.79],
+  people_influence:  [0.62, 0.59, 0.84, 0.91, 0.67],
+  process_structure: [0.86, 0.85, 0.47, 0.54, 0.62],
+  strategic_drive:   [0.71, 0.80, 0.69, 0.68, 0.60],
+}
+
 // ─── ARCH DATA ────────────────────────────────────────────────────────────────
 const ARCH_DATA: Record<string, { oneLine: string; strength: string; failureMode: string; bestIn: string; watchFor: string }> = {
   Conductor:   { oneLine: 'Takes control before anyone else does.',         strength: 'Establishes direction where no one else has claimed it.',               failureMode: 'Overrides others before they had a chance to act.',             bestIn: 'Early-stage or restructuring roles with no clear owner.',               watchFor: 'Crowding out the development of people beneath them.' },
@@ -363,6 +371,8 @@ function RadarCanvas({
   const hoveredProfRef     = useRef<string | null>(null)
   const hoverStartRef      = useRef<number>(0)
   const groupFocusStartRef = useRef<number>(0)
+  const groupLeaveTimeRef  = useRef<number>(0)
+  const lastActiveCatRef   = useRef<string | null>(null)
   const ambientRef         = useRef<{
     cat: string | null; startT: number; endT: number; nextT: number; idx: number
   }>({ cat: null, startT: 0, endT: 0, nextT: 2200, idx: -1 })
@@ -385,7 +395,12 @@ function RadarCanvas({
 
   useEffect(() => {
     activeCatRef.current = activeCat
-    if (activeCat !== null) groupFocusStartRef.current = performance.now()
+    if (activeCat !== null) {
+      groupFocusStartRef.current = performance.now()
+      lastActiveCatRef.current = activeCat
+    } else {
+      groupLeaveTimeRef.current = performance.now()
+    }
   }, [activeCat])
   useEffect(() => {
     hoveredProfRef.current = hoveredProfileName
@@ -484,18 +499,20 @@ function RadarCanvas({
       ctx.lineWidth = 1; ctx.stroke()
     }
 
-    // ── Axes: hairlines from plot edge to plot edge ──
-    const px0 = ox + M, px1 = ox + side - M
-    const py0 = oy + M, py1 = oy + side - M
-    ctx.setLineDash([2, 8])
-    ctx.strokeStyle = 'rgba(255,255,255,0.07)'; ctx.lineWidth = 1
-    ctx.beginPath(); ctx.moveTo(px0, cy); ctx.lineTo(px1, cy); ctx.stroke()
-    ctx.beginPath(); ctx.moveTo(cx, py0); ctx.lineTo(cx, py1); ctx.stroke()
-    ctx.setLineDash([])
+    // ── Axes: full-canvas crosshair lines ──
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)'
+    ctx.lineWidth = 0.5
+    ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(w, cy); ctx.stroke()
+    ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, h); ctx.stroke()
 
     // ── Group pentagon layer (drawn before dots) ──
     const groupProgress = activeCat ? Math.min(1, (t - groupFocusStartRef.current) / 300) : 0
+    const timeSinceLeave = activeCat === null ? t - groupLeaveTimeRef.current : 0
+    const centerFadeOut = activeCat === null ? Math.max(0, 1 - timeSinceLeave / 250) : 1
+    const centerCat = activeCat ?? (centerFadeOut > 0.005 ? lastActiveCatRef.current : null)
+    const centerDrawProg = activeCat !== null ? Math.min(1, (t - groupFocusStartRef.current) / 450) : 1
 
+    // Four individual archetype pentagons near their dot positions
     if (activeCat !== null && groupProgress > 0.01) {
       const gc = getCat(activeCat)
       REFERENCE_PROFILES
@@ -505,11 +522,30 @@ function RadarCanvas({
           drawPentagonRaw(ctx, pentagonVals(p), x, y, gc.color,
             groupProgress, 1.2, 0.06, 0.28, 1.0, side)
         })
-      const avg = groupAverage(activeCat, w, h, M)
-      if (avg) {
-        drawPentagonRaw(ctx, avg.vals, avg.x, avg.y, gc.color,
-          groupProgress, 2.2, 0.04, 0.50, 1.15, side)
-      }
+    }
+
+    // Center composite pentagon — draws in on hover, fades out on leave
+    if (centerCat !== null && (centerDrawProg > 0.005 || centerFadeOut > 0.005)) {
+      const gc = getCat(centerCat)
+      const compositeVals = CATEGORY_COMPOSITE_VALS[centerCat] ?? [0.7, 0.7, 0.7, 0.7, 0.7]
+      const maxR = side * 0.22
+      // radiusScale: at v=1.0, r = (side/16) * radiusScale = side*0.22 → scale = 3.52
+      const radiusScale = 3.52
+      ctx.save()
+      ctx.globalAlpha = centerFadeOut
+      // Reference rings at 100% and 50% radius
+      ;[1.0, 0.5].forEach(frac => {
+        const pts = PENT_ANGLES.map(a => [cx + Math.cos(a) * maxR * frac, cy + Math.sin(a) * maxR * frac] as [number, number])
+        ctx.beginPath()
+        pts.forEach(([px, py], i) => i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py))
+        ctx.closePath()
+        ctx.strokeStyle = 'rgba(255,255,255,0.06)'
+        ctx.lineWidth = 0.5
+        ctx.stroke()
+      })
+      // Pentagon with draw-in animation via stroke-dashoffset
+      drawPentagonRaw(ctx, compositeVals, cx, cy, gc.color, centerDrawProg, 2, 0.07, 0.8, radiusScale, side)
+      ctx.restore()
     }
 
     // Ambient: faint member pentagons
@@ -823,6 +859,7 @@ function ArchCard({ profile, catColor, catKey, onHover, sectionVisible, cardInde
             fontSize: 11.5, fontWeight: 300, color: 'rgba(238,236,230,0.60)',
             lineHeight: 1.5, margin: '0 0 10px 0',
             fontFamily: '"DM Sans", -apple-system, sans-serif',
+            opacity: hov ? 0.3 : 1, transition: 'opacity 200ms ease',
           }}>
             {d.oneLine}
           </p>
@@ -833,7 +870,7 @@ function ArchCard({ profile, catColor, catKey, onHover, sectionVisible, cardInde
 
         {/* Strength */}
         {d && (
-          <div style={{ display: 'flex', gap: 7, alignItems: 'flex-start', marginBottom: 7 }}>
+          <div style={{ display: 'flex', gap: 7, alignItems: 'flex-start', marginBottom: 7, opacity: hov ? 0.25 : 1, transition: 'opacity 200ms ease' }}>
             <span style={{
               fontFamily: '"Barlow Condensed", system-ui', fontSize: 13, fontWeight: 700,
               color: catColor, lineHeight: 1.3, flexShrink: 0, marginTop: 1,
@@ -847,7 +884,7 @@ function ArchCard({ profile, catColor, catKey, onHover, sectionVisible, cardInde
 
         {/* Failure mode */}
         {d && (
-          <div style={{ display: 'flex', gap: 7, alignItems: 'flex-start' }}>
+          <div style={{ display: 'flex', gap: 7, alignItems: 'flex-start', opacity: hov ? 0.25 : 1, transition: 'opacity 200ms ease' }}>
             <span style={{
               fontFamily: '"Barlow Condensed", system-ui', fontSize: 13, fontWeight: 700,
               color: 'rgba(200,140,60,0.75)', lineHeight: 1.3, flexShrink: 0, marginTop: 1,
@@ -1378,36 +1415,40 @@ export default function ArchetypesPage() {
         {/* Axis labels */}
         <span style={{
           position: 'absolute', left: '50%', top: 112, transform: 'translateX(-50%)',
-          fontSize: 11, fontWeight: 300, color: axisColors.top,
+          fontSize: 13, fontWeight: 500, color: axisColors.top,
           textTransform: 'uppercase', letterSpacing: '0.14em',
           pointerEvents: 'none', zIndex: 2,
           transition: 'color 250ms ease, text-shadow 250ms ease',
           textShadow: axisShadows.top,
+          fontFamily: '"DM Sans", sans-serif',
         }}>PEOPLE</span>
 
         <span style={{
           position: 'absolute', left: '50%', bottom: 20, transform: 'translateX(-50%)',
-          fontSize: 11, fontWeight: 300, color: axisColors.bottom,
+          fontSize: 13, fontWeight: 500, color: axisColors.bottom,
           textTransform: 'uppercase', letterSpacing: '0.14em',
           pointerEvents: 'none', zIndex: 2,
           transition: 'color 250ms ease, text-shadow 250ms ease',
           textShadow: axisShadows.bottom,
+          fontFamily: '"DM Sans", sans-serif',
         }}>RESULTS</span>
 
         <span style={{
           position: 'absolute', left: 20, top: '50%', transform: 'translateY(-50%)',
-          fontSize: 11, fontWeight: 300, color: axisColors.left,
+          fontSize: 13, fontWeight: 500, color: axisColors.left,
           textTransform: 'uppercase', letterSpacing: '0.14em',
           pointerEvents: 'none', zIndex: 2,
           transition: 'color 250ms ease',
+          fontFamily: '"DM Sans", sans-serif',
         }}>← DELIBERATE</span>
 
         <span style={{
           position: 'absolute', right: 20, top: '50%', transform: 'translateY(-50%)',
-          fontSize: 11, fontWeight: 300, color: axisColors.right,
+          fontSize: 13, fontWeight: 500, color: axisColors.right,
           textTransform: 'uppercase', letterSpacing: '0.14em',
           pointerEvents: 'none', zIndex: 2,
           transition: 'color 250ms ease',
+          fontFamily: '"DM Sans", sans-serif',
         }}>URGENT →</span>
 
         {/* Corner category labels */}
