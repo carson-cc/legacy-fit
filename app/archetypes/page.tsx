@@ -340,12 +340,14 @@ const RADAR_MARGIN = 72
 type TooltipState = { name: string; tagline: string; color: string; cssX: number; cssY: number }
 
 function RadarCanvas({
-  activeCat, hoveredProfileName, onHoverCat, onHoverProfile,
+  activeCat, hoveredProfileName, onHoverCat, onHoverProfile, onDotClick, selectedProfile,
 }: {
   activeCat: string | null
   hoveredProfileName: string | null
   onHoverCat: (k: string | null) => void
   onHoverProfile: (name: string | null) => void
+  onDotClick?: (name: string) => void
+  selectedProfile?: string | null
 }) {
   const canvasRef          = useRef<HTMLCanvasElement>(null)
   const rafRef             = useRef(0)
@@ -419,28 +421,6 @@ function RadarCanvas({
     ctx.fillStyle = bgGrad
     ctx.fillRect(0, 0, w, h)
 
-    // ── Subtle quadrant zone fills (DOT_COORDS quadrant mapping) ──
-    // Drivers: top-right (px 0.72-0.90, py 0.20-0.38)
-    // Catalysts: bottom-right (px 0.65-0.82, py 0.72-0.90)
-    // Operators: top-left (px 0.18-0.38, py 0.20-0.34)
-    // Stabilizers: bottom-left (px 0.22-0.38, py 0.65-0.82)
-    {
-      const plotSide = Math.min(w, h)
-      const pox = (w - plotSide) / 2
-      const poy = (h - plotSide) / 2
-      const qM  = Math.round(plotSide * 0.095)
-      const qcx = pox + plotSide / 2
-      const qcy = poy + plotSide / 2
-      ctx.fillStyle = 'rgba(196,80,48,0.035)'    // Drivers
-      ctx.fillRect(qcx, poy + qM, (pox + plotSide - qM) - qcx, qcy - (poy + qM))
-      ctx.fillStyle = 'rgba(200,135,58,0.035)'   // Catalysts
-      ctx.fillRect(qcx, qcy, (pox + plotSide - qM) - qcx, (poy + plotSide - qM) - qcy)
-      ctx.fillStyle = 'rgba(58,110,204,0.035)'   // Operators
-      ctx.fillRect(pox + qM, poy + qM, qcx - (pox + qM), qcy - (poy + qM))
-      ctx.fillStyle = 'rgba(58,168,104,0.035)'   // Stabilizers
-      ctx.fillRect(pox + qM, qcy, qcx - (pox + qM), (poy + plotSide - qM) - qcy)
-    }
-
     const activeCat    = activeCatRef.current
     const hovProf      = hoveredProfRef.current
     const isInteracting = activeCat !== null || hovProf !== null
@@ -505,17 +485,6 @@ function RadarCanvas({
     ctx.beginPath(); ctx.moveTo(px0, cy); ctx.lineTo(px1, cy); ctx.stroke()
     ctx.beginPath(); ctx.moveTo(cx, py0); ctx.lineTo(cx, py1); ctx.stroke()
     ctx.setLineDash([])
-    // Directional labels at axis ends
-    ctx.font = '500 9px system-ui, -apple-system'
-    ctx.fillStyle = 'rgba(255,255,255,0.11)'
-    ctx.textAlign = 'center'
-    ctx.fillText('PEOPLE', cx, py0 - 14)
-    ctx.fillText('OUTPUT', cx, py1 + 21)
-    ctx.textAlign = 'left'
-    ctx.fillText('FAST →', px1 + 8, cy - 4)
-    ctx.textAlign = 'right'
-    ctx.fillText('← DELIBERATE', px0 - 8, cy - 4)
-    ctx.textAlign = 'left'
 
     // ── Group pentagon layer (drawn before dots) ──
     const groupProgress = activeCat ? Math.min(1, (t - groupFocusStartRef.current) / 300) : 0
@@ -576,9 +545,9 @@ function RadarCanvas({
 
       const pp    = pulseParams.current[i]
       const pulse = (Math.sin(t * 0.001 * pp.speed + pp.phase) + 1) / 2
-      // Glow circle — radius 16 (scaled), category color at 0.10 opacity
+      // Glow circle — radius 18 (scaled), category color at 0.10 opacity
       if (alpha > 0.08) {
-        const glowR = 16 * (side / RADAR_SIZE)
+        const glowR = 18 * (side / RADAR_SIZE)
         ctx.beginPath()
         ctx.arc(x, y, glowR, 0, Math.PI * 2)
         ctx.fillStyle = hexAlpha(c.color, 0.10 * alpha)
@@ -592,8 +561,8 @@ function RadarCanvas({
         ctx.lineWidth = 1; ctx.stroke()
       }
 
-      // Main dot — radius 8 (scaled)
-      const dotR = 8 * (side / RADAR_SIZE)
+      // Main dot — radius 9 (scaled)
+      const dotR = 9 * (side / RADAR_SIZE)
 
       ctx.beginPath()
       ctx.arc(x, y, dotR, 0, Math.PI * 2)
@@ -657,6 +626,24 @@ function RadarCanvas({
     onHoverProfile(null); onHoverCat(null); setTooltip(null)
   }, [onHoverProfile, onHoverCat])
 
+  const handleClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!onDotClick) return
+    const canvas = canvasRef.current; if (!canvas) return
+    const rect   = canvas.getBoundingClientRect()
+    const { w, h } = dimsRef.current
+    const mx = (e.clientX - rect.left) * (w / rect.width)
+    const my = (e.clientY - rect.top)  * (h / rect.height)
+    const M  = Math.round(Math.min(w, h) * 0.095)
+    let foundProf: string | null = null
+    let minD = 26
+    REFERENCE_PROFILES.forEach(p => {
+      const { x, y } = getDotXY(p, w, h, M)
+      const d = Math.sqrt((mx - x) ** 2 + (my - y) ** 2)
+      if (d < minD) { minD = d; foundProf = displayName(p.name) }
+    })
+    if (foundProf) onDotClick(foundProf)
+  }, [onDotClick])
+
   return (
     // Full-bleed: canvas fills its parent section absolutely
     <div style={{ position: 'absolute', inset: 0 }}>
@@ -664,6 +651,7 @@ function RadarCanvas({
         ref={canvasRef}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
+        onClick={handleClick}
         style={{ width: '100%', height: '100%', cursor: 'crosshair', display: 'block' }}
       />
       {tooltip && (
@@ -977,6 +965,29 @@ function WhatChanges() {
   )
 }
 
+// ─── AXIS LIGHTING ────────────────────────────────────────────────────────────
+// dimension index → axis key
+// 0=Execution→right, 1=Ownership→bottom, 2=Adaptability→top, 3=Collaboration→top, 4=DecisionSpeed→right
+const DIM_TO_AXIS: Record<number, 'left' | 'right' | 'top' | 'bottom'> = {
+  0: 'right',   // Execution → URGENT
+  1: 'bottom',  // Ownership → RESULTS
+  2: 'top',     // Adaptability → PEOPLE
+  3: 'top',     // Collaboration → PEOPLE
+  4: 'right',   // Decision Speed → URGENT
+}
+
+type AxisKey = 'top' | 'bottom' | 'left' | 'right'
+type AxisColors = Record<AxisKey, string>
+type AxisShadows = Record<AxisKey, string>
+
+const DEFAULT_AXIS_COLORS: AxisColors = {
+  top: 'rgba(255,255,255,0.28)', bottom: 'rgba(255,255,255,0.28)',
+  left: 'rgba(255,255,255,0.28)', right: 'rgba(255,255,255,0.28)',
+}
+const DEFAULT_AXIS_SHADOWS: AxisShadows = {
+  top: 'none', bottom: 'none', left: 'none', right: 'none',
+}
+
 // ─── PAGE ─────────────────────────────────────────────────────────────────────
 const BG  = '#080808'
 const MAX = 1240
@@ -985,6 +996,9 @@ export default function ArchetypesPage() {
   const [hoveredProfile, setHoveredProfile] = useState<string | null>(null)
   const [activeSection,  setActiveSection]  = useState(0)
   const [hoveredCat,     setHoveredCat]     = useState<string | null>(null)
+  const [axisColors,     setAxisColors]     = useState<AxisColors>(DEFAULT_AXIS_COLORS)
+  const [axisShadows,    setAxisShadows]    = useState<AxisShadows>(DEFAULT_AXIS_SHADOWS)
+  const [selectedProfile, setSelectedProfile] = useState<string | null>(null)
 
   const ctaBandRef = useRef<HTMLDivElement>(null)
   const cat0Ref    = useRef<HTMLDivElement>(null)
@@ -995,6 +1009,34 @@ export default function ArchetypesPage() {
 
   const setActive  = useCallback((k: string | null) => setActiveCat(k), [])
   const setHovProf = useCallback((n: string | null) => setHoveredProfile(n), [])
+
+  const handleDotClick = useCallback((profileName: string) => {
+    if (selectedProfile === profileName) {
+      setSelectedProfile(null)
+      setAxisColors(DEFAULT_AXIS_COLORS)
+      setAxisShadows(DEFAULT_AXIS_SHADOWS)
+      return
+    }
+    setSelectedProfile(profileName)
+    const vals = PENT_VALUES[profileName] ?? [60, 60, 60, 60, 60]
+    const sorted = vals.map((v, i) => ({ v, i })).sort((a, b) => b.v - a.v)
+    const dom1 = DIM_TO_AXIS[sorted[0].i]
+    const dom2 = DIM_TO_AXIS[sorted[1].i]
+    const newColors: AxisColors = {
+      top:    'rgba(255,255,255,0.14)',
+      bottom: 'rgba(255,255,255,0.14)',
+      left:   'rgba(255,255,255,0.14)',
+      right:  'rgba(255,255,255,0.14)',
+    }
+    const newShadows: AxisShadows = { top: 'none', bottom: 'none', left: 'none', right: 'none' }
+    newColors[dom1] = 'rgba(255,255,255,0.90)'
+    newShadows[dom1] = '0 0 12px rgba(255,255,255,0.3)'
+    if (dom2 !== dom1) {
+      newColors[dom2] = 'rgba(255,255,255,0.60)'
+    }
+    setAxisColors(newColors)
+    setAxisShadows(newShadows)
+  }, [selectedProfile])
 
   useFadeInUp(ctaBandRef, 0)
   useFadeInUp(cat0Ref, 0)
@@ -1105,36 +1147,75 @@ export default function ArchetypesPage() {
       </section>
 
       {/* ── BEHAVIORAL MAP — full-bleed surface ── */}
-      <section style={{ width: '100%', height: '100svh', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      <section style={{ position: 'relative', width: '100%', height: '100svh', overflow: 'hidden' }}>
 
-        {/* Full-bleed canvas layer */}
-        <RadarCanvas
-          activeCat={activeCat}
-          hoveredProfileName={hoveredProfile}
-          onHoverCat={setActive}
-          onHoverProfile={setHovProf}
-        />
+        {/* Canvas wrapper — full bleed */}
+        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0 }}>
+          <RadarCanvas
+            activeCat={activeCat}
+            hoveredProfileName={hoveredProfile}
+            onHoverCat={setActive}
+            onHoverProfile={setHovProf}
+            onDotClick={handleDotClick}
+            selectedProfile={selectedProfile}
+          />
+        </div>
 
-        {/* Eyebrow */}
-        <p style={{
-          position: 'absolute', top: 72, left: 0, right: 0, margin: 0,
-          textAlign: 'center', zIndex: 2, pointerEvents: 'none',
-          fontSize: 9, fontWeight: 500, letterSpacing: '0.22em',
-          textTransform: 'uppercase', color: 'rgba(255,255,255,0.14)',
+        {/* Framing text + subtitle — centered top */}
+        <div style={{
+          position: 'absolute', top: 60, left: '50%', transform: 'translateX(-50%)',
+          textAlign: 'center', pointerEvents: 'none', zIndex: 2, whiteSpace: 'nowrap',
         }}>
-          Behavioral Map · Pace × People-orientation
-        </p>
-        <p style={{
-          position: 'absolute', top: 95, left: 0, right: 0,
-          fontSize: 14, fontWeight: 300, fontStyle: 'italic', color: 'rgba(238,236,230,0.42)',
-          textAlign: 'center', margin: '4px 0 20px 0',
-          zIndex: 2, pointerEvents: 'none',
-          fontFamily: '"DM Sans", sans-serif',
-        }}>
-          Every person you&#39;ve ever hired sits somewhere on this map.
-        </p>
+          <p style={{
+            margin: 0, fontSize: 9, fontWeight: 500, letterSpacing: '0.22em',
+            textTransform: 'uppercase', color: 'rgba(255,255,255,0.14)',
+          }}>
+            BEHAVIORAL MAP
+          </p>
+          <p style={{
+            margin: '4px 0 0 0', fontSize: 14, fontWeight: 300, fontStyle: 'italic',
+            color: 'rgba(238,236,230,0.42)', fontFamily: '"DM Sans", sans-serif',
+          }}>
+            Every person you&#39;ve ever hired sits somewhere on this map.
+          </p>
+        </div>
 
-        {/* Corner category labels — at actual section corners, floating over canvas */}
+        {/* Axis labels — DOM so they can animate */}
+        <span style={{
+          position: 'absolute', left: '50%', top: 20, transform: 'translateX(-50%)',
+          fontSize: 11, fontWeight: 300, color: axisColors.top,
+          textTransform: 'uppercase', letterSpacing: '0.14em',
+          pointerEvents: 'none', zIndex: 2,
+          transition: 'color 250ms ease, text-shadow 250ms ease',
+          textShadow: axisShadows.top,
+        }}>PEOPLE</span>
+
+        <span style={{
+          position: 'absolute', left: '50%', bottom: 20, transform: 'translateX(-50%)',
+          fontSize: 11, fontWeight: 300, color: axisColors.bottom,
+          textTransform: 'uppercase', letterSpacing: '0.14em',
+          pointerEvents: 'none', zIndex: 2,
+          transition: 'color 250ms ease, text-shadow 250ms ease',
+          textShadow: axisShadows.bottom,
+        }}>RESULTS</span>
+
+        <span style={{
+          position: 'absolute', left: 20, top: '50%', transform: 'translateY(-50%)',
+          fontSize: 11, fontWeight: 300, color: axisColors.left,
+          textTransform: 'uppercase', letterSpacing: '0.14em',
+          pointerEvents: 'none', zIndex: 2,
+          transition: 'color 250ms ease',
+        }}>← DELIBERATE</span>
+
+        <span style={{
+          position: 'absolute', right: 20, top: '50%', transform: 'translateY(-50%)',
+          fontSize: 11, fontWeight: 300, color: axisColors.right,
+          textTransform: 'uppercase', letterSpacing: '0.14em',
+          pointerEvents: 'none', zIndex: 2,
+          transition: 'color 250ms ease',
+        }}>URGENT →</span>
+
+        {/* Corner category labels — STABILIZERS top-left */}
         {([
           { key: 'strategic_drive',   pos: { top: 20, left: 24 },    align: 'left'  },
           { key: 'people_influence',  pos: { top: 20, right: 24 },   align: 'right' },
@@ -1190,8 +1271,8 @@ export default function ArchetypesPage() {
                       transition: 'opacity 150ms ease',
                     }} />
                     <span style={{
-                      fontSize: 10, fontWeight: isDom ? 500 : 300,
-                      color: isDom ? 'rgba(238,236,230,0.9)' : 'rgba(238,236,230,0.55)',
+                      fontSize: 10, fontWeight: isDom ? 500 : 400,
+                      color: isDom ? 'rgba(238,236,230,0.92)' : 'rgba(238,236,230,0.5)',
                       fontFamily: '"DM Sans", sans-serif',
                       letterSpacing: '0.01em',
                       transition: 'color 150ms ease',
@@ -1202,16 +1283,6 @@ export default function ArchetypesPage() {
             </div>
           )
         })}
-
-        {/* Interpretation line */}
-        <p style={{
-          position: 'absolute', bottom: 20, left: 0, right: 0, margin: 0,
-          textAlign: 'center', zIndex: 2, pointerEvents: 'none',
-          fontSize: 11, fontWeight: 300, letterSpacing: '0.01em',
-          color: 'rgba(255,255,255,0.15)', fontFamily: '"DM Sans", sans-serif',
-        }}>
-          Position reflects speed of execution and orientation toward people vs. output.
-        </p>
 
       </section>
 
