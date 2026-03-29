@@ -177,7 +177,7 @@ function RadarCanvas({
     const cx = S / 2, cy = S / 2, R = cx - M
 
     ctx.clearRect(0, 0, S, S)
-    ctx.fillStyle = '#0A0A0A'
+    ctx.fillStyle = '#080808'
     ctx.fillRect(0, 0, S, S)
 
     for (let i = 1; i <= 3; i++) {
@@ -280,7 +280,7 @@ function RadarCanvas({
   }, [onHoverProfile, onHoverCat])
 
   return (
-    <div style={{ position: 'relative', width: 'clamp(380px, 70vmin, 640px)', height: 'clamp(380px, 70vmin, 640px)', zIndex: 1 }}>
+    <div style={{ position: 'relative', width: 'clamp(280px, min(calc(100vw - 570px), calc(100vh - 100px)), 640px)', height: 'clamp(280px, min(calc(100vw - 570px), calc(100vh - 100px)), 640px)', zIndex: 1 }}>
       <canvas
         ref={canvasRef}
         width={RADAR_SIZE} height={RADAR_SIZE}
@@ -487,7 +487,7 @@ function RadarColumn({ groups, activeCat, hoveredProfile, setActive, setHovProf 
 }
 
 // ─── PAGE ─────────────────────────────────────────────────────────────────────
-const BG  = '#0A0A0A'
+const BG  = '#080808'
 const MAX = 1240
 const HERO_WORDS = ["YOU'VE", 'MET', 'THESE', 'PEOPLE.']
 
@@ -670,7 +670,7 @@ export default function ArchetypesPage() {
       </section>
 
       {/* ── TICKER ── */}
-      <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: '#0D0D0D', height: 36, overflow: 'hidden', display: 'flex', alignItems: 'center' }}>
+      <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: '#0f0f0f', height: 36, overflow: 'hidden', display: 'flex', alignItems: 'center' }}>
         <div style={{ display: 'flex', animation: 'ticker 42s linear infinite', whiteSpace: 'nowrap' }}>
           {[0, 1].map(rep => (
             <span key={rep} style={{ display: 'inline-flex', alignItems: 'center' }}>
@@ -691,20 +691,20 @@ export default function ArchetypesPage() {
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         overflow: 'hidden',
       }}>
-        {/* Headline overlay — top left */}
-        <div style={{ position: 'absolute', top: 80, left: 44, maxWidth: 340, zIndex: 2 }}>
+        {/* Headline — centered at top, above radar */}
+        <div style={{ position: 'absolute', top: 80, left: '50%', transform: 'translateX(-50%)', zIndex: 2, textAlign: 'center' }}>
           <p style={{ fontSize: 10, fontWeight: 500, color: 'rgba(255,255,255,0.22)', letterSpacing: '0.20em', textTransform: 'uppercase', marginBottom: 10 }}>The System</p>
           <h2 style={{
             fontFamily: '"Barlow Condensed", system-ui',
             fontSize: 'clamp(28px, 3vw, 42px)',
             fontWeight: 800, textTransform: 'uppercase',
             letterSpacing: '-0.01em', lineHeight: 1.0,
-            color: '#FFF', marginBottom: 12,
+            color: '#FFF', marginBottom: 10, whiteSpace: 'nowrap',
           }}>
-            Four types.<br />One map.
+            Four types. One map.
           </h2>
-          <p style={{ fontSize: 13, fontWeight: 300, color: 'rgba(255,255,255,0.38)', lineHeight: 1.7, margin: 0 }}>
-            Every archetype sits on two axes: Pace and People-orientation. Hover the map or the list to explore.
+          <p style={{ fontSize: 12, fontWeight: 300, color: 'rgba(255,255,255,0.35)', lineHeight: 1.6, margin: 0, whiteSpace: 'nowrap' }}>
+            Two axes: Pace and People-orientation. Hover to explore.
           </p>
         </div>
 
@@ -742,7 +742,7 @@ export default function ArchetypesPage() {
       {/* ── CTA + ARCHETYPE BLOCKS ── */}
       <section id="archetypes" style={{ padding: 0 }}>
         {/* CTA band */}
-        <div ref={ctaBandRef} style={{ borderTop: '1px solid rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: '#0D0D0D', padding: '52px 40px' }}>
+        <div ref={ctaBandRef} style={{ borderTop: '1px solid rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: '#0f0f0f', padding: '52px 40px' }}>
           <div style={{ maxWidth: MAX, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 40, flexWrap: 'wrap' }}>
             <div>
               <h2 style={{ fontFamily: '"Barlow Condensed", system-ui', fontSize: 'clamp(36px, 5vw, 56px)', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.01em', lineHeight: 1.0, color: '#FFF', marginBottom: 10 }}>
