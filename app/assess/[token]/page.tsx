@@ -537,6 +537,15 @@ export default function AssessPage() {
           @keyframes fadeUp { from { opacity: 0; transform: translateY(12px) } to { opacity: 1; transform: translateY(0) } }
           .result-fade { animation: fadeIn 400ms ease both; }
           .result-up   { animation: fadeUp 500ms ease both; }
+          @keyframes pent-draw {
+            0%   { stroke-dashoffset: 530; fill-opacity: 0; }
+            82%  { stroke-dashoffset: 0;   fill-opacity: 0; }
+            100% { stroke-dashoffset: 0;   fill-opacity: 1; }
+          }
+          @keyframes label-fade {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+          }
         `}</style>
 
         <div style={{ width: '100%', maxWidth: 480, textAlign: 'center' }}>
@@ -573,7 +582,8 @@ export default function AssessPage() {
           {/* MOMENT 4 — Pentagon */}
           {resultStage >= 4 && (
             <div className="result-up" style={{ margin: '36px auto 0', display: 'flex', justifyContent: 'center', position: 'relative' }}>
-              <svg width="220" height="220" viewBox="0 0 220 220">
+              {/* viewBox padded -32 -24 on all sides so no label clips */}
+              <svg width="252" height="244" viewBox="-32 -24 284 268">
                 {/* Background rings */}
                 <polygon points={ringPts(110, 110, 88)} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="0.5" />
                 <polygon points={ringPts(110, 110, 44)} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="0.5" />
@@ -589,7 +599,7 @@ export default function AssessPage() {
                     />
                   )
                 })}
-                {/* Data polygon */}
+                {/* Data polygon — keyframe draws stroke first, then fades fill in */}
                 <polygon
                   points={pentagonPts(pentagonValues, 110, 110, 88)}
                   fill="rgba(37,99,235,0.1)"
@@ -597,20 +607,24 @@ export default function AssessPage() {
                   strokeWidth="1.5"
                   style={{
                     strokeDasharray: 530,
-                    strokeDashoffset: pentagonActive ? 0 : 530,
-                    transition: pentagonActive ? 'stroke-dashoffset 1200ms ease-out' : 'none',
+                    strokeDashoffset: 530,
+                    fillOpacity: 0,
+                    ...(pentagonActive && {
+                      animation: 'pent-draw 2200ms cubic-bezier(0.4, 0, 0.2, 1) forwards',
+                    }),
                   }}
                 />
-                {/* Vertex labels */}
+                {/* Vertex labels — fade in after stroke completes */}
                 {PENTAGON_LABELS.map((label, i) => {
                   const a = (270 + i * 72) * Math.PI / 180
-                  const lx = 110 + 104 * Math.cos(a)
-                  const ly = 110 + 104 * Math.sin(a)
+                  const lx = 110 + 106 * Math.cos(a)
+                  const ly = 110 + 106 * Math.sin(a)
                   return (
                     <text key={label} x={lx.toFixed(1)} y={ly.toFixed(1)}
                       textAnchor="middle" dominantBaseline="middle"
                       fill="rgba(238,236,230,0.28)" fontSize="8.5"
                       fontFamily="-apple-system, BlinkMacSystemFont, sans-serif"
+                      style={pentagonActive ? { animation: 'label-fade 500ms ease both', animationDelay: '1900ms' } : { opacity: 0 }}
                     >{label}</text>
                   )
                 })}
