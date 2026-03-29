@@ -611,7 +611,7 @@ export default function HomePage() {
                   color: 'rgba(255,255,255,0.52)',
                   lineHeight: 1.65
                 }}>
-                  Execution and ownership scores place Kent in the top decile for PE-backed CFO roles. Pace delta with the operating partner is the single flagged gap — address structurally before day one.
+                  Kent's execution and ownership scores are in the top 10% for this role type. The only flag is pace — the operating partner runs slower. Get ahead of that before he starts.
                 </p>
               </div>
 
