@@ -250,66 +250,40 @@ export default function HomePage() {
             </span>
           </div>
 
-          {/* Main body — three columns */}
+          {/* TOP BLOCK — The Call */}
           <div style={{
-            padding: 24,
+            padding: '24px 28px 22px',
+            borderBottom: '1px solid rgba(255,255,255,0.06)',
             display: 'grid',
-            gridTemplateColumns: '1fr 1fr 1fr',
-            gap: 24
-          }} className="report-three-col">
+            gridTemplateColumns: '1fr auto',
+            gap: 32,
+            alignItems: 'start'
+          }} className="report-top-block">
 
-            {/* COLUMN 1 — Role fit */}
-            <div style={{
-              borderRight: '1px solid rgba(255,255,255,0.05)',
-              paddingRight: 24
-            }}>
+            {/* Left: name + score + verdict */}
+            <div>
               <p style={{
                 fontSize: 9,
                 fontWeight: 500,
                 color: 'rgba(255,255,255,0.16)',
-                letterSpacing: '0.12em',
+                letterSpacing: '0.14em',
                 textTransform: 'uppercase',
-                marginBottom: 14
-              }}>
-                Role Fit
-              </p>
-
-              <p style={{
-                fontSize: 22,
-                fontWeight: 800,
-                color: '#FFFFFF',
-                letterSpacing: '-0.02em',
-                marginBottom: 2
-              }}>
-                Kent Morrison
-              </p>
-              <p style={{
-                fontSize: 11,
-                color: 'rgba(255,255,255,0.28)',
-                marginBottom: 6
+                marginBottom: 10
               }}>
                 PE-Backed CFO · Velocity Growth Partners
               </p>
               <p style={{
-                fontSize: 10,
-                color: 'rgba(255,255,255,0.36)',
-                fontStyle: 'italic',
-                lineHeight: 1.5,
-                marginBottom: 14
+                fontSize: 26,
+                fontWeight: 800,
+                color: '#FFFFFF',
+                letterSpacing: '-0.02em',
+                marginBottom: 12
               }}>
-                High-confidence CFO for execution-driven environments with minimal consensus drag.
+                Kent Morrison
               </p>
-
-              <div style={{
-                display: 'flex',
-                alignItems: 'flex-end',
-                gap: 12,
-                marginBottom: 4,
-                paddingBottom: 14,
-                borderBottom: '1px solid rgba(255,255,255,0.06)'
-              }}>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 14 }}>
                 <span style={{
-                  fontSize: 60,
+                  fontSize: 68,
                   fontWeight: 900,
                   color: '#FFFFFF',
                   letterSpacing: '-0.04em',
@@ -318,44 +292,104 @@ export default function HomePage() {
                 }}>
                   93
                 </span>
-                <div style={{ paddingBottom: 4 }}>
+                <div style={{ paddingBottom: 5 }}>
                   <p style={{
                     fontSize: 20,
                     fontWeight: 700,
                     color: '#22C55E',
                     letterSpacing: '-0.02em',
-                    marginBottom: 3
+                    lineHeight: 1.1,
+                    marginBottom: 5
                   }}>
-                    Strong Hire
+                    Strong Hire — with one execution risk
                   </p>
                   <p style={{
                     fontSize: 10,
-                    color: 'rgba(255,255,255,0.24)'
+                    color: 'rgba(255,255,255,0.22)'
                   }}>
-                    Top 10% · High confidence
+                    Decision confidence: High
                   </p>
                 </div>
               </div>
+            </div>
 
+            {/* Right: Primary Tension */}
+            <div style={{
+              background: 'rgba(234,179,8,0.05)',
+              border: '1px solid rgba(234,179,8,0.18)',
+              borderRadius: 8,
+              padding: '14px 18px',
+              minWidth: 240,
+              maxWidth: 300
+            }}>
+              <p style={{
+                fontSize: 9,
+                fontWeight: 700,
+                color: 'rgba(234,179,8,0.6)',
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                marginBottom: 7
+              }}>
+                Primary Tension
+              </p>
+              <p style={{
+                fontSize: 13,
+                fontWeight: 600,
+                color: 'rgba(255,255,255,0.62)',
+                letterSpacing: '-0.01em',
+                lineHeight: 1.3,
+                marginBottom: 6
+              }}>
+                Execution Speed vs.<br />Stakeholder Alignment
+              </p>
+              <p style={{
+                fontSize: 11,
+                color: 'rgba(255,255,255,0.34)',
+                lineHeight: 1.55
+              }}>
+                Kent will move faster than the operating partner expects.
+              </p>
+            </div>
+
+          </div>
+
+          {/* BODY — two columns */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1.55fr'
+          }} className="report-body-cols">
+
+            {/* LEFT — Role Fit */}
+            <div style={{
+              borderRight: '1px solid rgba(255,255,255,0.05)',
+              padding: '22px 24px 24px 28px'
+            }}>
               <p style={{
                 fontSize: 9,
                 fontWeight: 500,
                 color: 'rgba(255,255,255,0.16)',
-                letterSpacing: '0.12em',
+                letterSpacing: '0.14em',
                 textTransform: 'uppercase',
-                marginBottom: 8,
-                marginTop: 14
+                marginBottom: 10
               }}>
-                Signal vs. Benchmark
+                Role Fit
+              </p>
+              <p style={{
+                fontSize: 11,
+                color: 'rgba(255,255,255,0.32)',
+                lineHeight: 1.6,
+                marginBottom: 20
+              }}>
+                Above benchmark on execution and decision speed. Slight drop in collaboration.
               </p>
 
               <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                 <div style={{
                   position: 'absolute',
-                  width: 160,
-                  height: 160,
+                  width: 180,
+                  height: 180,
                   borderRadius: '50%',
-                  background: 'radial-gradient(circle, rgba(37,99,235,0.10) 0%, transparent 70%)',
+                  background: 'radial-gradient(circle, rgba(37,99,235,0.08) 0%, transparent 70%)',
                   pointerEvents: 'none'
                 }} />
                 <FitModel
@@ -371,33 +405,31 @@ export default function HomePage() {
                     patience: 0.50,
                     formality: 0.66
                   }}
-                  size={144}
+                  size={200}
                   variant="dark"
                   animated={false}
-                  showLabels={false}
+                  showLabels={true}
                 />
               </div>
 
               <p style={{
                 fontSize: 9,
                 color: 'rgba(255,255,255,0.12)',
-                marginTop: 6,
+                marginTop: 10,
                 textAlign: 'center'
               }}>
                 Solid: Kent · Dashed: Benchmark
               </p>
             </div>
 
-            {/* COLUMN 2 — Execution environment */}
-            <div style={{
-              borderRight: '1px solid rgba(255,255,255,0.05)',
-              paddingRight: 24
-            }}>
+            {/* RIGHT — Execution Environment + Decision Frame + Insight + Probes */}
+            <div style={{ padding: '22px 28px 24px 24px' }}>
+
               <p style={{
                 fontSize: 9,
                 fontWeight: 500,
                 color: 'rgba(255,255,255,0.16)',
-                letterSpacing: '0.12em',
+                letterSpacing: '0.14em',
                 textTransform: 'uppercase',
                 marginBottom: 14
               }}>
@@ -411,51 +443,46 @@ export default function HomePage() {
                   score: 91,
                   label: 'Aligned on speed',
                   color: '#22C55E',
-                  note: 'Aligned on speed and independent execution'
+                  note: 'Aligned on fast execution and independent ownership'
                 },
                 {
                   name: 'Operating Partner',
                   role: 'Key Stakeholder',
                   score: 58,
-                  label: 'Potential friction: pace mismatch',
+                  label: 'Pacing mismatch risk',
                   color: '#EAB308',
-                  note: 'Expectation for structured alignment vs. Kent\u2019s bias for fast action'
+                  note: 'Expects structured alignment — pacing mismatch risk'
                 },
                 {
                   name: 'Board Member',
                   role: 'Key Stakeholder',
                   score: 82,
-                  label: 'Aligned on ownership expectations',
+                  label: 'Aligned on ownership',
                   color: '#22C55E',
-                  note: 'Aligned on ownership and accountability expectations'
+                  note: 'Aligned on ownership expectations'
                 }
               ].map((person, i) => (
                 <div key={i} style={{
-                  marginBottom: 16,
-                  paddingBottom: 16,
-                  borderBottom: i < 2
-                    ? '1px solid rgba(255,255,255,0.04)'
-                    : 'none'
+                  marginBottom: 14,
+                  paddingBottom: 14,
+                  borderBottom: i < 2 ? '1px solid rgba(255,255,255,0.04)' : 'none'
                 }}>
                   <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'flex-start',
-                    marginBottom: 6
+                    marginBottom: 5
                   }}>
                     <div>
                       <p style={{
                         fontSize: 12,
                         fontWeight: 600,
-                        color: 'rgba(255,255,255,0.88)',
+                        color: 'rgba(255,255,255,0.85)',
                         marginBottom: 1
                       }}>
                         {person.name}
                       </p>
-                      <p style={{
-                        fontSize: 10,
-                        color: 'rgba(255,255,255,0.24)'
-                      }}>
+                      <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.22)' }}>
                         {person.role}
                       </p>
                     </div>
@@ -464,97 +491,83 @@ export default function HomePage() {
                       fontWeight: 600,
                       color: person.color,
                       textAlign: 'right',
-                      maxWidth: 110,
+                      maxWidth: 130,
                       lineHeight: 1.3
                     }}>
                       {person.label}
                     </span>
                   </div>
-
                   <div style={{
                     height: 2,
                     background: 'rgba(255,255,255,0.05)',
                     borderRadius: 2,
                     overflow: 'hidden',
-                    marginBottom: 6
+                    marginBottom: 5
                   }}>
                     <div style={{
                       height: '100%',
                       width: `${person.score}%`,
                       background: person.color,
                       borderRadius: 2,
-                      opacity: 0.5
+                      opacity: 0.45
                     }} />
                   </div>
-
-                  <p style={{
-                    fontSize: 10,
-                    color: 'rgba(255,255,255,0.22)',
-                    lineHeight: 1.5
-                  }}>
+                  <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.22)', lineHeight: 1.5 }}>
                     {person.note}
                   </p>
                 </div>
               ))}
 
-              {/* Tension indicator */}
               <div style={{
                 display: 'flex',
                 alignItems: 'flex-start',
                 gap: 8,
-                paddingTop: 10,
-                borderTop: '1px solid rgba(255,255,255,0.04)'
+                padding: '10px 0 20px',
+                borderBottom: '1px solid rgba(255,255,255,0.05)'
               }}>
                 <span style={{
-                  width: 6,
-                  height: 6,
+                  width: 5,
+                  height: 5,
                   borderRadius: '50%',
                   background: '#EAB308',
                   flexShrink: 0,
-                  marginTop: 3
+                  marginTop: 4
                 }} />
-                <p style={{
-                  fontSize: 10,
-                  color: 'rgba(255,255,255,0.30)',
-                  lineHeight: 1.4
-                }}>
-                  <span style={{ color: 'rgba(255,255,255,0.50)', fontWeight: 600 }}>Execution Speed vs. Stakeholder Alignment:</span> Slight mismatch — address before close.
+                <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.28)', lineHeight: 1.45 }}>
+                  <span style={{ color: 'rgba(255,255,255,0.46)', fontWeight: 600 }}>Execution Speed vs. Stakeholder Alignment:</span> slight mismatch — address before close.
                 </p>
               </div>
-            </div>
 
-            {/* COLUMN 3 — Decision Frame + Key Insight */}
-            <div>
+              {/* Decision Frame */}
               <p style={{
                 fontSize: 9,
                 fontWeight: 500,
                 color: 'rgba(255,255,255,0.16)',
-                letterSpacing: '0.12em',
+                letterSpacing: '0.14em',
                 textTransform: 'uppercase',
-                marginBottom: 14
+                margin: '18px 0 10px'
               }}>
                 Decision Frame
               </p>
 
               <div style={{
-                background: 'rgba(0,0,0,0.2)',
                 border: '1px solid rgba(255,255,255,0.06)',
                 borderRadius: 8,
                 overflow: 'hidden',
-                marginBottom: 14
+                marginBottom: 18
               }}>
                 {[
                   {
                     label: 'HIRE IF',
                     color: '#22C55E',
                     bg: 'rgba(34,197,94,0.04)',
-                    text: 'Role requires decisive execution, financial ownership, and operating autonomy under pressure.'
+                    text: 'You need a decisive, execution-first CFO who operates with autonomy under pressure.'
                   },
                   {
                     label: 'DO NOT HIRE IF',
                     color: '#EF4444',
                     bg: 'rgba(239,68,68,0.04)',
-                    text: 'Success depends on consensus-building across stakeholders before major decisions.'
+                    text: 'The role requires stakeholder consensus before major decisions.'
                   }
                 ].map((row, i) => (
                   <div key={i} style={{
@@ -562,9 +575,7 @@ export default function HomePage() {
                     gap: 10,
                     padding: '10px 12px',
                     background: row.bg,
-                    borderBottom: i === 0
-                      ? '1px solid rgba(255,255,255,0.05)'
-                      : 'none'
+                    borderBottom: i === 0 ? '1px solid rgba(255,255,255,0.05)' : 'none'
                   }}>
                     <span style={{
                       fontSize: 8,
@@ -578,50 +589,44 @@ export default function HomePage() {
                     }}>
                       {row.label}
                     </span>
-                    <span style={{
-                      fontSize: 11,
-                      color: 'rgba(255,255,255,0.45)',
-                      lineHeight: 1.55
-                    }}>
+                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.42)', lineHeight: 1.55 }}>
                       {row.text}
                     </span>
                   </div>
                 ))}
               </div>
 
+              {/* Key Insight */}
               <div style={{
                 background: 'rgba(37,99,235,0.04)',
-                border: '1px solid rgba(37,99,235,0.12)',
+                border: '1px solid rgba(37,99,235,0.10)',
                 borderRadius: 8,
                 padding: '12px 14px',
-                marginBottom: 14
+                marginBottom: 18
               }}>
                 <p style={{
                   fontSize: 9,
                   fontWeight: 600,
-                  color: 'rgba(37,99,235,0.65)',
-                  letterSpacing: '0.08em',
+                  color: 'rgba(37,99,235,0.55)',
+                  letterSpacing: '0.1em',
                   textTransform: 'uppercase',
                   marginBottom: 6
                 }}>
                   Key Insight
                 </p>
-                <p style={{
-                  fontSize: 11,
-                  color: 'rgba(255,255,255,0.52)',
-                  lineHeight: 1.65
-                }}>
-                  Kent's execution and ownership scores are strong. The only flag is pace — the operating partner runs slower. Get ahead of that before he starts.
+                <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.46)', lineHeight: 1.65 }}>
+                  Kent&apos;s execution and ownership scores are strong. The only flag is pace — the operating partner runs slower. Get ahead of that before he starts.
                 </p>
               </div>
 
+              {/* Interview Probes */}
               <p style={{
                 fontSize: 9,
                 fontWeight: 500,
                 color: 'rgba(255,255,255,0.16)',
-                letterSpacing: '0.12em',
+                letterSpacing: '0.14em',
                 textTransform: 'uppercase',
-                marginBottom: 8
+                marginBottom: 10
               }}>
                 Interview Probes
               </p>
@@ -633,29 +638,25 @@ export default function HomePage() {
                 },
                 {
                   risk: 'Stakeholder Management',
-                  q: 'Describe a situation where you had to slow down to bring a board or operator along.'
+                  q: 'Describe a situation where you had to slow down to bring leadership along.'
                 }
               ].map((probe, i) => (
                 <div key={i} style={{
                   marginBottom: 10,
                   paddingLeft: 8,
-                  borderLeft: '2px solid rgba(37,99,235,0.2)'
+                  borderLeft: '2px solid rgba(37,99,235,0.16)'
                 }}>
                   <p style={{
                     fontSize: 9,
                     fontWeight: 600,
-                    color: 'rgba(37,99,235,0.5)',
-                    letterSpacing: '0.07em',
+                    color: 'rgba(37,99,235,0.45)',
+                    letterSpacing: '0.08em',
                     textTransform: 'uppercase',
                     marginBottom: 3
                   }}>
                     {probe.risk}
                   </p>
-                  <p style={{
-                    fontSize: 11,
-                    color: 'rgba(255,255,255,0.35)',
-                    lineHeight: 1.55
-                  }}>
+                  <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.32)', lineHeight: 1.55 }}>
                     {probe.q}
                   </p>
                 </div>
@@ -670,8 +671,8 @@ export default function HomePage() {
               }}>
                 94 signals · Benchmark confidence: High
               </p>
-            </div>
 
+            </div>
           </div>
         </div>
 

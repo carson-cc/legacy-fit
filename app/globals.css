@@ -508,6 +508,21 @@ button, a, input, select, textarea {
     padding-bottom: 20px;
     margin-bottom: 8px;
   }
+  .report-top-block {
+    grid-template-columns: 1fr !important;
+  }
+  .report-top-block > div:last-child {
+    min-width: unset !important;
+    max-width: unset !important;
+  }
+  .report-body-cols {
+    grid-template-columns: 1fr !important;
+  }
+  .report-body-cols > div {
+    border-right: none !important;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding: 20px 20px !important;
+  }
   .contrast-grid {
     grid-template-columns: 1fr !important;
   }
