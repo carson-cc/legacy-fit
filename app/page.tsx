@@ -158,7 +158,7 @@ export default function HomePage() {
           The report appears. It just exists.
           snap-beat keeps it in one viewport.
       ============================================ */}
-      <section ref={reportRef} className="snap-beat" style={{ background: '#080808', position: 'relative', overflow: 'hidden' }}>
+      <section ref={reportRef} className="snap-beat" style={{ background: '#080808', position: 'relative', overflow: 'hidden', padding: 0 }}>
 
         {/* Radial glow — sits behind everything */}
         <div style={{
@@ -174,33 +174,20 @@ export default function HomePage() {
           zIndex: 0
         }} />
 
-        <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', overflow: 'hidden' }}>
-
-        <p style={{
-          fontSize: 10,
-          fontWeight: 600,
-          color: 'rgba(238,236,230,0.25)',
-          letterSpacing: '0.12em',
-          textTransform: 'uppercase',
-          marginBottom: 14,
-          textAlign: 'center',
-          flexShrink: 0
-        }}>
-          What your client sees
-        </p>
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
 
         {/* CARD */}
         <div style={{
           width: '100%',
           maxWidth: 1060,
-          height: 'calc(100vh - 140px)',
-          background: 'linear-gradient(160deg, #0F1825, #0A1018)',
-          border: '1px solid rgba(255,255,255,0.09)',
-          borderRadius: 16,
+          height: 'calc(100vh - 58px)',
+          background: '#0d0d0d',
+          border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: 14,
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
-          boxShadow: '0 0 0 1px rgba(255,255,255,0.06), 0 40px 80px rgba(0,0,0,0.8), 0 0 60px rgba(37,99,235,0.05), inset 0 1px 0 rgba(255,255,255,0.03)'
+          boxShadow: '0 0 0 1px rgba(255,255,255,0.04), 0 40px 80px rgba(0,0,0,0.8), 0 0 60px rgba(37,99,235,0.05)'
         }}>
 
           {/* TOP BAR */}
@@ -213,222 +200,172 @@ export default function HomePage() {
             justifyContent: 'space-between',
             flexShrink: 0
           }}>
-            <span style={{
-              fontSize: 9,
-              fontWeight: 600,
-              color: 'rgba(238,236,230,0.3)',
-              letterSpacing: '0.16em',
-              textTransform: 'uppercase'
-            }}>
+            <span style={{ fontSize: 10, fontWeight: 600, color: 'rgba(238,236,230,0.3)', letterSpacing: '0.16em', textTransform: 'uppercase' }}>
               Candidate Recommendation Report
             </span>
-            <span style={{
-              fontSize: 9,
-              fontWeight: 400,
-              color: 'rgba(238,236,230,0.3)',
-              letterSpacing: '0.16em',
-              textTransform: 'uppercase'
-            }}>
+            <span style={{ fontSize: 10, fontWeight: 400, color: 'rgba(238,236,230,0.3)', letterSpacing: '0.16em', textTransform: 'uppercase' }}>
               Presented to client
             </span>
           </div>
 
           {/* BODY — two columns */}
-          <div style={{
-            display: 'flex',
-            flex: 1,
-            overflow: 'hidden',
-            minHeight: 0
-          }}>
+          <div style={{ display: 'flex', flex: 1, overflow: 'hidden', minHeight: 0 }}>
 
-            {/* LEFT COLUMN — 45% */}
+            {/* LEFT COLUMN — 42% */}
             <div style={{
-              width: '45%',
+              width: '42%',
               flexShrink: 0,
               borderRight: '1px solid rgba(255,255,255,0.07)',
               display: 'flex',
               flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '20px 24px',
-              position: 'relative'
+              justifyContent: 'space-between',
+              padding: '24px',
             }}>
-              <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+              {/* Top: candidate header */}
+              <div>
+                <p style={{ fontSize: 10, color: 'rgba(238,236,230,0.38)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8 }}>
+                  PE-Backed CFO · Velocity Growth Partners
+                </p>
+                <p style={{ fontSize: 22, fontFamily: '"Barlow Condensed", sans-serif', fontWeight: 800, color: '#eeece6' }}>
+                  Kent Morrison
+                </p>
+              </div>
+
+              {/* Middle: radar — fills remaining space */}
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', minHeight: 0, padding: '12px 0' }}>
                 <div style={{
                   position: 'absolute',
-                  width: 200,
-                  height: 200,
+                  width: '55%',
+                  paddingBottom: '55%',
                   borderRadius: '50%',
-                  background: 'radial-gradient(circle, rgba(37,99,235,0.1) 0%, transparent 70%)',
+                  background: 'radial-gradient(circle, rgba(37,99,235,0.09) 0%, transparent 70%)',
                   pointerEvents: 'none'
                 }} />
                 <FitModel
                   scores={{ dominance: 0.88, extraversion: 0.49, patience: 0.35, formality: 0.67 }}
                   benchmarkScores={{ dominance: 0.72, extraversion: 0.52, patience: 0.50, formality: 0.66 }}
-                  size={220}
+                  size={260}
                   variant="dark"
                   animated={false}
                   showLabels={true}
                 />
               </div>
 
-              <p style={{ fontSize: 13, fontWeight: 500, color: '#eeece6', marginTop: 16, textAlign: 'center' }}>
-                Kent Morrison
-              </p>
-              <p style={{ fontSize: 10, color: 'rgba(238,236,230,0.38)', marginTop: 3, textAlign: 'center' }}>
-                PE-Backed CFO · Velocity Growth Partners
-              </p>
-              <p style={{ fontSize: 9, color: 'rgba(238,236,230,0.22)', marginTop: 6, textAlign: 'center' }}>
-                — Candidate &nbsp;·&nbsp; - - Benchmark
-              </p>
+              {/* Bottom: legend + role fit line */}
+              <div style={{ textAlign: 'center' }}>
+                <p style={{ fontSize: 9, color: 'rgba(238,236,230,0.22)', marginBottom: 6 }}>
+                  — Candidate &nbsp;·&nbsp; - - Benchmark
+                </p>
+                <p style={{ fontSize: 11, fontWeight: 300, color: 'rgba(238,236,230,0.4)', lineHeight: 1.5 }}>
+                  Above benchmark on execution and decision speed.<br />Gap on collaboration.
+                </p>
+              </div>
             </div>
 
-            {/* RIGHT COLUMN — 55% */}
+            {/* RIGHT COLUMN — 58% */}
             <div style={{
               flex: 1,
               display: 'flex',
               flexDirection: 'column',
-              padding: '24px 28px',
+              padding: '20px 24px',
               overflow: 'hidden'
             }}>
 
-              {/* Block 1 — Verdict */}
-              <div style={{ paddingBottom: 18, borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 14 }}>
+              {/* Block 1 — Score + Verdict */}
+              <div style={{ paddingBottom: 10, borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 0 }}>
                   <span style={{
-                    fontSize: 52,
+                    fontSize: 72,
+                    fontFamily: '"Barlow Condensed", sans-serif',
                     fontWeight: 900,
                     color: '#eeece6',
                     letterSpacing: '-0.04em',
-                    lineHeight: 0.85,
+                    lineHeight: 1,
                     flexShrink: 0
                   }}>
                     93
                   </span>
                   <div>
-                    <p style={{
-                      fontSize: 16,
-                      fontWeight: 700,
-                      color: '#3aa868',
-                      letterSpacing: '-0.02em',
-                      lineHeight: 1.1,
-                      marginBottom: 3
-                    }}>
+                    <p style={{ fontSize: 16, fontWeight: 600, color: '#3aa868', letterSpacing: '-0.02em', lineHeight: 1.2, marginBottom: 4 }}>
                       Strong Hire — with one execution risk
                     </p>
-                    <p style={{ fontSize: 10, color: 'rgba(238,236,230,0.3)', marginBottom: 6 }}>
-                      Decision confidence: High
+                    <p style={{ fontSize: 11, color: 'rgba(238,236,230,0.3)' }}>
+                      Decision confidence: High · Pioneer archetype
                     </p>
-                    <span style={{
-                      background: 'rgba(255,255,255,0.06)',
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      borderRadius: 100,
-                      padding: '3px 10px',
-                      fontSize: 10,
-                      color: 'rgba(238,236,230,0.4)'
-                    }}>
-                      Pioneer archetype
-                    </span>
                   </div>
                 </div>
               </div>
 
               {/* Block 2 — Primary Tension */}
-              <div style={{ paddingTop: 16, paddingBottom: 16, borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-                <div style={{ borderLeft: '2px solid rgba(200,168,50,0.7)', paddingLeft: 14 }}>
-                  <p style={{
-                    fontSize: 9,
-                    fontWeight: 700,
-                    color: 'rgba(200,168,50,0.85)',
-                    letterSpacing: '0.14em',
-                    textTransform: 'uppercase',
-                    marginBottom: 5
-                  }}>
+              <div style={{ padding: '9px 0', borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
+                <div style={{ borderLeft: '2px solid #c8a832', paddingLeft: 14 }}>
+                  <p style={{ fontSize: 10, fontWeight: 700, color: '#c8a832', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 3 }}>
                     Primary Tension
                   </p>
-                  <p style={{
-                    fontSize: 13,
-                    fontWeight: 500,
-                    color: '#eeece6',
-                    letterSpacing: '-0.01em',
-                    lineHeight: 1.3,
-                    marginBottom: 4
-                  }}>
+                  <p style={{ fontSize: 13, fontWeight: 500, color: '#eeece6', letterSpacing: '-0.01em', lineHeight: 1.3, marginBottom: 2 }}>
                     Execution Speed vs. Stakeholder Alignment
                   </p>
-                  <p style={{ fontSize: 11, color: 'rgba(238,236,230,0.42)', lineHeight: 1.5 }}>
+                  <p style={{ fontSize: 11, fontWeight: 300, color: 'rgba(238,236,230,0.55)', lineHeight: 1.4 }}>
                     Kent will move faster than the operating partner expects.
                   </p>
                 </div>
               </div>
 
-              {/* Block 3 — When This Works / When It Breaks */}
-              <div style={{ paddingTop: 16, paddingBottom: 16, borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                  {/* HIRE IF */}
-                  <div>
-                    <p style={{
-                      fontSize: 9,
-                      fontWeight: 700,
-                      color: '#3aa868',
-                      letterSpacing: '0.12em',
-                      textTransform: 'uppercase',
-                      marginBottom: 8
-                    }}>
-                      Hire If
-                    </p>
-                    <div style={{ marginBottom: 5, fontSize: 11, color: 'rgba(238,236,230,0.45)', lineHeight: 1.5, paddingLeft: 10, borderLeft: '1px solid rgba(58,168,104,0.25)' }}>
-                      Pace over consensus
-                    </div>
-                    <div style={{ marginBottom: 5, fontSize: 11, color: 'rgba(238,236,230,0.45)', lineHeight: 1.5, paddingLeft: 10, borderLeft: '1px solid rgba(58,168,104,0.25)' }}>
-                      Autonomous scope with visible accountability
-                    </div>
+              {/* Block 3 — Signal Profile */}
+              <div style={{ padding: '9px 0', borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
+                <p style={{ fontSize: 10, fontWeight: 600, color: 'rgba(238,236,230,0.28)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 7 }}>
+                  Signal Profile
+                </p>
+                {[
+                  { label: 'Execution', score: 72, delta: '+8', pos: true },
+                  { label: 'Ownership', score: 67, delta: '+1', pos: true },
+                  { label: 'Adaptability', score: 65, delta: '+15', pos: true },
+                  { label: 'Collaboration', score: 49, delta: '−3', pos: false },
+                  { label: 'Decision Speed', score: 85, delta: '+21', pos: true },
+                ].map((dim) => (
+                  <div key={dim.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: 'rgba(238,236,230,0.3)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                      {dim.label}
+                    </span>
+                    <span style={{ fontSize: 12, fontWeight: 500, color: dim.pos ? 'rgba(238,236,230,0.65)' : '#e05a3a' }}>
+                      {dim.score} <span style={{ fontSize: 10, color: dim.pos ? 'rgba(58,168,104,0.85)' : '#e05a3a', fontWeight: dim.pos ? 400 : 700 }}>{dim.delta}</span>
+                    </span>
                   </div>
-                  {/* DO NOT HIRE IF */}
+                ))}
+              </div>
+
+              {/* Block 4 — Hire If / Do Not Hire If */}
+              <div style={{ padding: '9px 0', borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                   <div>
-                    <p style={{
-                      fontSize: 9,
-                      fontWeight: 700,
-                      color: 'rgba(220,80,50,0.85)',
-                      letterSpacing: '0.12em',
-                      textTransform: 'uppercase',
-                      marginBottom: 8
-                    }}>
-                      Do Not Hire If
-                    </p>
-                    <div style={{ marginBottom: 5, fontSize: 11, color: 'rgba(238,236,230,0.45)', lineHeight: 1.5, paddingLeft: 10, borderLeft: '1px solid rgba(220,80,50,0.25)' }}>
-                      Consensus required before major decisions
-                    </div>
-                    <div style={{ marginBottom: 5, fontSize: 11, color: 'rgba(238,236,230,0.45)', lineHeight: 1.5, paddingLeft: 10, borderLeft: '1px solid rgba(220,80,50,0.25)' }}>
-                      Hiring manager expects frequent consultation
-                    </div>
+                    <p style={{ fontSize: 9, fontWeight: 700, color: '#3aa868', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6 }}>Hire If</p>
+                    {['Pace over consensus', 'Autonomous scope with visible accountability'].map((t) => (
+                      <div key={t} style={{ marginBottom: 4, fontSize: 11, fontWeight: 300, color: 'rgba(238,236,230,0.45)', lineHeight: 1.4, paddingLeft: 8, borderLeft: '1.5px solid rgba(255,255,255,0.15)' }}>
+                        {t}
+                      </div>
+                    ))}
+                  </div>
+                  <div>
+                    <p style={{ fontSize: 9, fontWeight: 700, color: '#e05a3a', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6 }}>Do Not Hire If</p>
+                    {['Consensus required before major decisions', 'Hiring manager expects frequent consultation'].map((t) => (
+                      <div key={t} style={{ marginBottom: 4, fontSize: 11, fontWeight: 300, color: 'rgba(238,236,230,0.45)', lineHeight: 1.4, paddingLeft: 8, borderLeft: '1.5px solid rgba(255,255,255,0.15)' }}>
+                        {t}
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
 
-              {/* Block 4 — The One Thing to Verify */}
-              <div style={{ paddingTop: 16, flex: 1, display: 'flex', flexDirection: 'column' }}>
-                <p style={{
-                  fontSize: 9,
-                  fontWeight: 600,
-                  color: 'rgba(238,236,230,0.28)',
-                  letterSpacing: '0.12em',
-                  textTransform: 'uppercase',
-                  marginBottom: 10
-                }}>
+              {/* Block 5 — The One Thing to Verify */}
+              <div style={{ paddingTop: 9, flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <p style={{ fontSize: 10, fontWeight: 600, color: 'rgba(238,236,230,0.28)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 5 }}>
                   The One Thing to Verify
                 </p>
-                <p style={{
-                  fontSize: 13,
-                  fontStyle: 'italic',
-                  color: 'rgba(238,236,230,0.65)',
-                  lineHeight: 1.65,
-                  fontWeight: 300
-                }}>
+                <p style={{ fontSize: 12, fontStyle: 'italic', fontWeight: 300, color: 'rgba(238,236,230,0.65)', lineHeight: 1.55 }}>
                   Does Kent know when to slow down — or does he only know how to go fast?
                 </p>
-                <p style={{ fontSize: 10, color: 'rgba(238,236,230,0.22)', marginTop: 'auto' }}>
-                  3 interview probes included in full report →
+                <p style={{ fontSize: 10, color: 'rgba(238,236,230,0.28)', marginTop: 'auto', paddingTop: 6 }}>
+                  Full report includes team alignment, interview probes, and dimensional impact →
                 </p>
               </div>
 
