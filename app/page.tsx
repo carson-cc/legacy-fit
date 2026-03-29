@@ -129,10 +129,12 @@ export default function HomePage() {
   const [hoveredAxis,   setHoveredAxis]   = useState<string | null>(null)
   const [hoveredTeam,   setHoveredTeam]   = useState<string | null>(null)
   const [compMode,      setCompMode]      = useState<'benchmark' | 'shortlist'>('benchmark')
+  const [scrollThumb,   setScrollThumb]   = useState({ top: 0, height: 32, visible: false })
 
-  const beat4Ref = useRef<HTMLDivElement>(null)
-  const snapRef  = useRef<HTMLDivElement>(null)
-  const reportRef= useRef<HTMLElement | null>(null)
+  const beat4Ref   = useRef<HTMLDivElement>(null)
+  const snapRef    = useRef<HTMLDivElement>(null)
+  const reportRef  = useRef<HTMLElement | null>(null)
+  const rightColRef= useRef<HTMLDivElement>(null)
 
   // Nav light
   useEffect(() => {
@@ -204,6 +206,23 @@ export default function HomePage() {
     return () => clearTimeout(t)
   }, [])
 
+  // Custom scroll indicator — init after mount
+  useEffect(() => {
+    const el = rightColRef.current; if (!el) return
+    if (el.scrollHeight > el.clientHeight) {
+      const h = Math.max(24, (el.clientHeight / el.scrollHeight) * el.clientHeight)
+      setScrollThumb({ top: 0, height: h, visible: true })
+    }
+  }, [cardMounted])
+
+  const onRightScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const el = e.currentTarget
+    if (el.scrollHeight <= el.clientHeight) { setScrollThumb(s => ({ ...s, visible: false })); return }
+    const ratio = el.scrollTop / (el.scrollHeight - el.clientHeight)
+    const h = Math.max(24, (el.clientHeight / el.scrollHeight) * el.clientHeight)
+    setScrollThumb({ top: ratio * (el.clientHeight - h), height: h, visible: true })
+  }
+
   // Determine active axis highlight (team hover overrides axis hover)
   const effectiveHovAxis = hoveredTeam
     ? TEAM.find(t => t.role === hoveredTeam)?.axisKey ?? null
@@ -215,16 +234,15 @@ export default function HomePage() {
     <div className="snap-page" ref={snapRef}>
       <style>{`
         .snap-page::-webkit-scrollbar { display: none }
+        .report-card-right::-webkit-scrollbar { display: none }
         @media (max-width: 768px) {
           .report-card-body  { flex-direction: column !important; }
           .report-card-left  { width: 100% !important; border-right: none !important; border-bottom: 1px solid rgba(255,255,255,0.07) !important; }
           .report-card-right { padding: 16px !important; }
-          .report-card-right::-webkit-scrollbar { display: none }
-          .report-card-right { scrollbar-width: none }
         }
         .team-row { transition: background 150ms ease; border-radius: 6px; padding: 5px 6px; margin: 0 -6px; cursor: default; }
         .team-row:hover { background: rgba(255,255,255,0.04) !important; }
-        .comp-btn { transition: background 150ms ease, border-color 150ms ease, color 150ms ease; cursor: pointer; }
+        .comp-btn { cursor: pointer; background: none; border: none; padding: 0; }
       `}</style>
 
       <Nav light={navLight} />
@@ -277,7 +295,7 @@ export default function HomePage() {
             border: '1px solid rgba(255,255,255,0.07)',
             borderRadius: 14, overflow: 'hidden',
             display: 'flex', flexDirection: 'column',
-            boxShadow: '0 0 0 1px rgba(255,255,255,0.03), 0 40px 80px rgba(0,0,0,0.8)',
+            boxShadow: '0 0 0 1px rgba(255,255,255,0.06), 0 32px 80px rgba(0,0,0,0.6)',
           }}>
 
             {/* TOP BAR */}
@@ -317,18 +335,17 @@ export default function HomePage() {
                       </p>
                     </div>
                     {/* Comparison toggle */}
-                    <div style={{ display: 'flex', gap: 3, flexShrink: 0, marginTop: 2 }}>
+                    <div style={{ display: 'flex', gap: 16, flexShrink: 0, marginTop: 4 }}>
                       {(['benchmark', 'shortlist'] as const).map(mode => (
                         <button
                           key={mode}
                           className="comp-btn"
                           onClick={() => setCompMode(mode)}
                           style={{
-                            fontSize: 8, padding: '3px 7px', borderRadius: 4,
-                            background: compMode === mode ? 'rgba(255,255,255,0.09)' : 'transparent',
-                            border: `1px solid ${compMode === mode ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.07)'}`,
-                            color: compMode === mode ? TEXT : FAINT,
-                            letterSpacing: '0.05em', textTransform: 'uppercase',
+                            fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase',
+                            color: compMode === mode ? 'rgba(238,236,230,0.82)' : 'rgba(238,236,230,0.3)',
+                            borderBottom: compMode === mode ? '1px solid rgba(238,236,230,0.82)' : '1px solid transparent',
+                            paddingBottom: 2,
                           }}
                         >
                           {mode === 'benchmark' ? 'vs. Role' : 'vs. Shortlist'}
@@ -493,168 +510,195 @@ export default function HomePage() {
               </div>
 
               {/* ── RIGHT: Decision panel ── */}
-              <div className="report-card-right" style={{
-                flex: 1, minHeight: 0,
-                display: 'flex', flexDirection: 'column',
-                padding: '0 22px', overflowY: 'auto',
-              }}>
+              <div style={{ flex: 1, minHeight: 0, position: 'relative', display: 'flex', flexDirection: 'column' }}>
+                <div
+                  className="report-card-right"
+                  ref={rightColRef}
+                  onScroll={onRightScroll}
+                  style={{
+                    flex: 1, minHeight: 0,
+                    display: 'flex', flexDirection: 'column',
+                    padding: '0 22px 20px',
+                    overflowY: 'auto',
+                    scrollbarWidth: 'none',
+                    msOverflowStyle: 'none' as any,
+                  }}
+                >
 
-                {/* S1 — Headline */}
-                <div style={{ padding: '14px 0', ...fade(cardMounted, 0) }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
-                    <div style={{ flex: 1 }}>
-                      <p style={{
-                        margin: 0,
-                        fontSize: 'clamp(14px, 1.5vw, 17px)', fontWeight: 600, color: TEXT, lineHeight: 1.3,
-                      }}>
-                        Strong hire — high-velocity operator with manageable pacing risk
-                      </p>
-                      <p style={{ margin: '6px 0 0', fontSize: 11, color: 'rgba(238,236,230,0.35)' }}>
-                        Top 1 of 3 shortlisted · 4 of 5 dimensions above benchmark
-                      </p>
-                    </div>
-                    <div style={{ flexShrink: 0, textAlign: 'right' as const }}>
-                      <span style={{ display: 'block', fontSize: 56, fontFamily: CONDENSED, fontWeight: 900, color: '#ffffff', lineHeight: 1 }}>93</span>
-                      <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)' }}>Top 5% vs. benchmark</span>
+                  {/* S1 — Headline */}
+                  <div style={{ padding: '14px 0 12px', ...fade(cardMounted, 0) }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+                      <div style={{ flex: 1 }}>
+                        <p style={{
+                          margin: 0,
+                          fontSize: 'clamp(14px, 1.5vw, 17px)', fontWeight: 600, color: TEXT, lineHeight: 1.3,
+                        }}>
+                          Strong hire — high-velocity operator with manageable pacing risk
+                        </p>
+                        <p style={{ margin: '6px 0 0', fontSize: 11, color: 'rgba(238,236,230,0.35)' }}>
+                          Top 1 of 3 shortlisted · 4 of 5 dimensions above benchmark
+                        </p>
+                      </div>
+                      <div style={{ flexShrink: 0, textAlign: 'right' as const }}>
+                        <span style={{ display: 'block', fontSize: 56, fontFamily: CONDENSED, fontWeight: 900, color: '#ffffff', lineHeight: 1 }}>93</span>
+                        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginTop: 6, display: 'block' }}>Top 5% vs. benchmark</span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* S2 — Primary Watchout (consolidated with Thrives In / Watch For) */}
-                <div style={{ padding: '14px 0', borderTop: '1px solid rgba(255,255,255,0.07)', ...fade(cardMounted, 80) }}>
-                  <p style={{ margin: '0 0 5px', fontSize: 9, color: FAINT, letterSpacing: '0.16em', textTransform: 'uppercase' }}>
-                    Primary Watchout
-                  </p>
-                  <p style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 500, color: TEXT }}>
-                    Moves faster than the organization can absorb.
-                  </p>
-                  <p style={{ margin: '0 0 10px', fontSize: 11, color: 'rgba(238,236,230,0.45)', lineHeight: 1.45 }}>
-                    Pioneer profile + high-autonomy role = pace mismatch with stakeholders who expect consultation.
-                  </p>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 10 }}>
-                    <div>
-                      <p style={{ margin: '0 0 5px', fontSize: 8, color: GREEN, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Thrives In</p>
-                      {['CEO grants autonomous execution', 'Ownership is clear, stakeholder drag is low'].map(t => (
-                        <p key={t} style={{ margin: '0 0 4px', fontSize: 11, color: 'rgba(238,236,230,0.62)', lineHeight: 1.4, borderLeft: '1.5px solid rgba(58,168,104,0.3)', paddingLeft: 7 }}>{t}</p>
-                      ))}
-                    </div>
-                    <div>
-                      <p style={{ margin: '0 0 5px', fontSize: 8, color: AMBER, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Watch For</p>
-                      {['Operating Partner expects coordination on pacing', 'Decisions require partner-wide alignment'].map(t => (
-                        <p key={t} style={{ margin: '0 0 4px', fontSize: 11, color: 'rgba(238,236,230,0.62)', lineHeight: 1.4, borderLeft: '1.5px solid rgba(200,168,50,0.3)', paddingLeft: 7 }}>{t}</p>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* S3 — Team Dynamics (pill rows, hover links to radar) */}
-                <div style={{ padding: '14px 0', borderTop: '1px solid rgba(255,255,255,0.07)', ...fade(cardMounted, 160) }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
-                    <p style={{ margin: 0, fontSize: 9, color: FAINT, letterSpacing: '0.16em', textTransform: 'uppercase' }}>Team Dynamics</p>
-                    <p style={{ margin: 0, fontSize: 9, color: 'rgba(238,236,230,0.28)' }}>Strong fit · One relationship to address</p>
-                  </div>
-                  {[
-                    {
-                      role: 'CEO',
-                      pill: 'STRONG ALIGNMENT',
-                      pillBg: 'rgba(58,168,104,0.12)', pillBorder: 'rgba(58,168,104,0.25)', pillColor: GREEN,
-                      note: 'Will experience Kent as decisive and effective.',
-                    },
-                    {
-                      role: 'Operating Partner',
-                      pill: 'PACING GAP',
-                      pillBg: 'rgba(200,168,50,0.12)', pillBorder: 'rgba(200,168,50,0.25)', pillColor: AMBER,
-                      note: 'Friction on pacing — manageable with early alignment on decision cadence.',
-                    },
-                    {
-                      role: 'Board',
-                      pill: 'MODERATE FIT',
-                      pillBg: 'rgba(255,255,255,0.05)', pillBorder: 'rgba(255,255,255,0.12)', pillColor: 'rgba(238,236,230,0.5)',
-                      note: 'May want structured communication cadence. Low risk if expectations are set.',
-                    },
-                  ].map(({ role, pill, pillBg, pillBorder, pillColor, note }) => (
-                    <div
-                      key={role}
-                      className="team-row"
-                      onMouseEnter={() => setHoveredTeam(role)}
-                      onMouseLeave={() => setHoveredTeam(null)}
-                      style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '6px 0' }}
-                    >
-                      <span style={{
-                        borderRadius: 4, padding: '2px 8px', fontSize: 9, fontWeight: 600,
-                        letterSpacing: '0.08em', textTransform: 'uppercase' as const,
-                        background: pillBg, border: `1px solid ${pillBorder}`, color: pillColor,
-                        flexShrink: 0, minWidth: 110, textAlign: 'center' as const, display: 'inline-block',
-                      }}>{pill}</span>
+                  {/* S2 — Primary Watchout (consolidated with Thrives In / Watch For) */}
+                  <div style={{ padding: '14px 0', borderTop: '1px solid rgba(255,255,255,0.09)', ...fade(cardMounted, 80) }}>
+                    <p style={{ margin: '0 0 5px', fontSize: 9, color: FAINT, letterSpacing: '0.16em', textTransform: 'uppercase' }}>
+                      Primary Watchout
+                    </p>
+                    <p style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 500, color: TEXT }}>
+                      Moves faster than the organization can absorb.
+                    </p>
+                    <p style={{ margin: '0 0 10px', fontSize: 11, color: 'rgba(238,236,230,0.45)', lineHeight: 1.45 }}>
+                      Pioneer profile + high-autonomy role = pace mismatch with stakeholders who expect consultation.
+                    </p>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 10 }}>
                       <div>
-                        <p style={{ margin: '0 0 2px', fontSize: 12, fontWeight: 500, color: TEXT }}>{role}</p>
-                        <p style={{ margin: 0, fontSize: 11, color: 'rgba(238,236,230,0.42)', lineHeight: 1.4 }}>{note}</p>
+                        <p style={{ margin: '0 0 5px', fontSize: 8, color: GREEN, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Thrives In</p>
+                        {['CEO grants autonomous execution', 'Ownership is clear, stakeholder drag is low'].map(t => (
+                          <p key={t} style={{ margin: '0 0 4px', fontSize: 11, color: 'rgba(238,236,230,0.62)', lineHeight: 1.4, borderLeft: '1.5px solid rgba(58,168,104,0.3)', paddingLeft: 7 }}>{t}</p>
+                        ))}
+                      </div>
+                      <div>
+                        <p style={{ margin: '0 0 5px', fontSize: 8, color: AMBER, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Watch For</p>
+                        {['Operating Partner expects coordination on pacing', 'Decisions require partner-wide alignment'].map(t => (
+                          <p key={t} style={{ margin: '0 0 4px', fontSize: 11, color: 'rgba(238,236,230,0.62)', lineHeight: 1.4, borderLeft: '1.5px solid rgba(200,168,50,0.3)', paddingLeft: 7 }}>{t}</p>
+                        ))}
                       </div>
                     </div>
-                  ))}
-                </div>
-
-                {/* S4 — Signal Profile */}
-                <div style={{ padding: '14px 0', borderTop: '1px solid rgba(255,255,255,0.07)', ...fade(cardMounted, 240) }}>
-                  <p style={{ margin: '0 0 8px', fontSize: 9, color: FAINT, letterSpacing: '0.16em', textTransform: 'uppercase' }}>
-                    Signal Profile
-                  </p>
-                  {AXES.map((ax) => (
-                    <div key={ax.key} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                      <span style={{ fontSize: 9, color: 'rgba(238,236,230,0.24)', width: 90, flexShrink: 0 }}>
-                        {ax.fullLabel}
-                      </span>
-                      <div style={{ flex: 1, height: 4, background: 'rgba(255,255,255,0.05)', borderRadius: 2 }}>
-                        <div style={{
-                          width: `${ax.score}%`, height: '100%', borderRadius: 2,
-                          background: ax.above ? 'rgba(74,142,255,0.36)' : 'rgba(200,168,50,0.45)',
-                        }} />
-                      </div>
-                      <span style={{
-                        fontSize: 9,
-                        color: ax.above ? 'rgba(238,236,230,0.26)' : 'rgba(200,168,50,0.6)',
-                        width: 18, textAlign: 'right' as const, flexShrink: 0,
-                      }}>
-                        {ax.score}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* S5 — How to De-Risk */}
-                <div style={{ padding: '14px 0', borderTop: '1px solid rgba(255,255,255,0.07)', ...fade(cardMounted, 300) }}>
-                  <p style={{ margin: '0 0 8px', fontSize: 9, color: AMBER, letterSpacing: '0.16em', textTransform: 'uppercase' }}>
-                    How to De-Risk
-                  </p>
-                  {[
-                    "Align on decision cadence with Operating Partner before day one.",
-                    "Define which decisions require escalation and which don't.",
-                    "Set board communication expectations in onboarding.",
-                  ].map((item) => (
-                    <p key={item} style={{
-                      margin: '0 0 6px', fontSize: 11, color: 'rgba(238,236,230,0.62)', lineHeight: 1.5,
-                      borderLeft: '1.5px solid rgba(200,168,50,0.25)', paddingLeft: 8,
-                    }}>{item}</p>
-                  ))}
-                </div>
-
-                {/* S6 — Operating Style */}
-                <div style={{ padding: '14px 0 18px', borderTop: '1px solid rgba(255,255,255,0.07)', ...fade(cardMounted, 360) }}>
-                  <p style={{ margin: '0 0 8px', fontSize: 9, color: FAINT, letterSpacing: '0.16em', textTransform: 'uppercase' }}>
-                    Operating Style
-                  </p>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                    <span style={{
-                      fontFamily: CONDENSED, fontWeight: 700, fontSize: 13,
-                      color: '#c45030', textTransform: 'uppercase' as const, letterSpacing: '0.06em',
-                      background: 'rgba(196,80,48,0.1)', border: '1px solid rgba(196,80,48,0.2)',
-                      borderRadius: 4, padding: '3px 10px',
-                    }}>Pioneer</span>
-                    <span style={{ fontSize: 12, color: 'rgba(238,236,230,0.7)' }}>Execution-first operator</span>
                   </div>
-                  <p style={{ margin: 0, fontSize: 11, color: 'rgba(238,236,230,0.42)', lineHeight: 1.6 }}>
-                    Moves first, drives without waiting for full alignment. High pace, lower in cross-functional coordination.
-                  </p>
+
+                  {/* S3 — Team Dynamics (pill rows, hover links to radar) */}
+                  <div style={{ padding: '14px 0', borderTop: '1px solid rgba(255,255,255,0.09)', ...fade(cardMounted, 160) }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
+                      <p style={{ margin: 0, fontSize: 9, color: FAINT, letterSpacing: '0.16em', textTransform: 'uppercase' }}>Team Dynamics</p>
+                      <p style={{ margin: 0, fontSize: 9, color: 'rgba(238,236,230,0.28)' }}>Strong fit · One relationship to address</p>
+                    </div>
+                    {[
+                      {
+                        role: 'CEO',
+                        pill: 'STRONG ALIGNMENT',
+                        pillBg: 'rgba(58,168,104,0.12)', pillBorder: 'rgba(58,168,104,0.25)', pillColor: GREEN,
+                        note: 'Will experience Kent as decisive and effective.',
+                      },
+                      {
+                        role: 'Operating Partner',
+                        pill: 'PACING GAP',
+                        pillBg: 'rgba(200,168,50,0.12)', pillBorder: 'rgba(200,168,50,0.25)', pillColor: AMBER,
+                        note: 'Friction on pacing — manageable with early alignment on decision cadence.',
+                      },
+                      {
+                        role: 'Board',
+                        pill: 'MODERATE FIT',
+                        pillBg: 'rgba(255,255,255,0.05)', pillBorder: 'rgba(255,255,255,0.12)', pillColor: 'rgba(238,236,230,0.5)',
+                        note: 'May want structured communication cadence. Low risk if expectations are set.',
+                      },
+                    ].map(({ role, pill, pillBg, pillBorder, pillColor, note }) => (
+                      <div
+                        key={role}
+                        className="team-row"
+                        onMouseEnter={() => setHoveredTeam(role)}
+                        onMouseLeave={() => setHoveredTeam(null)}
+                        style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '6px 0' }}
+                      >
+                        <span style={{
+                          borderRadius: 4, padding: '2px 8px', fontSize: 9, fontWeight: 600,
+                          letterSpacing: '0.08em', textTransform: 'uppercase' as const,
+                          background: pillBg, border: `1px solid ${pillBorder}`, color: pillColor,
+                          flexShrink: 0, minWidth: 110, textAlign: 'center' as const, display: 'inline-block',
+                        }}>{pill}</span>
+                        <div>
+                          <p style={{ margin: '0 0 2px', fontSize: 12, fontWeight: 500, color: TEXT }}>{role}</p>
+                          <p style={{ margin: 0, fontSize: 11, color: 'rgba(238,236,230,0.42)', lineHeight: 1.4 }}>{note}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* S4 — Signal Profile */}
+                  <div style={{ padding: '14px 0', borderTop: '1px solid rgba(255,255,255,0.09)', ...fade(cardMounted, 240) }}>
+                    <p style={{ margin: '0 0 8px', fontSize: 9, color: FAINT, letterSpacing: '0.16em', textTransform: 'uppercase' }}>
+                      Signal Profile
+                    </p>
+                    {AXES.map((ax) => (
+                      <div key={ax.key} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                        <span style={{ fontSize: 9, color: 'rgba(238,236,230,0.24)', width: 90, flexShrink: 0 }}>
+                          {ax.fullLabel}
+                        </span>
+                        <div style={{ flex: 1, height: 4, background: 'rgba(255,255,255,0.05)', borderRadius: 2 }}>
+                          <div style={{
+                            width: `${ax.score}%`, height: '100%', borderRadius: 2,
+                            background: ax.above ? 'rgba(74,142,255,0.36)' : 'rgba(200,168,50,0.45)',
+                          }} />
+                        </div>
+                        <span style={{
+                          fontSize: 9,
+                          color: ax.above ? 'rgba(238,236,230,0.26)' : 'rgba(200,168,50,0.6)',
+                          width: 18, textAlign: 'right' as const, flexShrink: 0,
+                        }}>
+                          {ax.score}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* S5 — How to De-Risk */}
+                  <div style={{ padding: '14px 0', borderTop: '1px solid rgba(255,255,255,0.09)', ...fade(cardMounted, 300) }}>
+                    <p style={{ margin: '0 0 8px', fontSize: 9, color: AMBER, letterSpacing: '0.16em', textTransform: 'uppercase' }}>
+                      How to De-Risk
+                    </p>
+                    {[
+                      "Align on decision cadence with Operating Partner before day one.",
+                      "Define which decisions require escalation and which don't.",
+                      "Set board communication expectations in onboarding.",
+                    ].map((item) => (
+                      <p key={item} style={{
+                        margin: '0 0 6px', fontSize: 11, color: 'rgba(238,236,230,0.62)', lineHeight: 1.5,
+                        borderLeft: '1.5px solid rgba(200,168,50,0.25)', paddingLeft: 8,
+                      }}>{item}</p>
+                    ))}
+                  </div>
+
+                  {/* S6 — Operating Style */}
+                  <div style={{ padding: '14px 0', borderTop: '1px solid rgba(255,255,255,0.09)', ...fade(cardMounted, 360) }}>
+                    <p style={{ margin: '0 0 8px', fontSize: 9, color: FAINT, letterSpacing: '0.16em', textTransform: 'uppercase' }}>
+                      Operating Style
+                    </p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                      <span style={{
+                        fontFamily: CONDENSED, fontWeight: 700, fontSize: 13,
+                        color: '#c45030', textTransform: 'uppercase' as const, letterSpacing: '0.06em',
+                        background: 'rgba(196,80,48,0.1)', border: '1px solid rgba(196,80,48,0.2)',
+                        borderRadius: 4, padding: '3px 10px',
+                      }}>Pioneer</span>
+                      <span style={{ fontSize: 12, color: 'rgba(238,236,230,0.7)' }}>Execution-first operator</span>
+                    </div>
+                    <p style={{ margin: 0, fontSize: 11, color: 'rgba(238,236,230,0.42)', lineHeight: 1.6 }}>
+                      Moves first, drives without waiting for full alignment. High pace, lower in cross-functional coordination.
+                    </p>
+                  </div>
+
+                </div>
+
+                {/* Custom scroll indicator */}
+                <div style={{
+                  position: 'absolute', right: 0, top: 0, bottom: 0, width: 2,
+                  background: 'rgba(255,255,255,0.04)', borderRadius: 1,
+                  opacity: scrollThumb.visible ? 1 : 0,
+                  transition: 'opacity 200ms ease',
+                  pointerEvents: 'none',
+                }}>
+                  <div style={{
+                    position: 'absolute', left: 0, width: 2, borderRadius: 1,
+                    background: 'rgba(255,255,255,0.18)',
+                    height: scrollThumb.height,
+                    top: scrollThumb.top,
+                  }} />
                 </div>
 
               </div>
