@@ -611,7 +611,7 @@ export default function HomePage() {
                   color: 'rgba(255,255,255,0.52)',
                   lineHeight: 1.65
                 }}>
-                  Kent's execution and ownership scores are in the top 10% for this role type. The only flag is pace — the operating partner runs slower. Get ahead of that before he starts.
+                  Kent's execution and ownership scores are strong. The only flag is pace — the operating partner runs slower. Get ahead of that before he starts.
                 </p>
               </div>
 
