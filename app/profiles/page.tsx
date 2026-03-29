@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { FitModel } from '@/app/components/FitModel'
 import type { FitModelScores } from '@/app/components/FitModel'
 import Nav from '@/app/components/Nav'
+import { HowItWorksSection } from '@/app/components/HowItWorks'
 
 // ─── Brand tokens ────────────────────────────────────────────────────
 const BG    = '#000'
@@ -469,15 +470,9 @@ function SimCard() {
 // ─── Main page ────────────────────────────────────────────────────────
 export default function MethodPage() {
   const s1 = useInView(0.2)
-  const s2 = useInView(0.2)
   const s3 = useInView(0.2)
   const s4 = useInView(0.2)
   const s5 = useInView(0.2)
-
-  const v80  = useCountUp(80,  900, s2.inView)
-  const v94  = useCountUp(94,  900, s2.inView)
-  const v5   = useCountUp(5,   700, s2.inView)
-  const v1   = useCountUp(1,   500, s2.inView)
 
   const [activeProfile, setActiveProfile] = useState(0)
   const [fading, setFading] = useState(false)
@@ -709,63 +704,7 @@ export default function MethodPage() {
       {/* ══════════════════════════════════════════════════════════════
           SECTION 2 — HOW IT WORKS
       ══════════════════════════════════════════════════════════════ */}
-      <section ref={s2.ref as React.RefObject<HTMLElement>} style={{ ...SECTION_STYLE, borderTop: `1px solid ${BORD}` }}>
-        <div style={{
-          width: '100%', maxWidth: 'min(1120px, calc(100vw - clamp(40px, 8vw, 160px)))',
-          display: 'grid', gridTemplateColumns: '1fr 1fr',
-          gap: 80, alignItems: 'center',
-        }} className="score-build-grid">
-
-          {/* Left — stats + copy */}
-          <div style={fi(s2.inView)}>
-            <p style={eyebrow('How it works')}>How it works</p>
-            <h2 style={{
-              fontSize: 'clamp(32px,4.5vw,56px)',
-              fontWeight: 700, color: TEXT, letterSpacing: '-0.03em',
-              lineHeight: 1.05, marginBottom: 20,
-            }}>
-              Six minutes.<br />Ninety-four signals.
-            </h2>
-            <p style={{
-              fontSize: 14, fontFamily: FONT, fontWeight: 300, color: MUTED,
-              lineHeight: 1.8, marginBottom: 40, maxWidth: 380,
-            }}>
-              A candidate sees two word lists. What they need to be in this role.
-              And who they naturally are. The gap between those two answers is
-              where the signal lives.
-            </p>
-
-            {/* 2×2 stat grid */}
-            <div style={{
-              display: 'grid', gridTemplateColumns: '1fr 1fr',
-              border: `1px solid ${BORD}`, borderRadius: 12, overflow: 'hidden',
-            }}>
-              {[
-                { n: v80,  label: 'Adjective choices' },
-                { n: v94,  label: 'Behavioral signals' },
-                { n: v5,   label: 'Dimensions scored' },
-                { n: v1,   label: 'Fit score vs benchmark' },
-              ].map((stat, i) => (
-                <div key={i} style={{
-                  padding: '24px 22px',
-                  borderRight: i % 2 === 0 ? `1px solid ${BORD}` : 'none',
-                  borderBottom: i < 2 ? `1px solid ${BORD}` : 'none',
-                }}>
-                  <p style={{ fontSize: 'clamp(36px, 5.5vw, 64px)', fontWeight: 700, color: TEXT, letterSpacing: '-0.04em', lineHeight: 1, marginBottom: 6 }}>
-                    {stat.n}
-                  </p>
-                  <p style={{ fontSize: 11, fontFamily: FONT, fontWeight: 300, color: MUTED }}>{stat.label}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Right — assessment simulation */}
-          <div style={fi(s2.inView, 150)}>
-            <SimCard />
-          </div>
-        </div>
-      </section>
+      <HowItWorksSection />
 
       {/* ══════════════════════════════════════════════════════════════
           SECTION 3 — TEAM LAYER
