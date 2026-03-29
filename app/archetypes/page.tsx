@@ -479,7 +479,7 @@ export default function ArchetypesPage() {
     .map(p => p.name.toUpperCase())
 
   return (
-    <>
+    <div ref={snapRef} className="snap-page" style={{ background: BG, color: '#FFF', fontFamily: '"DM Sans", -apple-system, sans-serif' }}>
       {/* FIXED NAV */}
       <nav style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, height: 64,
@@ -521,9 +521,6 @@ export default function ArchetypesPage() {
         </div>
       </nav>
 
-      {/* SNAP CONTAINER */}
-      <div ref={snapRef} className="snap-page" style={{ background: BG, color: '#FFF', fontFamily: '"DM Sans", -apple-system, sans-serif' }}>
-
         {/* ── HERO ── */}
         <section className="snap-beat" style={{ position: 'relative', textAlign: 'center', overflowX: 'hidden' }}>
           {/* Ambient pulse */}
@@ -531,13 +528,13 @@ export default function ArchetypesPage() {
           <div style={{ position: 'absolute', top: '50%', left: '50%', width: 640, height: 640, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.022) 0%, transparent 70%)', animation: 'heroPulse 4s ease-out 2s infinite', pointerEvents: 'none' }} />
 
           <div style={{ position: 'relative' }}>
-            <p style={{ fontSize: 10, fontWeight: 500, color: 'rgba(255,255,255,0.25)', letterSpacing: '0.18em', textTransform: 'uppercase', marginBottom: 28 }}>
+            <p style={{ fontSize: 10, fontWeight: 500, color: 'rgba(255,255,255,0.25)', letterSpacing: '0.18em', textTransform: 'uppercase', marginBottom: 18 }}>
               Behavioral Archetypes
             </p>
             <div style={{ maxWidth: 900, margin: '0 auto' }}>
               <h1 style={{
                 fontFamily: '"Barlow Condensed", system-ui',
-                fontSize: 'clamp(52px, 8.5vw, 108px)',
+                fontSize: 'clamp(44px, 6.5vw, 88px)',
                 fontWeight: 900, textTransform: 'uppercase',
                 letterSpacing: '-0.01em', lineHeight: 0.92, margin: 0,
               }}>
@@ -757,8 +754,6 @@ export default function ArchetypesPage() {
           </footer>
         </section>
 
-      </div>
-
       <style>{`
         @keyframes ticker {
           from { transform: translateX(0); }
@@ -785,6 +780,6 @@ export default function ArchetypesPage() {
           .snap-beat { padding-left: 20px !important; padding-right: 20px !important; }
         }
       `}</style>
-    </>
+    </div>
   )
 }
