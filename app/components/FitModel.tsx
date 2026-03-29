@@ -148,8 +148,8 @@ function FitModelBase({
   }, [polyPath])
 
   return (
-    <div className={className} style={{ position: 'relative', width: size, height: size }}>
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} fill="none" style={{ display: 'block', overflow: 'visible' }}>
+    <div className={className} style={{ position: 'relative', width: size, height: size, maxWidth: '100%' }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} fill="none" style={{ display: 'block', overflow: 'visible', maxWidth: '100%', height: 'auto' }}>
         <defs>
           <filter id={`fit-model-glow-${variant}`} x="-60%" y="-60%" width="220%" height="220%">
             <feGaussianBlur stdDeviation="5" result="blur" />

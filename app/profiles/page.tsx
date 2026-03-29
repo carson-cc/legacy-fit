@@ -388,7 +388,7 @@ function SimCard() {
                   strokeLinecap="round" strokeDasharray={circum} strokeDashoffset={offset} />
               </svg>
               <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontFamily: FONT, fontSize: 38, fontWeight: 700, color: TEXT, lineHeight: 1, letterSpacing: '-0.04em' }}>{score}</span>
+                <span style={{ fontFamily: FONT, fontSize: 'clamp(26px, 3.5vw, 38px)', fontWeight: 700, color: TEXT, lineHeight: 1, letterSpacing: '-0.04em' }}>{score}</span>
               </div>
             </div>
             <div style={{ textAlign: 'center' }}>
@@ -407,7 +407,7 @@ function SimCard() {
               transition: 'opacity 400ms ease, transform 400ms ease',
             }}>
               <p style={{ fontSize: 8, fontFamily: FONT, fontWeight: 600, color: 'rgba(255,255,255,0.25)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 4 }}>Closest archetype</p>
-              <p style={{ fontFamily: FONT, fontSize: 30, fontWeight: 700, color: TEXT, letterSpacing: '-0.03em', lineHeight: 1.05, marginBottom: 4 }}>The Operator</p>
+              <p style={{ fontFamily: FONT, fontSize: 'clamp(22px, 3vw, 30px)', fontWeight: 700, color: TEXT, letterSpacing: '-0.03em', lineHeight: 1.05, marginBottom: 4 }}>The Operator</p>
               <p style={{ fontSize: 12, fontFamily: FONT, color: 'rgba(255,255,255,0.36)', letterSpacing: '-0.01em' }}>Deliberate · Output-focused</p>
             </div>
             <div style={{
@@ -531,9 +531,9 @@ export default function MethodPage() {
   })
 
   const SECTION_STYLE: React.CSSProperties = {
-    height: '100vh', flexShrink: 0, scrollSnapAlign: 'start',
+    minHeight: '100svh', flexShrink: 0, scrollSnapAlign: 'start',
     display: 'flex', alignItems: 'center', overflowY: 'auto',
-    justifyContent: 'center', padding: '100px 64px', position: 'relative',
+    justifyContent: 'center', padding: 'clamp(60px, 8vh, 100px) clamp(20px, 5vw, 64px)', position: 'relative',
     background: BG,
   }
 
@@ -554,7 +554,7 @@ export default function MethodPage() {
       ══════════════════════════════════════════════════════════════ */}
       <section ref={s1.ref as React.RefObject<HTMLElement>} style={{ ...SECTION_STYLE, gap: 80 }}>
         <div style={{
-          width: '100%', maxWidth: 1120,
+          width: '100%', maxWidth: 'min(1120px, calc(100vw - clamp(40px, 8vw, 160px)))',
           display: 'grid', gridTemplateColumns: '1fr 420px',
           gap: 80, alignItems: 'center',
         }} className="hero-grid">
@@ -671,7 +671,7 @@ export default function MethodPage() {
                     <p style={{ fontSize: 11, fontFamily: FONT, fontWeight: 300, color: MUTED }}>{profile.role}</p>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <p style={{ fontFamily: FONT, fontSize: 36, fontWeight: 900, color: TEXT, letterSpacing: '-0.04em', lineHeight: 1, marginBottom: 2 }}>
+                    <p style={{ fontFamily: FONT, fontSize: 'clamp(28px, 4vw, 36px)', fontWeight: 900, color: TEXT, letterSpacing: '-0.04em', lineHeight: 1, marginBottom: 2 }}>
                       {profile.score}
                     </p>
                     <p style={{ fontSize: 10, fontFamily: FONT, fontWeight: 500, color: profile.verdictColor }}>{profile.verdict}</p>
@@ -711,7 +711,7 @@ export default function MethodPage() {
       ══════════════════════════════════════════════════════════════ */}
       <section ref={s2.ref as React.RefObject<HTMLElement>} style={{ ...SECTION_STYLE, borderTop: `1px solid ${BORD}` }}>
         <div style={{
-          width: '100%', maxWidth: 1120,
+          width: '100%', maxWidth: 'min(1120px, calc(100vw - clamp(40px, 8vw, 160px)))',
           display: 'grid', gridTemplateColumns: '1fr 1fr',
           gap: 80, alignItems: 'center',
         }} className="score-build-grid">
@@ -751,7 +751,7 @@ export default function MethodPage() {
                   borderRight: i % 2 === 0 ? `1px solid ${BORD}` : 'none',
                   borderBottom: i < 2 ? `1px solid ${BORD}` : 'none',
                 }}>
-                  <p style={{ fontSize: 64, fontWeight: 700, color: TEXT, letterSpacing: '-0.04em', lineHeight: 1, marginBottom: 6 }}>
+                  <p style={{ fontSize: 'clamp(36px, 5.5vw, 64px)', fontWeight: 700, color: TEXT, letterSpacing: '-0.04em', lineHeight: 1, marginBottom: 6 }}>
                     {stat.n}
                   </p>
                   <p style={{ fontSize: 11, fontFamily: FONT, fontWeight: 300, color: MUTED }}>{stat.label}</p>
@@ -772,7 +772,7 @@ export default function MethodPage() {
       ══════════════════════════════════════════════════════════════ */}
       <section ref={s3.ref as React.RefObject<HTMLElement>} style={{ ...SECTION_STYLE, borderTop: `1px solid ${BORD}` }}>
         <div style={{
-          width: '100%', maxWidth: 1120,
+          width: '100%', maxWidth: 'min(1120px, calc(100vw - clamp(40px, 8vw, 160px)))',
           display: 'grid', gridTemplateColumns: '1fr 1fr',
           gap: 80, alignItems: 'center',
         }} className="signal-grid">
@@ -882,7 +882,7 @@ export default function MethodPage() {
           SECTION 4 — WHAT WE MEASURE
       ══════════════════════════════════════════════════════════════ */}
       <section ref={s4.ref as React.RefObject<HTMLElement>} style={{ ...SECTION_STYLE, borderTop: `1px solid ${BORD}` }}>
-        <div style={{ width: '100%', maxWidth: 1120 }}>
+        <div style={{ width: '100%', maxWidth: 'min(1120px, calc(100vw - clamp(40px, 8vw, 160px)))' }}>
           <div style={{ ...fi(s4.inView), textAlign: 'center', marginBottom: 64 }}>
             <p style={{ ...eyebrow('What we measure'), display: 'block' }}>What we measure</p>
             <h2 style={{
@@ -898,7 +898,7 @@ export default function MethodPage() {
           </div>
 
           {/* 5-column grid */}
-          <div style={{
+          <div className="dimensions-five-col" style={{
             display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1,
             border: `1px solid ${BORD}`, borderRadius: 12, overflow: 'hidden',
           }}>
@@ -962,10 +962,10 @@ export default function MethodPage() {
       ══════════════════════════════════════════════════════════════ */}
       <section ref={s5.ref as React.RefObject<HTMLElement>} style={{ ...SECTION_STYLE, borderTop: `1px solid ${BORD}` }}>
         <div style={{
-          width: '100%', maxWidth: 1120,
+          width: '100%', maxWidth: 'min(1120px, calc(100vw - clamp(40px, 8vw, 160px)))',
           display: 'grid', gridTemplateColumns: '1fr 1fr',
           gap: 80, alignItems: 'center',
-        }} className="howit-grid">
+        }} className="signal-grid howit-grid">
 
           {/* Left */}
           <div style={fi(s5.inView)}>

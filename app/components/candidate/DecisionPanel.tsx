@@ -29,15 +29,16 @@ export default function DecisionPanel({
 
   return (
     <section
+      className="candidate-decision-panel-grid"
       style={{
         background: '#FFFFFF',
         border: '1px solid #E5E7EB',
         borderRadius: 12,
         boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-        padding: 32,
+        padding: 'clamp(20px, 4vw, 32px)',
         display: 'grid',
         gridTemplateColumns: '220px 1fr',
-        gap: 32,
+        gap: 'clamp(16px, 3vw, 32px)',
       }}
     >
       <div
@@ -63,9 +64,9 @@ export default function DecisionPanel({
             background: '#FFFFFF',
           }}
         >
-          <span style={{ fontSize: 40, lineHeight: '48px', fontWeight: 700, color: '#111827' }}>{fitScore}</span>
+          <span style={{ fontSize: 'clamp(28px, 4vw, 40px)', lineHeight: '48px', fontWeight: 700, color: '#111827' }}>{fitScore}</span>
         </div>
-        <div style={{ fontSize: 20, lineHeight: '28px', fontWeight: 600, color: '#111827' }}>{recommendation}</div>
+        <div style={{ fontSize: 'clamp(16px, 2.5vw, 20px)', lineHeight: '28px', fontWeight: 600, color: '#111827' }}>{recommendation}</div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           <span
             style={{
@@ -101,7 +102,7 @@ export default function DecisionPanel({
           <div style={{ fontSize: 12, lineHeight: '16px', fontWeight: 600, letterSpacing: '0.08em', color: '#6B7280', textTransform: 'uppercase', marginBottom: 8 }}>
             Benchmark comparison
           </div>
-          <p style={{ margin: 0, fontSize: 20, lineHeight: '28px', fontWeight: 600, color: '#111827' }}>
+          <p style={{ margin: 0, fontSize: 'clamp(16px, 2.5vw, 20px)', lineHeight: '28px', fontWeight: 600, color: '#111827' }}>
             {benchmarkComparison}
           </p>
         </div>

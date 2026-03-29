@@ -231,7 +231,7 @@ export default function AssessPage() {
   if (phase === 'loading') {
     return (
       <div style={{
-        minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        minHeight: '100svh', display: 'flex', alignItems: 'center', justifyContent: 'center',
         background: '#060B14',
       }}>
         <div style={{
@@ -249,7 +249,7 @@ export default function AssessPage() {
   if (phase === 'error') {
     return (
       <div style={{
-        minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        minHeight: '100svh', display: 'flex', alignItems: 'center', justifyContent: 'center',
         background: '#060B14', padding: '24px',
       }}>
         <div style={{ textAlign: 'center', maxWidth: 400 }}>
@@ -276,7 +276,7 @@ export default function AssessPage() {
     const firstName = candidateName ? candidateName.split(' ')[0] : ''
     return (
       <div style={{
-        minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        minHeight: '100svh', display: 'flex', alignItems: 'center', justifyContent: 'center',
         background: '#060B14', padding: '24px',
       }}>
         <div style={{ width: '100%', maxWidth: 440 }}>
@@ -288,14 +288,14 @@ export default function AssessPage() {
           {/* Card */}
           <div style={{
             background: '#0D1421', border: '1px solid rgba(255,255,255,0.07)',
-            borderRadius: 16, padding: '40px 36px',
+            borderRadius: 16, padding: 'clamp(24px, 5vw, 40px) clamp(20px, 5vw, 36px)',
           }}>
             {firstName && (
               <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.5)', margin: '0 0 8px' }}>
                 Hi {firstName},
               </p>
             )}
-            <h1 style={{ fontSize: 28, fontWeight: 700, color: '#FFFFFF', margin: '0 0 16px', lineHeight: 1.25, letterSpacing: '-0.02em' }}>
+            <h1 style={{ fontSize: 'clamp(22px, 3vw, 28px)', fontWeight: 700, color: '#FFFFFF', margin: '0 0 16px', lineHeight: 1.25, letterSpacing: '-0.02em' }}>
               You&rsquo;ve been invited to complete a brief behavioral assessment.
             </h1>
             <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.55)', lineHeight: 1.7, margin: '0 0 32px' }}>
@@ -383,7 +383,7 @@ export default function AssessPage() {
     const firstName = candidateName ? candidateName.split(' ')[0] : ''
     return (
       <div style={{
-        minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        minHeight: '100svh', display: 'flex', alignItems: 'center', justifyContent: 'center',
         background: '#060B14', padding: '24px',
       }}>
         <div style={{ width: '100%', maxWidth: 440, textAlign: 'center' }}>
@@ -411,7 +411,7 @@ export default function AssessPage() {
               {firstName ? `You're done, ${firstName}.` : "You're done."}
             </p>
             {completionData && (
-              <h1 style={{ fontSize: 44, fontWeight: 800, color: '#FFFFFF', margin: '0 0 8px', letterSpacing: '-0.03em', lineHeight: 1.1 }}>
+              <h1 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800, color: '#FFFFFF', margin: '0 0 8px', letterSpacing: '-0.03em', lineHeight: 1.1 }}>
                 {completionData.profileName}
               </h1>
             )}
@@ -464,7 +464,7 @@ export default function AssessPage() {
   const progressPct = isList1 ? Math.min(selectionCount / 20 * 50, 50) : 50 + Math.min(selectionCount / 20 * 50, 50)
 
   return (
-    <div style={{ minHeight: '100vh', background: '#FFFFFF', paddingBottom: 96 }}>
+    <div style={{ minHeight: '100svh', background: '#FFFFFF', paddingBottom: 96 }}>
       <style>{`
         @keyframes spin { to { transform: rotate(360deg) } }
         .word-chip-assess {
@@ -612,7 +612,7 @@ export default function AssessPage() {
             </div>
           )}
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
             {/* Selection count feedback */}
             <div style={{ fontSize: 14 }}>
               {selectionCount === 0 && (
@@ -629,7 +629,7 @@ export default function AssessPage() {
               )}
             </div>
 
-            {/* Action button */}
+            {/* Action button — full width on mobile */}
             {isList1 ? (
               <button
                 onClick={finishList1}
@@ -641,6 +641,7 @@ export default function AssessPage() {
                   fontSize: 14, fontWeight: 600, border: 'none',
                   cursor: canProceed ? 'pointer' : 'not-allowed',
                   transition: 'all 150ms ease',
+                  width: '100%', maxWidth: 320,
                 }}
                 onMouseEnter={e => { if (canProceed) e.currentTarget.style.background = '#1F2937' }}
                 onMouseLeave={e => { if (canProceed) e.currentTarget.style.background = '#111827' }}
@@ -658,6 +659,7 @@ export default function AssessPage() {
                   fontSize: 14, fontWeight: 600, border: 'none',
                   cursor: canProceed ? 'pointer' : 'not-allowed',
                   transition: 'all 150ms ease',
+                  width: '100%', maxWidth: 320,
                 }}
                 onMouseEnter={e => { if (canProceed) { e.currentTarget.style.background = '#1D4ED8'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(37,99,235,0.3)' } }}
                 onMouseLeave={e => { if (canProceed) { e.currentTarget.style.background = '#2563EB'; e.currentTarget.style.boxShadow = 'none' } }}

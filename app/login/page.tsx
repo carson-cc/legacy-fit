@@ -23,11 +23,11 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex' }}>
+    <div style={{ minHeight: '100svh', display: 'flex' }}>
       {/* Left — dark brand panel */}
       <div className="hidden md:flex" style={{
         width: '50%', background: '#0B0F14', flexDirection: 'column',
-        justifyContent: 'space-between', padding: 64,
+        justifyContent: 'space-between', padding: 'clamp(32px, 5vw, 64px)',
       }}>
         <div>
           <p style={{ fontSize: 20, fontWeight: 700, color: '#fff', letterSpacing: '-0.02em' }}>{PRODUCT_NAME}</p>
@@ -48,7 +48,7 @@ export default function LoginPage() {
       }}>
         <div style={{ width: '100%', maxWidth: 360 }}>
           <div style={{ marginBottom: 48 }}>
-            <h1 style={{ fontSize: 28, fontWeight: 700, color: '#111827', letterSpacing: '-0.02em' }}>Sign in</h1>
+            <h1 style={{ fontSize: 'clamp(22px, 3vw, 28px)', fontWeight: 700, color: '#111827', letterSpacing: '-0.02em' }}>Sign in</h1>
             <p style={{ fontSize: 14, color: '#9CA3AF', marginTop: 8 }}>Access the hiring decision engine</p>
           </div>
 

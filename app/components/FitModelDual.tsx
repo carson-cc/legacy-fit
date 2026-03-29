@@ -126,9 +126,9 @@ export default function FitModelDual({
   const font = "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif"
 
   return (
-    <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} fill="none" style={{ display: 'block', overflow: 'visible' }}>
+    <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start', maxWidth: '100%', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, maxWidth: '100%' }}>
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} fill="none" style={{ display: 'block', overflow: 'visible', maxWidth: '100%', height: 'auto' }}>
           {rings.map((pct, i) => {
             const ringPoints = Array.from({ length: 5 }, (_, j) => polarPoint(cx, cy, maxR * pct, j, 5))
             return <path key={i} d={pointsToPath(ringPoints)} stroke={strokeGrid} strokeWidth={1} fill="none" />

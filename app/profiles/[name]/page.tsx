@@ -44,7 +44,7 @@ export default async function ProfileDetailPage({ params }: { params: Promise<{ 
   const strategies = generateManagementStrategies(profile)
 
   return (
-    <div style={{ background: 'var(--p-bg0)', minHeight: '100vh' }}>
+    <div style={{ background: 'var(--p-bg0)', minHeight: '100svh' }}>
       <ProfileNav
         backLink
         prev={{ name: prevProfile.name, href: `/profiles/${prevProfile.name.toLowerCase()}` }}
@@ -52,7 +52,7 @@ export default async function ProfileDetailPage({ params }: { params: Promise<{ 
       />
 
       {/* Hero */}
-      <section className="grid grid-cols-1 md:grid-cols-[1fr_300px]" style={{ padding: '80px var(--p-sp) 0', gap: 80, maxWidth: 1100, margin: '0 auto', alignItems: 'start' }}>
+      <section className="grid grid-cols-1 md:grid-cols-[1fr_300px]" style={{ padding: 'clamp(40px, 6vh, 80px) var(--p-sp) 0', gap: 'clamp(32px, 5vw, 80px)', maxWidth: 'min(1100px, calc(100vw - clamp(40px, 8vw, 160px)))', margin: '0 auto', alignItems: 'start' }}>
         {/* Left */}
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 28 }}>
@@ -62,7 +62,7 @@ export default async function ProfileDetailPage({ params }: { params: Promise<{ 
             </span>
           </div>
 
-          <h1 className="text-[56px] md:text-[80px]" style={{ fontWeight: 700, letterSpacing: '-0.05em', lineHeight: 0.88, color: 'var(--p-t0)', marginBottom: 20 }}>
+          <h1 className="text-[56px] md:text-[80px]" style={{ fontWeight: 700, letterSpacing: '-0.05em', lineHeight: 0.88, color: 'var(--p-t0)', marginBottom: 20, fontSize: 'clamp(36px, 7vw, 80px)' }}>
             {profile.name}
           </h1>
 
@@ -103,7 +103,7 @@ export default async function ProfileDetailPage({ params }: { params: Promise<{ 
       <div style={{ marginTop: 80 }}>
 
         {/* Section 1: Behavioral Shape */}
-        <section style={{ padding: `52px var(--p-sp)`, borderTop: '1px solid var(--p-b0)' }}>
+        <section style={{ padding: `clamp(28px, 5vh, 52px) var(--p-sp)`, borderTop: '1px solid var(--p-b0)' }}>
           <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--p-t3)', marginBottom: 32 }}>
             Behavioral Shape
           </p>
@@ -115,7 +115,7 @@ export default async function ProfileDetailPage({ params }: { params: Promise<{ 
                   <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--p-t3)', marginBottom: 8 }}>
                     {DIM_TECHNICAL[i]}
                   </p>
-                  <p style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1, color: getLevelHeadingColor(val), marginBottom: 10 }}>
+                  <p style={{ fontSize: 'clamp(20px, 3vw, 26px)', fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1, color: getLevelHeadingColor(val), marginBottom: 10 }}>
                     {getDimensionLevel(val)}
                   </p>
                   <div style={{ width: '100%', height: 2, background: 'var(--p-bg4)', borderRadius: 1, overflow: 'hidden', marginBottom: 14, position: 'relative' }}>
@@ -131,7 +131,7 @@ export default async function ProfileDetailPage({ params }: { params: Promise<{ 
         </section>
 
         {/* Section 2: Strengths + Watch For */}
-        <section style={{ padding: `52px var(--p-sp)`, borderTop: '1px solid var(--p-b0)' }}>
+        <section style={{ padding: `clamp(28px, 5vh, 52px) var(--p-sp)`, borderTop: '1px solid var(--p-b0)' }}>
           <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--p-t3)', marginBottom: 32 }}>
             Strengths &amp; Watch For
           </p>
@@ -160,7 +160,7 @@ export default async function ProfileDetailPage({ params }: { params: Promise<{ 
         </section>
 
         {/* Section 3: Working With */}
-        <section style={{ padding: `52px var(--p-sp)`, borderTop: '1px solid var(--p-b0)' }}>
+        <section style={{ padding: `clamp(28px, 5vh, 52px) var(--p-sp)`, borderTop: '1px solid var(--p-b0)' }}>
           <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--p-t3)', marginBottom: 32 }}>
             Working with a {profile.name}
           </p>
@@ -175,7 +175,7 @@ export default async function ProfileDetailPage({ params }: { params: Promise<{ 
         </section>
 
         {/* Section 4: Best Fit Roles */}
-        <section style={{ padding: `52px var(--p-sp)`, borderTop: '1px solid var(--p-b0)' }}>
+        <section style={{ padding: `clamp(28px, 5vh, 52px) var(--p-sp)`, borderTop: '1px solid var(--p-b0)' }}>
           <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--p-t3)', marginBottom: 32 }}>
             Best Fit Roles
           </p>
@@ -189,7 +189,7 @@ export default async function ProfileDetailPage({ params }: { params: Promise<{ 
         </section>
 
         {/* Section 5: Also Resembles */}
-        <section style={{ padding: `52px var(--p-sp)`, borderTop: '1px solid var(--p-b0)' }}>
+        <section style={{ padding: `clamp(28px, 5vh, 52px) var(--p-sp)`, borderTop: '1px solid var(--p-b0)' }}>
           <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--p-t3)', marginBottom: 32 }}>
             Also Resembles
           </p>
@@ -206,7 +206,7 @@ export default async function ProfileDetailPage({ params }: { params: Promise<{ 
               <p style={{ fontSize: 10, color: 'var(--p-t3)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>
                 Secondary Profile &middot; {secondaryProfile.groupLabel}
               </p>
-              <p style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--p-t0)' }}>
+              <p style={{ fontSize: 'clamp(18px, 3vw, 22px)', fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--p-t0)' }}>
                 {secondaryProfile.name}
               </p>
               <p style={{ fontSize: 13, color: 'var(--p-t2)', marginTop: 4 }}>
@@ -221,7 +221,7 @@ export default async function ProfileDetailPage({ params }: { params: Promise<{ 
         </section>
 
         {/* Bottom nav */}
-        <div style={{ padding: `56px var(--p-sp)`, borderTop: '1px solid var(--p-b0)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: `clamp(28px, 5vh, 56px) var(--p-sp)`, borderTop: '1px solid var(--p-b0)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Link href={`/profiles/${prevProfile.name.toLowerCase()}`} style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', gap: 4 }}>
             <span style={{ fontSize: 10, color: 'var(--p-t3)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>&larr; Previous</span>
             <span style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--p-t0)', transition: 'color 0.1s' }}>{prevProfile.name}</span>

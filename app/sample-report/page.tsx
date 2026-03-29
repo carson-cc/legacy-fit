@@ -265,6 +265,8 @@ export default function SampleReportPage() {
         }
         @media (max-width: 767px) {
           .rpt-nav-subtitle { display: none !important; }
+          .rpt-hero-grid > div:last-child { border-left: none !important; padding-left: 0 !important; border-top: 1px solid rgba(255,255,255,0.07); padding-top: 24px !important; }
+          .rpt-proof-grid > div:last-child { border-left: none !important; padding-left: 0 !important; border-top: 1px solid rgba(255,255,255,0.07); padding-top: 24px !important; }
         }
       `}</style>
 
@@ -316,16 +318,16 @@ export default function SampleReportPage() {
       </nav>
 
       <main className="report-root" style={{
-        minHeight: '100vh', background: BG, color: TEXT, fontFamily: FONT,
+        minHeight: '100svh', background: BG, color: TEXT, fontFamily: FONT,
       }}>
-        <div style={{ maxWidth: 960, margin: '0 auto', padding: '64px 24px 96px' }}>
+        <div style={{ maxWidth: 'min(960px, calc(100vw - clamp(40px, 8vw, 160px)))', margin: '0 auto', padding: 'clamp(40px, 6vh, 64px) clamp(16px, 4vw, 24px) clamp(60px, 8vh, 96px)' }}>
 
           {/* ── Report header ── */}
           <header style={{ textAlign: 'center', marginBottom: 48 }}>
             <p style={{ margin: '0 0 16px', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: FAINT, fontWeight: 600 }}>
               Candidate Recommendation Report
             </p>
-            <h1 style={{ margin: '0 0 8px', fontSize: 40, lineHeight: 1.15, letterSpacing: '-0.03em', fontWeight: 700, color: TEXT }}>
+            <h1 style={{ margin: '0 0 8px', fontSize: 'clamp(28px, 4vw, 40px)', lineHeight: 1.15, letterSpacing: '-0.03em', fontWeight: 700, color: TEXT }}>
               Marcus Thompson
             </h1>
             <p style={{ margin: 0, fontSize: 16, color: SUB }}>
@@ -359,7 +361,7 @@ export default function SampleReportPage() {
                 </div>
               </div>
 
-              <div style={{ borderLeft: `1px solid ${DIV}`, paddingLeft: 40, display: 'grid', gap: 28 }}>
+              <div style={{ borderLeft: `1px solid ${DIV}`, paddingLeft: 'clamp(20px, 4vw, 40px)', display: 'grid', gap: 28 }}>
 
                 {/* 1B — Primary Tension */}
                 <div style={{
@@ -479,7 +481,7 @@ export default function SampleReportPage() {
               </div>
 
               {/* 3B — Dimension Breakdown */}
-              <div style={{ borderLeft: `1px solid ${DIV}`, paddingLeft: 32 }}>
+              <div style={{ borderLeft: `1px solid ${DIV}`, paddingLeft: 'clamp(16px, 3vw, 32px)' }}>
                 <Label text="Dimension Breakdown" />
                 <p style={{ margin: '8px 0 20px', fontSize: 12, color: 'rgba(255,255,255,0.25)' }}>
                   Bar = candidate · Tick = benchmark · Delta vs. role
@@ -652,7 +654,7 @@ export default function SampleReportPage() {
                   borderBottom: i < INTERVIEW_PROBES.length - 1 ? `1px solid ${DIV}` : 'none',
                 }}>
                   <span style={{
-                    fontSize: 40, fontWeight: 800, color: 'rgba(255,255,255,0.06)',
+                    fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 800, color: 'rgba(255,255,255,0.06)',
                     lineHeight: 1, flexShrink: 0, letterSpacing: '-0.04em', fontVariantNumeric: 'tabular-nums',
                     minWidth: 48,
                   }}>

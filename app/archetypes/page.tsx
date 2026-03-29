@@ -29,6 +29,46 @@ const TAGS: Record<string, string> = {
   Trailblazer: 'Pace · Excellence', Veteran: 'Integrity · Steady',
 }
 
+// ─── CARD PENTAGON DATA ───────────────────────────────────────────────────────
+const PENT_VALUES: Record<string, number[]> = {
+  Conductor:   [82, 75, 70, 78, 72],
+  Pioneer:     [78, 72, 80, 52, 88],
+  Purist:      [90, 88, 42, 45, 62],
+  Renegade:    [72, 65, 88, 55, 92],
+  Catalyst:    [62, 58, 85, 94, 78],
+  Diplomat:    [52, 55, 88, 92, 50],
+  Rainmaker:   [70, 62, 80, 88, 82],
+  Unifier:     [55, 60, 72, 98, 48],
+  Anchor:      [88, 90, 40, 52, 58],
+  Navigator:   [82, 84, 55, 60, 70],
+  Sentinel:    [92, 88, 36, 45, 55],
+  Standard:    [85, 80, 48, 62, 65],
+  Agent:       [68, 78, 70, 65, 52],
+  Executor:    [84, 82, 55, 60, 70],
+  Trailblazer: [75, 68, 88, 72, 82],
+  Veteran:     [70, 85, 60, 72, 52],
+}
+
+// ─── DECISION SIGNALS ─────────────────────────────────────────────────────────
+const DECISION_SIGNALS: Record<string, { bestIn: string; watchFor: string }> = {
+  Conductor:   { bestIn: 'High-stakes roles with unclear authority.',                          watchFor: 'Fills the vacuum others needed to step into.' },
+  Pioneer:     { bestIn: 'Greenfield builds, turnarounds, fast-moving mandates.',              watchFor: 'Loses patience before the work is done.' },
+  Purist:      { bestIn: 'Quality-critical roles where the standard is non-negotiable.',       watchFor: 'Blocks progress in the name of perfection.' },
+  Renegade:    { bestIn: 'Roles that need a new direction, not a better process.',             watchFor: 'Alienates people who needed to be brought along.' },
+  Catalyst:    { bestIn: 'Culture-building, team activation, change management.',              watchFor: 'Enthusiasm can mask lack of follow-through.' },
+  Diplomat:    { bestIn: 'Roles that live at the intersection of competing interests.',        watchFor: 'Avoids the hard call to preserve the relationship.' },
+  Rainmaker:   { bestIn: 'Revenue-critical roles where relationships are the product.',        watchFor: "The work after the win isn't where they live." },
+  Unifier:     { bestIn: 'Fractured teams, post-merger integration, trust rebuilds.',          watchFor: 'Holds the team together past the point it should change.' },
+  Anchor:      { bestIn: 'Roles that need reliability over innovation.',                       watchFor: "Resists change that's actually necessary." },
+  Navigator:   { bestIn: 'Complex builds where the plan is the product.',                     watchFor: 'Over-plans in situations that need improvisation.' },
+  Sentinel:    { bestIn: 'Risk-heavy roles where catching the miss is the job.',              watchFor: 'Slows things down when speed is the right call.' },
+  Standard:    { bestIn: 'Roles where consistency compounds over time.',                       watchFor: 'Mistakes familiarity for correctness.' },
+  Agent:       { bestIn: "Roles where depth of knowledge is the differentiator.",             watchFor: "Hard to access for people who don't speak the language." },
+  Executor:    { bestIn: 'Roles that need strategy turned into reality, fast.',               watchFor: 'Can execute the wrong strategy very well.' },
+  Trailblazer: { bestIn: 'Roles that need someone to raise the ceiling.',                     watchFor: 'Gets restless when the work becomes maintenance.' },
+  Veteran:     { bestIn: 'Roles where institutional judgment is irreplaceable.',              watchFor: 'Underestimates how much the context has changed.' },
+}
+
 // ─── ICONS ────────────────────────────────────────────────────────────────────
 const CAT_ICONS: Record<string, string[]> = {
   field_command:     ['M4,18 L18,4', 'M10,4 L18,4 L18,12'],
@@ -169,6 +209,45 @@ function MiniPentagon({ vals, color, size = 20 }: { vals: number[]; color: strin
   )
 }
 
+// ─── CARD PENTAGON ────────────────────────────────────────────────────────────
+function CardPentagon({ name, color, hovered }: { name: string; color: string; hovered: boolean }) {
+  const [drawn, setDrawn] = useState(false)
+  useEffect(() => { if (hovered && !drawn) setDrawn(true) }, [hovered, drawn])
+
+  const vals    = PENT_VALUES[name] ?? [60, 60, 60, 60, 60]
+  const size    = 56, cx = 28, cy = 28, maxR = 22
+  const angles  = [0, 1, 2, 3, 4].map(i => (i * 2 * Math.PI / 5) - Math.PI / 2)
+
+  function ring(r: number) {
+    return angles.map(a => `${cx + r * Math.cos(a)},${cy + r * Math.sin(a)}`).join(' ')
+  }
+
+  const dataPoints = vals.map((v, i) => {
+    const r = (v / 100) * maxR
+    return `${cx + r * Math.cos(angles[i])},${cy + r * Math.sin(angles[i])}`
+  }).join(' ')
+
+  return (
+    <svg
+      width={size} height={size}
+      viewBox={`0 0 ${size} ${size}`}
+      style={{ position: 'absolute', top: 14, right: 14, pointerEvents: 'none', transition: 'opacity 200ms ease', flexShrink: 0 }}
+    >
+      <polygon points={ring(maxR)} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="0.5" />
+      <polygon points={ring(maxR * 0.5)} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="0.5" />
+      <polygon
+        points={dataPoints}
+        fill={`${color}${hovered ? '30' : '1a'}`}
+        stroke={color}
+        strokeWidth="1.2"
+        opacity={hovered ? 1 : 0.65}
+        className={drawn ? 'pent-first-draw' : undefined}
+        style={{ transition: 'opacity 200ms ease, fill 200ms ease' }}
+      />
+    </svg>
+  )
+}
+
 // ─── RADAR CANVAS ─────────────────────────────────────────────────────────────
 const RADAR_SIZE   = 720
 const RADAR_MARGIN = 72
@@ -223,6 +302,14 @@ function RadarCanvas({
     REFERENCE_PROFILES.map(p => ({
       phase: seeded(p.name) * Math.PI * 2,
       speed: 0.35 + seeded(p.name + 's') * 0.45,
+    }))
+  )
+
+  const driftParams = useRef(
+    REFERENCE_PROFILES.map(p => ({
+      radius: 2 + seeded(p.name + 'd') * 1.5,
+      period: (8 + seeded(p.name + 'p') * 6) * 1000,
+      phase:  seeded(p.name + 'ph') * Math.PI * 2,
     }))
   )
 
@@ -359,7 +446,10 @@ function RadarCanvas({
     const hoverProg = hovProf ? Math.min(1, (t - hoverStartRef.current) / 200) : 0
 
     REFERENCE_PROFILES.forEach((p, i) => {
-      const { x, y } = dotXY(p.coords.patience, p.coords.extraversion, w, h, M)
+      const base = dotXY(p.coords.patience, p.coords.extraversion, w, h, M)
+      const dp   = driftParams.current[i]
+      const x    = base.x + dp.radius * Math.cos(t / dp.period + dp.phase)
+      const y    = base.y + dp.radius * Math.sin(t / dp.period + dp.phase)
       const c          = getCat(p.group)
       const isHovProf  = p.name === hovProf
       const isAmbGroup = p.group === ambCat
@@ -391,7 +481,7 @@ function RadarCanvas({
 
       const distFromCenter = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2) / R
       const depthScale = 1 - distFromCenter * 0.18
-      const baseR = isHovProf ? 6 : isAmbGroup && !isInteracting ? 4 + ambAlpha * 0.8 : 3.8
+      const baseR = isHovProf ? 5.7 : isAmbGroup && !isInteracting ? 4 + ambAlpha * 0.8 : 3.8
       const dotR  = baseR * depthScale + (isHovProf ? 0 : (1 - depthScale) * 0.5)
 
       ctx.beginPath()
@@ -471,13 +561,16 @@ function RadarCanvas({
           left:  tooltip.cssX < window.innerWidth * 0.6 ? tooltip.cssX + 14 : undefined,
           right: tooltip.cssX >= window.innerWidth * 0.6 ? `calc(100% - ${tooltip.cssX}px + 14px)` : undefined,
           top: Math.max(8, tooltip.cssY - 22),
-          background: 'rgba(10,10,10,0.96)',
-          border: `1px solid ${hexAlpha(tooltip.color, 0.28)}`,
-          borderRadius: 7, padding: '8px 12px',
-          pointerEvents: 'none', zIndex: 10, minWidth: 130,
+          background: '#0f0f0f',
+          border: '1px solid rgba(255,255,255,0.12)',
+          borderRadius: 8, padding: '10px 14px',
+          pointerEvents: 'none', zIndex: 20, whiteSpace: 'nowrap',
         }}>
-          <div style={{ fontFamily: '"Barlow Condensed", system-ui', fontSize: 15, fontWeight: 800, textTransform: 'uppercase', color: tooltip.color, letterSpacing: '0.04em' }}>{tooltip.name}</div>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.40)', marginTop: 2, lineHeight: 1.4 }}>{tooltip.tagline.slice(0, 58)}</div>
+          <div style={{ fontFamily: '"Barlow Condensed", system-ui', fontSize: 13, fontWeight: 700, textTransform: 'uppercase', color: '#eeece6', letterSpacing: '0.04em' }}>{tooltip.name}</div>
+          <div style={{ fontSize: 11, fontWeight: 300, color: 'rgba(238,236,230,0.52)', marginTop: 2, lineHeight: 1.4, fontFamily: '"DM Sans", sans-serif' }}>{tooltip.tagline.slice(0, 72)}</div>
+          <div style={{ fontSize: 9, color: tooltip.color, textTransform: 'uppercase', letterSpacing: '0.12em', marginTop: 4, fontFamily: '"DM Sans", sans-serif' }}>
+            {getCat(REFERENCE_PROFILES.find(p => p.name === tooltip.name)?.group ?? '')?.label}
+          </div>
         </div>
       )}
     </div>
@@ -554,8 +647,10 @@ function ArchCard({ profile, catColor, catKey, onHover }: {
         display: 'flex', flexDirection: 'column', gap: 10,
         width: 240, flexShrink: 0,
         scrollSnapAlign: 'start', touchAction: 'pan-x',
+        position: 'relative',
       }}
     >
+      <CardPentagon name={profile.name} color={catColor} hovered={hov} />
       <div style={{
         opacity: hov ? 1 : 0.62,
         transition: 'opacity 150ms ease, filter 150ms ease',
@@ -570,6 +665,7 @@ function ArchCard({ profile, catColor, catKey, onHover }: {
           letterSpacing: '0.02em',
           color: hov ? catColor : 'rgba(255,255,255,0.88)',
           lineHeight: 1.1, marginBottom: 8, transition: 'color 150ms ease',
+          paddingRight: 68,
         }}>{profile.name}</div>
         <p style={{ fontSize: 12, fontWeight: 300, color: 'rgba(255,255,255,0.42)', lineHeight: 1.65, margin: 0, fontFamily: '"DM Sans", sans-serif' }}>
           {profile.essence}
@@ -584,6 +680,29 @@ function ArchCard({ profile, catColor, catKey, onHover }: {
         fontFamily: '"DM Sans", sans-serif', letterSpacing: '0.04em',
       }}>
         {TAGS[profile.name] ?? profile.tagline.split(',')[0]}
+      </div>
+      {/* Decision signal — reveals on hover */}
+      <div style={{
+        borderTop: '1px solid rgba(255,255,255,0.07)',
+        marginTop: 12,
+        paddingTop: 10,
+        maxHeight: hov ? 80 : 0,
+        overflow: 'hidden',
+        opacity: hov ? 1 : 0,
+        transition: 'max-height 200ms ease, opacity 200ms ease',
+      }}>
+        {DECISION_SIGNALS[profile.name] && (
+          <>
+            <div style={{ borderLeft: '1.5px solid rgba(58,168,104,0.4)', paddingLeft: 8, marginBottom: 5 }}>
+              <span style={{ fontSize: 8, color: '#3aa868', textTransform: 'uppercase', letterSpacing: '0.12em', display: 'block', marginBottom: 2 }}>BEST IN</span>
+              <span style={{ fontSize: 11, fontWeight: 300, color: 'rgba(238,236,230,0.7)', fontFamily: '"DM Sans", sans-serif' }}>{DECISION_SIGNALS[profile.name].bestIn}</span>
+            </div>
+            <div style={{ borderLeft: '1.5px solid rgba(200,168,50,0.4)', paddingLeft: 8 }}>
+              <span style={{ fontSize: 8, color: '#c8a832', textTransform: 'uppercase', letterSpacing: '0.12em', display: 'block', marginBottom: 2 }}>WATCH FOR</span>
+              <span style={{ fontSize: 11, fontWeight: 300, color: 'rgba(238,236,230,0.7)', fontFamily: '"DM Sans", sans-serif' }}>{DECISION_SIGNALS[profile.name].watchFor}</span>
+            </div>
+          </>
+        )}
       </div>
     </div>
   )
@@ -663,16 +782,88 @@ function RadarColumn({ groups, activeCat, hoveredProfile, setActive, setHovProf 
   )
 }
 
+// ─── WHAT CHANGES ─────────────────────────────────────────────────────────────
+const WHAT_CHANGES = [
+  "Know who will outperform in this role before the first interview. Not after a bad hire.",
+  "Know where friction lives before onboarding. Not after the first 90 days.",
+  "Know whether this candidate fits this specific manager — not just the role in the abstract.",
+  "Know in six minutes what a reference check takes three weeks to surface. If it surfaces at all.",
+]
+
+function WhatChanges() {
+  const ref = useRef<HTMLDivElement>(null)
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setVisible(true); obs.disconnect() } },
+      { threshold: 0.15 }
+    )
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
+
+  return (
+    <div ref={ref} style={{
+      padding: 'clamp(32px, 4vh, 52px) clamp(20px, 5vw, 44px)',
+      borderBottom: '1px solid rgba(255,255,255,0.07)',
+      maxWidth: 900,
+      margin: '0 auto',
+      width: '100%',
+      boxSizing: 'border-box',
+    }}>
+      <h2 style={{
+        fontFamily: '"Barlow Condensed", system-ui',
+        fontWeight: 900,
+        fontSize: 'clamp(22px, 2.8vw, 34px)',
+        color: '#eeece6',
+        textTransform: 'uppercase',
+        letterSpacing: '-0.01em',
+        margin: '0 0 28px 0',
+      }}>
+        What this actually changes.
+      </h2>
+      {WHAT_CHANGES.map((text, i) => (
+        <div key={i} style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 20,
+          padding: '16px 0',
+          borderBottom: i < WHAT_CHANGES.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+          opacity: visible ? 1 : 0,
+          transform: visible ? 'translateY(0)' : 'translateY(12px)',
+          transition: `opacity 400ms ease ${i * 80}ms, transform 400ms ease ${i * 80}ms`,
+        }}>
+          <span style={{
+            fontFamily: '"Barlow Condensed", system-ui',
+            fontWeight: 700,
+            fontSize: 20,
+            color: 'rgba(255,255,255,0.13)',
+            width: 36,
+            flexShrink: 0,
+            paddingTop: 2,
+          }}>0{i + 1}</span>
+          <p style={{
+            fontSize: 14,
+            fontWeight: 400,
+            color: 'rgba(238,236,230,0.8)',
+            lineHeight: 1.65,
+            margin: 0,
+          }}>{text}</p>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // ─── PAGE ─────────────────────────────────────────────────────────────────────
 const BG  = '#080808'
 const MAX = 1240
-const HERO_WORDS = ["YOU'VE", 'MET', 'THESE', 'PEOPLE.']
-
 export default function ArchetypesPage() {
   const [activeCat,      setActiveCat]      = useState<string | null>(null)
   const [hoveredProfile, setHoveredProfile] = useState<string | null>(null)
-  const [heroWords,      setHeroWords]      = useState(0)
-  const [heroGhost,      setHeroGhost]      = useState(false)
   const [activeSection,  setActiveSection]  = useState(0)
 
   const ctaBandRef = useRef<HTMLDivElement>(null)
@@ -700,10 +891,6 @@ export default function ArchetypesPage() {
   }, [])
 
 
-  useEffect(() => {
-    HERO_WORDS.forEach((_, i) => setTimeout(() => setHeroWords(i + 1), 80 + i * 60))
-    setTimeout(() => setHeroGhost(true), 80 + HERO_WORDS.length * 60 + 220)
-  }, [])
 
   useEffect(() => {
     const main = mainRef.current
@@ -742,66 +929,51 @@ export default function ArchetypesPage() {
 
       {/* ── HERO ── */}
       <section style={{
-        height: '100vh', display: 'flex', flexDirection: 'column',
+        minHeight: '100svh', display: 'flex', flexDirection: 'column',
         justifyContent: 'center',
         position: 'relative',
-        padding: '80px 48px', overflow: 'hidden',
+        padding: 'clamp(40px, 6vh, 80px) clamp(20px, 5vw, 48px)', overflow: 'hidden',
       }}>
         {/* Ambient pulse */}
         <div style={{ position: 'absolute', top: '50%', left: '50%', width: 640, height: 640, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.022) 0%, transparent 70%)', animation: 'heroPulse 4s ease-out infinite', pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', top: '50%', left: '50%', width: 640, height: 640, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.022) 0%, transparent 70%)', animation: 'heroPulse 4s ease-out 2s infinite', pointerEvents: 'none' }} />
 
-        <div style={{ position: 'relative', maxWidth: 900, width: '100%', margin: '0 auto', marginTop: '-10vh' }}>
+        <div style={{ position: 'relative', maxWidth: 'min(900px, calc(100vw - clamp(40px, 8vw, 160px)))', width: '100%', margin: '0 auto', marginTop: '-10vh' }}>
           <p style={{ fontSize: 10, fontWeight: 300, color: 'rgba(238,236,230,0.32)', letterSpacing: '0.22em', textTransform: 'uppercase', margin: '0 0 20px 0' }}>
-            Behavioral Archetypes
+            BEHAVIORAL ARCHETYPES
           </p>
           <h1 style={{
             fontFamily: '"Barlow Condensed", system-ui',
             fontWeight: 900, textTransform: 'uppercase',
             letterSpacing: '-0.01em', lineHeight: 0.9, margin: 0,
+            fontSize: 'clamp(52px, 7vw, 88px)',
+            color: '#eeece6',
           }}>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0 0.22em', marginBottom: 4 }}>
-              {HERO_WORDS.map((word, i) => (
-                <span key={i} style={{
-                  display: 'inline-block',
-                  fontSize: 'clamp(52px, 7vw, 88px)',
-                  color: '#eeece6',
-                  opacity: heroWords > i ? 1 : 0,
-                  transform: heroWords > i ? 'translateY(0)' : 'translateY(8px)',
-                  transition: 'opacity 320ms ease, transform 320ms ease',
-                }}>{word}</span>
-              ))}
-            </div>
-            <span style={{
-              display: 'block',
-              fontSize: 'clamp(52px, 7vw, 88px)',
-              color: 'rgba(238,236,230,0.09)',
-              opacity: heroGhost ? 1 : 0,
-              transform: heroGhost ? 'translateY(0)' : 'translateY(8px)',
-              transition: 'opacity 320ms ease, transform 320ms ease',
-            }}>Now you have words for them.</span>
+            You already know these people.
           </h1>
-          <p style={{ fontSize: 16, fontWeight: 300, color: 'rgba(238,236,230,0.5)', maxWidth: 420, marginTop: 28, lineHeight: 1.65 }}>
-            Browse the patterns recruiters recognize instantly — or find your own in six minutes.
+          <p style={{ fontSize: 16, fontWeight: 300, color: 'rgba(238,236,230,0.52)', maxWidth: 400, marginTop: 22, lineHeight: 1.65, margin: '22px 0 0 0', fontFamily: '"DM Sans", sans-serif' }}>
+            We made the patterns behind them visible.
           </p>
-          <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 36, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 32, flexWrap: 'wrap' }}>
             <a href="/invite-self" style={{
-              padding: '11px 24px', borderRadius: 100,
-              background: '#eeece6', color: '#080808', fontSize: 13, fontWeight: 500,
+              padding: '12px 28px', borderRadius: 100,
+              background: '#eeece6', color: '#080808', fontSize: 14, fontWeight: 500,
               display: 'inline-flex', alignItems: 'center', textDecoration: 'none', transition: 'opacity 150ms ease',
+              fontFamily: '"DM Sans", sans-serif',
             }}
               onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
               onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
-            >Find your archetype</a>
+            >Start the assessment</a>
             <a href="#archetypes" style={{
-              padding: '11px 24px', borderRadius: 100,
-              background: 'transparent', color: 'rgba(238,236,230,0.6)',
+              padding: '12px 28px', borderRadius: 100,
+              background: 'transparent', color: 'rgba(238,236,230,0.55)',
               border: '1px solid rgba(255,255,255,0.14)',
-              fontSize: 13, fontWeight: 400, display: 'inline-flex', alignItems: 'center',
+              fontSize: 14, fontWeight: 500, display: 'inline-flex', alignItems: 'center',
               textDecoration: 'none', transition: 'border-color 150ms ease, color 150ms ease',
+              fontFamily: '"DM Sans", sans-serif',
             }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.28)'; e.currentTarget.style.color = 'rgba(238,236,230,1)' }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.14)'; e.currentTarget.style.color = 'rgba(238,236,230,0.6)' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.14)'; e.currentTarget.style.color = 'rgba(238,236,230,0.55)' }}
             >Browse all {REFERENCE_PROFILES.length}</a>
           </div>
         </div>
@@ -833,7 +1005,7 @@ export default function ArchetypesPage() {
       </div>
 
       {/* ── BEHAVIORAL MAP — full-bleed surface ── */}
-      <section style={{ width: '100%', height: '100vh', position: 'relative', overflow: 'hidden' }}>
+      <section style={{ width: '100%', height: '100svh', position: 'relative', overflow: 'hidden' }}>
 
         {/* Full-bleed canvas layer */}
         <RadarCanvas
@@ -851,6 +1023,15 @@ export default function ArchetypesPage() {
           textTransform: 'uppercase', color: 'rgba(255,255,255,0.14)',
         }}>
           Behavioral Map · Pace × People-orientation
+        </p>
+        <p style={{
+          position: 'absolute', top: 95, left: 0, right: 0,
+          fontSize: 14, fontWeight: 300, fontStyle: 'italic', color: 'rgba(238,236,230,0.42)',
+          textAlign: 'center', margin: '4px 0 20px 0',
+          zIndex: 2, pointerEvents: 'none',
+          fontFamily: '"DM Sans", sans-serif',
+        }}>
+          Every person you&#39;ve ever hired sits somewhere on this map.
         </p>
 
         {/* Corner category labels — at actual section corners, floating over canvas */}
@@ -910,8 +1091,8 @@ export default function ArchetypesPage() {
       {/* ── CTA + ARCHETYPE BLOCKS ── */}
       <section id="archetypes" style={{ padding: 0 }}>
         {/* CTA band */}
-        <div ref={ctaBandRef} style={{ borderTop: '1px solid rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: '#0f0f0f', padding: '52px 40px' }}>
-          <div style={{ maxWidth: MAX, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 40, flexWrap: 'wrap' }}>
+        <div ref={ctaBandRef} style={{ borderTop: '1px solid rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: '#0f0f0f', padding: 'clamp(32px, 5vh, 52px) clamp(20px, 5vw, 40px)' }}>
+          <div style={{ maxWidth: 'min(1240px, calc(100vw - clamp(40px, 8vw, 160px)))', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 40, flexWrap: 'wrap' }}>
             <div>
               <h2 style={{ fontFamily: '"Barlow Condensed", system-ui', fontSize: 'clamp(36px, 5vw, 56px)', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.01em', lineHeight: 1.0, color: '#FFF', marginBottom: 10 }}>
                 Find yours in six minutes.
@@ -944,8 +1125,11 @@ export default function ArchetypesPage() {
           </div>
         </div>
 
+        {/* ── WHAT THIS ACTUALLY CHANGES ── */}
+        <WhatChanges />
+
         {/* Archetype blocks */}
-        <div style={{ padding: '72px 40px 100px', maxWidth: MAX + 80, margin: '0 auto', width: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 64 }}>
+        <div style={{ padding: 'clamp(40px, 6vh, 72px) clamp(20px, 5vw, 40px) clamp(60px, 8vh, 100px)', maxWidth: 'min(1320px, calc(100vw - clamp(40px, 8vw, 160px)))', margin: '0 auto', width: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 64 }}>
           {grouped.map((g, idx) => (
             <div key={g.key}>
               <div ref={catRefs[idx]} style={{
@@ -955,7 +1139,7 @@ export default function ArchetypesPage() {
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <Icon paths={CAT_ICONS[g.key] ?? []} size={22} stroke={g.color} />
-                  <span style={{ fontFamily: '"Barlow Condensed", system-ui', fontSize: 28, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.02em', color: g.color }}>
+                  <span style={{ fontFamily: '"Barlow Condensed", system-ui', fontSize: 'clamp(22px, 3vw, 28px)', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.02em', color: g.color }}>
                     {g.label}
                   </span>
                   <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.28)', fontWeight: 300 }}>{g.descriptor}</span>
@@ -972,8 +1156,8 @@ export default function ArchetypesPage() {
         </div>
 
         {/* Footer */}
-        <footer style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '20px 40px' }}>
-          <div style={{ maxWidth: MAX, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <footer style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '20px clamp(20px, 5vw, 40px)' }}>
+          <div style={{ maxWidth: 'min(1240px, calc(100vw - clamp(40px, 8vw, 160px)))', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.14)' }}>{PRODUCT_NAME} by Legacy Workforce · © 2026</span>
             <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.14)' }}>{COMPANY_EMAIL}</span>
           </div>
@@ -992,6 +1176,14 @@ export default function ArchetypesPage() {
         @keyframes scrollLine {
           0%   { transform: translateY(-100%); opacity: 1; }
           100% { transform: translateY(100%);  opacity: 0; }
+        }
+        @keyframes pentDraw {
+          from { stroke-dashoffset: 200; opacity: 0; }
+          to   { stroke-dashoffset: 0;   opacity: 1; }
+        }
+        .pent-first-draw {
+          stroke-dasharray: 200;
+          animation: pentDraw 450ms ease-out forwards;
         }
         html, body { scrollbar-width: none; -ms-overflow-style: none; }
         html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; }

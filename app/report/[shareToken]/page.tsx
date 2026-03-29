@@ -578,7 +578,7 @@ export default function SharedReportPage() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: BG, gap: 16 }}>
+      <div style={{ minHeight: '100svh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: BG, gap: 16 }}>
         <div style={{ width: 24, height: 24, border: '2px solid rgba(255,255,255,0.08)', borderTopColor: 'rgba(255,255,255,0.5)', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
         <p style={{ fontSize: 14, color: SUBTLE, margin: 0 }}>Loading report...</p>
         <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
@@ -588,9 +588,9 @@ export default function SharedReportPage() {
 
   if (error || !data || !derived) {
     return (
-      <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: BG, color: TEXT, padding: 24 }}>
+      <div style={{ minHeight: '100svh', display: 'grid', placeItems: 'center', background: BG, color: TEXT, padding: 24 }}>
         <div style={{ textAlign: 'center', maxWidth: 420 }}>
-          <h1 style={{ fontSize: 28, margin: '0 0 8px', fontWeight: 700 }}>Report not found</h1>
+          <h1 style={{ fontSize: 'clamp(22px, 3vw, 28px)', margin: '0 0 8px', fontWeight: 700 }}>Report not found</h1>
           <p style={{ margin: 0, color: SUBTLE, fontSize: 16, lineHeight: 1.6 }}>
             This link may be invalid or expired. Please request a new report link.
           </p>
@@ -623,6 +623,7 @@ export default function SharedReportPage() {
           .rpt-call-grid { grid-template-columns: 1fr !important; }
           .rpt-two-col { grid-template-columns: 1fr !important; }
           .rpt-main-grid { grid-template-columns: 1fr !important; }
+          .rpt-decision-col { border-left: none !important; padding-left: 0 !important; border-top: 1px solid rgba(255,255,255,0.07); padding-top: 20px !important; }
         }
       `}</style>
 
@@ -650,17 +651,17 @@ export default function SharedReportPage() {
       </nav>
 
       <main className="report-root" style={{
-        minHeight: '100vh', background: BG, color: TEXT,
+        minHeight: '100svh', background: BG, color: TEXT,
         fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif',
       }}>
-        <div style={{ maxWidth: 960, margin: '0 auto', padding: '64px 24px 96px' }}>
+        <div style={{ maxWidth: 'min(960px, calc(100vw - clamp(40px, 8vw, 160px)))', margin: '0 auto', padding: 'clamp(40px, 6vh, 64px) clamp(16px, 4vw, 24px) clamp(60px, 8vh, 96px)' }}>
 
           {/* ── Header ──────────────────────────────────────── */}
           <header style={{ textAlign: 'center', marginBottom: 48 }}>
             <p style={{ margin: '0 0 16px', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: FAINT, fontWeight: 600 }}>
               Candidate Recommendation Report
             </p>
-            <h1 style={{ margin: '0 0 8px', fontSize: 40, lineHeight: 1.15, letterSpacing: '-0.03em', fontWeight: 700 }}>
+            <h1 style={{ margin: '0 0 8px', fontSize: 'clamp(28px, 4vw, 40px)', lineHeight: 1.15, letterSpacing: '-0.03em', fontWeight: 700 }}>
               {c.name}
             </h1>
             <p style={{ margin: 0, fontSize: 16, color: SUBTLE }}>
@@ -706,7 +707,7 @@ export default function SharedReportPage() {
             </div>
 
             {/* Decision column */}
-            <div style={{ borderLeft: `1px solid ${DIVIDER}`, paddingLeft: 40, display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <div className="rpt-decision-col" style={{ borderLeft: `1px solid ${DIVIDER}`, paddingLeft: 'clamp(20px, 4vw, 40px)', display: 'flex', flexDirection: 'column', gap: 20 }}>
               {/* Verdict */}
               <div>
                 <Label text="Verdict" />
