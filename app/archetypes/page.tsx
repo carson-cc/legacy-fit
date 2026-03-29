@@ -8,10 +8,10 @@ import Nav from '@/app/components/Nav'
 
 // ─── CATEGORY CONFIG ──────────────────────────────────────────────────────────
 const CATS = [
-  { key: 'field_command',     label: 'Drivers',     descriptor: 'Urgent · Output-focused',        axisNote: 'High Pace · Low People',  color: '#B84848' },
-  { key: 'people_influence',  label: 'Catalysts',   descriptor: 'Variable Pace · People-focused', axisNote: 'Mixed Pace · High People', color: '#9A7420' },
-  { key: 'process_structure', label: 'Operators',   descriptor: 'Deliberate · Output-focused',    axisNote: 'Low Pace · Low People',   color: '#2D7248' },
-  { key: 'strategic_drive',   label: 'Stabilizers', descriptor: 'Deliberate · Mixed People',      axisNote: 'Low Pace · Mid People',   color: '#2458B8' },
+  { key: 'field_command',     label: 'Drivers',     descriptor: 'Push things forward',             axisNote: 'Pace-first · Output-driven',  color: '#c45030' },
+  { key: 'people_influence',  label: 'Catalysts',   descriptor: 'Move people and energy',          axisNote: 'Energy-first · People-driven', color: '#c8873a' },
+  { key: 'process_structure', label: 'Operators',   descriptor: 'Execute and manage complexity',   axisNote: 'Process over pace',            color: '#3a6ecc' },
+  { key: 'strategic_drive',   label: 'Stabilizers', descriptor: 'Deepen, scale, and sustain',      axisNote: 'Trust over speed',             color: '#3aa868' },
 ] as const
 
 function getCat(key: string) {
@@ -21,11 +21,11 @@ function getCat(key: string) {
 const TAGS: Record<string, string> = {
   Pioneer: 'Independent · Owner', Renegade: 'Bold · Disruptive',
   Purist: 'Standards · Exacting', Conductor: 'Authority · Range',
-  Catalyst: 'Launch · Ignite',    Diplomat: 'Alignment · Trust',
+  Igniter: 'Launch · Ignite',     Diplomat: 'Alignment · Trust',
   Rainmaker: 'Influence · Warmth', Unifier: 'Team · Cohesion',
   Anchor: 'Reliable · Warm',      Navigator: 'Systematic · Precise',
-  Sentinel: 'Compliance · Detail', Standard: 'Consistent · Steady',
-  Agent: 'Expert · Deep',          Executor: 'Drive · Discipline',
+  Sentinel: 'Compliance · Detail', Steward: 'Consistent · Steady',
+  Expert: 'Expert · Deep',         Executor: 'Drive · Discipline',
   Trailblazer: 'Pace · Excellence', Veteran: 'Integrity · Steady',
 }
 
@@ -35,15 +35,15 @@ const PENT_VALUES: Record<string, number[]> = {
   Pioneer:     [78, 72, 80, 52, 88],
   Purist:      [90, 88, 42, 45, 62],
   Renegade:    [72, 65, 88, 55, 92],
-  Catalyst:    [62, 58, 85, 94, 78],
+  Igniter:     [62, 58, 85, 94, 78],
   Diplomat:    [52, 55, 88, 92, 50],
   Rainmaker:   [70, 62, 80, 88, 82],
   Unifier:     [55, 60, 72, 98, 48],
   Anchor:      [88, 90, 40, 52, 58],
   Navigator:   [82, 84, 55, 60, 70],
   Sentinel:    [92, 88, 36, 45, 55],
-  Standard:    [85, 80, 48, 62, 65],
-  Agent:       [68, 78, 70, 65, 52],
+  Steward:     [85, 80, 48, 62, 65],
+  Expert:      [68, 78, 70, 65, 52],
   Executor:    [84, 82, 55, 60, 70],
   Trailblazer: [75, 68, 88, 72, 82],
   Veteran:     [70, 85, 60, 72, 52],
@@ -51,22 +51,22 @@ const PENT_VALUES: Record<string, number[]> = {
 
 // ─── DECISION SIGNALS ─────────────────────────────────────────────────────────
 const DECISION_SIGNALS: Record<string, { bestIn: string; watchFor: string }> = {
-  Conductor:   { bestIn: 'High-stakes roles with unclear authority.',                          watchFor: 'Fills the vacuum others needed to step into.' },
-  Pioneer:     { bestIn: 'Greenfield builds, turnarounds, fast-moving mandates.',              watchFor: 'Loses patience before the work is done.' },
-  Purist:      { bestIn: 'Quality-critical roles where the standard is non-negotiable.',       watchFor: 'Blocks progress in the name of perfection.' },
-  Renegade:    { bestIn: 'Roles that need a new direction, not a better process.',             watchFor: 'Alienates people who needed to be brought along.' },
-  Catalyst:    { bestIn: 'Culture-building, team activation, change management.',              watchFor: 'Enthusiasm can mask lack of follow-through.' },
-  Diplomat:    { bestIn: 'Roles that live at the intersection of competing interests.',        watchFor: 'Avoids the hard call to preserve the relationship.' },
-  Rainmaker:   { bestIn: 'Revenue-critical roles where relationships are the product.',        watchFor: "The work after the win isn't where they live." },
-  Unifier:     { bestIn: 'Fractured teams, post-merger integration, trust rebuilds.',          watchFor: 'Holds the team together past the point it should change.' },
-  Anchor:      { bestIn: 'Roles that need reliability over innovation.',                       watchFor: "Resists change that's actually necessary." },
-  Navigator:   { bestIn: 'Complex builds where the plan is the product.',                     watchFor: 'Over-plans in situations that need improvisation.' },
-  Sentinel:    { bestIn: 'Risk-heavy roles where catching the miss is the job.',              watchFor: 'Slows things down when speed is the right call.' },
-  Standard:    { bestIn: 'Roles where consistency compounds over time.',                       watchFor: 'Mistakes familiarity for correctness.' },
-  Agent:       { bestIn: "Roles where depth of knowledge is the differentiator.",             watchFor: "Hard to access for people who don't speak the language." },
-  Executor:    { bestIn: 'Roles that need strategy turned into reality, fast.',               watchFor: 'Can execute the wrong strategy very well.' },
-  Trailblazer: { bestIn: 'Roles that need someone to raise the ceiling.',                     watchFor: 'Gets restless when the work becomes maintenance.' },
-  Veteran:     { bestIn: 'Roles where institutional judgment is irreplaceable.',              watchFor: 'Underestimates how much the context has changed.' },
+  Conductor:   { bestIn: 'Roles with no clear owner yet.',                                    watchFor: 'Filling space others needed to grow into.' },
+  Pioneer:     { bestIn: 'Roles that need someone to start without a roadmap.',               watchFor: 'Leaving before the work is solid.' },
+  Purist:      { bestIn: 'Roles where the standard is the job.',                              watchFor: 'Protecting quality past the point of diminishing return.' },
+  Renegade:    { bestIn: 'Roles that need a new direction, not a better process.',            watchFor: 'Breaking alignment to prove a point.' },
+  Igniter:     { bestIn: 'Roles that need energy and momentum quickly.',                      watchFor: 'Moving on before the momentum becomes output.' },
+  Diplomat:    { bestIn: 'Roles that live between competing interests.',                      watchFor: 'Keeping peace when a hard call is needed.' },
+  Rainmaker:   { bestIn: 'Roles where relationships are the product.',                        watchFor: 'Losing focus after the win.' },
+  Unifier:     { bestIn: 'Fractured teams that need trust rebuilt.',                          watchFor: 'Holding the group together past when it should change.' },
+  Anchor:      { bestIn: 'Roles that need someone steady, not someone fast.',                 watchFor: 'Holding firm when the situation actually needs to shift.' },
+  Navigator:   { bestIn: 'Complex situations where the plan is half the job.',                watchFor: 'Over-preparing when speed matters more.' },
+  Sentinel:    { bestIn: 'Roles where missing something is worse than moving slowly.',        watchFor: 'Slowing the whole system to prevent one miss.' },
+  Steward:     { bestIn: 'Roles where consistency compounds over time.',                      watchFor: 'Running the same play after the game has changed.' },
+  Expert:      { bestIn: 'Roles where depth of knowledge is the differentiator.',             watchFor: 'Being hard to access for people without the same background.' },
+  Executor:    { bestIn: 'Roles that need strategy turned into action fast.',                 watchFor: 'Executing the wrong direction very well.' },
+  Trailblazer: { bestIn: "Roles that need someone to raise what's possible.",                watchFor: 'Getting restless once things stabilize.' },
+  Veteran:     { bestIn: 'Roles where judgment built over time is the asset.',               watchFor: 'Reading a new situation through an old lens.' },
 }
 
 // ─── ICONS ────────────────────────────────────────────────────────────────────
@@ -82,18 +82,48 @@ const ARCH_ICONS: Record<string, string[]> = {
   Renegade:    ['M11,3 L7,11 L10,11 L9,17 L13,9 L10,9 Z'],
   Purist:      ['M10,3 L17,10 L10,17 L3,10 Z', 'M7,10 L9,12 L13,8'],
   Conductor:   ['M5,6 L5,16', 'M9,9 L9,16', 'M13,5 L13,16', 'M17,11 L17,16'],
-  Catalyst:    ['M10,10 L10,4', 'M10,10 L15.2,7', 'M10,10 L15.2,13', 'M10,10 L10,16', 'M10,10 L4.8,13', 'M10,10 L4.8,7'],
+  Igniter:     ['M10,10 L10,4', 'M10,10 L15.2,7', 'M10,10 L15.2,13', 'M10,10 L10,16', 'M10,10 L4.8,13', 'M10,10 L4.8,7'],
   Diplomat:    ['M3,4 L11,4 L11,9 L8,9 L6,12 L6,9 L3,9 Z', 'M9,7 L17,7 L17,12 L15,12 L15,14 L13,12 L9,12 Z'],
   Rainmaker:   ['M10,3 Q10,9 7.5,11 a2.5,2.5 0 0,0 5,0 Q10,9 10,3 Z', 'M4,17 Q6.5,14 9,17 Q11.5,20 14,17 Q16.5,14 19,17'],
   Unifier:     ['M6,10 a4,4 0 1,0 8,0', 'M6,10 a4,4 0 1,1 8,0'],
   Anchor:      ['M10,4 m-2,0 a2,2 0 1,0 4,0 a2,2 0 1,0 -4,0', 'M10,6 L10,16', 'M6,9 L14,9', 'M6,16 Q10,14 14,16'],
   Navigator:   ['M10,10 m-6.5,0 a6.5,6.5 0 1,0 13,0 a6.5,6.5 0 1,0 -13,0', 'M10,3.5 L10,5.5', 'M10,14.5 L10,16.5', 'M3.5,10 L5.5,10', 'M14.5,10 L16.5,10', 'M10,10 L12.5,6.5'],
   Sentinel:    ['M10,2 L17,5 L17,12 Q17,16 10,19 Q3,16 3,12 L3,5 Z'],
-  Standard:    ['M3,17 L17,3', 'M7,13 L9,11', 'M10,10 L12,8', 'M13,7 L15,5'],
-  Agent:       ['M9,9 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0', 'M13,13 L17,17'],
+  Steward:     ['M3,17 L17,3', 'M7,13 L9,11', 'M10,10 L12,8', 'M13,7 L15,5'],
+  Expert:      ['M9,9 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0', 'M13,13 L17,17'],
   Executor:    ['M10,10 m-3.5,0 a3.5,3.5 0 1,0 7,0 a3.5,3.5 0 1,0 -7,0', 'M10,3 L10,5', 'M10,15 L10,17', 'M3,10 L5,10', 'M15,10 L17,10', 'M5.5,5.5 L7,7', 'M13,13 L14.5,14.5', 'M14.5,5.5 L13,7', 'M7,13 L5.5,14.5'],
   Trailblazer: ['M2,17 L10,4 L18,17 Z', 'M7,11 L13,11'],
   Veteran:     ['M10,2 L12,7.5 L18,7.5 L13.5,11 L15.5,17 L10,13.5 L4.5,17 L6.5,11 L2,7.5 L8,7.5 Z'],
+}
+
+// ─── NAME REMAP (data file → display name) ────────────────────────────────────
+const NAME_REMAP: Record<string, string> = {
+  Catalyst: 'Igniter',
+  Agent:    'Expert',
+  Standard: 'Steward',
+}
+function displayName(name: string): string {
+  return NAME_REMAP[name] ?? name
+}
+
+// ─── ARCH COPY ────────────────────────────────────────────────────────────────
+const ARCH_COPY: Record<string, { blurb: string; risk: string }> = {
+  Conductor:   { blurb: 'Takes control quickly.',                           risk: 'Overrides others before they step in.' },
+  Pioneer:     { blurb: 'Starts fast without waiting for clarity.',         risk: 'Moves on before the work holds.' },
+  Purist:      { blurb: 'Holds the line on quality.',                       risk: 'Slows progress to protect the standard.' },
+  Renegade:    { blurb: 'Pushes for a different direction.',                risk: 'Breaks alignment to force change.' },
+  Igniter:     { blurb: 'Creates momentum quickly.',                        risk: 'Leaves before it turns into output.' },
+  Diplomat:    { blurb: 'Keeps people aligned.',                            risk: 'Avoids hard calls to preserve relationships.' },
+  Rainmaker:   { blurb: 'Wins through relationships.',                      risk: 'Focus drops after the initial win.' },
+  Unifier:     { blurb: 'Holds the team together.',                         risk: 'Maintains alignment when change is needed.' },
+  Anchor:      { blurb: 'Keeps things stable under pressure.',              risk: 'Holds steady when change is needed.' },
+  Navigator:   { blurb: 'Thinks it through before moving.',                 risk: 'Takes longer than the situation allows.' },
+  Sentinel:    { blurb: 'Catches what could go wrong.',                     risk: 'Slows things down to avoid misses.' },
+  Steward:     { blurb: 'Runs what works consistently.',                    risk: 'Keeps the same approach after it stops working.' },
+  Expert:      { blurb: 'Operates from deep knowledge.',                    risk: 'Hard to follow without the same depth.' },
+  Executor:    { blurb: 'Turns decisions into action quickly.',              risk: 'Executes before the direction is fully right.' },
+  Trailblazer: { blurb: "Raises the level of what's possible.",             risk: 'Gets restless once things become routine.' },
+  Veteran:     { blurb: 'Leans on experience to guide decisions.',           risk: 'Relies on past patterns when the situation has changed.' },
 }
 
 function Icon({ paths, size = 20, stroke = 'currentColor' }: { paths: string[]; size?: number; stroke?: string }) {
@@ -493,7 +523,7 @@ function RadarCanvas({
         ctx.font = '500 9px system-ui, -apple-system'
         ctx.fillStyle = hexAlpha(c.color, groupProgress * 0.65)
         ctx.textAlign = 'center'
-        ctx.fillText(p.name.toUpperCase(), x, y + 14)
+        ctx.fillText(displayName(p.name).toUpperCase(), x, y + 14)
         ctx.textAlign = 'left'
       }
     })
@@ -534,7 +564,7 @@ function RadarCanvas({
       const cssX = dotX * (rect.width  / w)
       const cssY = dotY * (rect.height / h)
       const c = getCat(prof.group)
-      setTooltip({ name: prof.name, tagline: prof.essence, color: c.color, cssX, cssY })
+      setTooltip({ name: displayName(prof.name), tagline: prof.essence, color: c.color, cssX, cssY })
     } else {
       onHoverProfile(null)
       onHoverCat(foundCat)
@@ -650,13 +680,13 @@ function ArchCard({ profile, catColor, catKey, onHover }: {
         position: 'relative',
       }}
     >
-      <CardPentagon name={profile.name} color={catColor} hovered={hov} />
+      <CardPentagon name={displayName(profile.name)} color={catColor} hovered={hov} />
       <div style={{
         opacity: hov ? 1 : 0.62,
         transition: 'opacity 150ms ease, filter 150ms ease',
         filter: hov ? `drop-shadow(0 0 5px ${hexAlpha(catColor, 0.65)})` : 'none',
       }}>
-        <Icon paths={ARCH_ICONS[profile.name] ?? []} size={20} stroke={catColor} />
+        <Icon paths={ARCH_ICONS[displayName(profile.name)] ?? []} size={20} stroke={catColor} />
       </div>
       <div>
         <div style={{
@@ -666,10 +696,18 @@ function ArchCard({ profile, catColor, catKey, onHover }: {
           color: hov ? catColor : 'rgba(255,255,255,0.88)',
           lineHeight: 1.1, marginBottom: 8, transition: 'color 150ms ease',
           paddingRight: 68,
-        }}>{profile.name}</div>
-        <p style={{ fontSize: 12, fontWeight: 300, color: 'rgba(255,255,255,0.42)', lineHeight: 1.65, margin: 0, fontFamily: '"DM Sans", sans-serif' }}>
-          {profile.essence}
-        </p>
+        }}>{displayName(profile.name)}</div>
+        <div>
+          <p style={{ fontSize: 12, fontWeight: 300, color: 'rgba(255,255,255,0.62)', lineHeight: 1.65, margin: '0 0 6px 0', fontFamily: '"DM Sans", sans-serif' }}>
+            {ARCH_COPY[displayName(profile.name)]?.blurb ?? profile.essence}
+          </p>
+          {ARCH_COPY[displayName(profile.name)] && (
+            <p style={{ fontSize: 12, fontWeight: 300, fontStyle: 'italic', color: 'rgba(238,236,230,0.45)', lineHeight: 1.5, margin: 0, fontFamily: '"DM Sans", sans-serif' }}>
+              <span style={{ fontStyle: 'normal', fontWeight: 500, fontSize: 10, color: catColor, textTransform: 'uppercase', letterSpacing: '0.1em', marginRight: 5 }}>Risk:</span>
+              {ARCH_COPY[displayName(profile.name)].risk}
+            </p>
+          )}
+        </div>
       </div>
       <div style={{
         display: 'inline-block', alignSelf: 'flex-start', marginTop: 'auto',
@@ -679,7 +717,7 @@ function ArchCard({ profile, catColor, catKey, onHover }: {
         borderRadius: 5, padding: '3px 8px',
         fontFamily: '"DM Sans", sans-serif', letterSpacing: '0.04em',
       }}>
-        {TAGS[profile.name] ?? profile.tagline.split(',')[0]}
+        {TAGS[displayName(profile.name)] ?? profile.tagline.split(',')[0]}
       </div>
       {/* Decision signal — reveals on hover */}
       <div style={{
@@ -691,15 +729,15 @@ function ArchCard({ profile, catColor, catKey, onHover }: {
         opacity: hov ? 1 : 0,
         transition: 'max-height 200ms ease, opacity 200ms ease',
       }}>
-        {DECISION_SIGNALS[profile.name] && (
+        {DECISION_SIGNALS[displayName(profile.name)] && (
           <>
             <div style={{ borderLeft: '1.5px solid rgba(58,168,104,0.4)', paddingLeft: 8, marginBottom: 5 }}>
               <span style={{ fontSize: 8, color: '#3aa868', textTransform: 'uppercase', letterSpacing: '0.12em', display: 'block', marginBottom: 2 }}>BEST IN</span>
-              <span style={{ fontSize: 11, fontWeight: 300, color: 'rgba(238,236,230,0.7)', fontFamily: '"DM Sans", sans-serif' }}>{DECISION_SIGNALS[profile.name].bestIn}</span>
+              <span style={{ fontSize: 11, fontWeight: 300, color: 'rgba(238,236,230,0.7)', fontFamily: '"DM Sans", sans-serif' }}>{DECISION_SIGNALS[displayName(profile.name)].bestIn}</span>
             </div>
             <div style={{ borderLeft: '1.5px solid rgba(200,168,50,0.4)', paddingLeft: 8 }}>
               <span style={{ fontSize: 8, color: '#c8a832', textTransform: 'uppercase', letterSpacing: '0.12em', display: 'block', marginBottom: 2 }}>WATCH FOR</span>
-              <span style={{ fontSize: 11, fontWeight: 300, color: 'rgba(238,236,230,0.7)', fontFamily: '"DM Sans", sans-serif' }}>{DECISION_SIGNALS[profile.name].watchFor}</span>
+              <span style={{ fontSize: 11, fontWeight: 300, color: 'rgba(238,236,230,0.7)', fontFamily: '"DM Sans", sans-serif' }}>{DECISION_SIGNALS[displayName(profile.name)].watchFor}</span>
             </div>
           </>
         )}
@@ -761,7 +799,7 @@ function RadarColumn({ groups, activeCat, hoveredProfile, setActive, setHovProf 
                     textTransform: 'uppercase', letterSpacing: '0.04em',
                     color: (isHovProf || isHot) ? '#FFF' : 'rgba(255,255,255,0.60)',
                     transition: 'color 150ms ease',
-                  }}>{p.name}</span>
+                  }}>{displayName(p.name)}</span>
                 </div>
                 {/* Description slide-in */}
                 <div style={{
@@ -917,10 +955,6 @@ export default function ArchetypesPage() {
 
   const catRefs = [cat0Ref, cat1Ref, cat2Ref, cat3Ref]
 
-  const tickerNames = [...REFERENCE_PROFILES]
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .map(p => p.name.toUpperCase())
-
   return (
     <main ref={mainRef} style={{ background: BG, color: '#FFF', fontFamily: '"DM Sans", -apple-system, sans-serif', overflowX: 'hidden' }}>
 
@@ -988,22 +1022,6 @@ export default function ArchetypesPage() {
 
       </section>
 
-      {/* ── TICKER ── */}
-      <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: '#0f0f0f', height: 36, overflow: 'hidden', display: 'flex', alignItems: 'center' }}>
-        <div style={{ display: 'flex', animation: 'ticker 42s linear infinite', whiteSpace: 'nowrap' }}>
-          {[0, 1].map(rep => (
-            <span key={rep} style={{ display: 'inline-flex', alignItems: 'center' }}>
-              {tickerNames.map(name => (
-                <span key={name + rep} style={{ display: 'inline-flex', alignItems: 'center' }}>
-                  <span style={{ fontSize: 11, fontWeight: 500, color: 'rgba(255,255,255,0.22)', letterSpacing: '0.12em', padding: '0 16px', fontFamily: '"Barlow Condensed", system-ui' }}>{name}</span>
-                  <span style={{ color: 'rgba(255,255,255,0.10)', fontSize: 10 }}>·</span>
-                </span>
-              ))}
-            </span>
-          ))}
-        </div>
-      </div>
-
       {/* ── BEHAVIORAL MAP — full-bleed surface ── */}
       <section style={{ width: '100%', height: '100svh', position: 'relative', overflow: 'hidden' }}>
 
@@ -1070,7 +1088,7 @@ export default function ArchetypesPage() {
                   color: 'rgba(255,255,255,0.24)',
                   fontFamily: '"DM Sans", sans-serif',
                   letterSpacing: '0.01em',
-                }}>{p.name}</div>
+                }}>{displayName(p.name)}</div>
               ))}
             </div>
           )
@@ -1090,6 +1108,9 @@ export default function ArchetypesPage() {
 
       {/* ── CTA + ARCHETYPE BLOCKS ── */}
       <section id="archetypes" style={{ padding: 0 }}>
+        {/* ── WHAT THIS ACTUALLY CHANGES ── */}
+        <WhatChanges />
+
         {/* CTA band */}
         <div ref={ctaBandRef} style={{ borderTop: '1px solid rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: '#0f0f0f', padding: 'clamp(32px, 5vh, 52px) clamp(20px, 5vw, 40px)' }}>
           <div style={{ maxWidth: 'min(1240px, calc(100vw - clamp(40px, 8vw, 160px)))', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 40, flexWrap: 'wrap' }}>
@@ -1124,9 +1145,6 @@ export default function ArchetypesPage() {
             </div>
           </div>
         </div>
-
-        {/* ── WHAT THIS ACTUALLY CHANGES ── */}
-        <WhatChanges />
 
         {/* Archetype blocks */}
         <div style={{ padding: 'clamp(40px, 6vh, 72px) clamp(20px, 5vw, 40px) clamp(60px, 8vh, 100px)', maxWidth: 'min(1320px, calc(100vw - clamp(40px, 8vw, 160px)))', margin: '0 auto', width: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 64 }}>
@@ -1165,10 +1183,6 @@ export default function ArchetypesPage() {
       </section>
 
       <style>{`
-        @keyframes ticker {
-          from { transform: translateX(0); }
-          to   { transform: translateX(-50%); }
-        }
         @keyframes heroPulse {
           0%   { opacity: 0.035; transform: translate(-50%,-50%) scale(0.3); }
           100% { opacity: 0;     transform: translate(-50%,-50%) scale(1.9); }
