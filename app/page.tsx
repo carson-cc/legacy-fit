@@ -231,9 +231,9 @@ export default function HomePage() {
                   Kent Morrison
                 </p>
                 <span style={{
-                  background: 'rgba(74,142,255,0.08)', border: '1px solid rgba(74,142,255,0.18)',
+                  background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
                   borderRadius: 100, padding: '2px 8px',
-                  fontSize: 9, fontWeight: 300, color: 'rgba(74,142,255,0.65)',
+                  fontSize: 9, fontWeight: 300, color: 'rgba(238,236,230,0.28)',
                   display: 'inline-block', marginTop: 4
                 }}>
                   Role profile · AI-configured
@@ -241,9 +241,9 @@ export default function HomePage() {
               </div>
 
               {/* Middle: Custom SVG radar — three polygon layers */}
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0, padding: '8px 0' }}>
+              <div style={{ width: '100%', aspectRatio: '1 / 1', flexShrink: 0 }}>
                 {/* viewBox: cx=100 cy=100 maxR=72, with label overflow room */}
-                <svg viewBox="-25 -5 250 215" style={{ width: '100%', maxWidth: 320 }}>
+                <svg viewBox="-35 -5 260 215" style={{ width: '100%', height: '100%' }}>
                   {/* Background rings at 50% and 100% radius */}
                   <polygon points="100.0,28.0 168.5,77.8 142.3,158.2 57.7,158.2 31.5,77.8"
                     fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="0.5" />
@@ -253,28 +253,31 @@ export default function HomePage() {
                   {/* Layer 1 — Pioneer archetype reference (faintest) */}
                   {/* values: Execution 82, Ownership 78, Adaptability 76, Collaboration 68, Decision Speed 88 */}
                   <polygon points="100.0,41.0 153.4,82.6 132.2,144.3 71.2,139.6 39.7,80.4"
-                    fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.07)" strokeWidth="0.5" />
+                    fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
 
                   {/* Layer 2 — Role benchmark (dashed) */}
                   {/* values: Execution 75, Ownership 72, Adaptability 65, Collaboration 68, Decision Speed 78 */}
                   <polygon points="100.0,46.0 149.3,84.0 127.5,137.9 71.2,139.6 46.6,82.6"
-                    fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.22)" strokeWidth="1" strokeDasharray="4 3" />
+                    fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.35)" strokeWidth="1.5" strokeDasharray="4 3" />
+
+                  {/* Role annotation — top vertex of benchmark polygon */}
+                  <text x="100" y="38" textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.28)">Role</text>
 
                   {/* Layer 3 — Candidate Kent Morrison (solid blue) */}
                   {/* values: Execution 82, Ownership 74, Adaptability 70, Collaboration 62, Decision Speed 88 */}
                   <polygon points="100.0,41.0 150.7,83.5 129.6,140.8 73.7,136.1 39.7,80.4"
-                    fill="rgba(74,142,255,0.1)" stroke="#4a8eff" strokeWidth="1.5" />
+                    fill="rgba(74,142,255,0.1)" stroke="#4a8eff" strokeWidth="2" />
 
                   {/* Glow pulses — Execution (i=0, top) and Decision Speed (i=4, left) only */}
                   <circle cx="100" cy="41" r="8" fill="rgba(74,142,255,0.12)" className="vglow-ex" />
                   <circle cx="39.7" cy="80.4" r="8" fill="rgba(74,142,255,0.12)" className="vglow-ds" />
 
-                  {/* Axis labels — abbreviated to fit */}
+                  {/* Axis labels */}
                   <text x="100" y="16" textAnchor="middle" fontSize="9" fill="rgba(238,236,230,0.35)">Execution</text>
                   <text x="178" y="80" textAnchor="start" fontSize="9" fill="rgba(238,236,230,0.35)">Ownership</text>
                   <text x="150" y="170" textAnchor="start" fontSize="9" fill="rgba(238,236,230,0.35)">Adapt.</text>
                   <text x="50" y="170" textAnchor="end" fontSize="9" fill="rgba(238,236,230,0.35)">Collab.</text>
-                  <text x="20" y="80" textAnchor="end" fontSize="9" fill="rgba(238,236,230,0.35)">D. Speed</text>
+                  <text x="20" y="80" textAnchor="end" fontSize="9" fill="rgba(238,236,230,0.35)">Dec. Speed</text>
                 </svg>
               </div>
 
@@ -297,20 +300,18 @@ export default function HomePage() {
 
               {/* ── LAYER 1: DECISION (anchor, immediate) ── */}
               <div style={{ paddingBottom: 12, borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
-                  <span style={{
-                    fontSize: 64, fontFamily: '"Barlow Condensed", sans-serif',
-                    fontWeight: 900, color: '#eeece6', lineHeight: 1, flexShrink: 0, letterSpacing: '-0.03em'
-                  }}>93</span>
-                  <div style={{ paddingTop: 2 }}>
-                    <p style={{ fontSize: 16, fontWeight: 600, color: '#3aa868', lineHeight: 1.15, marginBottom: 5 }}>
-                      Strong hire — with one execution risk
-                    </p>
-                    <p style={{ fontSize: 11, fontWeight: 300, color: 'rgba(238,236,230,0.38)' }}>
-                      Pioneer archetype · 4 of 5 dimensions above threshold · 1 of 3 shortlisted
-                    </p>
-                  </div>
-                </div>
+                <span style={{
+                  display: 'block',
+                  fontSize: 76, fontFamily: '"Barlow Condensed", sans-serif',
+                  fontWeight: 900, color: '#eeece6', lineHeight: 1, letterSpacing: '-0.03em',
+                  marginBottom: 6
+                }}>93</span>
+                <p style={{ fontSize: 14, fontWeight: 600, color: '#3aa868', lineHeight: 1.15, marginBottom: 4 }}>
+                  Strong hire — with one execution risk
+                </p>
+                <p style={{ fontSize: 11, fontWeight: 300, color: 'rgba(238,236,230,0.38)' }}>
+                  Pioneer archetype · 4 of 5 dimensions above threshold · 1 of 3 shortlisted
+                </p>
               </div>
 
               {/* ── LAYER 2: INSIGHT (where decisions are made) ── */}
@@ -322,14 +323,14 @@ export default function HomePage() {
                 </p>
                 {/* Directional tension bar */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                  <span style={{ fontSize: 9, fontWeight: 600, color: 'rgba(74,142,255,0.65)', letterSpacing: '0.08em', textTransform: 'uppercase', flexShrink: 0 }}>
-                    Execution speed
+                  <span style={{ fontSize: 8, fontWeight: 600, color: 'rgba(74,142,255,0.8)', letterSpacing: '0.14em', textTransform: 'uppercase', flexShrink: 0 }}>
+                    Kent
                   </span>
                   <div style={{ flex: 1, height: 2, borderRadius: 1, background: 'linear-gradient(90deg, rgba(74,142,255,0.5) 0%, rgba(200,168,50,0.5) 100%)', position: 'relative' }}>
                     <div style={{ position: 'absolute', left: '30%', top: '50%', transform: 'translateY(-50%)', color: 'rgba(238,236,230,0.4)', fontSize: 10 }}>→</div>
                   </div>
-                  <span style={{ fontSize: 9, fontWeight: 600, color: 'rgba(200,168,50,0.65)', letterSpacing: '0.08em', textTransform: 'uppercase', flexShrink: 0 }}>
-                    Stakeholder alignment
+                  <span style={{ fontSize: 8, fontWeight: 600, color: 'rgba(200,168,50,0.6)', letterSpacing: '0.14em', textTransform: 'uppercase', flexShrink: 0 }}>
+                    Environment
                   </span>
                 </div>
                 <p style={{ fontSize: 14, fontWeight: 500, color: '#eeece6', lineHeight: 1.4, marginBottom: 6 }}>
@@ -376,7 +377,7 @@ export default function HomePage() {
               </div>
 
               {/* ── LAYER 3: EVIDENCE (de-emphasized, supporting) ── */}
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 10 }}>
 
                 {/* Signal bars — visual, no deltas */}
                 <p style={{ fontSize: 9, color: 'rgba(238,236,230,0.2)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>
