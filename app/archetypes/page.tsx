@@ -18,6 +18,13 @@ function getCat(key: string) {
   return CATS.find(c => c.key === key) ?? CATS[0]
 }
 
+const DOMINANT_ARCHETYPES = new Set([
+  'Pioneer', 'Renegade',     // Drivers
+  'Igniter', 'Unifier',      // Catalysts
+  'Sentinel', 'Anchor',      // Operators
+  'Trailblazer', 'Veteran',  // Stabilizers
+])
+
 const TAGS: Record<string, string> = {
   Pioneer: 'Independent · Owner', Renegade: 'Bold · Disruptive',
   Purist: 'Standards · Exacting', Conductor: 'Authority · Range',
@@ -104,6 +111,46 @@ const NAME_REMAP: Record<string, string> = {
 }
 function displayName(name: string): string {
   return NAME_REMAP[name] ?? name
+}
+
+// ─── DOT COORDS OVERRIDE (px=0 left/1 right, py=0 top/1 bottom) ──────────────
+const DOT_COORDS: Record<string, { px: number; py: number }> = {
+  // Drivers — right side, upper half
+  Conductor:   { px: 0.78, py: 0.28 },
+  Pioneer:     { px: 0.88, py: 0.20 },
+  Purist:      { px: 0.72, py: 0.32 },
+  Renegade:    { px: 0.90, py: 0.38 },
+  // Catalysts — right side, lower half
+  Igniter:     { px: 0.82, py: 0.72 },
+  Diplomat:    { px: 0.65, py: 0.85 },
+  Rainmaker:   { px: 0.75, py: 0.72 },
+  Unifier:     { px: 0.68, py: 0.90 },
+  // Operators — left side, upper half
+  Anchor:      { px: 0.25, py: 0.28 },
+  Navigator:   { px: 0.32, py: 0.20 },
+  Sentinel:    { px: 0.18, py: 0.24 },
+  Steward:     { px: 0.38, py: 0.34 },
+  // Stabilizers — left side, lower half
+  Expert:      { px: 0.28, py: 0.72 },
+  Executor:    { px: 0.38, py: 0.65 },
+  Trailblazer: { px: 0.32, py: 0.82 },
+  Veteran:     { px: 0.22, py: 0.68 },
+}
+
+function getDotXY(p: typeof REFERENCE_PROFILES[0], w: number, h: number, M: number): { x: number; y: number } {
+  const side  = Math.min(w, h)
+  const ox    = (w - side) / 2
+  const oy    = (h - side) / 2
+  const inner = side - M * 2
+  const dn    = displayName(p.name)
+  const coords = DOT_COORDS[dn] ?? DOT_COORDS[p.name]
+  if (coords) {
+    return {
+      x: ox + M + coords.px * inner,
+      y: oy + M + coords.py * inner,
+    }
+  }
+  return dotXY(p.coords.patience, p.coords.extraversion, w, h, M)
 }
 
 // ─── ARCH COPY ────────────────────────────────────────────────────────────────
@@ -207,22 +254,30 @@ function drawCanvasPentagon(
   profile: typeof REFERENCE_PROFILES[0],
   dx: number, dy: number, color: string, progress: number, side = RADAR_SIZE,
 ) {
-  drawPentagonRaw(ctx, pentagonVals(profile), dx, dy, color, progress, 1.5, 0.09, 0.75, 1.0, side)
+  // Outer reference ring — scales with canvas size
+  const targetR   = side * 0.08
+  const scaleFor  = targetR / (side / 16)   // ensures max r = targetR
+  ctx.beginPath()
+  ctx.arc(dx, dy, targetR, 0, Math.PI * 2)
+  ctx.strokeStyle = 'rgba(255,255,255,0.09)'
+  ctx.lineWidth = 0.5
+  ctx.stroke()
+  drawPentagonRaw(ctx, pentagonVals(profile), dx, dy, color, progress, 1.5, 0.14, 0.90, scaleFor, side)
 }
 
-// Compute average pentagon vals + dot centroid for a group
+// Compute average pentagon vals + dot centroid for a group (uses DOT_COORDS overrides)
 function groupAverage(groupKey: string, w: number, h: number, M: number) {
   const ps = REFERENCE_PROFILES.filter(p => p.group === groupKey)
   if (!ps.length) return null
   const avgVals = [0, 0, 0, 0, 0]
-  let ap = 0, ae = 0
+  let ax = 0, ay = 0
   ps.forEach(p => {
     pentagonVals(p).forEach((v, i) => { avgVals[i] += v / ps.length })
-    ap += p.coords.patience / ps.length
-    ae += p.coords.extraversion / ps.length
+    const { x, y } = getDotXY(p, w, h, M)
+    ax += x / ps.length
+    ay += y / ps.length
   })
-  const { x, y } = dotXY(ap, ae, w, h, M)
-  return { vals: avgVals, x, y }
+  return { vals: avgVals, x: ax, y: ay }
 }
 
 function MiniPentagon({ vals, color, size = 20 }: { vals: number[]; color: string; size?: number }) {
@@ -364,6 +419,28 @@ function RadarCanvas({
     ctx.fillStyle = bgGrad
     ctx.fillRect(0, 0, w, h)
 
+    // ── Subtle quadrant zone fills (DOT_COORDS quadrant mapping) ──
+    // Drivers: top-right (px 0.72-0.90, py 0.20-0.38)
+    // Catalysts: bottom-right (px 0.65-0.82, py 0.72-0.90)
+    // Operators: top-left (px 0.18-0.38, py 0.20-0.34)
+    // Stabilizers: bottom-left (px 0.22-0.38, py 0.65-0.82)
+    {
+      const plotSide = Math.min(w, h)
+      const pox = (w - plotSide) / 2
+      const poy = (h - plotSide) / 2
+      const qM  = Math.round(plotSide * 0.095)
+      const qcx = pox + plotSide / 2
+      const qcy = poy + plotSide / 2
+      ctx.fillStyle = 'rgba(196,80,48,0.035)'    // Drivers
+      ctx.fillRect(qcx, poy + qM, (pox + plotSide - qM) - qcx, qcy - (poy + qM))
+      ctx.fillStyle = 'rgba(200,135,58,0.035)'   // Catalysts
+      ctx.fillRect(qcx, qcy, (pox + plotSide - qM) - qcx, (poy + plotSide - qM) - qcy)
+      ctx.fillStyle = 'rgba(58,110,204,0.035)'   // Operators
+      ctx.fillRect(pox + qM, poy + qM, qcx - (pox + qM), qcy - (poy + qM))
+      ctx.fillStyle = 'rgba(58,168,104,0.035)'   // Stabilizers
+      ctx.fillRect(pox + qM, qcy, qcx - (pox + qM), (poy + plotSide - qM) - qcy)
+    }
+
     const activeCat    = activeCatRef.current
     const hovProf      = hoveredProfRef.current
     const isInteracting = activeCat !== null || hovProf !== null
@@ -412,12 +489,11 @@ function RadarCanvas({
       ctx.fillRect(0, 0, w, h)
     })
 
-    // ── Rings: inner brighter, outer fading ──
+    // ── Rings: uniform low opacity ──
     for (let i = 1; i <= 4; i++) {
-      const op = (0.11 - (i - 1) * 0.024).toFixed(3)
       ctx.beginPath()
       ctx.arc(cx, cy, R * i / 4, 0, Math.PI * 2)
-      ctx.strokeStyle = `rgba(255,255,255,${op})`
+      ctx.strokeStyle = 'rgba(255,255,255,0.04)'
       ctx.lineWidth = 1; ctx.stroke()
     }
 
@@ -449,7 +525,7 @@ function RadarCanvas({
       REFERENCE_PROFILES
         .filter(p => p.group === activeCat)
         .forEach(p => {
-          const { x, y } = dotXY(p.coords.patience, p.coords.extraversion, w, h, M)
+          const { x, y } = getDotXY(p, w, h, M)
           drawPentagonRaw(ctx, pentagonVals(p), x, y, gc.color,
             groupProgress, 1.2, 0.06, 0.28, 1.0, side)
         })
@@ -466,7 +542,7 @@ function RadarCanvas({
       REFERENCE_PROFILES
         .filter(p => p.group === ambCat)
         .forEach(p => {
-          const { x, y } = dotXY(p.coords.patience, p.coords.extraversion, w, h, M)
+          const { x, y } = getDotXY(p, w, h, M)
           drawPentagonRaw(ctx, pentagonVals(p), x, y, ac.color,
             ambAlpha * 0.5, 1.0, 0.03, 0.14, 1.0, side)
         })
@@ -476,12 +552,12 @@ function RadarCanvas({
     const hoverProg = hovProf ? Math.min(1, (t - hoverStartRef.current) / 200) : 0
 
     REFERENCE_PROFILES.forEach((p, i) => {
-      const base = dotXY(p.coords.patience, p.coords.extraversion, w, h, M)
+      const base = getDotXY(p, w, h, M)
       const dp   = driftParams.current[i]
       const x    = base.x + dp.radius * Math.cos(t / dp.period + dp.phase)
       const y    = base.y + dp.radius * Math.sin(t / dp.period + dp.phase)
       const c          = getCat(p.group)
-      const isHovProf  = p.name === hovProf
+      const isHovProf  = displayName(p.name) === hovProf || p.name === hovProf
       const isAmbGroup = p.group === ambCat
 
       const alpha = hovProf
@@ -500,7 +576,14 @@ function RadarCanvas({
 
       const pp    = pulseParams.current[i]
       const pulse = (Math.sin(t * 0.001 * pp.speed + pp.phase) + 1) / 2
+      // Glow circle — radius 16 (scaled), category color at 0.10 opacity
       if (alpha > 0.08) {
+        const glowR = 16 * (side / RADAR_SIZE)
+        ctx.beginPath()
+        ctx.arc(x, y, glowR, 0, Math.PI * 2)
+        ctx.fillStyle = hexAlpha(c.color, 0.10 * alpha)
+        ctx.fill()
+
         const pr = 4.5 + pulse * 13
         const pa = (1 - pulse) * 0.22 * (isFocused ? 1.8 : isAmbGroup ? 1.3 : 0.7)
         ctx.beginPath()
@@ -509,14 +592,12 @@ function RadarCanvas({
         ctx.lineWidth = 1; ctx.stroke()
       }
 
-      const distFromCenter = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2) / R
-      const depthScale = 1 - distFromCenter * 0.18
-      const baseR = isHovProf ? 5.7 : isAmbGroup && !isInteracting ? 4 + ambAlpha * 0.8 : 3.8
-      const dotR  = baseR * depthScale + (isHovProf ? 0 : (1 - depthScale) * 0.5)
+      // Main dot — radius 8 (scaled)
+      const dotR = 8 * (side / RADAR_SIZE)
 
       ctx.beginPath()
       ctx.arc(x, y, dotR, 0, Math.PI * 2)
-      ctx.fillStyle = hexAlpha(c.color, alpha)
+      ctx.fillStyle = hexAlpha(c.color, alpha * 0.88)
       ctx.fill()
 
       if (!isHovProf && activeCat !== null && activeCat === p.group && groupProgress > 0.5) {
@@ -551,15 +632,15 @@ function RadarCanvas({
     let minD = 26  // hit radius in canvas px
 
     REFERENCE_PROFILES.forEach(p => {
-      const { x, y } = dotXY(p.coords.patience, p.coords.extraversion, w, h, M)
+      const { x, y } = getDotXY(p, w, h, M)
       const d = Math.sqrt((mx - x) ** 2 + (my - y) ** 2)
-      if (d < minD) { minD = d; foundProf = p.name; foundCat = p.group }
+      if (d < minD) { minD = d; foundProf = displayName(p.name); foundCat = p.group }
     })
 
     if (foundProf) {
       onHoverProfile(foundProf)
-      const prof = REFERENCE_PROFILES.find(p => p.name === foundProf)!
-      const { x: dotX, y: dotY } = dotXY(prof.coords.patience, prof.coords.extraversion, w, h, M)
+      const prof = REFERENCE_PROFILES.find(p => displayName(p.name) === foundProf || p.name === foundProf)!
+      const { x: dotX, y: dotY } = getDotXY(prof, w, h, M)
       // Convert back to CSS px for tooltip positioning
       const cssX = dotX * (rect.width  / w)
       const cssY = dotY * (rect.height / h)
@@ -599,7 +680,7 @@ function RadarCanvas({
           <div style={{ fontFamily: '"Barlow Condensed", system-ui', fontSize: 13, fontWeight: 700, textTransform: 'uppercase', color: '#eeece6', letterSpacing: '0.04em' }}>{tooltip.name}</div>
           <div style={{ fontSize: 11, fontWeight: 300, color: 'rgba(238,236,230,0.52)', marginTop: 2, lineHeight: 1.4, fontFamily: '"DM Sans", sans-serif' }}>{tooltip.tagline.slice(0, 72)}</div>
           <div style={{ fontSize: 9, color: tooltip.color, textTransform: 'uppercase', letterSpacing: '0.12em', marginTop: 4, fontFamily: '"DM Sans", sans-serif' }}>
-            {getCat(REFERENCE_PROFILES.find(p => p.name === tooltip.name)?.group ?? '')?.label}
+            {getCat(REFERENCE_PROFILES.find(p => displayName(p.name) === tooltip.name || p.name === tooltip.name)?.group ?? '')?.label}
           </div>
         </div>
       )}
@@ -903,6 +984,7 @@ export default function ArchetypesPage() {
   const [activeCat,      setActiveCat]      = useState<string | null>(null)
   const [hoveredProfile, setHoveredProfile] = useState<string | null>(null)
   const [activeSection,  setActiveSection]  = useState(0)
+  const [hoveredCat,     setHoveredCat]     = useState<string | null>(null)
 
   const ctaBandRef = useRef<HTMLDivElement>(null)
   const cat0Ref    = useRef<HTMLDivElement>(null)
@@ -1023,7 +1105,7 @@ export default function ArchetypesPage() {
       </section>
 
       {/* ── BEHAVIORAL MAP — full-bleed surface ── */}
-      <section style={{ width: '100%', height: '100svh', position: 'relative', overflow: 'hidden' }}>
+      <section style={{ width: '100%', height: '100svh', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
 
         {/* Full-bleed canvas layer */}
         <RadarCanvas
@@ -1054,20 +1136,21 @@ export default function ArchetypesPage() {
 
         {/* Corner category labels — at actual section corners, floating over canvas */}
         {([
-          { key: 'strategic_drive',   pos: { top: 88, left: 32 },    align: 'left'  },
-          { key: 'people_influence',  pos: { top: 88, right: 32 },   align: 'right' },
-          { key: 'process_structure', pos: { bottom: 36, left: 32 },   align: 'left'  },
-          { key: 'field_command',     pos: { bottom: 36, right: 32 },  align: 'right' },
+          { key: 'strategic_drive',   pos: { top: 20, left: 24 },    align: 'left'  },
+          { key: 'people_influence',  pos: { top: 20, right: 24 },   align: 'right' },
+          { key: 'process_structure', pos: { bottom: 20, left: 24 },  align: 'left'  },
+          { key: 'field_command',     pos: { bottom: 20, right: 24 }, align: 'right' },
         ] as const).map(({ key, pos, align }) => {
           const cat = getCat(key)
+          const isDimmed  = hoveredCat !== null && hoveredCat !== key
           const isOn = activeCat === null || activeCat === key
           const profiles = REFERENCE_PROFILES
             .filter(p => p.group === key)
             .sort((a, b) => a.name.localeCompare(b.name))
           return (
             <div key={key}
-              onMouseEnter={() => setActive(key)}
-              onMouseLeave={() => setActive(null)}
+              onMouseEnter={() => { setActive(key); setHoveredCat(key) }}
+              onMouseLeave={() => { setActive(null); setHoveredCat(null) }}
               style={{
                 position: 'absolute', ...pos,
                 textAlign: align as 'left' | 'right',
@@ -1078,18 +1161,44 @@ export default function ArchetypesPage() {
             >
               <div style={{
                 fontFamily: '"Barlow Condensed", system-ui',
-                fontSize: 10, fontWeight: 700,
-                textTransform: 'uppercase', letterSpacing: '0.13em',
-                color: cat.color, marginBottom: 5, lineHeight: 1,
+                fontSize: 13, fontWeight: 700,
+                textTransform: 'uppercase', letterSpacing: '0.08em',
+                color: isDimmed ? 'rgba(238,236,230,0.18)' : cat.color,
+                marginBottom: 6, lineHeight: 1,
+                transition: 'color 200ms ease',
               }}>{cat.label}</div>
-              {profiles.map(p => (
-                <div key={p.name} style={{
-                  fontSize: 9.5, fontWeight: 300, lineHeight: 1.7,
-                  color: 'rgba(255,255,255,0.24)',
-                  fontFamily: '"DM Sans", sans-serif',
-                  letterSpacing: '0.01em',
-                }}>{displayName(p.name)}</div>
-              ))}
+              {profiles.map(p => {
+                const dn = displayName(p.name)
+                const isDom = DOMINANT_ARCHETYPES.has(dn)
+                return (
+                  <div key={p.name}
+                    onMouseEnter={e => { e.stopPropagation(); setHovProf(dn) }}
+                    onMouseLeave={e => { e.stopPropagation(); setHovProf(null) }}
+                    style={{
+                      display: 'flex', alignItems: 'center',
+                      gap: 6, lineHeight: 1.7,
+                      flexDirection: align === 'right' ? 'row-reverse' : 'row',
+                      cursor: 'default',
+                    }}
+                  >
+                    <span style={{
+                      display: 'inline-block', width: 5, height: 5,
+                      borderRadius: '50%',
+                      background: cat.color,
+                      opacity: isDom ? 0.85 : 0.45,
+                      flexShrink: 0,
+                      transition: 'opacity 150ms ease',
+                    }} />
+                    <span style={{
+                      fontSize: 10, fontWeight: isDom ? 500 : 300,
+                      color: isDom ? 'rgba(238,236,230,0.9)' : 'rgba(238,236,230,0.55)',
+                      fontFamily: '"DM Sans", sans-serif',
+                      letterSpacing: '0.01em',
+                      transition: 'color 150ms ease',
+                    }}>{dn}</span>
+                  </div>
+                )
+              })}
             </div>
           )
         })}
