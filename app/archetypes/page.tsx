@@ -17,7 +17,6 @@ function getCat(key: string) {
   return CATS.find(c => c.key === key) ?? CATS[0]
 }
 
-// ─── TAGS ─────────────────────────────────────────────────────────────────────
 const TAGS: Record<string, string> = {
   Pioneer: 'Independent · Owner', Renegade: 'Bold · Disruptive',
   Purist: 'Standards · Exacting', Conductor: 'Authority · Range',
@@ -105,7 +104,7 @@ function drawCanvasPentagon(
   dx: number, dy: number, color: string, progress: number,
 ) {
   const pts = pentagonVals(profile).map((v, i) => {
-    const r = (0.22 + v * 0.78) * 36
+    const r = (0.22 + v * 0.78) * 40
     return [dx + Math.cos(PENT_ANGLES[i]) * r, dy + Math.sin(PENT_ANGLES[i]) * r]
   })
   let perim = 0
@@ -125,8 +124,8 @@ function drawCanvasPentagon(
   ctx.setLineDash([])
 }
 
-function MiniPentagon({ vals, color, size = 26 }: { vals: number[]; color: string; size?: number }) {
-  const cx = size / 2, cy = size / 2, R = size / 2 - 2
+function MiniPentagon({ vals, color, size = 20 }: { vals: number[]; color: string; size?: number }) {
+  const cx = size / 2, cy = size / 2, R = size / 2 - 1.5
   const pts = vals.map((v, i) => {
     const r = (0.22 + v * 0.78) * R
     return [cx + Math.cos(PENT_ANGLES[i]) * r, cy + Math.sin(PENT_ANGLES[i]) * r]
@@ -134,14 +133,14 @@ function MiniPentagon({ vals, color, size = 26 }: { vals: number[]; color: strin
   const d = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ') + ' Z'
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} fill="none" style={{ flexShrink: 0 }}>
-      <path d={d} fill={hexAlpha(color, 0.12)} stroke={hexAlpha(color, 0.55)} strokeWidth="1" />
+      <path d={d} fill={hexAlpha(color, 0.14)} stroke={hexAlpha(color, 0.60)} strokeWidth="1" />
     </svg>
   )
 }
 
 // ─── RADAR CANVAS ─────────────────────────────────────────────────────────────
-const RADAR_SIZE   = 560
-const RADAR_MARGIN = 56
+const RADAR_SIZE   = 640
+const RADAR_MARGIN = 64
 
 type TooltipState = { name: string; tagline: string; color: string; cssX: number; cssY: number }
 
@@ -153,11 +152,11 @@ function RadarCanvas({
   onHoverCat: (k: string | null) => void
   onHoverProfile: (name: string | null) => void
 }) {
-  const canvasRef         = useRef<HTMLCanvasElement>(null)
-  const rafRef            = useRef(0)
-  const activeCatRef      = useRef<string | null>(null)
-  const hoveredProfRef    = useRef<string | null>(null)
-  const hoverStartRef     = useRef<number>(0)
+  const canvasRef        = useRef<HTMLCanvasElement>(null)
+  const rafRef           = useRef(0)
+  const activeCatRef     = useRef<string | null>(null)
+  const hoveredProfRef   = useRef<string | null>(null)
+  const hoverStartRef    = useRef<number>(0)
   const [tooltip, setTooltip] = useState<TooltipState | null>(null)
 
   useEffect(() => { activeCatRef.current = activeCat }, [activeCat])
@@ -188,18 +187,18 @@ function RadarCanvas({
       ctx.lineWidth = 1; ctx.stroke()
     }
 
-    ctx.setLineDash([3, 5])
+    ctx.setLineDash([3, 6])
     ctx.strokeStyle = 'rgba(255,255,255,0.07)'; ctx.lineWidth = 1
     ctx.beginPath(); ctx.moveTo(M, cy); ctx.lineTo(S - M, cy); ctx.stroke()
     ctx.beginPath(); ctx.moveTo(cx, M); ctx.lineTo(cx, S - M); ctx.stroke()
     ctx.setLineDash([])
 
-    ctx.font = '500 10px system-ui, -apple-system'
+    ctx.font = '500 11px system-ui, -apple-system'
     ctx.fillStyle = 'rgba(255,255,255,0.16)'
-    ctx.textAlign = 'center';  ctx.fillText('PEOPLE',     cx,     M - 12)
-    ctx.textAlign = 'center';  ctx.fillText('OUTPUT',     cx,     S - M + 20)
-    ctx.textAlign = 'left';    ctx.fillText('DELIBERATE', M,      cy - 10)
-    ctx.textAlign = 'right';   ctx.fillText('URGENT',     S - M,  cy - 10)
+    ctx.textAlign = 'center';  ctx.fillText('PEOPLE',     cx,     M - 14)
+    ctx.textAlign = 'center';  ctx.fillText('OUTPUT',     cx,     S - M + 22)
+    ctx.textAlign = 'left';    ctx.fillText('DELIBERATE', M,      cy - 12)
+    ctx.textAlign = 'right';   ctx.fillText('URGENT',     S - M,  cy - 12)
     ctx.textAlign = 'left'
 
     const activeCat  = activeCatRef.current
@@ -220,7 +219,7 @@ function RadarCanvas({
       if (isHovProf && hoverProg > 0) drawCanvasPentagon(ctx, p, x, y, c.color, hoverProg)
 
       if (alpha > 0.11) {
-        const pr = 5 + pulse * 16
+        const pr = 6 + pulse * 18
         const pa = (1 - pulse) * 0.30 * (isFocused ? 1.4 : 0.85)
         ctx.beginPath()
         ctx.arc(x, y, pr, 0, Math.PI * 2)
@@ -229,7 +228,7 @@ function RadarCanvas({
       }
 
       ctx.beginPath()
-      ctx.arc(x, y, isHovProf ? 6 : 4, 0, Math.PI * 2)
+      ctx.arc(x, y, isHovProf ? 7 : 4.5, 0, Math.PI * 2)
       ctx.fillStyle = hexAlpha(c.color, alpha)
       ctx.fill()
     })
@@ -253,7 +252,7 @@ function RadarCanvas({
 
     let foundProf: string | null = null
     let foundCat:  string | null = null
-    let minD = 22
+    let minD = 24
 
     REFERENCE_PROFILES.forEach(p => {
       const { x, y } = dotXY(p.coords.patience, p.coords.extraversion, RADAR_SIZE, RADAR_MARGIN)
@@ -281,7 +280,7 @@ function RadarCanvas({
   }, [onHoverProfile, onHoverCat])
 
   return (
-    <div style={{ position: 'relative', width: 'min(52vw, 560px)', height: 'min(52vw, 560px)', flexShrink: 0 }}>
+    <div style={{ position: 'relative', width: 'clamp(380px, 70vmin, 640px)', height: 'clamp(380px, 70vmin, 640px)', zIndex: 1 }}>
       <canvas
         ref={canvasRef}
         width={RADAR_SIZE} height={RADAR_SIZE}
@@ -292,8 +291,8 @@ function RadarCanvas({
       {tooltip && (
         <div style={{
           position: 'absolute',
-          left:  tooltip.cssX <= 280 ? tooltip.cssX + 14 : undefined,
-          right: tooltip.cssX >  280 ? `calc(100% - ${tooltip.cssX}px + 14px)` : undefined,
+          left:  tooltip.cssX <= 320 ? tooltip.cssX + 14 : undefined,
+          right: tooltip.cssX >  320 ? `calc(100% - ${tooltip.cssX}px + 14px)` : undefined,
           top: Math.max(0, tooltip.cssY - 22),
           background: 'rgba(12,12,12,0.97)',
           border: `1px solid ${hexAlpha(tooltip.color, 0.32)}`,
@@ -312,7 +311,7 @@ function RadarCanvas({
 function useFadeInUp(ref: { current: HTMLElement | null }, delay = 0) {
   useEffect(() => {
     const el = ref.current; if (!el) return
-    el.style.opacity = '0'; el.style.transform = 'translateY(16px)'
+    el.style.opacity = '0'; el.style.transform = 'translateY(14px)'
     const obs = new IntersectionObserver(([e]) => {
       if (e.isIntersecting) {
         setTimeout(() => {
@@ -321,7 +320,7 @@ function useFadeInUp(ref: { current: HTMLElement | null }, delay = 0) {
         }, delay)
         obs.disconnect()
       }
-    }, { threshold: 0.08 })
+    }, { threshold: 0.06 })
     obs.observe(el)
     return () => obs.disconnect()
   }, [ref, delay])
@@ -377,8 +376,7 @@ function ArchCard({ profile, catColor, catKey, onHover }: {
         transition: 'transform 150ms ease, border-color 150ms ease',
         display: 'flex', flexDirection: 'column', gap: 10,
         width: 240, flexShrink: 0,
-        scrollSnapAlign: 'start',
-        touchAction: 'pan-x',
+        scrollSnapAlign: 'start', touchAction: 'pan-x',
       }}
     >
       <div style={{
@@ -403,8 +401,7 @@ function ArchCard({ profile, catColor, catKey, onHover }: {
       <div style={{
         display: 'inline-block', alignSelf: 'flex-start', marginTop: 'auto',
         fontSize: 10, fontWeight: 500,
-        color: hexAlpha(catColor, 0.75),
-        background: hexAlpha(catColor, 0.08),
+        color: hexAlpha(catColor, 0.75), background: hexAlpha(catColor, 0.08),
         border: `1px solid ${hexAlpha(catColor, 0.14)}`,
         borderRadius: 5, padding: '3px 8px',
         fontFamily: '"DM Sans", sans-serif', letterSpacing: '0.04em',
@@ -415,10 +412,89 @@ function ArchCard({ profile, catColor, catKey, onHover }: {
   )
 }
 
+// ─── RADAR COLUMN ─────────────────────────────────────────────────────────────
+function RadarColumn({ groups, activeCat, hoveredProfile, setActive, setHovProf }: {
+  groups: typeof CATS[number][]
+  activeCat: string | null
+  hoveredProfile: string | null
+  setActive: (k: string | null) => void
+  setHovProf: (n: string | null) => void
+}) {
+  const grouped = groups.map(g => ({
+    ...g,
+    profiles: REFERENCE_PROFILES.filter(p => p.group === g.key).sort((a, b) => a.name.localeCompare(b.name)),
+  }))
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {grouped.map(g => (
+        <div key={g.key}>
+          {/* Category header */}
+          <div
+            onMouseEnter={() => setActive(g.key)}
+            onMouseLeave={() => setActive(null)}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, cursor: 'default', paddingLeft: 8 }}
+          >
+            <Icon paths={CAT_ICONS[g.key] ?? []} size={12} stroke={g.color} />
+            <span style={{ fontFamily: '"Barlow Condensed", system-ui', fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: g.color }}>{g.label}</span>
+            <span style={{ fontSize: 11, fontWeight: 300, color: 'rgba(255,255,255,0.28)' }}>{g.descriptor}</span>
+          </div>
+          {/* Archetype rows */}
+          {g.profiles.map(p => {
+            const isHovProf = hoveredProfile === p.name
+            const isOn = hoveredProfile === null
+              ? (activeCat === null || activeCat === p.group)
+              : isHovProf
+            const isHot = activeCat === p.group && hoveredProfile === null
+            return (
+              <div key={p.name}
+                onMouseEnter={() => { setHovProf(p.name); setActive(p.group) }}
+                onMouseLeave={() => { setHovProf(null); setActive(null) }}
+                style={{
+                  padding: '6px 8px', borderRadius: 5,
+                  background: isHovProf ? 'rgba(255,255,255,0.05)' : 'transparent',
+                  opacity: isOn ? 1 : 0.22,
+                  transition: 'background 150ms ease, opacity 150ms ease',
+                  cursor: 'default',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <MiniPentagon vals={pentagonVals(p)} color={g.color} size={20} />
+                  <span style={{
+                    fontFamily: '"Barlow Condensed", system-ui', fontSize: 13, fontWeight: 600,
+                    textTransform: 'uppercase', letterSpacing: '0.04em',
+                    color: (isHovProf || isHot) ? '#FFF' : 'rgba(255,255,255,0.60)',
+                    transition: 'color 150ms ease',
+                  }}>{p.name}</span>
+                </div>
+                {/* Description slide-in */}
+                <div style={{
+                  overflow: 'hidden',
+                  maxHeight: isHovProf ? 52 : 0,
+                  transition: 'max-height 150ms ease',
+                }}>
+                  <p style={{ fontSize: 11, fontWeight: 300, color: 'rgba(255,255,255,0.40)', lineHeight: 1.5, paddingLeft: 27, paddingTop: 3, margin: 0 }}>
+                    {p.essence.slice(0, 72)}
+                  </p>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // ─── PAGE ─────────────────────────────────────────────────────────────────────
 const BG  = '#0A0A0A'
 const MAX = 1240
 const HERO_WORDS = ["YOU'VE", 'MET', 'THESE', 'PEOPLE.']
+
+// Left column: deliberate quadrants (Operators, Stabilizers)
+const LEFT_CATS  = ['process_structure', 'strategic_drive'] as const
+// Right column: urgent quadrants (Drivers, Catalysts)
+const RIGHT_CATS = ['field_command', 'people_influence'] as const
 
 export default function ArchetypesPage() {
   const [activeCat,      setActiveCat]      = useState<string | null>(null)
@@ -427,25 +503,20 @@ export default function ArchetypesPage() {
   const [heroWords,      setHeroWords]      = useState(0)
   const [heroGhost,      setHeroGhost]      = useState(false)
 
-  const snapRef      = useRef<HTMLDivElement>(null)
-  const radarHeadRef = useRef<HTMLDivElement>(null)
-  const radarWrapRef = useRef<HTMLDivElement>(null)
-  const ctaBandRef   = useRef<HTMLDivElement>(null)
-  const cat0Ref      = useRef<HTMLDivElement>(null)
-  const cat1Ref      = useRef<HTMLDivElement>(null)
-  const cat2Ref      = useRef<HTMLDivElement>(null)
-  const cat3Ref      = useRef<HTMLDivElement>(null)
+  const ctaBandRef = useRef<HTMLDivElement>(null)
+  const cat0Ref    = useRef<HTMLDivElement>(null)
+  const cat1Ref    = useRef<HTMLDivElement>(null)
+  const cat2Ref    = useRef<HTMLDivElement>(null)
+  const cat3Ref    = useRef<HTMLDivElement>(null)
 
   const setActive  = useCallback((k: string | null) => setActiveCat(k), [])
   const setHovProf = useCallback((n: string | null) => setHoveredProfile(n), [])
 
-  useFadeInUp(radarHeadRef, 0)
-  useFadeInUp(radarWrapRef, 80)
-  useFadeInUp(ctaBandRef,   0)
-  useFadeInUp(cat0Ref,      0)
-  useFadeInUp(cat1Ref,      60)
-  useFadeInUp(cat2Ref,      120)
-  useFadeInUp(cat3Ref,      180)
+  useFadeInUp(ctaBandRef, 0)
+  useFadeInUp(cat0Ref, 0)
+  useFadeInUp(cat1Ref, 60)
+  useFadeInUp(cat2Ref, 120)
+  useFadeInUp(cat3Ref, 180)
 
   useEffect(() => {
     const link = document.createElement('link')
@@ -456,10 +527,9 @@ export default function ArchetypesPage() {
   }, [])
 
   useEffect(() => {
-    const el = snapRef.current; if (!el) return
-    const h = () => setScrolled(el.scrollTop > 40)
-    el.addEventListener('scroll', h, { passive: true })
-    return () => el.removeEventListener('scroll', h)
+    const h = () => setScrolled(window.scrollY > 40)
+    window.addEventListener('scroll', h, { passive: true })
+    return () => window.removeEventListener('scroll', h)
   }, [])
 
   useEffect(() => {
@@ -478,9 +548,13 @@ export default function ArchetypesPage() {
     .sort((a, b) => a.name.localeCompare(b.name))
     .map(p => p.name.toUpperCase())
 
+  const leftCats  = CATS.filter(c => (LEFT_CATS  as readonly string[]).includes(c.key))
+  const rightCats = CATS.filter(c => (RIGHT_CATS as readonly string[]).includes(c.key))
+
   return (
-    <div ref={snapRef} className="snap-page" style={{ background: BG, color: '#FFF', fontFamily: '"DM Sans", -apple-system, sans-serif' }}>
-      {/* FIXED NAV */}
+    <main style={{ background: BG, color: '#FFF', fontFamily: '"DM Sans", -apple-system, sans-serif', overflowX: 'hidden' }}>
+
+      {/* ── NAV ── */}
       <nav style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, height: 64,
         background: scrolled ? 'rgba(10,10,10,0.97)' : 'rgba(10,10,10,0.88)',
@@ -492,9 +566,9 @@ export default function ArchetypesPage() {
           <Link href="/" style={{ fontSize: 15, fontWeight: 700, color: '#FFF', textDecoration: 'none', letterSpacing: '-0.02em' }}>{PRODUCT_NAME}</Link>
           <div className="nav-links" style={{ display: 'flex', gap: 32, alignItems: 'center' }}>
             {([
-              { label: 'Product',    href: '/#how-it-works' },
-              { label: 'Method',     href: '/profiles' },
-              { label: 'Archetypes', href: '/archetypes' },
+              { label: 'Product',       href: '/#how-it-works' },
+              { label: 'Method',        href: '/profiles' },
+              { label: 'Archetypes',    href: '/archetypes' },
               { label: 'Sample Report', href: '/sample-report' },
             ] as const).map(l => (
               <Link key={l.label} href={l.href} style={{
@@ -521,238 +595,222 @@ export default function ArchetypesPage() {
         </div>
       </nav>
 
-        {/* ── HERO ── */}
-        <section className="snap-beat" style={{ position: 'relative', textAlign: 'center', overflowX: 'hidden' }}>
-          {/* Ambient pulse */}
-          <div style={{ position: 'absolute', top: '50%', left: '50%', width: 640, height: 640, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.022) 0%, transparent 70%)', animation: 'heroPulse 4s ease-out infinite', pointerEvents: 'none' }} />
-          <div style={{ position: 'absolute', top: '50%', left: '50%', width: 640, height: 640, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.022) 0%, transparent 70%)', animation: 'heroPulse 4s ease-out 2s infinite', pointerEvents: 'none' }} />
+      {/* ── HERO ── */}
+      <section style={{
+        height: '100vh', display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
+        position: 'relative', textAlign: 'center',
+        padding: '80px 48px', overflow: 'hidden',
+      }}>
+        {/* Ambient pulse */}
+        <div style={{ position: 'absolute', top: '50%', left: '50%', width: 640, height: 640, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.022) 0%, transparent 70%)', animation: 'heroPulse 4s ease-out infinite', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', top: '50%', left: '50%', width: 640, height: 640, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.022) 0%, transparent 70%)', animation: 'heroPulse 4s ease-out 2s infinite', pointerEvents: 'none' }} />
 
-          <div style={{ position: 'relative' }}>
-            <p style={{ fontSize: 10, fontWeight: 500, color: 'rgba(255,255,255,0.25)', letterSpacing: '0.18em', textTransform: 'uppercase', marginBottom: 18 }}>
-              Behavioral Archetypes
-            </p>
-            <div style={{ maxWidth: 900, margin: '0 auto' }}>
-              <h1 style={{
-                fontFamily: '"Barlow Condensed", system-ui',
-                fontSize: 'clamp(44px, 6.5vw, 88px)',
-                fontWeight: 900, textTransform: 'uppercase',
-                letterSpacing: '-0.01em', lineHeight: 0.92, margin: 0,
-              }}>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0 0.22em', justifyContent: 'center', marginBottom: '0.06em' }}>
-                  {HERO_WORDS.map((word, i) => (
-                    <span key={i} style={{
-                      display: 'inline-block', color: '#FFFFFF',
-                      opacity: heroWords > i ? 1 : 0,
-                      transform: heroWords > i ? 'translateY(0)' : 'translateY(8px)',
-                      transition: 'opacity 320ms ease, transform 320ms ease',
-                    }}>{word}</span>
-                  ))}
-                </div>
-                <span style={{
-                  display: 'block', color: 'rgba(255,255,255,0.13)',
-                  opacity: heroGhost ? 1 : 0,
-                  transform: heroGhost ? 'translateY(0)' : 'translateY(8px)',
-                  transition: 'opacity 320ms ease, transform 320ms ease',
-                }}>Now you have words for them.</span>
-              </h1>
+        <div style={{ position: 'relative' }}>
+          <p style={{ fontSize: 10, fontWeight: 500, color: 'rgba(255,255,255,0.25)', letterSpacing: '0.18em', textTransform: 'uppercase', marginBottom: 18 }}>
+            Behavioral Archetypes
+          </p>
+          <div style={{ maxWidth: 820, margin: '0 auto' }}>
+            <h1 style={{
+              fontFamily: '"Barlow Condensed", system-ui',
+              fontSize: 'clamp(44px, 6.5vw, 88px)',
+              fontWeight: 900, textTransform: 'uppercase',
+              letterSpacing: '-0.01em', lineHeight: 0.92, margin: 0,
+            }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0 0.22em', justifyContent: 'center', marginBottom: '0.06em' }}>
+                {HERO_WORDS.map((word, i) => (
+                  <span key={i} style={{
+                    display: 'inline-block', color: '#FFFFFF',
+                    opacity: heroWords > i ? 1 : 0,
+                    transform: heroWords > i ? 'translateY(0)' : 'translateY(8px)',
+                    transition: 'opacity 320ms ease, transform 320ms ease',
+                  }}>{word}</span>
+                ))}
+              </div>
+              <span style={{
+                display: 'block', color: 'rgba(255,255,255,0.13)',
+                opacity: heroGhost ? 1 : 0,
+                transform: heroGhost ? 'translateY(0)' : 'translateY(8px)',
+                transition: 'opacity 320ms ease, transform 320ms ease',
+              }}>Now you have words for them.</span>
+            </h1>
+          </div>
+          <p style={{ fontSize: 15, fontWeight: 300, color: 'rgba(255,255,255,0.38)', maxWidth: 400, margin: '28px auto 0', lineHeight: 1.7 }}>
+            Browse the patterns recruiters recognize instantly — or find your own in six minutes.
+          </p>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 36, flexWrap: 'wrap' }}>
+            <a href="/invite-self" style={{
+              height: 44, padding: '0 24px', borderRadius: 8,
+              background: '#FFFFFF', color: BG, fontSize: 14, fontWeight: 600,
+              display: 'inline-flex', alignItems: 'center', textDecoration: 'none', transition: 'opacity 150ms ease',
+            }}
+              onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
+              onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+            >Find your archetype</a>
+            <a href="#archetypes" style={{
+              height: 44, padding: '0 24px', borderRadius: 8,
+              background: 'transparent', color: 'rgba(255,255,255,0.50)',
+              border: '1px solid rgba(255,255,255,0.14)',
+              fontSize: 14, fontWeight: 400, display: 'inline-flex', alignItems: 'center',
+              textDecoration: 'none', transition: 'border-color 150ms ease, color 150ms ease',
+            }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.28)'; e.currentTarget.style.color = '#FFF' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.14)'; e.currentTarget.style.color = 'rgba(255,255,255,0.50)' }}
+            >Browse all {REFERENCE_PROFILES.length}</a>
+          </div>
+        </div>
+
+        {/* Scroll indicator */}
+        <div style={{ position: 'absolute', bottom: 28, left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
+          <div style={{ width: 1, height: 28, position: 'relative', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', width: '100%', background: 'rgba(255,255,255,0.30)', animation: 'scrollDrop 1.8s ease-in-out infinite' }} />
+          </div>
+          <span style={{ fontSize: 9, letterSpacing: '0.14em', color: 'rgba(255,255,255,0.18)' }}>SCROLL</span>
+        </div>
+      </section>
+
+      {/* ── TICKER ── */}
+      <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: '#0D0D0D', height: 36, overflow: 'hidden', display: 'flex', alignItems: 'center' }}>
+        <div style={{ display: 'flex', animation: 'ticker 42s linear infinite', whiteSpace: 'nowrap' }}>
+          {[0, 1].map(rep => (
+            <span key={rep} style={{ display: 'inline-flex', alignItems: 'center' }}>
+              {tickerNames.map(name => (
+                <span key={name + rep} style={{ display: 'inline-flex', alignItems: 'center' }}>
+                  <span style={{ fontSize: 11, fontWeight: 500, color: 'rgba(255,255,255,0.22)', letterSpacing: '0.12em', padding: '0 16px', fontFamily: '"Barlow Condensed", system-ui' }}>{name}</span>
+                  <span style={{ color: 'rgba(255,255,255,0.10)', fontSize: 10 }}>·</span>
+                </span>
+              ))}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* ── RADAR MAP — FULL VIEWPORT ── */}
+      <section style={{
+        position: 'relative', width: '100%', height: '100vh',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        overflow: 'hidden',
+      }}>
+        {/* Headline overlay — top left */}
+        <div style={{ position: 'absolute', top: 80, left: 44, maxWidth: 340, zIndex: 2 }}>
+          <p style={{ fontSize: 10, fontWeight: 500, color: 'rgba(255,255,255,0.22)', letterSpacing: '0.20em', textTransform: 'uppercase', marginBottom: 10 }}>The System</p>
+          <h2 style={{
+            fontFamily: '"Barlow Condensed", system-ui',
+            fontSize: 'clamp(28px, 3vw, 42px)',
+            fontWeight: 800, textTransform: 'uppercase',
+            letterSpacing: '-0.01em', lineHeight: 1.0,
+            color: '#FFF', marginBottom: 12,
+          }}>
+            Four types.<br />One map.
+          </h2>
+          <p style={{ fontSize: 13, fontWeight: 300, color: 'rgba(255,255,255,0.38)', lineHeight: 1.7, margin: 0 }}>
+            Every archetype sits on two axes: Pace and People-orientation. Hover the map or the list to explore.
+          </p>
+        </div>
+
+        {/* Left column — Operators + Stabilizers (deliberate quadrant) */}
+        <div className="radar-col-left" style={{ position: 'absolute', left: 44, top: '50%', transform: 'translateY(-50%)', width: 220, zIndex: 2 }}>
+          <RadarColumn
+            groups={leftCats}
+            activeCat={activeCat}
+            hoveredProfile={hoveredProfile}
+            setActive={setActive}
+            setHovProf={setHovProf}
+          />
+        </div>
+
+        {/* Radar — centered */}
+        <RadarCanvas
+          activeCat={activeCat}
+          hoveredProfileName={hoveredProfile}
+          onHoverCat={setActive}
+          onHoverProfile={setHovProf}
+        />
+
+        {/* Right column — Drivers + Catalysts (urgent quadrant) */}
+        <div className="radar-col-right" style={{ position: 'absolute', right: 44, top: '50%', transform: 'translateY(-50%)', width: 220, zIndex: 2 }}>
+          <RadarColumn
+            groups={rightCats}
+            activeCat={activeCat}
+            hoveredProfile={hoveredProfile}
+            setActive={setActive}
+            setHovProf={setHovProf}
+          />
+        </div>
+      </section>
+
+      {/* ── CTA + ARCHETYPE BLOCKS ── */}
+      <section id="archetypes" style={{ padding: 0 }}>
+        {/* CTA band */}
+        <div ref={ctaBandRef} style={{ borderTop: '1px solid rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: '#0D0D0D', padding: '52px 40px' }}>
+          <div style={{ maxWidth: MAX, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 40, flexWrap: 'wrap' }}>
+            <div>
+              <h2 style={{ fontFamily: '"Barlow Condensed", system-ui', fontSize: 'clamp(36px, 5vw, 56px)', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.01em', lineHeight: 1.0, color: '#FFF', marginBottom: 10 }}>
+                Find yours in six minutes.
+              </h2>
+              <p style={{ fontSize: 14, fontWeight: 300, color: 'rgba(255,255,255,0.32)' }}>
+                {REFERENCE_PROFILES.length} archetypes. 94 signals. One honest answer.
+              </p>
             </div>
-            <p style={{ fontSize: 16, fontWeight: 300, color: 'rgba(255,255,255,0.38)', maxWidth: 420, margin: '32px auto 0', lineHeight: 1.7 }}>
-              Browse the patterns recruiters recognize instantly — or find your own in six minutes.
-            </p>
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 40, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flexShrink: 0 }}>
               <a href="/invite-self" style={{
                 height: 44, padding: '0 24px', borderRadius: 8,
-                background: '#FFFFFF', color: BG, fontSize: 14, fontWeight: 600,
-                display: 'inline-flex', alignItems: 'center', textDecoration: 'none', transition: 'opacity 150ms ease',
+                background: '#FFF', color: BG, fontSize: 14, fontWeight: 600,
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                textDecoration: 'none', transition: 'opacity 150ms ease',
               }}
                 onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
                 onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
-              >Find your archetype</a>
-              <a href="#archetypes" style={{
+              >Start the assessment</a>
+              <a href="/sample-report" style={{
                 height: 44, padding: '0 24px', borderRadius: 8,
-                background: 'transparent', color: 'rgba(255,255,255,0.50)',
-                border: '1px solid rgba(255,255,255,0.14)',
-                fontSize: 14, fontWeight: 400, display: 'inline-flex', alignItems: 'center',
+                background: 'transparent', color: 'rgba(255,255,255,0.48)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                fontSize: 14, fontWeight: 400, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                 textDecoration: 'none', transition: 'border-color 150ms ease, color 150ms ease',
               }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.28)'; e.currentTarget.style.color = '#FFF' }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.14)'; e.currentTarget.style.color = 'rgba(255,255,255,0.50)' }}
-              >Browse all {REFERENCE_PROFILES.length}</a>
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.26)'; e.currentTarget.style.color = '#FFF' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'; e.currentTarget.style.color = 'rgba(255,255,255,0.48)' }}
+              >View sample report →</a>
             </div>
           </div>
+        </div>
 
-          {/* Scroll indicator */}
-          <div style={{ position: 'absolute', bottom: 28, left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
-            <div style={{ width: 1, height: 28, position: 'relative', overflow: 'hidden' }}>
-              <div style={{ position: 'absolute', width: '100%', background: 'rgba(255,255,255,0.30)', animation: 'scrollDrop 1.8s ease-in-out infinite' }} />
-            </div>
-            <span style={{ fontSize: 9, letterSpacing: '0.14em', color: 'rgba(255,255,255,0.18)' }}>SCROLL</span>
-          </div>
-        </section>
-
-        {/* ── TICKER + RADAR ── */}
-        <section className="snap-beat-scroll" style={{ padding: 0 }}>
-          {/* Ticker */}
-          <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: '#0D0D0D', height: 36, overflow: 'hidden', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-            <div style={{ display: 'flex', animation: 'ticker 42s linear infinite', whiteSpace: 'nowrap' }}>
-              {[0, 1].map(rep => (
-                <span key={rep} style={{ display: 'inline-flex', alignItems: 'center' }}>
-                  {tickerNames.map(name => (
-                    <span key={name + rep} style={{ display: 'inline-flex', alignItems: 'center' }}>
-                      <span style={{ fontSize: 11, fontWeight: 500, color: 'rgba(255,255,255,0.22)', letterSpacing: '0.12em', padding: '0 16px', fontFamily: '"Barlow Condensed", system-ui' }}>{name}</span>
-                      <span style={{ color: 'rgba(255,255,255,0.10)', fontSize: 10 }}>·</span>
-                    </span>
-                  ))}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* Radar + sidebar */}
-          <div style={{ flex: 1, padding: '64px 40px 72px', maxWidth: MAX + 80, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
-            <div ref={radarHeadRef} style={{ marginBottom: 48, maxWidth: 520 }}>
-              <p style={{ fontSize: 10, fontWeight: 500, color: 'rgba(255,255,255,0.22)', letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: 16 }}>The System</p>
-              <h2 style={{ fontFamily: '"Barlow Condensed", system-ui', fontSize: 'clamp(40px, 5vw, 60px)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '-0.01em', lineHeight: 1.0, color: '#FFF', marginBottom: 16 }}>
-                Four types. One map.
-              </h2>
-              <p style={{ fontSize: 15, fontWeight: 300, color: 'rgba(255,255,255,0.38)', lineHeight: 1.75 }}>
-                Every archetype sits on two axes: Pace (deliberate to urgent) and People-orientation (output-focused to people-focused). Drivers push right. Operators anchor left. Catalysts rise. Stabilizers hold the middle.
-              </p>
-            </div>
-
-            <div ref={radarWrapRef} className="radar-layout" style={{ display: 'flex', gap: 48, alignItems: 'flex-start' }}>
-              <RadarCanvas
-                activeCat={activeCat}
-                hoveredProfileName={hoveredProfile}
-                onHoverCat={setActive}
-                onHoverProfile={setHovProf}
-              />
-
-              {/* Sidebar list */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                {grouped.map(g => (
-                  <div key={g.key} style={{ marginBottom: 28 }}>
-                    <div style={{
-                      position: 'sticky', top: 0, background: BG, paddingBottom: 8, zIndex: 2,
-                      display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, cursor: 'default',
-                    }}
-                      onMouseEnter={() => setActive(g.key)}
-                      onMouseLeave={() => setActive(null)}
-                    >
-                      <Icon paths={CAT_ICONS[g.key] ?? []} size={14} stroke={g.color} />
-                      <span style={{ fontFamily: '"Barlow Condensed", system-ui', fontSize: 12, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.10em', color: g.color }}>{g.label}</span>
-                      <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.22)' }}>{g.descriptor}</span>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                      {g.profiles.map(p => {
-                        const isHovProf = hoveredProfile === p.name
-                        const isOn = hoveredProfile === null
-                          ? (activeCat === null || activeCat === p.group)
-                          : isHovProf
-                        const isHot = activeCat === p.group && hoveredProfile === null
-                        return (
-                          <div key={p.name}
-                            onMouseEnter={() => { setHovProf(p.name); setActive(p.group) }}
-                            onMouseLeave={() => { setHovProf(null); setActive(null) }}
-                            style={{
-                              display: 'flex', alignItems: 'center', gap: 10,
-                              padding: '7px 10px', borderRadius: 6,
-                              background: isHovProf ? 'rgba(255,255,255,0.04)' : 'transparent',
-                              border: `1px solid ${isHovProf ? 'rgba(255,255,255,0.08)' : 'transparent'}`,
-                              opacity: isOn ? 1 : 0.20,
-                              transition: 'all 150ms ease', cursor: 'default',
-                            }}
-                          >
-                            <MiniPentagon vals={pentagonVals(p)} color={g.color} size={24} />
-                            <span style={{ fontFamily: '"Barlow Condensed", system-ui', fontSize: 14, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: (isHovProf || isHot) ? g.color : 'rgba(255,255,255,0.62)', flex: 1 }}>
-                              {p.name}
-                            </span>
-                            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.18)' }}>
-                              {p.tagline.split(',').slice(0, 2).join(',').trim()}
-                            </span>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ── CTA + BLOCKS ── */}
-        <section className="snap-beat-scroll" id="archetypes" style={{ padding: 0 }}>
-          {/* CTA band */}
-          <div ref={ctaBandRef} style={{ borderTop: '1px solid rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: '#0D0D0D', padding: '52px 40px', flexShrink: 0 }}>
-            <div style={{ maxWidth: MAX, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 40, flexWrap: 'wrap' }}>
-              <div>
-                <h2 style={{ fontFamily: '"Barlow Condensed", system-ui', fontSize: 'clamp(36px, 5vw, 56px)', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.01em', lineHeight: 1.0, color: '#FFF', marginBottom: 10 }}>
-                  Find yours in six minutes.
-                </h2>
-                <p style={{ fontSize: 14, fontWeight: 300, color: 'rgba(255,255,255,0.32)' }}>
-                  {REFERENCE_PROFILES.length} archetypes. 94 signals. One honest answer.
-                </p>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flexShrink: 0 }}>
-                <a href="/invite-self" style={{
-                  height: 44, padding: '0 24px', borderRadius: 8,
-                  background: '#FFF', color: BG, fontSize: 14, fontWeight: 600,
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                  textDecoration: 'none', transition: 'opacity 150ms ease',
-                }}
-                  onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
-                  onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
-                >Start the assessment</a>
-                <a href="/sample-report" style={{
-                  height: 44, padding: '0 24px', borderRadius: 8,
-                  background: 'transparent', color: 'rgba(255,255,255,0.48)',
-                  border: '1px solid rgba(255,255,255,0.12)',
-                  fontSize: 14, fontWeight: 400, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                  textDecoration: 'none', transition: 'border-color 150ms ease, color 150ms ease',
-                }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.26)'; e.currentTarget.style.color = '#FFF' }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'; e.currentTarget.style.color = 'rgba(255,255,255,0.48)' }}
-                >View sample report →</a>
-              </div>
-            </div>
-          </div>
-
-          {/* Archetype blocks */}
-          <div style={{ padding: '72px 40px 100px', maxWidth: MAX + 80, margin: '0 auto', width: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 64 }}>
-            {grouped.map((g, idx) => (
-              <div key={g.key}>
-                <div ref={catRefs[idx]} style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  paddingBottom: 18, borderBottom: `1px solid ${hexAlpha(g.color, 0.14)}`,
-                  marginBottom: 20, flexWrap: 'wrap', gap: 12,
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <Icon paths={CAT_ICONS[g.key] ?? []} size={22} stroke={g.color} />
-                    <span style={{ fontFamily: '"Barlow Condensed", system-ui', fontSize: 28, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.02em', color: g.color }}>
-                      {g.label}
-                    </span>
-                    <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.28)', fontWeight: 300 }}>{g.descriptor}</span>
-                  </div>
-                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.18)', letterSpacing: '0.06em' }}>{g.axisNote}</span>
+        {/* Archetype blocks */}
+        <div style={{ padding: '72px 40px 100px', maxWidth: MAX + 80, margin: '0 auto', width: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 64 }}>
+          {grouped.map((g, idx) => (
+            <div key={g.key}>
+              <div ref={catRefs[idx]} style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                paddingBottom: 18, borderBottom: `1px solid ${hexAlpha(g.color, 0.14)}`,
+                marginBottom: 20, flexWrap: 'wrap', gap: 12,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <Icon paths={CAT_ICONS[g.key] ?? []} size={22} stroke={g.color} />
+                  <span style={{ fontFamily: '"Barlow Condensed", system-ui', fontSize: 28, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.02em', color: g.color }}>
+                    {g.label}
+                  </span>
+                  <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.28)', fontWeight: 300 }}>{g.descriptor}</span>
                 </div>
-                <HScrollRow>
-                  {g.profiles.map(p => (
-                    <ArchCard key={p.name} profile={p} catColor={g.color} catKey={g.key} onHover={setActive} />
-                  ))}
-                </HScrollRow>
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.18)', letterSpacing: '0.06em' }}>{g.axisNote}</span>
               </div>
-            ))}
-          </div>
-
-          {/* Footer */}
-          <footer style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '20px 40px' }}>
-            <div style={{ maxWidth: MAX, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.14)' }}>{PRODUCT_NAME} by Legacy Workforce · © 2026</span>
-              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.14)' }}>{COMPANY_EMAIL}</span>
+              <HScrollRow>
+                {g.profiles.map(p => (
+                  <ArchCard key={p.name} profile={p} catColor={g.color} catKey={g.key} onHover={setActive} />
+                ))}
+              </HScrollRow>
             </div>
-          </footer>
-        </section>
+          ))}
+        </div>
+
+        {/* Footer */}
+        <footer style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '20px 40px' }}>
+          <div style={{ maxWidth: MAX, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.14)' }}>{PRODUCT_NAME} by Legacy Workforce · © 2026</span>
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.14)' }}>{COMPANY_EMAIL}</span>
+          </div>
+        </footer>
+      </section>
 
       <style>{`
         @keyframes ticker {
@@ -774,12 +832,9 @@ export default function ArchetypesPage() {
           .nav-signin { display: none !important; }
           .nav-inner  { padding: 0 20px !important; }
           .nav-cta    { height: 36px !important; padding: 0 14px !important; }
-          .radar-layout { flex-direction: column !important; }
-        }
-        @media (max-width: 600px) {
-          .snap-beat { padding-left: 20px !important; padding-right: 20px !important; }
+          .radar-col-left, .radar-col-right { display: none !important; }
         }
       `}</style>
-    </div>
+    </main>
   )
 }
