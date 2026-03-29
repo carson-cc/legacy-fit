@@ -131,23 +131,12 @@ function DimIcon({ dim }: { dim: string }) {
 }
 
 // ─── Assessment simulation card ───────────────────────────────────────
-const BC_C = '"Barlow Condensed", system-ui'
-const DM_C = '"DM Sans", -apple-system, sans-serif'
-
-const SIM_STAGE_LABELS: Record<number, string> = {
-  1: 'WHAT THE ROLE DEMANDS',
-  2: 'HOW THEY NATURALLY OPERATE',
-  3: 'THE ADAPTATION GAP',
-  4: 'SCORING',
-  5: 'ARCHETYPE IDENTIFIED',
-}
-
-const SIM_FOOTERS: Record<number, string> = {
-  1: '80-item behavioral preference survey · selecting role demands',
-  2: '80-item behavioral preference survey · selecting natural style',
-  3: 'Gap between role demands and natural style generates 94 behavioral signals',
-  4: 'Behavioral fit score derived from 94 signals across 5 dimensions',
-  5: 'Matched against 20 reference archetypes · 94 behavioral signals',
+const SIM_LABELS: Record<number, string> = {
+  1: 'ROLE PROFILE',
+  2: 'NATURAL STYLE',
+  3: 'ADAPTATION GAP',
+  4: 'BEHAVIORAL FIT',
+  5: 'ARCHETYPE MATCH',
 }
 
 const LIST1_WORDS = ['Decisive', 'Bold', 'Competitive', 'Direct', 'Methodical', 'Patient', 'Collaborative', 'Analytical', 'Thorough', 'Systematic', 'Careful', 'Adaptable']
@@ -158,17 +147,17 @@ const SEL2 = ['Patient', 'Methodical', 'Collaborative']
 type SimStage = 1 | 2 | 3 | 4 | 5
 
 function SimCard() {
-  const [loop, setLoop]           = useState(0)
   const [stage, setStage]         = useState<SimStage>(1)
   const [vis1, setVis1]           = useState(0)
   const [picked1, setPicked1]     = useState<string[]>([])
   const [vis2, setVis2]           = useState(0)
   const [picked2, setPicked2]     = useState<string[]>([])
   const [connectors, setConn]     = useState(0)
+  const [gapIn, setGapIn]         = useState(false)
   const [score, setScore]         = useState(0)
   const [barsGo, setBarsGo]       = useState(false)
   const [archIn, setArchIn]       = useState(false)
-  const [cursorPos, setCursorPos] = useState({ x: -20, y: -20 })
+  const [cursorPos, setCursorPos] = useState({ x: -40, y: -40 })
   const [cursorVis, setCursorVis] = useState(false)
   const [clicking, setClicking]   = useState(false)
 
@@ -176,32 +165,12 @@ function SimCard() {
   const pillRefs = useRef<Record<string, HTMLSpanElement | null>>({})
   const timers   = useRef<ReturnType<typeof setTimeout>[]>([])
 
-  // Load fonts + keyframe once
-  useEffect(() => {
-    const fid = 'simcard-fonts'
-    if (!document.getElementById(fid)) {
-      const link = document.createElement('link')
-      link.id = fid; link.rel = 'stylesheet'
-      link.href = 'https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=DM+Sans:wght@400;500&display=swap'
-      document.head.appendChild(link)
-    }
-    const sid = 'simcard-kf'
-    if (!document.getElementById(sid)) {
-      const style = document.createElement('style')
-      style.id = sid
-      style.textContent = '@keyframes simProg{from{transform:scaleX(0)}to{transform:scaleX(1)}}'
-      document.head.appendChild(style)
-    }
-  }, [])
-
   const addT = useCallback((fn: () => void, ms: number) => {
-    const t = setTimeout(fn, ms)
-    timers.current.push(t)
+    const t = setTimeout(fn, ms); timers.current.push(t)
   }, [])
 
   const clearAll = useCallback(() => {
-    timers.current.forEach(clearTimeout)
-    timers.current = []
+    timers.current.forEach(clearTimeout); timers.current = []
   }, [])
 
   const moveCursor = useCallback((word: string) => {
@@ -210,72 +179,76 @@ function SimCard() {
     if (!card || !pill) return
     const cr = card.getBoundingClientRect()
     const pr = pill.getBoundingClientRect()
-    setCursorPos({ x: pr.left - cr.left + pr.width / 2, y: pr.top - cr.top + pr.height / 2 })
+    // Point to top-right of pill (natural cursor position before clicking)
+    setCursorPos({ x: pr.left - cr.left + pr.width * 0.7, y: pr.top - cr.top + pr.height * 0.35 })
   }, [])
 
   const run = useCallback(() => {
     clearAll()
     setStage(1); setVis1(0); setPicked1([]); setVis2(0); setPicked2([])
-    setConn(0); setScore(0); setBarsGo(false); setArchIn(false)
+    setConn(0); setGapIn(false); setScore(0); setBarsGo(false); setArchIn(false)
     setCursorVis(false); setClicking(false)
 
-    // Stage 1 — WHAT THE ROLE DEMANDS (0–6000ms)
-    LIST1_WORDS.forEach((_, i) => addT(() => setVis1(i + 1), i * 80))
-    addT(() => moveCursor('Decisive'),                               1050)
-    addT(() => setCursorVis(true),                                   1100)
-    addT(() => setClicking(true),                                    1300)
-    addT(() => { setClicking(false); setPicked1(['Decisive']) },     1450)
-    addT(() => moveCursor('Bold'),                                   1650)
-    addT(() => setClicking(true),                                    1850)
-    addT(() => { setClicking(false); setPicked1(['Decisive','Bold']) }, 2000)
-    addT(() => moveCursor('Competitive'),                            2150)
-    addT(() => setClicking(true),                                    2350)
-    addT(() => { setClicking(false); setPicked1(['Decisive','Bold','Competitive']) }, 2500)
-    addT(() => setCursorVis(false),                                  4600)
+    // ── Stage 1: ROLE PROFILE (0–2500ms) ─────────────────────────────
+    // Pills stagger in at 40ms each (done at 480ms)
+    LIST1_WORDS.forEach((_, i) => addT(() => setVis1(i + 1), i * 40))
+    // Cursor sequence
+    addT(() => moveCursor('Decisive'),                              520)
+    addT(() => setCursorVis(true),                                  560)
+    addT(() => setClicking(true),                                   700)
+    addT(() => { setClicking(false); setPicked1(['Decisive']) },    840)
+    addT(() => moveCursor('Bold'),                                  960)
+    addT(() => setClicking(true),                                   1100)
+    addT(() => { setClicking(false); setPicked1(['Decisive','Bold']) }, 1240)
+    addT(() => moveCursor('Competitive'),                           1340)
+    addT(() => setClicking(true),                                   1480)
+    addT(() => { setClicking(false); setPicked1(['Decisive','Bold','Competitive']) }, 1620)
+    addT(() => setCursorVis(false),                                 2200)
 
-    // Stage 2 — HOW THEY NATURALLY OPERATE (6000–12000ms)
-    addT(() => { setStage(2); setVis2(0); setPicked2([]) },          6000)
-    LIST2_WORDS.forEach((_, i) => addT(() => setVis2(i + 1), 6000 + i * 80))
-    addT(() => moveCursor('Patient'),                                7050)
-    addT(() => setCursorVis(true),                                   7100)
-    addT(() => setClicking(true),                                    7300)
-    addT(() => { setClicking(false); setPicked2(['Patient']) },      7450)
-    addT(() => moveCursor('Methodical'),                             7650)
-    addT(() => setClicking(true),                                    7850)
-    addT(() => { setClicking(false); setPicked2(['Patient','Methodical']) }, 8000)
-    addT(() => moveCursor('Collaborative'),                          8200)
-    addT(() => setClicking(true),                                    8400)
-    addT(() => { setClicking(false); setPicked2(['Patient','Methodical','Collaborative']) }, 8550)
-    addT(() => setCursorVis(false),                                  10600)
+    // ── Stage 2: NATURAL STYLE (2500–5000ms) ─────────────────────────
+    addT(() => { setStage(2); setVis2(0); setPicked2([]) },         2500)
+    LIST2_WORDS.forEach((_, i) => addT(() => setVis2(i + 1), 2500 + i * 40))
+    addT(() => moveCursor('Patient'),                               3020)
+    addT(() => setCursorVis(true),                                  3060)
+    addT(() => setClicking(true),                                   3200)
+    addT(() => { setClicking(false); setPicked2(['Patient']) },     3340)
+    addT(() => moveCursor('Methodical'),                            3460)
+    addT(() => setClicking(true),                                   3600)
+    addT(() => { setClicking(false); setPicked2(['Patient','Methodical']) }, 3740)
+    addT(() => moveCursor('Collaborative'),                         3860)
+    addT(() => setClicking(true),                                   4000)
+    addT(() => { setClicking(false); setPicked2(['Patient','Methodical','Collaborative']) }, 4140)
+    addT(() => setCursorVis(false),                                 4700)
 
-    // Stage 3 — THE ADAPTATION GAP (12000–17500ms)
-    addT(() => { setStage(3); setConn(0) },  12000)
-    addT(() => setConn(1),                   12400)
-    addT(() => setConn(2),                   12850)
-    addT(() => setConn(3),                   13300)
+    // ── Stage 3: ADAPTATION GAP (5000–7500ms) ────────────────────────
+    addT(() => { setStage(3); setConn(0); setGapIn(false) },        5000)
+    addT(() => setConn(1),                                          5300)
+    addT(() => setConn(2),                                          5620)
+    addT(() => setConn(3),                                          5940)
+    addT(() => setGapIn(true),                                      6400)
 
-    // Stage 4 — SCORING (17500–21500ms)
-    addT(() => { setStage(4); setScore(0) }, 17500)
-    const scoreDur = 1600
-    const runScore = (startMs: number) => {
-      const t = Math.min((Date.now() - startMs) / scoreDur, 1)
+    // ── Stage 4: BEHAVIORAL FIT (7500–9500ms) ────────────────────────
+    addT(() => { setStage(4); setScore(0) },                        7500)
+    const scoreDur = 1400
+    const runScore = (t0: number) => {
+      const t = Math.min((Date.now() - t0) / scoreDur, 1)
       setScore(Math.round(78 * (1 - Math.pow(1 - t, 3))))
-      if (t < 1) addT(() => runScore(startMs), 16)
+      if (t < 1) addT(() => runScore(t0), 16)
     }
-    addT(() => runScore(Date.now()),         17700)
+    addT(() => runScore(Date.now()),                                7700)
 
-    // Stage 5 — ARCHETYPE IDENTIFIED (21500–30000ms)
-    addT(() => { setStage(5); setBarsGo(false); setArchIn(false) }, 21500)
-    addT(() => setArchIn(true),  21700)
-    addT(() => setBarsGo(true),  22350)
+    // ── Stage 5: ARCHETYPE MATCH (9500–12000ms) ──────────────────────
+    addT(() => { setStage(5); setArchIn(false); setBarsGo(false) }, 9500)
+    addT(() => setArchIn(true),                                     9700)
+    addT(() => setBarsGo(true),                                     10180)
 
-    // Loop at 30s
-    addT(() => { setLoop(l => l + 1); run() }, 30000)
+    // Loop every 12s
+    addT(() => run(),                                               12000)
   }, [addT, clearAll, moveCursor])
 
   useEffect(() => { run(); return clearAll }, [run, clearAll])
 
-  const circum = Math.PI * 2 * 38
+  const circum = Math.PI * 2 * 40
   const offset = circum - (score / 100) * circum
 
   const dimBars = [
@@ -287,44 +260,54 @@ function SimCard() {
   ]
 
   const pillStyle = (word: string, list: 1 | 2, visible: boolean): React.CSSProperties => {
-    if (!visible) return { opacity: 0, transform: 'scale(0.88)', transition: 'none', display: 'inline-block' }
+    if (!visible) return { opacity: 0, transform: 'translateY(5px)', transition: 'none', display: 'inline-block' }
     const sel = list === 1 ? picked1.includes(word) : picked2.includes(word)
     return {
-      opacity: 1, transform: 'scale(1)', display: 'inline-block',
-      transition: 'opacity 180ms ease, transform 180ms ease, background 200ms ease, color 200ms ease',
+      opacity: 1, transform: 'translateY(0)', display: 'inline-block',
+      transition: 'opacity 150ms ease, transform 150ms ease, background 200ms ease, color 200ms ease, border-color 200ms ease',
       padding: '5px 13px', borderRadius: 100, cursor: 'default',
-      fontSize: 12, fontFamily: DM_C, fontWeight: sel ? 500 : 400,
-      background: sel ? 'rgba(255,255,255,0.92)' : 'transparent',
-      color: sel ? '#0a0a0a' : 'rgba(255,255,255,0.35)',
-      border: `1px solid ${sel ? 'transparent' : 'rgba(255,255,255,0.1)'}`,
+      fontSize: 12, fontFamily: FONT, fontWeight: sel ? 600 : 400,
+      letterSpacing: sel ? '-0.01em' : '0',
+      background: sel ? 'rgba(255,255,255,0.94)' : 'rgba(255,255,255,0.04)',
+      color: sel ? '#000' : 'rgba(255,255,255,0.42)',
+      border: `1px solid ${sel ? 'transparent' : 'rgba(255,255,255,0.09)'}`,
     }
   }
 
   return (
     <div ref={cardRef} style={{
-      position: 'relative', background: '#0f0f0f',
-      border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14,
-      height: 540, overflow: 'hidden', display: 'flex', flexDirection: 'column',
+      position: 'relative', background: '#0a0a0a',
+      border: '1px solid rgba(255,255,255,0.09)', borderRadius: 16,
+      height: 520, overflow: 'hidden', display: 'flex', flexDirection: 'column',
     }}>
-      {/* Top bar */}
-      <div style={{ padding: '14px 20px 12px', borderBottom: '1px solid rgba(255,255,255,0.05)', flexShrink: 0 }}>
-        <p style={{ fontSize: 9, fontFamily: DM_C, fontWeight: 500, letterSpacing: '0.14em', color: 'rgba(255,255,255,0.28)', textTransform: 'uppercase', marginBottom: 10 }}>
-          {SIM_STAGE_LABELS[stage]}
-        </p>
-        <div style={{ height: 1.5, background: 'rgba(255,255,255,0.06)', borderRadius: 1, overflow: 'hidden' }}>
-          <div key={loop} style={{
-            height: '100%', background: BLUE, transformOrigin: 'left center',
-            animation: 'simProg 30s linear forwards',
-          }} />
+      {/* ── Header ─────────────────────────────────────────────────── */}
+      <div style={{ padding: '15px 20px 13px', borderBottom: '1px solid rgba(255,255,255,0.05)', flexShrink: 0 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <span style={{ fontSize: 9, fontFamily: FONT, fontWeight: 600, letterSpacing: '0.14em', color: 'rgba(255,255,255,0.28)', textTransform: 'uppercase' }}>
+            {SIM_LABELS[stage]}
+          </span>
+          <span style={{ fontSize: 9, fontFamily: FONT, color: 'rgba(255,255,255,0.18)', letterSpacing: '0.04em' }}>
+            {stage} / 5
+          </span>
+        </div>
+        {/* 5-segment progress — discrete, not continuous */}
+        <div style={{ display: 'flex', gap: 3 }}>
+          {([1,2,3,4,5] as SimStage[]).map(s => (
+            <div key={s} style={{
+              flex: 1, height: 2, borderRadius: 1,
+              background: s <= stage ? BLUE : 'rgba(255,255,255,0.07)',
+              transition: 'background 350ms ease',
+            }} />
+          ))}
         </div>
       </div>
 
-      {/* Stage content */}
-      <div style={{ flex: 1, padding: '20px 20px 0', overflow: 'hidden' }}>
+      {/* ── Content ────────────────────────────────────────────────── */}
+      <div style={{ flex: 1, padding: '18px 20px 0', overflow: 'hidden' }}>
 
-        {/* Stage 1 */}
+        {/* Stage 1: pill selection */}
         {stage === 1 && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 6px', alignContent: 'flex-start' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px 5px', alignContent: 'flex-start' }}>
             {LIST1_WORDS.map((word, i) => (
               <span key={word} ref={el => { pillRefs.current[word] = el }} style={pillStyle(word, 1, i < vis1)}>
                 {word}
@@ -333,9 +316,9 @@ function SimCard() {
           </div>
         )}
 
-        {/* Stage 2 */}
+        {/* Stage 2: pill selection */}
         {stage === 2 && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 6px', alignContent: 'flex-start' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px 5px', alignContent: 'flex-start' }}>
             {LIST2_WORDS.map((word, i) => (
               <span key={word} ref={el => { pillRefs.current[word] = el }} style={pillStyle(word, 2, i < vis2)}>
                 {word}
@@ -344,67 +327,102 @@ function SimCard() {
           </div>
         )}
 
-        {/* Stage 3 */}
+        {/* Stage 3: adaptation gap — the money shot */}
         {stage === 3 && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 36px 1fr', height: '100%' }}>
-            <div>
-              <p style={{ fontSize: 9, fontFamily: DM_C, fontWeight: 500, color: BLUE, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 14 }}>Role demands</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {SEL1.map(w => (
-                  <span key={w} style={{ padding: '5px 13px', borderRadius: 100, fontSize: 12, fontFamily: DM_C, fontWeight: 500, background: 'rgba(255,255,255,0.92)', color: '#0a0a0a', display: 'inline-block' }}>{w}</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, height: '100%' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 44px 1fr' }}>
+              {/* Role demands */}
+              <div>
+                <p style={{ fontSize: 8, fontFamily: FONT, fontWeight: 600, color: BLUE, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 10 }}>Role demands</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start' }}>
+                  {SEL1.map(w => (
+                    <span key={w} style={{ padding: '5px 13px', borderRadius: 100, fontSize: 12, fontFamily: FONT, fontWeight: 600, letterSpacing: '-0.01em', background: 'rgba(255,255,255,0.94)', color: '#000', display: 'inline-block' }}>{w}</span>
+                  ))}
+                </div>
+              </div>
+              {/* Connector lines — now visible */}
+              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 22, paddingTop: 24 }}>
+                {SEL1.map((_, i) => (
+                  <div key={i} style={{
+                    height: 1.5, width: 44, borderRadius: 1,
+                    background: 'rgba(37,99,235,0.55)',
+                    opacity: connectors > i ? 1 : 0,
+                    transform: connectors > i ? 'scaleX(1)' : 'scaleX(0)',
+                    transformOrigin: 'left',
+                    transition: `opacity 300ms ease ${i * 160}ms, transform 300ms ease ${i * 160}ms`,
+                  }} />
                 ))}
               </div>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 26, paddingTop: 28 }}>
-              {SEL1.map((_, i) => (
-                <div key={i} style={{ height: 1, background: 'rgba(37,99,235,0.4)', width: connectors > i ? 36 : 0, transition: 'width 400ms ease', borderRadius: 1 }} />
-              ))}
-            </div>
-            <div>
-              <p style={{ fontSize: 9, fontFamily: DM_C, fontWeight: 500, color: 'rgba(255,255,255,0.28)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 14 }}>Natural style</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {SEL2.map(w => (
-                  <span key={w} style={{ padding: '5px 13px', borderRadius: 100, fontSize: 12, fontFamily: DM_C, border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.38)', display: 'inline-block' }}>{w}</span>
-                ))}
+              {/* Natural style */}
+              <div>
+                <p style={{ fontSize: 8, fontFamily: FONT, fontWeight: 600, color: 'rgba(255,255,255,0.22)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 10 }}>Natural style</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start' }}>
+                  {SEL2.map(w => (
+                    <span key={w} style={{ padding: '5px 13px', borderRadius: 100, fontSize: 12, fontFamily: FONT, letterSpacing: '-0.01em', border: '1px solid rgba(255,255,255,0.13)', color: 'rgba(255,255,255,0.45)', display: 'inline-block' }}>{w}</span>
+                  ))}
+                </div>
               </div>
+            </div>
+            {/* Gap callout — appears after connectors */}
+            <div style={{
+              padding: '11px 14px', borderRadius: 10,
+              background: 'rgba(37,99,235,0.07)', border: '1px solid rgba(37,99,235,0.18)',
+              opacity: gapIn ? 1 : 0, transform: gapIn ? 'none' : 'translateY(6px)',
+              transition: 'opacity 380ms ease, transform 380ms ease',
+            }}>
+              <p style={{ fontSize: 11, fontFamily: FONT, color: 'rgba(255,255,255,0.58)', lineHeight: 1.55, letterSpacing: '-0.01em' }}>
+                Role demands urgency and assertion.<br/>
+                This candidate defaults to deliberation.
+              </p>
             </div>
           </div>
         )}
 
-        {/* Stage 4 */}
+        {/* Stage 4: fit score ring */}
         {stage === 4 && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-            <div style={{ position: 'relative', width: 100, height: 100 }}>
-              <svg width="100" height="100" viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)' }}>
-                <circle cx="50" cy="50" r="38" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="5" />
-                <circle cx="50" cy="50" r="38" fill="none" stroke={BLUE} strokeWidth="5"
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 14 }}>
+            <div style={{ position: 'relative', width: 112, height: 112 }}>
+              <svg width="112" height="112" viewBox="0 0 112 112" style={{ transform: 'rotate(-90deg)' }}>
+                <circle cx="56" cy="56" r="40" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="6" />
+                <circle cx="56" cy="56" r="40" fill="none" stroke={BLUE} strokeWidth="6"
                   strokeLinecap="round" strokeDasharray={circum} strokeDashoffset={offset} />
               </svg>
               <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontFamily: BC_C, fontSize: 32, fontWeight: 700, color: TEXT, lineHeight: 1 }}>{score}</span>
+                <span style={{ fontFamily: FONT, fontSize: 38, fontWeight: 700, color: TEXT, lineHeight: 1, letterSpacing: '-0.04em' }}>{score}</span>
               </div>
             </div>
-            <p style={{ fontSize: 9, fontFamily: DM_C, color: 'rgba(255,255,255,0.28)', letterSpacing: '0.14em', textTransform: 'uppercase', marginTop: 16 }}>Behavioral fit score</p>
+            <div style={{ textAlign: 'center' }}>
+              <p style={{ fontSize: 9, fontFamily: FONT, fontWeight: 600, color: 'rgba(255,255,255,0.25)', letterSpacing: '0.14em', textTransform: 'uppercase' }}>Behavioral fit score</p>
+              <p style={{ fontSize: 11, fontFamily: FONT, color: 'rgba(255,255,255,0.32)', marginTop: 5, letterSpacing: '-0.01em' }}>94 signals across 5 dimensions</p>
+            </div>
           </div>
         )}
 
-        {/* Stage 5 */}
+        {/* Stage 5: archetype reveal */}
         {stage === 5 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div style={{ opacity: archIn ? 1 : 0, transform: archIn ? 'none' : 'translateY(10px)', transition: 'opacity 500ms ease, transform 500ms ease' }}>
-              <p style={{ fontSize: 9, fontFamily: DM_C, color: 'rgba(255,255,255,0.28)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 5 }}>Closest archetype match</p>
-              <p style={{ fontFamily: BC_C, fontSize: 38, fontWeight: 900, color: TEXT, letterSpacing: '0.06em', textTransform: 'uppercase', lineHeight: 1, marginBottom: 5 }}>The Operator</p>
-              <p style={{ fontSize: 12, fontFamily: DM_C, color: 'rgba(255,255,255,0.38)' }}>Deliberate · Output-focused</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{
+              opacity: archIn ? 1 : 0,
+              transform: archIn ? 'none' : 'translateY(8px)',
+              transition: 'opacity 400ms ease, transform 400ms ease',
+            }}>
+              <p style={{ fontSize: 8, fontFamily: FONT, fontWeight: 600, color: 'rgba(255,255,255,0.25)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 4 }}>Closest archetype</p>
+              <p style={{ fontFamily: FONT, fontSize: 30, fontWeight: 700, color: TEXT, letterSpacing: '-0.03em', lineHeight: 1.05, marginBottom: 4 }}>The Operator</p>
+              <p style={{ fontSize: 12, fontFamily: FONT, color: 'rgba(255,255,255,0.36)', letterSpacing: '-0.01em' }}>Deliberate · Output-focused</p>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+            <div style={{
+              display: 'flex', flexDirection: 'column', gap: 8,
+              opacity: archIn ? 1 : 0,
+              transition: 'opacity 400ms ease 120ms',
+            }}>
               {dimBars.map((d, i) => (
                 <div key={d.label}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <span style={{ fontSize: 9, fontFamily: DM_C, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{d.label}</span>
-                    <span style={{ fontSize: 9, fontFamily: DM_C, color: 'rgba(255,255,255,0.35)' }}>{d.val}</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                    <span style={{ fontSize: 9, fontFamily: FONT, fontWeight: 600, color: 'rgba(255,255,255,0.28)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{d.label}</span>
+                    <span style={{ fontSize: 9, fontFamily: FONT, color: 'rgba(255,255,255,0.28)' }}>{d.val}</span>
                   </div>
                   <div style={{ height: 3, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
-                    <div style={{ height: '100%', borderRadius: 2, background: BLUE, width: barsGo ? `${d.val}%` : '0%', transition: `width 500ms ease ${i * 110}ms` }} />
+                    <div style={{ height: '100%', borderRadius: 2, background: BLUE, width: barsGo ? `${d.val}%` : '0%', transition: `width 500ms ease ${i * 90}ms` }} />
                   </div>
                 </div>
               ))}
@@ -413,23 +431,36 @@ function SimCard() {
         )}
       </div>
 
-      {/* Bottom bar */}
-      <div style={{ padding: '10px 20px 14px', borderTop: '1px solid rgba(255,255,255,0.05)', flexShrink: 0 }}>
-        <p style={{ fontSize: 9, fontFamily: DM_C, color: 'rgba(255,255,255,0.2)', letterSpacing: '0.06em' }}>
-          {SIM_FOOTERS[stage]}
+      {/* ── Footer ─────────────────────────────────────────────────── */}
+      <div style={{ padding: '10px 20px 14px', flexShrink: 0 }}>
+        <p style={{ fontSize: 9, fontFamily: FONT, color: 'rgba(255,255,255,0.14)', letterSpacing: '0.04em' }}>
+          80 behavioral signals · 5 dimensions · 20 archetypes
         </p>
       </div>
 
-      {/* Cursor dot */}
+      {/* ── SVG cursor pointer ─────────────────────────────────────── */}
       {cursorVis && (
         <div style={{
           position: 'absolute', pointerEvents: 'none', zIndex: 10,
           left: cursorPos.x, top: cursorPos.y,
-          width: 8, height: 8, borderRadius: '50%', background: '#fff',
-          transform: `translate(-50%,-50%) scale(${clicking ? 0.65 : 1})`,
-          transition: 'left 280ms cubic-bezier(0.4,0,0.2,1), top 280ms cubic-bezier(0.4,0,0.2,1), transform 80ms ease',
-          boxShadow: '0 0 8px rgba(255,255,255,0.5)',
-        }} />
+          transformOrigin: '2px 1px',
+          transform: clicking ? 'scale(0.82)' : 'scale(1)',
+          transition: [
+            'left 230ms cubic-bezier(0.25,0.46,0.45,0.94)',
+            'top 230ms cubic-bezier(0.25,0.46,0.45,0.94)',
+            'transform 80ms ease',
+          ].join(', '),
+        }}>
+          <svg width="14" height="18" viewBox="0 0 14 18" fill="none">
+            <path
+              d="M2 1.5 L2 14 L5.2 11.2 L7.6 16.8 L9.4 16 L7 10.4 L11.5 10.4 Z"
+              fill="white"
+              stroke="rgba(0,0,0,0.18)"
+              strokeWidth="0.6"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </div>
       )}
     </div>
   )
