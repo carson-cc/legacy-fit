@@ -834,6 +834,8 @@ function ArchCard({ profile, catColor, catKey, onHover, sectionVisible, cardInde
             textTransform: 'uppercase', letterSpacing: '0.14em',
             marginBottom: 8,
             fontFamily: '"DM Sans", -apple-system, sans-serif',
+            paddingRight: 88,
+            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
           }}>
             {ARCH_ESSENCE[dn]}
           </div>
@@ -1258,42 +1260,30 @@ export default function ArchetypesPage() {
           />
         </div>
 
-        {/* Framing text + subtitle — centered top */}
+        {/* Framing text — centered, below nav */}
         <div style={{
-          position: 'absolute', top: 24, left: '50%', transform: 'translateX(-50%)',
+          position: 'absolute', top: 72, left: '50%', transform: 'translateX(-50%)',
           textAlign: 'center', pointerEvents: 'none', zIndex: 2, whiteSpace: 'nowrap',
-          display: 'flex', flexDirection: 'column', gap: 6,
+          display: 'flex', flexDirection: 'column', gap: 5,
         }}>
           <p style={{
             margin: 0, fontSize: 10, fontWeight: 300, letterSpacing: '0.22em',
-            textTransform: 'uppercase', color: 'rgba(238,236,230,0.32)',
+            textTransform: 'uppercase', color: 'rgba(238,236,230,0.28)',
             fontFamily: '"DM Sans", -apple-system, sans-serif',
           }}>
             BEHAVIORAL MAP
           </p>
           <p style={{
-            margin: 0, fontSize: 16, fontWeight: 300,
-            color: 'rgba(238,236,230,0.75)', fontFamily: '"DM Sans", -apple-system, sans-serif',
+            margin: 0, fontSize: 14, fontWeight: 300,
+            color: 'rgba(238,236,230,0.60)', fontFamily: '"DM Sans", -apple-system, sans-serif',
           }}>
             Every person you&#39;ve ever hired sits somewhere on this map.
-          </p>
-          <p style={{
-            margin: 0, fontSize: 13, fontWeight: 300, fontStyle: 'italic',
-            color: 'rgba(238,236,230,0.42)', fontFamily: '"DM Sans", -apple-system, sans-serif',
-          }}>
-            Speed of execution × orientation toward people vs. output.
-          </p>
-          <p style={{
-            margin: 0, fontSize: 12, fontWeight: 300, fontStyle: 'italic',
-            color: 'rgba(238,236,230,0.28)', fontFamily: '"DM Sans", -apple-system, sans-serif',
-          }}>
-            Use this to understand how candidates will behave in your environment.
           </p>
         </div>
 
         {/* Axis labels — DOM so they can animate */}
         <span style={{
-          position: 'absolute', left: '50%', top: 20, transform: 'translateX(-50%)',
+          position: 'absolute', left: '50%', top: 112, transform: 'translateX(-50%)',
           fontSize: 11, fontWeight: 300, color: axisColors.top,
           textTransform: 'uppercase', letterSpacing: '0.14em',
           pointerEvents: 'none', zIndex: 2,
@@ -1328,8 +1318,8 @@ export default function ArchetypesPage() {
 
         {/* Corner category labels — STABILIZERS top-left */}
         {([
-          { key: 'strategic_drive',   pos: { top: 20, left: 24 },    align: 'left'  },
-          { key: 'people_influence',  pos: { top: 20, right: 24 },   align: 'right' },
+          { key: 'strategic_drive',   pos: { top: 72, left: 24 },    align: 'left'  },
+          { key: 'people_influence',  pos: { top: 72, right: 24 },   align: 'right' },
           { key: 'process_structure', pos: { bottom: 20, left: 24 },  align: 'left'  },
           { key: 'field_command',     pos: { bottom: 20, right: 24 }, align: 'right' },
         ] as const).map(({ key, pos, align }) => {
@@ -1461,7 +1451,7 @@ export default function ArchetypesPage() {
         </div>
 
         {/* Archetype blocks */}
-        <div ref={archetypeBlocksRef} style={{ padding: 'clamp(40px, 6vh, 72px) clamp(20px, 5vw, 40px) clamp(60px, 8vh, 100px)', maxWidth: 'min(1320px, calc(100vw - clamp(40px, 8vw, 160px)))', margin: '0 auto', width: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 64 }}>
+        <div ref={archetypeBlocksRef} style={{ padding: 'clamp(40px, 6vh, 72px) clamp(20px, 5vw, 40px) clamp(60px, 8vh, 100px)', maxWidth: 'min(1320px, calc(100vw - clamp(40px, 8vw, 160px)))', margin: '0 auto', width: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 48 }}>
           {grouped.map((g, idx) => (
             <div key={g.key}>
               <div ref={catRefs[idx]} style={{
