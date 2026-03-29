@@ -2,11 +2,13 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { FitModel } from '@/app/components/FitModel'
+import Nav from '@/app/components/Nav'
 
 export default function HomePage() {
   const [navLight, setNavLight] = useState(false)
   const [lineDrawn, setLineDrawn] = useState(false)
   const [showWhy, setShowWhy] = useState(false)
+  const [activeSection, setActiveSection] = useState(0)
   const beat4Ref = useRef<HTMLDivElement>(null)
   const snapRef = useRef<HTMLDivElement>(null)
   const reportRef = useRef<HTMLElement | null>(null)
@@ -91,69 +93,29 @@ export default function HomePage() {
     }
   }, [])
 
+  useEffect(() => {
+    const container = snapRef.current
+    if (!container) return
+    const sections = Array.from(container.querySelectorAll('section'))
+    const obs = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            setActiveSection(sections.indexOf(entry.target as HTMLElement))
+          }
+        })
+      },
+      { threshold: 0.5, root: container }
+    )
+    sections.forEach(s => obs.observe(s))
+    return () => obs.disconnect()
+  }, [])
+
   return (
     <div className="snap-page" ref={snapRef}>
 
       {/* FIXED NAV */}
-      <nav style={{
-        position: 'fixed',
-        top: 0, left: 0, right: 0,
-        zIndex: 100,
-        padding: '18px 48px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        background: navLight
-          ? 'rgba(245,245,240,0.96)'
-          : 'transparent',
-        backdropFilter: navLight ? 'blur(12px)' : 'none',
-        transition: 'all 300ms ease'
-      }}>
-        <span style={{
-          fontSize: 15,
-          fontWeight: 700,
-          color: navLight ? '#000' : '#fff',
-          letterSpacing: '-0.01em',
-          transition: 'color 300ms ease'
-        }}>
-          Veltro
-        </span>
-        <div className="nav-links-desktop" style={{ display: 'flex', gap: 28, alignItems: 'center' }}>
-          {[
-            { label: 'Sample Report', href: '/sample-report' },
-            { label: 'Method', href: '/profiles' },
-            { label: 'Sign in', href: '/login' }
-          ].map(link => (
-            <a key={link.label} href={link.href} style={{
-              fontSize: 13,
-              color: navLight
-                ? 'rgba(0,0,0,0.4)'
-                : 'rgba(255,255,255,0.4)',
-              textDecoration: 'none',
-              transition: 'color 300ms ease'
-            }}>
-              {link.label}
-            </a>
-          ))}
-          <a href="/sample-report" style={{
-            fontSize: 13,
-            fontWeight: 600,
-            color: navLight ? '#000' : '#fff',
-            background: navLight
-              ? 'rgba(0,0,0,0.06)'
-              : 'rgba(255,255,255,0.1)',
-            border: `1px solid ${navLight
-              ? 'rgba(0,0,0,0.12)'
-              : 'rgba(255,255,255,0.15)'}`,
-            padding: '7px 14px',
-            borderRadius: 6,
-            textDecoration: 'none',
-            transition: 'all 300ms ease'
-          }}>
-            See the report →
-          </a>
-        </div>
-      </nav>
+      <Nav light={navLight} />
 
       {/* ============================================
           BEAT 1 — The Recognition → The Shift
@@ -188,32 +150,6 @@ export default function HomePage() {
           </p>
         </div>
 
-        <div style={{
-          position: 'absolute',
-          bottom: 36,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 6,
-          opacity: showWhy ? 0 : 0.35,
-          transition: 'opacity 300ms ease'
-        }}>
-          <div style={{
-            width: 1,
-            height: 32,
-            background: 'linear-gradient(180deg,rgba(255,255,255,0.6),transparent)'
-          }} />
-          <span style={{
-            fontSize: 9,
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase',
-            color: 'rgba(255,255,255,0.5)'
-          }}>
-            Scroll
-          </span>
-        </div>
       </section>
 
       {/* ============================================
@@ -887,6 +823,31 @@ export default function HomePage() {
           </p>
         </div>
       </section>
+
+      {/* DOT NAV */}
+      <div style={{
+        position: 'fixed',
+        right: 24,
+        top: '50%',
+        transform: 'translateY(-50%)',
+        zIndex: 50,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 10,
+        pointerEvents: 'none',
+      }}>
+        {[0, 1, 2, 3, 4].map(i => (
+          <div key={i} style={{
+            width: 5,
+            height: 5,
+            borderRadius: '50%',
+            background: activeSection === i
+              ? 'rgba(255,255,255,0.75)'
+              : 'rgba(255,255,255,0.2)',
+            transition: 'all 300ms ease',
+          }} />
+        ))}
+      </div>
 
     </div>
   )

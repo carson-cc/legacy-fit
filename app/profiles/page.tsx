@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { FitModel } from '@/app/components/FitModel'
 import type { FitModelScores } from '@/app/components/FitModel'
+import Nav from '@/app/components/Nav'
 
 // ─── Brand tokens ────────────────────────────────────────────────────
 const BG    = '#080808'
@@ -376,7 +377,9 @@ export default function MethodPage() {
   const [activeProfile, setActiveProfile] = useState(0)
   const [fading, setFading] = useState(false)
   const [tooltip, setTooltip] = useState<number | null>(null)
+  const [activeSection, setActiveSection] = useState(0)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const snapContainerRef = useRef<HTMLDivElement>(null)
 
 
   // Profile rotation
@@ -389,6 +392,25 @@ export default function MethodPage() {
       }, 300)
     }, 3500)
     return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
+  }, [])
+
+  // Dot nav
+  useEffect(() => {
+    const container = snapContainerRef.current
+    if (!container) return
+    const sections = Array.from(container.querySelectorAll('section'))
+    const obs = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            setActiveSection(sections.indexOf(entry.target as HTMLElement))
+          }
+        })
+      },
+      { threshold: 0.5, root: container }
+    )
+    sections.forEach(s => obs.observe(s))
+    return () => obs.disconnect()
   }, [])
 
   const profile = PROFILES[activeProfile]
@@ -416,36 +438,10 @@ export default function MethodPage() {
   })
 
   return (
-    <div className="snap-page" style={{ background: BG, color: TEXT, fontFamily: FONT }}>
+    <div className="snap-page" ref={snapContainerRef} style={{ background: BG, color: TEXT, fontFamily: FONT }}>
 
       {/* ── NAV ─────────────────────────────────────────────────────── */}
-      <nav style={{
-        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
-        padding: '18px 48px', display: 'flex', alignItems: 'center',
-        justifyContent: 'space-between',
-        background: 'transparent',
-      }}>
-        <a href="/" style={{ fontSize: 15, fontWeight: 700, color: TEXT, fontFamily: FONT, textDecoration: 'none', letterSpacing: '-0.01em' }}>Veltro</a>
-        <div style={{ display: 'flex', gap: 28, alignItems: 'center' }}>
-          {[
-            { label: 'Sample Report', href: '/sample-report' },
-            { label: 'Method', href: '/profiles' },
-            { label: 'Sign in', href: '/login' },
-          ].map(l => (
-            <a key={l.label} href={l.href} style={{
-              fontSize: 13, fontFamily: FONT,
-              color: l.label === 'Method' ? TEXT : MUTED,
-              fontWeight: l.label === 'Method' ? 500 : 300,
-              textDecoration: 'none',
-            }}>{l.label}</a>
-          ))}
-          <a href="/sample-report" style={{
-            fontSize: 13, fontFamily: FONT, fontWeight: 500, color: TEXT,
-            border: `1px solid ${BORD}`, padding: '7px 16px',
-            borderRadius: 100, textDecoration: 'none',
-          }}>See the report →</a>
-        </div>
-      </nav>
+      <Nav activePage="profiles" />
 
       {/* ══════════════════════════════════════════════════════════════
           SECTION 1 — HERO
@@ -484,7 +480,6 @@ export default function MethodPage() {
                 fontSize: 16, fontWeight: 700,
                 padding: '15px 36px', borderRadius: 9, textDecoration: 'none',
               }}>See a full recommendation</a>
-              <span style={{ fontSize: 13, fontFamily: FONT, fontWeight: 300, color: MUTED }}>Scroll to see how it works ↓</span>
             </div>
           </div>
 
@@ -959,6 +954,31 @@ export default function MethodPage() {
           </div>
         </div>
       </section>
+
+      {/* DOT NAV */}
+      <div style={{
+        position: 'fixed',
+        right: 24,
+        top: '50%',
+        transform: 'translateY(-50%)',
+        zIndex: 50,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 10,
+        pointerEvents: 'none',
+      }}>
+        {[0, 1, 2, 3, 4].map(i => (
+          <div key={i} style={{
+            width: 5,
+            height: 5,
+            borderRadius: '50%',
+            background: activeSection === i
+              ? 'rgba(255,255,255,0.75)'
+              : 'rgba(255,255,255,0.2)',
+            transition: 'all 300ms ease',
+          }} />
+        ))}
+      </div>
 
     </div>
   )

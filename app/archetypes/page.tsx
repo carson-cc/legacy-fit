@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { REFERENCE_PROFILES } from '@/lib/data/profiles'
 import { PRODUCT_NAME, COMPANY_EMAIL } from '@/lib/brand'
+import Nav from '@/app/components/Nav'
 
 // ─── CATEGORY CONFIG ──────────────────────────────────────────────────────────
 const CATS = [
@@ -499,15 +500,16 @@ const RIGHT_CATS = ['field_command', 'people_influence'] as const
 export default function ArchetypesPage() {
   const [activeCat,      setActiveCat]      = useState<string | null>(null)
   const [hoveredProfile, setHoveredProfile] = useState<string | null>(null)
-  const [scrolled,       setScrolled]       = useState(false)
   const [heroWords,      setHeroWords]      = useState(0)
   const [heroGhost,      setHeroGhost]      = useState(false)
+  const [activeSection,  setActiveSection]  = useState(0)
 
   const ctaBandRef = useRef<HTMLDivElement>(null)
   const cat0Ref    = useRef<HTMLDivElement>(null)
   const cat1Ref    = useRef<HTMLDivElement>(null)
   const cat2Ref    = useRef<HTMLDivElement>(null)
   const cat3Ref    = useRef<HTMLDivElement>(null)
+  const mainRef    = useRef<HTMLElement>(null)
 
   const setActive  = useCallback((k: string | null) => setActiveCat(k), [])
   const setHovProf = useCallback((n: string | null) => setHoveredProfile(n), [])
@@ -526,15 +528,28 @@ export default function ArchetypesPage() {
     return () => { try { document.head.removeChild(link) } catch {} }
   }, [])
 
-  useEffect(() => {
-    const h = () => setScrolled(window.scrollY > 40)
-    window.addEventListener('scroll', h, { passive: true })
-    return () => window.removeEventListener('scroll', h)
-  }, [])
 
   useEffect(() => {
     HERO_WORDS.forEach((_, i) => setTimeout(() => setHeroWords(i + 1), 80 + i * 60))
     setTimeout(() => setHeroGhost(true), 80 + HERO_WORDS.length * 60 + 220)
+  }, [])
+
+  useEffect(() => {
+    const main = mainRef.current
+    if (!main) return
+    const sections = Array.from(main.querySelectorAll(':scope > section'))
+    const obs = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            setActiveSection(sections.indexOf(entry.target as HTMLElement))
+          }
+        })
+      },
+      { threshold: 0.1 }
+    )
+    sections.forEach(s => obs.observe(s))
+    return () => obs.disconnect()
   }, [])
 
   const grouped = CATS.map(c => ({
@@ -552,48 +567,10 @@ export default function ArchetypesPage() {
   const rightCats = CATS.filter(c => (RIGHT_CATS as readonly string[]).includes(c.key))
 
   return (
-    <main style={{ background: BG, color: '#FFF', fontFamily: '"DM Sans", -apple-system, sans-serif', overflowX: 'hidden' }}>
+    <main ref={mainRef} style={{ background: BG, color: '#FFF', fontFamily: '"DM Sans", -apple-system, sans-serif', overflowX: 'hidden' }}>
 
       {/* ── NAV ── */}
-      <nav style={{
-        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, height: 64,
-        background: scrolled ? 'rgba(10,10,10,0.97)' : 'rgba(10,10,10,0.88)',
-        backdropFilter: 'blur(16px)',
-        borderBottom: '1px solid rgba(255,255,255,0.07)',
-        transition: 'background 200ms ease',
-      }}>
-        <div className="nav-inner" style={{ maxWidth: MAX, margin: '0 auto', padding: '0 40px', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Link href="/" style={{ fontSize: 15, fontWeight: 700, color: '#FFF', textDecoration: 'none', letterSpacing: '-0.02em' }}>{PRODUCT_NAME}</Link>
-          <div className="nav-links" style={{ display: 'flex', gap: 32, alignItems: 'center' }}>
-            {([
-              { label: 'Product',       href: '/#how-it-works' },
-              { label: 'Method',        href: '/profiles' },
-              { label: 'Archetypes',    href: '/archetypes' },
-              { label: 'Sample Report', href: '/sample-report' },
-            ] as const).map(l => (
-              <Link key={l.label} href={l.href} style={{
-                fontSize: 13, fontWeight: l.href === '/archetypes' ? 500 : 400,
-                color: l.href === '/archetypes' ? '#FFF' : 'rgba(255,255,255,0.42)',
-                textDecoration: 'none', transition: 'color 150ms ease',
-              }}
-                onMouseEnter={e => (e.currentTarget.style.color = '#FFF')}
-                onMouseLeave={e => (e.currentTarget.style.color = l.href === '/archetypes' ? '#FFF' : 'rgba(255,255,255,0.42)')}
-              >{l.label}</Link>
-            ))}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <Link href="/login" className="nav-signin" style={{ fontSize: 13, color: 'rgba(255,255,255,0.42)', textDecoration: 'none', transition: 'color 150ms ease' }}
-              onMouseEnter={e => (e.currentTarget.style.color = '#FFF')}
-              onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.42)')}
-            >Sign in</Link>
-            <a href={`mailto:${COMPANY_EMAIL}`} className="nav-cta" style={{
-              height: 34, padding: '0 16px', borderRadius: 7,
-              background: '#FFF', color: BG, fontSize: 13, fontWeight: 600,
-              display: 'inline-flex', alignItems: 'center', textDecoration: 'none',
-            }}>Talk to us</a>
-          </div>
-        </div>
-      </nav>
+      <Nav activePage="archetypes" />
 
       {/* ── HERO ── */}
       <section style={{
@@ -660,13 +637,6 @@ export default function ArchetypesPage() {
           </div>
         </div>
 
-        {/* Scroll indicator */}
-        <div style={{ position: 'absolute', bottom: 28, left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
-          <div style={{ width: 1, height: 28, position: 'relative', overflow: 'hidden' }}>
-            <div style={{ position: 'absolute', width: '100%', background: 'rgba(255,255,255,0.30)', animation: 'scrollDrop 1.8s ease-in-out infinite' }} />
-          </div>
-          <span style={{ fontSize: 9, letterSpacing: '0.14em', color: 'rgba(255,255,255,0.18)' }}>SCROLL</span>
-        </div>
       </section>
 
       {/* ── TICKER ── */}
@@ -823,12 +793,8 @@ export default function ArchetypesPage() {
           0%   { opacity: 0.035; transform: translate(-50%,-50%) scale(0.3); }
           100% { opacity: 0;     transform: translate(-50%,-50%) scale(1.9); }
         }
-        @keyframes scrollDrop {
-          0%   { top: -50%; height: 50%; opacity: 0; }
-          20%  { opacity: 0.7; }
-          80%  { opacity: 0.7; }
-          100% { top: 100%; height: 50%; opacity: 0; }
-        }
+        html, body { scrollbar-width: none; -ms-overflow-style: none; }
+        html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; }
         @media (max-width: 768px) {
           .nav-links  { display: none !important; }
           .nav-signin { display: none !important; }
@@ -837,6 +803,32 @@ export default function ArchetypesPage() {
           .radar-col-left, .radar-col-right { display: none !important; }
         }
       `}</style>
+
+      {/* DOT NAV */}
+      <div style={{
+        position: 'fixed',
+        right: 24,
+        top: '50%',
+        transform: 'translateY(-50%)',
+        zIndex: 50,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 10,
+        pointerEvents: 'none',
+      }}>
+        {[0, 1, 2].map(i => (
+          <div key={i} style={{
+            width: 5,
+            height: 5,
+            borderRadius: '50%',
+            background: activeSection === i
+              ? 'rgba(255,255,255,0.75)'
+              : 'rgba(255,255,255,0.2)',
+            transition: 'all 300ms ease',
+          }} />
+        ))}
+      </div>
+
     </main>
   )
 }
