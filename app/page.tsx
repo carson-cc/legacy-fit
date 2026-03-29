@@ -291,12 +291,12 @@ export default function HomePage() {
 
             {/* RIGHT COLUMN — 60% — 3-layer decision hierarchy */}
             <div className="report-card-right" style={{
-              flex: 1, display: 'flex', flexDirection: 'column',
+              flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
               padding: '18px 22px', overflow: 'hidden'
             }}>
 
               {/* ── LAYER 1: DECISION (anchor, immediate) ── */}
-              <div style={{ paddingBottom: 16, borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
+              <div style={{ paddingBottom: 12, borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
                   <span style={{
                     fontSize: 64, fontFamily: '"Barlow Condensed", sans-serif',
@@ -316,7 +316,7 @@ export default function HomePage() {
               {/* ── LAYER 2: INSIGHT (where decisions are made) ── */}
 
               {/* Core insight — Primary Tension, dominant */}
-              <div style={{ paddingTop: 16, paddingBottom: 16, borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
+              <div style={{ paddingBottom: 12, borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
                 <p style={{ fontSize: 9, color: 'rgba(200,168,50,0.6)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 10 }}>
                   Primary Tension
                 </p>
@@ -344,7 +344,7 @@ export default function HomePage() {
               </div>
 
               {/* Hire If / Don't Hire If — the actual decision */}
-              <div style={{ paddingTop: 16, paddingBottom: 16, borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
+              <div style={{ paddingBottom: 12, borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                   <div>
                     <p style={{ fontSize: 9, color: '#3aa868', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 9 }}>✔ Hire if</p>
@@ -366,7 +366,7 @@ export default function HomePage() {
               </div>
 
               {/* The one question */}
-              <div style={{ paddingTop: 14, paddingBottom: 14, borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
+              <div style={{ paddingBottom: 12, borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
                 <p style={{ fontSize: 9, color: 'rgba(238,236,230,0.25)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6 }}>
                   The one thing to verify
                 </p>
@@ -375,11 +375,8 @@ export default function HomePage() {
                 </p>
               </div>
 
-              {/* Flex spacer — pushes evidence to bottom */}
-              <div style={{ flex: 1 }} />
-
               {/* ── LAYER 3: EVIDENCE (de-emphasized, supporting) ── */}
-              <div style={{ paddingTop: 12, paddingBottom: 4, borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
 
                 {/* Signal bars — visual, no deltas */}
                 <p style={{ fontSize: 9, color: 'rgba(238,236,230,0.2)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>
