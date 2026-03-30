@@ -169,6 +169,7 @@ export default function JobDetailPage() {
   const [inviteLink, setInviteLink] = useState<string | null>(null)
   const [inviteEmailSent, setInviteEmailSent] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [resending, setResending] = useState<string | null>(null)
 
   /* Fetch */
   const fetchJob = useCallback(() => {
@@ -238,11 +239,20 @@ export default function JobDetailPage() {
   }
 
   async function handleResend(inviteId: string) {
+    setResending(inviteId)
     try {
       const res = await fetch(`/api/jobs/${id}/invites/${inviteId}/resend`, { method: 'POST' })
-      if (res.ok) showToast('Invite resent')
+      if (res.ok) {
+        showToast('Invite resent')
+        fetchJob()
+      } else {
+        const body = await res.json().catch(() => ({}))
+        showToast(body.error || 'Failed to resend')
+      }
     } catch {
-      /* silent */
+      showToast('Network error — try again')
+    } finally {
+      setResending(null)
     }
   }
 
@@ -892,19 +902,20 @@ export default function JobDetailPage() {
                 </div>
                 <button
                   onClick={() => handleResend(invite.id)}
+                  disabled={resending === invite.id}
                   style={{
                     background: 'none',
                     border: 'none',
                     fontSize: 12,
-                    color: '#2563EB',
-                    cursor: 'pointer',
+                    color: resending === invite.id ? '#9CA3AF' : '#2563EB',
+                    cursor: resending === invite.id ? 'default' : 'pointer',
                     textDecoration: 'underline',
                     transition: 'color 180ms ease',
                   }}
-                  onMouseEnter={e => (e.currentTarget.style.color = '#1D4ED8')}
-                  onMouseLeave={e => (e.currentTarget.style.color = '#2563EB')}
+                  onMouseEnter={e => { if (resending !== invite.id) e.currentTarget.style.color = '#1D4ED8' }}
+                  onMouseLeave={e => { if (resending !== invite.id) e.currentTarget.style.color = '#2563EB' }}
                 >
-                  Resend
+                  {resending === invite.id ? 'Sending…' : 'Resend'}
                 </button>
               </div>
             ))}

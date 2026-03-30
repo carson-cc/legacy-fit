@@ -47,7 +47,8 @@ export async function POST(req: NextRequest, { params }: Params) {
 
     return NextResponse.json({ ok: true })
   } catch (err) {
-    console.error('Resend error:', err)
-    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('Resend error:', msg)
+    return NextResponse.json({ error: msg }, { status: 500 })
   }
 }
