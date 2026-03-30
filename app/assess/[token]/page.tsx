@@ -203,7 +203,6 @@ export default function AssessPage() {
   // Results animation
   const [resultMoment, setResultMoment] = useState(0) // 0-12
   const [hoveredDim, setHoveredDim] = useState<number | null>(null)
-  const [phase2Visible, setPhase2Visible] = useState(false)
   const [expandedDim, setExpandedDim] = useState<number | null>(null)
 
   // Timer management (all timeouts tracked for cleanup)
@@ -313,7 +312,6 @@ export default function AssessPage() {
     if (phase !== 'complete' || !completionData) return
     setResultMoment(0)
     setHoveredDim(null)
-    setPhase2Visible(false)
     setExpandedDim(null)
 
     // Greeting → fades → pentagon mounts → name blur-reveals → category → separator+line → insights → emotional → close → explore cue
@@ -839,28 +837,19 @@ export default function AssessPage() {
               </div>
             )}
 
-            {/* ── Explore cue ── */}
-            {resultMoment >= 12 && !phase2Visible && (
-              <button
-                onClick={() => {
-                  setPhase2Visible(true)
-                  schedule(() => {
-                    document.getElementById('phase2-anchor')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                  }, 80)
-                }}
-                style={{
-                  marginTop: 56, background: 'none', border: 'none', cursor: 'pointer',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
-                  animation: 'fadeIn 600ms ease both', padding: '8px 16px',
-                }}
-              >
-                <span style={{ fontSize: 12, color: 'rgba(238,236,230,0.32)', fontWeight: 300, letterSpacing: '0.06em' }}>
-                  Explore your profile
+            {/* ── Explore divider (auto-reveals, no click required) ── */}
+            {resultMoment >= 12 && (
+              <div style={{
+                marginTop: 64, display: 'flex', alignItems: 'center', gap: 14,
+                width: '100%', maxWidth: 500,
+                animation: 'fadeIn 600ms ease both',
+              }}>
+                <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.07)' }} />
+                <span style={{ fontSize: 10, color: 'rgba(238,236,230,0.28)', letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 400, whiteSpace: 'nowrap' }}>
+                  your behavioral profile
                 </span>
-                <svg width="14" height="8" viewBox="0 0 14 8" fill="none">
-                  <path d="M1 1L7 7L13 1" stroke="rgba(238,236,230,0.25)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </button>
+                <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.07)' }} />
+              </div>
             )}
 
           </div>
@@ -869,7 +858,7 @@ export default function AssessPage() {
         {/* ═══════════════════════════════════════════════════
             PHASE 2 — BEHAVIORAL SYSTEM EXPLORER
         ═══════════════════════════════════════════════════ */}
-        {phase2Visible && completionData && (() => {
+        {resultMoment >= 12 && completionData && (() => {
           const depth = DEPTH[completionData.profileName]
           if (!depth) return null
 
@@ -901,15 +890,6 @@ export default function AssessPage() {
                 fontFamily: 'DM Sans, -apple-system, BlinkMacSystemFont, sans-serif',
               }}
             >
-              {/* Section divider */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16, margin: '0 0 64px', ...sectionStyle(0) }}>
-                <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.06)' }} />
-                <span style={{ fontSize: 10, color: 'rgba(238,236,230,0.2)', letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 400 }}>
-                  behavioral profile
-                </span>
-                <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.06)' }} />
-              </div>
-
               {/* ── 1. HOW YOU SHOW UP ── */}
               <div style={{ marginBottom: 56, ...sectionStyle(80) }}>
                 <p style={labelStyle()}>How you show up</p>
