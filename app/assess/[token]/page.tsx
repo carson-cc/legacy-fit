@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import { ADJECTIVES } from '@/lib/data/adjectives'
 import { REFERENCE_PROFILES } from '@/lib/data/profiles'
+import { DEPTH, DIM_DEPTH } from '@/lib/data/depth'
 import { PRODUCT_NAME } from '@/lib/brand'
 
 // ─── Utilities ───────────────────────────────────────────────────────────────
@@ -200,8 +201,10 @@ export default function AssessPage() {
   const [procStage, setProcStage] = useState(0) // 0=black,1=line,2-6=dims,7=fadeout
 
   // Results animation
-  const [resultMoment, setResultMoment] = useState(0) // 0-11
+  const [resultMoment, setResultMoment] = useState(0) // 0-12
   const [hoveredDim, setHoveredDim] = useState<number | null>(null)
+  const [phase2Visible, setPhase2Visible] = useState(false)
+  const [expandedDim, setExpandedDim] = useState<number | null>(null)
 
   // Timer management (all timeouts tracked for cleanup)
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
@@ -310,8 +313,10 @@ export default function AssessPage() {
     if (phase !== 'complete' || !completionData) return
     setResultMoment(0)
     setHoveredDim(null)
+    setPhase2Visible(false)
+    setExpandedDim(null)
 
-    // Greeting → fades → pentagon mounts → name blur-reveals → category → separator+line → insights → emotional → close
+    // Greeting → fades → pentagon mounts → name blur-reveals → category → separator+line → insights → emotional → close → explore cue
     schedule(() => setResultMoment(1),   200)   // greeting appears
     schedule(() => setResultMoment(2),   500)   // greeting fades
     schedule(() => setResultMoment(3),   600)   // pentagon + content mounts; CSS handles rings/axis/stroke internally
@@ -323,6 +328,7 @@ export default function AssessPage() {
     schedule(() => setResultMoment(9),  2680)   // WATCH FOR
     schedule(() => setResultMoment(10), 3060)   // emotional line
     schedule(() => setResultMoment(11), 3620)   // closing box
+    schedule(() => setResultMoment(12), 4600)   // explore cue
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, completionData])
 
@@ -833,8 +839,340 @@ export default function AssessPage() {
               </div>
             )}
 
+            {/* ── Explore cue ── */}
+            {resultMoment >= 12 && !phase2Visible && (
+              <button
+                onClick={() => {
+                  setPhase2Visible(true)
+                  schedule(() => {
+                    document.getElementById('phase2-anchor')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                  }, 80)
+                }}
+                style={{
+                  marginTop: 56, background: 'none', border: 'none', cursor: 'pointer',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+                  animation: 'fadeIn 600ms ease both', padding: '8px 16px',
+                }}
+              >
+                <span style={{ fontSize: 12, color: 'rgba(238,236,230,0.32)', fontWeight: 300, letterSpacing: '0.06em' }}>
+                  Explore your profile
+                </span>
+                <svg width="14" height="8" viewBox="0 0 14 8" fill="none">
+                  <path d="M1 1L7 7L13 1" stroke="rgba(238,236,230,0.25)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+            )}
+
           </div>
         )}
+
+        {/* ═══════════════════════════════════════════════════
+            PHASE 2 — BEHAVIORAL SYSTEM EXPLORER
+        ═══════════════════════════════════════════════════ */}
+        {phase2Visible && completionData && (() => {
+          const depth = DEPTH[completionData.profileName]
+          if (!depth) return null
+
+          const sectionStyle = (delay: number): React.CSSProperties => ({
+            animation: `fadeUp 420ms ease ${delay}ms both`,
+          })
+
+          const labelStyle = (color = 'rgba(238,236,230,0.28)'): React.CSSProperties => ({
+            fontSize: 10, color, textTransform: 'uppercase' as const,
+            letterSpacing: '0.2em', fontWeight: 600, margin: '0 0 6px',
+          })
+
+          const subLabelStyle = (color = 'rgba(238,236,230,0.38)'): React.CSSProperties => ({
+            fontSize: 10, color, textTransform: 'uppercase' as const,
+            letterSpacing: '0.16em', fontWeight: 600, margin: '0 0 10px',
+          })
+
+          const bulletStyle: React.CSSProperties = {
+            fontSize: 14, color: 'rgba(238,236,230,0.7)', lineHeight: 1.7,
+            margin: '0 0 6px', fontWeight: 300, paddingLeft: 14, position: 'relative',
+          }
+
+          return (
+            <div
+              id="phase2-anchor"
+              style={{
+                width: '100%', maxWidth: 540, margin: '0 auto',
+                padding: '0 24px 96px',
+                fontFamily: 'DM Sans, -apple-system, BlinkMacSystemFont, sans-serif',
+              }}
+            >
+              {/* Section divider */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16, margin: '0 0 64px', ...sectionStyle(0) }}>
+                <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.06)' }} />
+                <span style={{ fontSize: 10, color: 'rgba(238,236,230,0.2)', letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 400 }}>
+                  behavioral profile
+                </span>
+                <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.06)' }} />
+              </div>
+
+              {/* ── 1. HOW YOU SHOW UP ── */}
+              <div style={{ marginBottom: 56, ...sectionStyle(80) }}>
+                <p style={labelStyle()}>How you show up</p>
+                <h2 style={{ fontSize: 20, fontWeight: 300, color: '#eeece6', margin: '0 0 32px', lineHeight: 1.3 }}>
+                  Three lenses on the same signal.
+                </h2>
+
+                {/* A: How you operate */}
+                <div style={{ marginBottom: 28 }}>
+                  <p style={subLabelStyle('rgba(238,236,230,0.38)')}>How you operate</p>
+                  {depth.howYouOperate.map((b, i) => (
+                    <p key={i} style={bulletStyle}>
+                      <span style={{ position: 'absolute', left: 0, color: 'rgba(238,236,230,0.22)', fontWeight: 400 }}>·</span>
+                      {b}
+                    </p>
+                  ))}
+                </div>
+
+                {/* B: How others experience you */}
+                <div style={{ marginBottom: 28, paddingTop: 20, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                  <p style={subLabelStyle('rgba(238,236,230,0.38)')}>How others experience you</p>
+                  {depth.howOthersExperienceYou.map((b, i) => (
+                    <p key={i} style={bulletStyle}>
+                      <span style={{ position: 'absolute', left: 0, color: 'rgba(238,236,230,0.22)', fontWeight: 400 }}>·</span>
+                      {b}
+                    </p>
+                  ))}
+                </div>
+
+                {/* C: Friction */}
+                <div style={{ paddingTop: 20, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                  <p style={subLabelStyle('#c8a832')}>Where this creates friction</p>
+                  {depth.friction.map((b, i) => (
+                    <p key={i} style={{ ...bulletStyle, color: 'rgba(238,236,230,0.55)', fontStyle: 'italic' }}>
+                      <span style={{ position: 'absolute', left: 0, color: 'rgba(200,168,50,0.35)', fontWeight: 400, fontStyle: 'normal' }}>·</span>
+                      {b}
+                    </p>
+                  ))}
+                </div>
+              </div>
+
+              {/* ── 2. CORE TENSION ── */}
+              <div style={{ marginBottom: 56, ...sectionStyle(200) }}>
+                <p style={labelStyle()}>Your core tension</p>
+                <h3 style={{
+                  fontSize: 'clamp(20px, 3vw, 26px)', fontWeight: 400, fontStyle: 'italic',
+                  color: '#eeece6', margin: '0 0 20px', lineHeight: 1.25, letterSpacing: '-0.01em',
+                }}>
+                  {depth.tension.title}
+                </h3>
+                {depth.tension.lines.map((line, i) => (
+                  <p key={i} style={{ ...bulletStyle, color: i === 0 ? 'rgba(238,236,230,0.72)' : i === 1 ? 'rgba(238,236,230,0.55)' : 'rgba(238,236,230,0.45)' }}>
+                    <span style={{ position: 'absolute', left: 0, color: 'rgba(238,236,230,0.2)', fontWeight: 400 }}>·</span>
+                    {line}
+                  </p>
+                ))}
+              </div>
+
+              {/* ── 3. ENVIRONMENT FIT ── */}
+              <div style={{ marginBottom: 56, ...sectionStyle(320) }}>
+                <p style={labelStyle()}>Environment fit</p>
+                <h2 style={{ fontSize: 20, fontWeight: 300, color: '#eeece6', margin: '0 0 28px', lineHeight: 1.3 }}>
+                  Where the signal is an asset. Where it costs.
+                </h2>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 24 }}>
+                  <div>
+                    <p style={subLabelStyle('#3aa868')}>You thrive when</p>
+                    {depth.thriveWhen.map((b, i) => (
+                      <p key={i} style={bulletStyle}>
+                        <span style={{ position: 'absolute', left: 0, color: 'rgba(58,168,104,0.4)', fontWeight: 400 }}>·</span>
+                        {b}
+                      </p>
+                    ))}
+                  </div>
+                  <div>
+                    <p style={subLabelStyle('#c8a832')}>You struggle when</p>
+                    {depth.struggleWhen.map((b, i) => (
+                      <p key={i} style={{ ...bulletStyle, color: 'rgba(238,236,230,0.55)' }}>
+                        <span style={{ position: 'absolute', left: 0, color: 'rgba(200,168,50,0.35)', fontWeight: 400 }}>·</span>
+                        {b}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* ── 4. REAL-WORLD TRANSLATION ── */}
+              <div style={{ marginBottom: 56, ...sectionStyle(440) }}>
+                <p style={labelStyle()}>What this looks like in practice</p>
+                <h2 style={{ fontSize: 20, fontWeight: 300, color: '#eeece6', margin: '0 0 28px', lineHeight: 1.3 }}>
+                  Concrete. Specific. Recognizable.
+                </h2>
+                {[
+                  { label: 'In meetings', bullets: depth.inMeetings, color: 'rgba(238,236,230,0.38)' },
+                  { label: 'In conflict',  bullets: depth.inConflict,  color: 'rgba(238,236,230,0.38)' },
+                  { label: 'Under pressure', bullets: depth.underPressure, color: 'rgba(238,236,230,0.38)' },
+                ].map(({ label, bullets, color }, si) => (
+                  <div key={label} style={{ marginBottom: si < 2 ? 24 : 0, paddingBottom: si < 2 ? 24 : 0, borderBottom: si < 2 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
+                    <p style={subLabelStyle(color as string)}>{label}</p>
+                    {bullets.map((b, i) => (
+                      <p key={i} style={bulletStyle}>
+                        <span style={{ position: 'absolute', left: 0, color: 'rgba(238,236,230,0.2)', fontWeight: 400 }}>·</span>
+                        {b}
+                      </p>
+                    ))}
+                  </div>
+                ))}
+              </div>
+
+              {/* ── 5. SIGNAL BREAKDOWN (dimension accordion) ── */}
+              <div style={{ ...sectionStyle(560) }}>
+                <p style={labelStyle()}>Your signal breakdown</p>
+                <h2 style={{ fontSize: 20, fontWeight: 300, color: '#eeece6', margin: '0 0 8px', lineHeight: 1.3 }}>
+                  Five dimensions. Your specific shape.
+                </h2>
+                <p style={{ fontSize: 13, color: 'rgba(238,236,230,0.35)', margin: '0 0 28px', fontWeight: 300 }}>
+                  Select a dimension to see what it means for you specifically.
+                </p>
+
+                {/* Compact pentagon */}
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 28 }}>
+                  <div style={{ width: 'min(180px, 54vw)', aspectRatio: '180 / 174' }}>
+                    <svg width="100%" height="100%" viewBox="-30 -24 220 210">
+                      {/* Rings */}
+                      <polygon points={ringPts(80, 80, 68)} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="0.5"/>
+                      <polygon points={ringPts(80, 80, 34)} fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="0.5"/>
+                      {/* Axis lines */}
+                      {Array.from({ length: 5 }, (_, i) => {
+                        const a = (270 + i * 72) * Math.PI / 180
+                        return (
+                          <line key={i}
+                            x1="80" y1="80"
+                            x2={(80 + 68 * Math.cos(a)).toFixed(2)}
+                            y2={(80 + 68 * Math.sin(a)).toFixed(2)}
+                            stroke={hoveredDim === i || expandedDim === i ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.07)'}
+                            strokeWidth="0.5"
+                            style={{ transition: 'stroke 200ms ease' }}
+                          />
+                        )
+                      })}
+                      {/* Data polygon */}
+                      <polygon
+                        points={pentagonPts(pentagonValues, 80, 80, 68)}
+                        fill="rgba(37,99,235,0.09)"
+                        stroke="#2563EB"
+                        strokeWidth="1.5"
+                        strokeLinejoin="round"
+                      />
+                      {/* Vertex dots */}
+                      {pentagonValues.map((v, i) => {
+                        const a = (270 + i * 72) * Math.PI / 180
+                        return (
+                          <circle key={i}
+                            cx={(80 + v * 68 * Math.cos(a)).toFixed(2)}
+                            cy={(80 + v * 68 * Math.sin(a)).toFixed(2)}
+                            r="2"
+                            fill={hoveredDim === i || expandedDim === i ? '#60a5fa' : '#2563EB'}
+                            style={{ transition: 'fill 200ms ease', filter: hoveredDim === i || expandedDim === i ? 'drop-shadow(0 0 3px rgba(37,99,235,0.7))' : 'none' }}
+                          />
+                        )
+                      })}
+                      {/* Labels */}
+                      {PENTAGON_LABELS.map((label, i) => {
+                        const a = (270 + i * 72) * Math.PI / 180
+                        const lx = 80 + 84 * Math.cos(a)
+                        const ly = 80 + 84 * Math.sin(a)
+                        const parts = label.split(' ')
+                        const isActive = hoveredDim === i || expandedDim === i
+                        return (
+                          <text key={label}
+                            textAnchor="middle"
+                            fill={isActive ? 'rgba(238,236,230,0.8)' : 'rgba(238,236,230,0.3)'}
+                            fontSize="8"
+                            fontFamily="DM Sans, -apple-system, BlinkMacSystemFont, sans-serif"
+                            fontWeight="300"
+                            style={{ cursor: 'pointer', transition: 'fill 180ms ease' }}
+                            onMouseEnter={() => setHoveredDim(i)}
+                            onMouseLeave={() => setHoveredDim(null)}
+                            onClick={() => setExpandedDim(expandedDim === i ? null : i)}
+                          >
+                            {parts.length === 1
+                              ? <tspan x={lx.toFixed(1)} y={ly.toFixed(1)}>{parts[0]}</tspan>
+                              : <>
+                                  <tspan x={lx.toFixed(1)} y={(ly - 4.5).toFixed(1)}>{parts[0]}</tspan>
+                                  <tspan x={lx.toFixed(1)} y={(ly + 5.5).toFixed(1)}>{parts[1]}</tspan>
+                                </>
+                            }
+                          </text>
+                        )
+                      })}
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Accordion */}
+                <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+                  {DIM_DEPTH.map((dim, i) => {
+                    const value = pentagonValues[i]
+                    const scoreLevel: 'high' | 'mid' | 'low' = value >= 0.65 ? 'high' : value >= 0.35 ? 'mid' : 'low'
+                    const bullets = dim[scoreLevel]
+                    const isExpanded = expandedDim === i
+                    const isHov = hoveredDim === i
+                    return (
+                      <div key={dim.name} style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+                        {/* Row */}
+                        <button
+                          onClick={() => setExpandedDim(isExpanded ? null : i)}
+                          onMouseEnter={() => setHoveredDim(i)}
+                          onMouseLeave={() => setHoveredDim(null)}
+                          style={{
+                            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            padding: '14px 0', background: 'none', border: 'none', cursor: 'pointer',
+                            gap: 16, textAlign: 'left',
+                          }}
+                        >
+                          <span style={{
+                            fontSize: 13, fontWeight: 500,
+                            color: isHov || isExpanded ? '#eeece6' : 'rgba(238,236,230,0.6)',
+                            transition: 'color 180ms ease', letterSpacing: '-0.01em',
+                            fontFamily: 'DM Sans, -apple-system, BlinkMacSystemFont, sans-serif',
+                          }}>
+                            {dim.name}
+                          </span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+                            {/* Score bar */}
+                            <div style={{ width: 48, height: 2, background: 'rgba(255,255,255,0.08)', borderRadius: 1 }}>
+                              <div style={{
+                                width: `${Math.round(value * 100)}%`, height: '100%', borderRadius: 1,
+                                background: isExpanded ? '#2563EB' : 'rgba(37,99,235,0.6)',
+                                transition: 'background 200ms ease',
+                              }} />
+                            </div>
+                            <span style={{
+                              fontSize: 14, color: isExpanded ? 'rgba(238,236,230,0.6)' : 'rgba(238,236,230,0.22)',
+                              transition: 'color 180ms ease', lineHeight: 1, userSelect: 'none',
+                              fontFamily: 'DM Sans, -apple-system, BlinkMacSystemFont, sans-serif',
+                            }}>
+                              {isExpanded ? '−' : '+'}
+                            </span>
+                          </div>
+                        </button>
+
+                        {/* Expanded panel */}
+                        {isExpanded && (
+                          <div style={{ paddingBottom: 20, animation: 'fadeUp 260ms ease both' }}>
+                            {bullets.map((b, bi) => (
+                              <p key={bi} style={{ ...bulletStyle, margin: '0 0 5px' }}>
+                                <span style={{ position: 'absolute', left: 0, color: 'rgba(37,99,235,0.5)', fontWeight: 400 }}>·</span>
+                                {b}
+                              </p>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+            </div>
+          )
+        })()}
+
       </div>
     )
   }
