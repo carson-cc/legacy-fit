@@ -137,7 +137,26 @@ const INSIGHTS: Record<string, { coreSignal: string; whereYouWin: string; watchF
   },
 }
 
-const PENTAGON_LABELS = ['Execution', 'Ownership', 'Adaptability', 'Collaboration', 'Dec. Speed']
+const PENTAGON_LABELS = ['Execution', 'Ownership', 'Adaptability', 'Collaboration', 'Decision Speed']
+
+// ─── Results Helpers ─────────────────────────────────────────────────────────
+
+function getInterpretiveLine(values: number[]): string {
+  const dimNames = ['Execution', 'Ownership', 'Adaptability', 'Collaboration', 'Decision Speed']
+  const ranked = [...values.map((v, i) => ({ v, i }))].sort((a, b) => b.v - a.v)
+  return `Defining edge: ${dimNames[ranked[0].i]} + ${dimNames[ranked[1].i]}`
+}
+
+function getDimCaption(dimIdx: number, values: number[]): string {
+  const dimNames = ['Execution', 'Ownership', 'Adaptability', 'Collaboration', 'Decision Speed']
+  const ranked = [...values.map((v, i) => ({ v, i }))].sort((a, b) => b.v - a.v)
+  const rank = ranked.findIndex(r => r.i === dimIdx)
+  const name = dimNames[dimIdx]
+  if (rank === 0) return `${name} is one of your defining edges.`
+  if (rank === 1) return `${name} is a strong secondary signal.`
+  if (rank >= 3) return `${name} is not your dominant signal.`
+  return `${name} is present, but not your primary driver.`
+}
 const PROC_DIMS = ['EXECUTION', 'OWNERSHIP', 'ADAPTABILITY', 'COLLABORATION', 'DECISION SPEED']
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -180,9 +199,9 @@ export default function AssessPage() {
   // Processing screen animation (Change 2)
   const [procStage, setProcStage] = useState(0) // 0=black,1=line,2-6=dims,7=fadeout
 
-  // Results animation (Change 3)
-  const [resultMoment, setResultMoment] = useState(0) // 0-10
-  const [displayedName, setDisplayedName] = useState('')
+  // Results animation
+  const [resultMoment, setResultMoment] = useState(0) // 0-11
+  const [hoveredDim, setHoveredDim] = useState<number | null>(null)
 
   // Timer management (all timeouts tracked for cleanup)
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
@@ -290,32 +309,20 @@ export default function AssessPage() {
   useEffect(() => {
     if (phase !== 'complete' || !completionData) return
     setResultMoment(0)
-    setDisplayedName('')
+    setHoveredDim(null)
 
-    const name = completionData.profileName
-
-    schedule(() => setResultMoment(1), 200)
-    schedule(() => setResultMoment(2), 500)
-    schedule(() => setResultMoment(3), 600)
-
-    // Typewriter starts at 1400ms
-    schedule(() => {
-      setResultMoment(4)
-      let idx = 0
-      const tick = setInterval(() => {
-        idx++
-        setDisplayedName(name.slice(0, idx))
-        if (idx >= name.length) clearInterval(tick)
-      }, 40)
-      timers.current.push(tick as unknown as ReturnType<typeof setTimeout>)
-    }, 1400)
-
-    schedule(() => setResultMoment(5), 1800)
-    schedule(() => setResultMoment(6), 2200)
-    schedule(() => setResultMoment(7), 2800)
-    schedule(() => setResultMoment(8), 3200)
-    schedule(() => setResultMoment(9), 3800)
-    schedule(() => setResultMoment(10), 4600)
+    // Greeting → fades → pentagon mounts → name blur-reveals → category → separator+line → insights → emotional → close
+    schedule(() => setResultMoment(1),   200)   // greeting appears
+    schedule(() => setResultMoment(2),   500)   // greeting fades
+    schedule(() => setResultMoment(3),   600)   // pentagon + content mounts; CSS handles rings/axis/stroke internally
+    schedule(() => setResultMoment(4),  1360)   // archetype name blur-reveal (760ms after pentagon mounts)
+    schedule(() => setResultMoment(5),  1780)   // category label (420ms after name)
+    schedule(() => setResultMoment(6),  1920)   // separator + interpretive line
+    schedule(() => setResultMoment(7),  2200)   // CORE SIGNAL
+    schedule(() => setResultMoment(8),  2440)   // WHERE YOU WIN
+    schedule(() => setResultMoment(9),  2680)   // WATCH FOR
+    schedule(() => setResultMoment(10), 3060)   // emotional line
+    schedule(() => setResultMoment(11), 3620)   // closing box
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, completionData])
 
@@ -550,171 +557,282 @@ export default function AssessPage() {
     )
   }
 
-  // ─── COMPLETE (Change 3) ──────────────────────────────────────────────────
+  // ─── COMPLETE ─────────────────────────────────────────────────────────────
 
   if (phase === 'complete') {
     const firstName = candidateName ? candidateName.split(' ')[0] : ''
     const profile = REFERENCE_PROFILES.find(p => p.name === completionData?.profileName)
     const pentagonValues = profile ? profileToValues(profile.coords) : [0.5, 0.5, 0.5, 0.5, 0.5]
     const insights = completionData ? INSIGHTS[completionData.profileName] : null
+    const interpretiveLine = getInterpretiveLine(pentagonValues)
 
-    // Pentagon perimeter ≈ 530px
-    const PENT_PERIMETER = 530
+    const cx = 110, cy = 110, maxR = 95
+    // Perimeter of pentagon inscribed in r=95: 5 × 2r×sin(π/5) ≈ 558
+    const PENT_PERIMETER = 558
 
     return (
-      <div style={{ minHeight: '100svh', background: '#080808', overflowX: 'hidden', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif' }}>
+      <div style={{ minHeight: '100svh', background: '#080808', overflowX: 'hidden' }}>
         <style>{`
-          @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
-          @keyframes fadeUp { from { opacity: 0; transform: translateY(10px) } to { opacity: 1; transform: translateY(0) } }
+          @keyframes fadeIn  { from { opacity: 0 } to { opacity: 1 } }
+          @keyframes fadeUp  { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: translateY(0) } }
           @keyframes rings-in { from { opacity: 0 } to { opacity: 1 } }
           @keyframes pent-stroke {
-            from { stroke-dashoffset: ${PENT_PERIMETER}; }
-            to   { stroke-dashoffset: 0; }
+            from { stroke-dashoffset: ${PENT_PERIMETER}px; }
+            to   { stroke-dashoffset: 0px; }
           }
           @keyframes pent-fill { from { fill-opacity: 0 } to { fill-opacity: 1 } }
-          @keyframes blink { 0%,100% { opacity: 0.3 } 50% { opacity: 0 } }
+          @keyframes arch-reveal {
+            from { opacity: 0; transform: translateY(10px); filter: blur(8px); }
+            to   { opacity: 1; transform: translateY(0);   filter: blur(0px);  }
+          }
         `}</style>
 
-        {/* MOMENT 1 — Greeting, centered fullscreen */}
+        {/* Greeting — fullscreen, fades out */}
         <div style={{
           position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
           pointerEvents: 'none', zIndex: 10,
           opacity: resultMoment === 1 ? 1 : 0,
-          transition: resultMoment >= 2 ? 'opacity 200ms ease' : 'none',
+          transition: resultMoment >= 2 ? 'opacity 220ms ease' : 'none',
         }}>
           {resultMoment >= 1 && (
-            <p style={{ fontSize: 18, fontWeight: 300, color: 'rgba(238,236,230,0.45)', margin: 0, animation: 'fadeIn 300ms ease both' }}>
+            <p style={{ fontSize: 18, fontWeight: 300, color: 'rgba(238,236,230,0.45)', margin: 0, animation: 'fadeIn 280ms ease both' }}>
               {firstName ? `You're done, ${firstName}.` : "You're done."}
             </p>
           )}
         </div>
 
-        {/* MOMENTS 2–6 — Main reveal content */}
+        {/* Main reveal — mounts at moment 3 */}
         {resultMoment >= 3 && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '18vh', paddingBottom: 72, paddingLeft: 24, paddingRight: 24 }}>
+          <div style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center',
+            padding: '56px 24px 80px',
+          }}>
 
-            {/* MOMENT 2 — Pentagon */}
-            <div style={{ animation: 'fadeIn 400ms ease both' }}>
-              <svg width="252" height="244" viewBox="-32 -24 284 268">
-                {/* Background rings fade in first */}
-                <polygon points={ringPts(110, 110, 88)} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="0.5"
-                  style={{ animation: 'rings-in 400ms ease-out both', animationDelay: '0ms' }} />
-                <polygon points={ringPts(110, 110, 44)} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="0.5"
-                  style={{ animation: 'rings-in 400ms ease-out both', animationDelay: '100ms' }} />
+            {/* ── Pentagon ── */}
+            <div style={{ width: 'min(252px, 86vw)', aspectRatio: '252 / 244', position: 'relative' }}>
+              <svg width="100%" height="100%" viewBox="-38 -28 296 276">
+
+                {/* Outer reference ring */}
+                <polygon
+                  points={ringPts(cx, cy, maxR)}
+                  fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="0.5"
+                  style={{ animation: 'rings-in 300ms ease-out both', animationDelay: '0ms' }}
+                />
+                {/* Mid ring */}
+                <polygon
+                  points={ringPts(cx, cy, Math.round(maxR * 0.63))}
+                  fill="none" stroke="rgba(255,255,255,0.055)" strokeWidth="0.5"
+                  style={{ animation: 'rings-in 300ms ease-out both', animationDelay: '40ms' }}
+                />
+                {/* Inner ring */}
+                <polygon
+                  points={ringPts(cx, cy, Math.round(maxR * 0.33))}
+                  fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="0.5"
+                  style={{ animation: 'rings-in 300ms ease-out both', animationDelay: '80ms' }}
+                />
+
                 {/* Axis lines */}
                 {Array.from({ length: 5 }, (_, i) => {
                   const a = (270 + i * 72) * Math.PI / 180
                   return (
                     <line key={i}
-                      x1="110" y1="110"
-                      x2={(110 + 88 * Math.cos(a)).toFixed(2)}
-                      y2={(110 + 88 * Math.sin(a)).toFixed(2)}
-                      stroke="rgba(255,255,255,0.04)" strokeWidth="0.5"
-                      style={{ animation: 'rings-in 400ms ease-out both', animationDelay: '50ms' }}
+                      x1={cx} y1={cy}
+                      x2={(cx + maxR * Math.cos(a)).toFixed(2)}
+                      y2={(cy + maxR * Math.sin(a)).toFixed(2)}
+                      stroke={hoveredDim === i ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.06)'}
+                      strokeWidth="0.5"
+                      style={{
+                        animation: 'rings-in 300ms ease-out 180ms both',
+                        transition: 'stroke 200ms ease',
+                      }}
                     />
                   )
                 })}
-                {/* Data polygon: stroke draws in 800ms, fill fades in after */}
+
+                {/* Data polygon — stroke draws in 900ms, fill fades in after */}
                 <polygon
-                  points={pentagonPts(pentagonValues, 110, 110, 88)}
-                  fill="rgba(37,99,235,0.07)"
+                  points={pentagonPts(pentagonValues, cx, cy, maxR)}
+                  fill="rgba(37,99,235,0.09)"
                   stroke="#2563EB"
                   strokeWidth="2"
+                  strokeLinejoin="round"
                   style={{
                     strokeDasharray: PENT_PERIMETER,
-                    animation: `pent-stroke 800ms cubic-bezier(0.25,0.46,0.45,0.94) 200ms forwards,
-                                 pent-fill 400ms ease 900ms forwards`,
-                    fillOpacity: 0,
                     strokeDashoffset: PENT_PERIMETER,
+                    fillOpacity: 0,
+                    animation: `pent-stroke 900ms cubic-bezier(0.25,0.46,0.45,0.94) 220ms forwards,
+                                 pent-fill 400ms ease 1000ms forwards`,
                   }}
                 />
-                {/* Vertex labels: appear as stroke passes each vertex */}
+
+                {/* Vertex dots */}
+                {pentagonValues.map((v, i) => {
+                  const a = (270 + i * 72) * Math.PI / 180
+                  const vx = cx + v * maxR * Math.cos(a)
+                  const vy = cy + v * maxR * Math.sin(a)
+                  const dotDelay = 220 + Math.round((i / 5) * 900) + 80
+                  return (
+                    <circle key={i}
+                      cx={vx.toFixed(2)} cy={vy.toFixed(2)} r="2.5"
+                      fill={hoveredDim === i ? '#60a5fa' : '#2563EB'}
+                      style={{
+                        opacity: 0,
+                        animation: `fadeIn 200ms ease ${dotDelay}ms both`,
+                        filter: hoveredDim === i ? 'drop-shadow(0 0 4px rgba(37,99,235,0.7))' : 'none',
+                        transition: 'fill 180ms ease, filter 180ms ease',
+                      }}
+                    />
+                  )
+                })}
+
+                {/* Axis labels — split "Decision Speed" to two lines */}
                 {PENTAGON_LABELS.map((label, i) => {
                   const a = (270 + i * 72) * Math.PI / 180
-                  const lx = 110 + 106 * Math.cos(a)
-                  const ly = 110 + 106 * Math.sin(a)
-                  const labelDelay = 200 + Math.round((i / 5) * 800)
+                  const lx = cx + 115 * Math.cos(a)
+                  const ly = cy + 115 * Math.sin(a)
+                  const labelDelay = 220 + Math.round((i / 5) * 900) + 200
+                  const isHov = hoveredDim === i
+                  const parts = label.split(' ')
+                  const textFill = isHov ? 'rgba(238,236,230,0.78)' : 'rgba(238,236,230,0.35)'
                   return (
-                    <text key={label} x={lx.toFixed(1)} y={ly.toFixed(1)}
-                      textAnchor="middle" dominantBaseline="middle"
-                      fill="rgba(238,236,230,0.3)" fontSize="8.5"
-                      fontFamily="-apple-system, BlinkMacSystemFont, sans-serif"
-                      style={{ animation: `fadeIn 200ms ease both`, animationDelay: `${labelDelay + 100}ms`, opacity: 0 }}
-                    >{label}</text>
+                    <text key={label}
+                      textAnchor="middle"
+                      fill={textFill}
+                      fontSize="9.5"
+                      fontFamily="DM Sans, -apple-system, BlinkMacSystemFont, sans-serif"
+                      fontWeight="300"
+                      style={{
+                        opacity: 0,
+                        animation: `fadeIn 200ms ease ${labelDelay}ms both`,
+                        cursor: 'pointer',
+                        transition: 'fill 180ms ease',
+                      }}
+                      onMouseEnter={() => setHoveredDim(i)}
+                      onMouseLeave={() => setHoveredDim(null)}
+                      onClick={() => setHoveredDim(hoveredDim === i ? null : i)}
+                    >
+                      {parts.length === 1 ? (
+                        <tspan x={lx.toFixed(1)} y={ly.toFixed(1)}>{parts[0]}</tspan>
+                      ) : (
+                        <>
+                          <tspan x={lx.toFixed(1)} y={(ly - 5.5).toFixed(1)}>{parts[0]}</tspan>
+                          <tspan x={lx.toFixed(1)} y={(ly + 6.5).toFixed(1)}>{parts[1]}</tspan>
+                        </>
+                      )}
+                    </text>
                   )
                 })}
               </svg>
             </div>
 
-            {/* MOMENT 3 — Archetype name */}
-            <div style={{ textAlign: 'center', marginTop: 20 }}>
-              {resultMoment >= 4 && (
-                <h1 style={{
-                  fontSize: 'clamp(52px, 7vw, 80px)', fontWeight: 900, color: '#eeece6',
-                  letterSpacing: '-0.02em', lineHeight: 1, margin: 0,
-                  fontFamily: '"Barlow Condensed", "SF Pro Display", -apple-system, sans-serif',
+            {/* Dim caption — reserved 20px slot to prevent layout shift */}
+            <div style={{ height: 22, marginTop: 6, marginBottom: 22, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {hoveredDim !== null && (
+                <p style={{
+                  fontSize: 11, color: 'rgba(238,236,230,0.48)', margin: 0, fontWeight: 300,
+                  textAlign: 'center', letterSpacing: '0.01em',
+                  animation: 'fadeIn 150ms ease both',
                 }}>
-                  {displayedName}
-                  <span style={{ opacity: 0.25, animation: 'blink 0.7s step-end infinite' }}>|</span>
-                </h1>
-              )}
-
-              {/* MOMENT 3b — Group label */}
-              {resultMoment >= 5 && completionData && (
-                <p style={{ fontSize: 16, fontStyle: 'italic', color: 'rgba(238,236,230,0.38)', fontWeight: 300, margin: '10px 0 0', animation: 'fadeIn 300ms ease both' }}>
-                  {completionData.profileGroup}
+                  {getDimCaption(hoveredDim, pentagonValues)}
                 </p>
               )}
             </div>
 
-            {/* MOMENT 4 — Insight blocks */}
+            {/* ── Archetype name — blur reveal, no typewriter ── */}
+            {resultMoment >= 4 && completionData && (
+              <h1 style={{
+                fontSize: 'clamp(64px, 10vw, 96px)', fontWeight: 900, color: '#eeece6',
+                letterSpacing: '-0.02em', lineHeight: 1, margin: 0, textAlign: 'center',
+                fontFamily: '"Barlow Condensed", "SF Pro Display", -apple-system, sans-serif',
+                animation: 'arch-reveal 420ms cubic-bezier(0.25,0.46,0.45,0.94) both',
+              }}>
+                {completionData.profileName}
+              </h1>
+            )}
+
+            {/* ── Category label ── */}
+            {resultMoment >= 5 && completionData && (
+              <p style={{
+                fontSize: 15, fontStyle: 'italic', color: 'rgba(238,236,230,0.38)',
+                fontWeight: 300, margin: '10px 0 0', textAlign: 'center',
+                animation: 'fadeIn 280ms ease both',
+              }}>
+                {completionData.profileGroup}
+              </p>
+            )}
+
+            {/* ── Separator + interpretive line ── */}
+            {resultMoment >= 6 && (
+              <>
+                <div style={{
+                  width: 40, height: 1, background: 'rgba(255,255,255,0.12)',
+                  margin: '22px 0 16px',
+                  animation: 'fadeIn 200ms ease both',
+                }} />
+                <p style={{
+                  fontSize: 12, color: 'rgba(238,236,230,0.42)', textAlign: 'center',
+                  margin: 0, fontWeight: 300, letterSpacing: '0.01em',
+                  animation: 'fadeIn 280ms ease 80ms both',
+                }}>
+                  {interpretiveLine}
+                </p>
+              </>
+            )}
+
+            {/* ── Insight blocks ── */}
             {insights && (
-              <div style={{ width: '100%', maxWidth: 440, marginTop: 40, textAlign: 'left' }}>
-                {resultMoment >= 6 && (
-                  <div style={{ marginBottom: 20, animation: 'fadeUp 400ms ease both' }}>
-                    <p style={{ fontSize: 9, color: 'rgba(238,236,230,0.3)', textTransform: 'uppercase', letterSpacing: '0.16em', margin: '0 0 6px', fontWeight: 500 }}>Core Signal</p>
-                    <p style={{ fontSize: 14, color: 'rgba(238,236,230,0.8)', lineHeight: 1.6, margin: 0, fontWeight: 400 }}>{insights.coreSignal}</p>
-                  </div>
-                )}
+              <div style={{ width: '100%', maxWidth: 500, marginTop: 34, textAlign: 'left' }}>
                 {resultMoment >= 7 && (
-                  <div style={{ marginBottom: 20, animation: 'fadeUp 400ms ease both' }}>
-                    <p style={{ fontSize: 9, color: '#3aa868', textTransform: 'uppercase', letterSpacing: '0.16em', margin: '0 0 6px', fontWeight: 500 }}>Where You Win</p>
-                    <p style={{ fontSize: 13, color: 'rgba(238,236,230,0.65)', lineHeight: 1.6, margin: 0, fontWeight: 300 }}>{insights.whereYouWin}</p>
+                  <div style={{ marginBottom: 20, animation: 'fadeUp 320ms ease both' }}>
+                    <p style={{ fontSize: 10, color: 'rgba(238,236,230,0.38)', textTransform: 'uppercase', letterSpacing: '0.18em', margin: '0 0 7px', fontWeight: 600 }}>Core Signal</p>
+                    <p style={{ fontSize: 14, color: 'rgba(238,236,230,0.75)', lineHeight: 1.65, margin: 0, fontWeight: 400 }}>{insights.coreSignal}</p>
                   </div>
                 )}
                 {resultMoment >= 8 && (
-                  <div style={{ marginBottom: 0, animation: 'fadeUp 400ms ease both' }}>
-                    <p style={{ fontSize: 9, color: '#c8a832', textTransform: 'uppercase', letterSpacing: '0.16em', margin: '0 0 6px', fontWeight: 500 }}>Watch For</p>
-                    <p style={{ fontSize: 13, color: 'rgba(238,236,230,0.55)', lineHeight: 1.6, margin: 0, fontWeight: 300, fontStyle: 'italic' }}>{insights.watchFor}</p>
+                  <div style={{ marginBottom: 20, animation: 'fadeUp 320ms ease both' }}>
+                    <p style={{ fontSize: 10, color: '#3aa868', textTransform: 'uppercase', letterSpacing: '0.18em', margin: '0 0 7px', fontWeight: 600 }}>Where You Win</p>
+                    <p style={{ fontSize: 14, color: 'rgba(238,236,230,0.75)', lineHeight: 1.65, margin: 0, fontWeight: 300 }}>{insights.whereYouWin}</p>
+                  </div>
+                )}
+                {resultMoment >= 9 && (
+                  <div style={{ marginBottom: 0, animation: 'fadeUp 320ms ease both' }}>
+                    <p style={{ fontSize: 10, color: '#c8a832', textTransform: 'uppercase', letterSpacing: '0.18em', margin: '0 0 7px', fontWeight: 600 }}>Watch For</p>
+                    <p style={{ fontSize: 14, color: 'rgba(238,236,230,0.55)', lineHeight: 1.65, margin: 0, fontWeight: 300, fontStyle: 'italic' }}>{insights.watchFor}</p>
                   </div>
                 )}
               </div>
             )}
 
-            {/* MOMENT 5 — Emotional line */}
-            {resultMoment >= 9 && insights && (
+            {/* ── Emotional line ── */}
+            {resultMoment >= 10 && insights && (
               <p style={{
-                fontSize: 17, fontWeight: 400, color: 'rgba(238,236,230,0.72)',
-                lineHeight: 1.65, margin: '32px 0 0', textAlign: 'center',
-                maxWidth: 520, animation: 'fadeIn 500ms ease both',
+                fontSize: 'clamp(17px, 2.2vw, 21px)', fontWeight: 400, color: 'rgba(238,236,230,0.8)',
+                lineHeight: 1.6, margin: '52px 0 0', textAlign: 'center',
+                maxWidth: 520, fontStyle: 'italic',
+                animation: 'fadeIn 550ms ease both',
               }}>
                 {insights.emotionalLine}
               </p>
             )}
 
-            {/* MOMENT 6 — Closing */}
-            {resultMoment >= 10 && (
-              <div style={{ width: '100%', maxWidth: 440, marginTop: 40, animation: 'fadeIn 400ms ease both' }}>
-                <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: '18px 22px' }}>
-                  <p style={{ fontSize: 13, color: '#eeece6', margin: '0 0 4px', fontWeight: 400 }}>
+            {/* ── Closing box ── */}
+            {resultMoment >= 11 && (
+              <div style={{ width: '100%', maxWidth: 440, marginTop: 48, animation: 'fadeIn 400ms ease both' }}>
+                <div style={{
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 12, padding: '20px 24px',
+                }}>
+                  <p style={{ fontSize: 13, color: '#eeece6', margin: '0 0 5px', fontWeight: 500 }}>
                     Your profile has been shared with your search partner.
                   </p>
-                  <p style={{ fontSize: 12, color: 'rgba(238,236,230,0.4)', margin: 0, fontWeight: 300, lineHeight: 1.55 }}>
+                  <p style={{ fontSize: 12, color: 'rgba(238,236,230,0.42)', margin: 0, fontWeight: 300, lineHeight: 1.55 }}>
                     They&rsquo;ll use this to evaluate role alignment. Your results are on file.
                   </p>
                 </div>
               </div>
             )}
+
           </div>
         )}
       </div>
