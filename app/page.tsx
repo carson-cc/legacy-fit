@@ -30,21 +30,21 @@ const AXES = [
     lx: 178, ly: 80, anchor: 'start', baseline: 'middle',
   },
   {
-    key: 'adaptability', svgLabel: 'Adapt.', fullLabel: 'Adaptability',
+    key: 'adaptability', svgLabel: 'Adaptability', fullLabel: 'Adaptability',
     score: 70, benchmark: 65, delta: +5, above: true,
     interp: 'Above benchmark by +5',
     impl: 'Handles shifting scope without losing execution edge. Resilient to ambiguity.',
     lx: 150, ly: 170, anchor: 'start', baseline: 'hanging',
   },
   {
-    key: 'collaboration', svgLabel: 'Collab.', fullLabel: 'Collaboration',
+    key: 'collaboration', svgLabel: 'Collaboration', fullLabel: 'Collaboration',
     score: 62, benchmark: 68, delta: -6, above: false,
     interp: 'Below benchmark by −6',
     impl: 'Prefers independent execution over cross-functional coordination. The only gap — and the source of the pacing risk.',
     lx: 50, ly: 170, anchor: 'end', baseline: 'hanging',
   },
   {
-    key: 'decisionSpeed', svgLabel: 'Dec. Speed', fullLabel: 'Decision Speed',
+    key: 'decisionSpeed', svgLabel: 'Decision Speed', fullLabel: 'Decision Speed',
     score: 88, benchmark: 78, delta: +10, above: true,
     interp: 'Significantly above benchmark (+10)',
     impl: 'Largest delta on the screen. Moves faster than most environments expect. Primary source of Operating Partner friction.',
@@ -97,17 +97,17 @@ const TEAM = [
 const TEAM_ROWS = [
   {
     role: 'CEO', pill: 'STRONG ALIGNMENT', axisKey: 'execution',
-    pillBg: 'rgba(58,168,104,0.12)', pillBorder: 'rgba(58,168,104,0.25)', pillColor: GREEN,
+    pillBg: 'rgba(58,168,104,0.12)', pillBorder: 'rgba(58,168,104,0.25)', pillBorderHover: 'rgba(58,168,104,0.5)', pillColor: GREEN,
     note: 'Will experience Kent as decisive and effective.',
   },
   {
     role: 'Operating Partner', pill: 'PACING GAP', axisKey: 'decisionSpeed',
-    pillBg: 'rgba(200,168,50,0.12)', pillBorder: 'rgba(200,168,50,0.25)', pillColor: AMBER,
+    pillBg: 'rgba(200,168,50,0.12)', pillBorder: 'rgba(200,168,50,0.25)', pillBorderHover: 'rgba(200,168,50,0.5)', pillColor: AMBER,
     note: 'Friction on pacing — manageable with early alignment on decision cadence.',
   },
   {
     role: 'Board', pill: 'MODERATE FIT', axisKey: 'collaboration',
-    pillBg: 'rgba(255,255,255,0.05)', pillBorder: 'rgba(255,255,255,0.12)', pillColor: 'rgba(238,236,230,0.5)',
+    pillBg: 'rgba(255,255,255,0.05)', pillBorder: 'rgba(255,255,255,0.12)', pillBorderHover: 'rgba(255,255,255,0.28)', pillColor: 'rgba(238,236,230,0.5)',
     note: 'May want structured communication cadence. Low risk if expectations are set.',
   },
 ]
@@ -338,7 +338,7 @@ export default function HomePage() {
       <section
         ref={reportRef}
         className="snap-beat"
-        style={{ background: '#080808', position: 'relative', overflow: 'hidden', padding: 0 }}
+        style={{ background: '#080808', position: 'relative', overflow: 'hidden', justifyContent: 'flex-start', paddingTop: '68px', paddingBottom: '8px', paddingLeft: 0, paddingRight: 0 }}
       >
         <div style={{
           position: 'absolute', top: '50%', left: '50%',
@@ -352,7 +352,7 @@ export default function HomePage() {
           <div style={{
             width: '100%',
             maxWidth: 'min(1060px, calc(100vw - clamp(40px, 8vw, 160px)))',
-            height: 'calc(100svh - 58px)',
+            height: 'calc(100svh - 76px)',
             background: '#0d0d0d',
             border: '1px solid rgba(255,255,255,0.07)',
             borderRadius: 14, overflow: 'hidden',
@@ -430,7 +430,7 @@ export default function HomePage() {
                 {/* Radar */}
                 <div style={{ width: '100%', aspectRatio: '1 / 1', flexShrink: 0, ...fade(cardMounted, 80) }}>
                   <svg
-                    viewBox="-35 -5 260 215"
+                    viewBox="-65 -5 290 215"
                     style={{ width: '100%', height: '100%' }}
                     onMouseLeave={() => setHoveredAxis(null)}
                   >
@@ -625,7 +625,7 @@ export default function HomePage() {
                 >
 
                   {/* S1 — Headline */}
-                  <div style={{ padding: '14px 0 12px', ...fade(cardMounted, 0) }}>
+                  <div style={{ padding: '16px 0 12px', ...fade(cardMounted, 0) }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
                       <div style={{ flex: 1 }}>
                         <p style={{
@@ -652,7 +652,7 @@ export default function HomePage() {
                     className="watchout-block"
                     onMouseEnter={() => setHoveredWatchout(true)}
                     onMouseLeave={() => setHoveredWatchout(false)}
-                    style={{ padding: '14px 0', borderTop: '1px solid rgba(255,255,255,0.09)', ...fade(cardMounted, 80) }}
+                    style={{ padding: '16px 0', borderTop: '1px solid rgba(255,255,255,0.09)', ...fade(cardMounted, 80) }}
                   >
                     <p style={{ margin: '0 0 5px', fontSize: 9, color: FAINT, letterSpacing: '0.16em', textTransform: 'uppercase' }}>
                       Primary Watchout
@@ -660,32 +660,32 @@ export default function HomePage() {
                     <p style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 500, color: TEXT }}>
                       Moves faster than the organization can absorb.
                     </p>
-                    <p style={{ margin: '0 0 10px', fontSize: 11, color: 'rgba(238,236,230,0.45)', lineHeight: 1.45 }}>
+                    <p style={{ margin: '0 0 10px', fontSize: 11, color: hoveredWatchout ? 'rgba(238,236,230,0.65)' : 'rgba(238,236,230,0.45)', lineHeight: 1.45, transition: 'color 200ms ease' }}>
                       Pioneer profile + high-autonomy role = pace mismatch with stakeholders who expect consultation.
                     </p>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 10 }}>
                       <div>
                         <p style={{ margin: '0 0 5px', fontSize: 8, color: GREEN, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Thrives In</p>
                         {['CEO grants autonomous execution', 'Ownership is clear, stakeholder drag is low'].map(t => (
-                          <p key={t} style={{ margin: '0 0 4px', fontSize: 11, color: 'rgba(238,236,230,0.62)', lineHeight: 1.4, borderLeft: '1.5px solid rgba(58,168,104,0.3)', paddingLeft: 7 }}>{t}</p>
+                          <p key={t} style={{ margin: '0 0 4px', fontSize: 11, color: 'rgba(238,236,230,0.62)', lineHeight: 1.4, borderLeft: '2px solid rgba(58,168,104,0.45)', paddingLeft: 9 }}>{t}</p>
                         ))}
                       </div>
                       <div>
                         <p style={{ margin: '0 0 5px', fontSize: 8, color: AMBER, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Watch For</p>
                         {['Operating Partner expects coordination on pacing', 'Decisions require partner-wide alignment'].map(t => (
-                          <p key={t} style={{ margin: '0 0 4px', fontSize: 11, color: 'rgba(238,236,230,0.62)', lineHeight: 1.4, borderLeft: '1.5px solid rgba(200,168,50,0.3)', paddingLeft: 7 }}>{t}</p>
+                          <p key={t} style={{ margin: '0 0 4px', fontSize: 11, color: 'rgba(238,236,230,0.62)', lineHeight: 1.4, borderLeft: '2px solid rgba(200,168,50,0.45)', paddingLeft: 9 }}>{t}</p>
                         ))}
                       </div>
                     </div>
                   </div>
 
                   {/* S3 — Team Dynamics */}
-                  <div style={{ padding: '14px 0', borderTop: '1px solid rgba(255,255,255,0.09)', ...fade(cardMounted, 160) }}>
+                  <div style={{ padding: '16px 0', borderTop: '1px solid rgba(255,255,255,0.09)', ...fade(cardMounted, 160) }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
                       <p style={{ margin: 0, fontSize: 9, color: FAINT, letterSpacing: '0.16em', textTransform: 'uppercase' }}>Team Dynamics</p>
                       <p style={{ margin: 0, fontSize: 9, color: 'rgba(238,236,230,0.28)' }}>Strong fit · One relationship to address</p>
                     </div>
-                    {TEAM_ROWS.map(({ role, pill, axisKey, pillBg, pillBorder, pillColor, note }) => {
+                    {TEAM_ROWS.map(({ role, pill, axisKey, pillBg, pillBorder, pillBorderHover, pillColor, note }) => {
                       // Reverse: radar axis hover highlights the relevant team row
                       const reverseHighlight = hoveredAxis === axisKey
                       return (
@@ -702,8 +702,11 @@ export default function HomePage() {
                           <span style={{
                             borderRadius: 4, padding: '2px 8px', fontSize: 9, fontWeight: 600,
                             letterSpacing: '0.08em', textTransform: 'uppercase' as const,
-                            background: pillBg, border: `1px solid ${pillBorder}`, color: pillColor,
-                            flexShrink: 0, minWidth: 110, textAlign: 'center' as const, display: 'inline-block',
+                            background: pillBg,
+                            border: `1px solid ${hoveredTeam === role ? pillBorderHover : pillBorder}`,
+                            color: pillColor,
+                            flexShrink: 0, minWidth: 140, textAlign: 'center' as const, display: 'inline-flex',
+                            alignItems: 'center', justifyContent: 'center',
                           }}>{pill}</span>
                           <div>
                             <p style={{ margin: '0 0 2px', fontSize: 12, fontWeight: 500, color: TEXT }}>{role}</p>
@@ -715,34 +718,59 @@ export default function HomePage() {
                   </div>
 
                   {/* S4 — Signal Profile */}
-                  <div style={{ padding: '14px 0', borderTop: '1px solid rgba(255,255,255,0.09)', ...fade(cardMounted, 240) }}>
+                  <div style={{ padding: '16px 0', borderTop: '1px solid rgba(255,255,255,0.09)', ...fade(cardMounted, 240) }}>
                     <p style={{ margin: '0 0 8px', fontSize: 9, color: FAINT, letterSpacing: '0.16em', textTransform: 'uppercase' }}>
                       Signal Profile
                     </p>
-                    {AXES.map((ax) => (
-                      <div key={ax.key} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                        <span style={{ fontSize: 9, color: 'rgba(238,236,230,0.24)', width: 90, flexShrink: 0 }}>
-                          {ax.fullLabel}
-                        </span>
-                        <div style={{ flex: 1, height: 4, background: 'rgba(255,255,255,0.05)', borderRadius: 2 }}>
-                          <div style={{
-                            width: `${ax.score}%`, height: '100%', borderRadius: 2,
-                            background: ax.above ? 'rgba(74,142,255,0.36)' : 'rgba(200,168,50,0.45)',
-                          }} />
+                    {AXES.map((ax) => {
+                      const isHov = hoveredAxis === ax.key
+                      const deltaStr = ax.delta > 0 ? `+${ax.delta}` : `${ax.delta}`
+                      const deltaColor = ax.delta === 2 ? 'rgba(37,99,235,0.6)' : ax.above ? 'rgba(37,99,235,0.9)' : AMBER
+                      return (
+                        <div
+                          key={ax.key}
+                          onMouseEnter={() => setHoveredAxis(ax.key)}
+                          onMouseLeave={() => setHoveredAxis(null)}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4,
+                            padding: '3px 4px', borderRadius: 4, margin: '0 -4px 3px',
+                            background: isHov ? 'rgba(255,255,255,0.025)' : 'transparent',
+                            transition: 'background 150ms ease',
+                          }}
+                        >
+                          <span style={{
+                            fontSize: 9, width: 90, flexShrink: 0, transition: 'color 150ms ease',
+                            color: isHov ? 'rgba(238,236,230,0.9)' : 'rgba(238,236,230,0.24)',
+                          }}>
+                            {ax.fullLabel}
+                          </span>
+                          <div style={{ flex: 1, height: 4, background: 'rgba(255,255,255,0.05)', borderRadius: 2 }}>
+                            <div style={{
+                              width: `${ax.score}%`, height: '100%', borderRadius: 2,
+                              background: ax.above ? 'rgba(74,142,255,0.36)' : 'rgba(200,168,50,0.45)',
+                            }} />
+                          </div>
+                          <span style={{
+                            fontSize: 9,
+                            color: ax.above ? 'rgba(238,236,230,0.26)' : 'rgba(200,168,50,0.6)',
+                            width: 18, textAlign: 'right' as const, flexShrink: 0,
+                          }}>
+                            {ax.score}
+                          </span>
+                          <span style={{
+                            fontSize: 10, fontWeight: 300, marginLeft: 2, flexShrink: 0, width: 28,
+                            color: deltaColor, textAlign: 'right' as const,
+                            opacity: isHov ? 1 : 0, transition: 'opacity 150ms ease',
+                          }}>
+                            {deltaStr}
+                          </span>
                         </div>
-                        <span style={{
-                          fontSize: 9,
-                          color: ax.above ? 'rgba(238,236,230,0.26)' : 'rgba(200,168,50,0.6)',
-                          width: 18, textAlign: 'right' as const, flexShrink: 0,
-                        }}>
-                          {ax.score}
-                        </span>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
 
                   {/* S5 — How to De-Risk */}
-                  <div style={{ padding: '14px 0', borderTop: '1px solid rgba(255,255,255,0.09)', ...fade(cardMounted, 300) }}>
+                  <div style={{ padding: '16px 0', borderTop: '1px solid rgba(255,255,255,0.09)', ...fade(cardMounted, 300) }}>
                     <p style={{ margin: '0 0 8px', fontSize: 9, color: AMBER, letterSpacing: '0.16em', textTransform: 'uppercase' }}>
                       How to De-Risk
                     </p>
@@ -759,7 +787,7 @@ export default function HomePage() {
                   </div>
 
                   {/* S6 — Operating Style */}
-                  <div style={{ padding: '14px 0', borderTop: '1px solid rgba(255,255,255,0.09)', ...fade(cardMounted, 360) }}>
+                  <div style={{ padding: '16px 0', borderTop: '1px solid rgba(255,255,255,0.09)', ...fade(cardMounted, 360) }}>
                     <p style={{ margin: '0 0 8px', fontSize: 9, color: FAINT, letterSpacing: '0.16em', textTransform: 'uppercase' }}>
                       Operating Style
                     </p>
@@ -767,7 +795,7 @@ export default function HomePage() {
                       <span style={{
                         background: 'rgba(196,80,48,0.1)',
                         border: '1px solid rgba(196,80,48,0.22)',
-                        color: '#c45030',
+                        color: '#b8422a',
                         borderRadius: 4,
                         padding: '2px 8px',
                         fontSize: 10,
