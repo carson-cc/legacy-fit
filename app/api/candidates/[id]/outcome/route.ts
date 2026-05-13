@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { auth } from '@/lib/auth'
+import { requireOrg, assertInviteInOrg } from '@/lib/auth-helpers'
 
 type Params = { params: Promise<{ id: string }> }
 
 export async function POST(req: NextRequest, { params }: Params) {
-  const session = await auth()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const ctx = await requireOrg()
+  if (ctx instanceof NextResponse) return ctx
 
   const { id } = await params
+  if (!(await assertInviteInOrg(id, ctx.orgId))) {
+    return NextResponse.json({ error: 'Candidate not found' }, { status: 404 })
+  }
   try {
     const invite = await prisma.candidateInvite.findUnique({
       where: { id },
@@ -27,6 +30,10 @@ export async function POST(req: NextRequest, { params }: Params) {
       where: { inviteId: id },
       update: { placed, retainedAt90, retainedAt180, performanceRating, notes },
       create: { inviteId: id, placed, retainedAt90, retainedAt180, performanceRating, notes },
+    })
+
+    await prisma.eventLog.create({
+      data: { event: 'outcome.recorded', entityId: id, orgId: ctx.orgId, userId: ctx.userId },
     })
 
     return NextResponse.json({ data: outcome })

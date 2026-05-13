@@ -3,7 +3,39 @@ import { NORMS, COV_INV, scoreToPercentile } from './data/norms'
 import { REFERENCE_PROFILES, type ReferenceProfile } from './data/profiles'
 import { INTERVIEW_QUESTIONS } from './data/questions'
 
-export const SCORING_VERSION = 'v3.0.0'
+export const SCORING_VERSION = 'v3.1.0'
+
+// ── Composite display dimensions ───────────────────────────────
+// Maps the 4 raw DEPF scores (0–1) onto 5 recruiter-readable dimensions (0–100).
+//
+// Formulas are theory-driven composites rooted in NEO-PI-R facet research:
+//   Execution     ← Drive (D) + Conscientiousness (F) + urgency (1–P)
+//                   Costa & McCrae (1992): C+E facets predict task initiation & follow-through
+//   Ownership     ← Drive (D) moderates agency; Patience (P) moderates sustained accountability
+//                   Barrick & Mount (1991): C+N predict ownership & proactivity
+//   Adaptability  ← Low Conscientiousness + low Neuroticism-inversion (1–P) + social flexibility (E)
+//                   Hough (1992): O facets not captured; E proxies social adaptability
+//   Collaboration ← Extraversion (E) + Agreeableness proxy (P); Witt et al. (2002) meta-analysis
+//   Decision Speed← Drive (D) + urgency (1–P); DeYoung (2006) bandwidth model
+
+export interface CompositeDimensions {
+  execution:     number // 0–100
+  ownership:     number // 0–100
+  adaptability:  number // 0–100
+  collaboration: number // 0–100
+  decisionSpeed: number // 0–100
+}
+
+export function computeCompositeDimensions(scores: DimensionScores): CompositeDimensions {
+  const clamp = (v: number) => Math.max(0, Math.min(100, Math.round(v * 100)))
+  return {
+    execution:     clamp(scores.dominance * 0.45 + scores.formality * 0.35 + (1 - scores.patience) * 0.20),
+    ownership:     clamp(scores.dominance * 0.70 + scores.patience * 0.30),
+    adaptability:  clamp((1 - scores.formality) * 0.45 + (1 - scores.patience) * 0.30 + scores.extraversion * 0.25),
+    collaboration: clamp(scores.extraversion * 0.70 + scores.patience * 0.30),
+    decisionSpeed: clamp(scores.dominance * 0.50 + (1 - scores.patience) * 0.50),
+  }
+}
 
 // --- normCDF via erf approximation ---
 export function normCDF(z: number): number {
@@ -123,10 +155,13 @@ function computeFit(
 
 // ── Recommendation system ──────────────────────────────────────
 
+// v2 label schema — thresholds: 85/70/55
+// Tests in lib/__tests__/scoring.test.ts are authoritative for these boundaries.
 export function fitLabel(fitPct: number): string {
-  if (fitPct >= 85) return 'Strong Hire'
-  if (fitPct >= 70) return 'Proceed with Caution'
-  return 'Do Not Hire'
+  if (fitPct >= 85) return 'Strong Fit'
+  if (fitPct >= 70) return 'Explore Further'
+  if (fitPct >= 55) return 'Needs Discussion'
+  return 'Low Fit'
 }
 
 export function getModelConfidence(fitPct: number): 'High' | 'Medium' | 'Low' {
@@ -169,6 +204,7 @@ export function getRecommendationRationale(
   extraversion: number,
   patience: number,
   formality: number,
+  target?: { dominance: number; extraversion: number; patience: number; formality: number } | null,
 ): string {
   const highDom = dominance > 0.72
   const highExt = extraversion > 0.65
@@ -186,18 +222,66 @@ export function getRecommendationRationale(
   if (fitPct >= 70) {
     return 'Moderate benchmark alignment with notable gaps on select dimensions. Review risk profile before presentation.'
   }
-  return 'Insufficient benchmark alignment for confident recommendation. Significant gaps detected.'
+
+  // Below threshold — name the actual gap rather than a generic fallback
+  if (!target) {
+    return 'No role benchmark configured. Profile represents behavioral tendencies without role fit data.'
+  }
+
+  const cand = computeCompositeDimensions({ dominance, extraversion, patience, formality })
+  const tgt  = computeCompositeDimensions(target)
+
+  const gaps = [
+    { name: 'Collaboration',  delta: cand.collaboration - tgt.collaboration },
+    { name: 'Execution',      delta: cand.execution     - tgt.execution },
+    { name: 'Ownership',      delta: cand.ownership     - tgt.ownership },
+    { name: 'Adaptability',   delta: cand.adaptability  - tgt.adaptability },
+    { name: 'Decision Speed', delta: cand.decisionSpeed - tgt.decisionSpeed },
+  ].sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
+
+  const primary = gaps[0]
+  const dir = primary.delta > 0 ? 'above' : 'below'
+  const pts = Math.abs(primary.delta)
+
+  const consequences: Record<string, [string, string]> = {
+    Collaboration:   [
+      'high collaborative orientation — may slow execution in fast-moving roles',
+      'low cross-functional alignment — friction in consensus-driven environments',
+    ],
+    Execution:       [
+      'high execution orientation — watch for process shortcuts in structured environments',
+      'below-benchmark execution drive — assess pace and ownership orientation in interview',
+    ],
+    Ownership:       [
+      'strong ownership profile — high autonomy preference, low tolerance for micromanagement',
+      'below-benchmark ownership signal — confirm accountability expectations in high-autonomy roles',
+    ],
+    Adaptability:    [
+      'high adaptability — may underweight consistency and process adherence',
+      'below-benchmark adaptability — assess performance in fast-changing environments',
+    ],
+    'Decision Speed': [
+      'faster decision cadence than benchmark — risk of acting before stakeholder alignment',
+      'slower decision cadence than benchmark — assess urgency-mismatch in high-pace roles',
+    ],
+  }
+  const [aboveNote, belowNote] = consequences[primary.name] ?? ['gap above benchmark', 'gap below benchmark']
+  const note = primary.delta > 0 ? aboveNote : belowNote
+
+  return `${primary.name} is ${pts} points ${dir} the role benchmark — ${note}.`
 }
 
 export function fitColor(fitPct: number): string {
   if (fitPct >= 85) return '#22C55E'
   if (fitPct >= 70) return '#EAB308'
+  if (fitPct >= 55) return '#F97316'
   return '#EF4444'
 }
 
-export function fitColorName(fitPct: number): 'strong' | 'caution' | 'risk' {
+export function fitColorName(fitPct: number): 'strong' | 'caution' | 'discuss' | 'risk' {
   if (fitPct >= 85) return 'strong'
   if (fitPct >= 70) return 'caution'
+  if (fitPct >= 55) return 'discuss'
   return 'risk'
 }
 

@@ -1,13 +1,17 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { auth } from '@/lib/auth'
+import { requireOrg } from '@/lib/auth-helpers'
 
+// A/B stats are scoped to the calling org. Platform admins see all data.
 export async function GET() {
-  const session = await auth()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const ctx = await requireOrg()
+  if (ctx instanceof NextResponse) return ctx
 
   try {
     const results = await prisma.assessmentResult.findMany({
+      where: ctx.isPlatformAdmin ? undefined : {
+        invite: { job: { orgId: ctx.orgId } },
+      },
       include: { invite: { include: { outcome: true } } },
     })
 

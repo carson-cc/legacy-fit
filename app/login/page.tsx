@@ -99,7 +99,7 @@ export default function LoginPage() {
             </div>
 
             <div style={{ textAlign: 'right', marginBottom: 32 }}>
-              <a href="#" style={{ fontSize: 12, color: '#9CA3AF', textDecoration: 'none' }}>Forgot password?</a>
+              <a href="/forgot-password" style={{ fontSize: 12, color: '#9CA3AF', textDecoration: 'none' }}>Forgot password?</a>
             </div>
 
             <button
@@ -115,6 +115,12 @@ export default function LoginPage() {
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
+
+
+            <p style={{ fontSize: 13, color: '#6B7280', marginTop: 24, textAlign: 'center' }}>
+              New to {PRODUCT_NAME}?{' '}
+              <a href="/signup" style={{ color: '#2563EB', fontWeight: 500, textDecoration: 'none' }}>Create an account</a>
+            </p>
           </form>
         </div>
       </div>

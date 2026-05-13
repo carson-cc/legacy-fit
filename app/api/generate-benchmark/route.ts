@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { requireOrg } from '@/lib/auth-helpers'
 import Anthropic from '@anthropic-ai/sdk'
 
 export async function POST(req: NextRequest) {
-  const session = await auth()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const ctx = await requireOrg()
+  if (ctx instanceof NextResponse) return ctx
 
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) return NextResponse.json({ error: 'AI not configured.' }, { status: 503 })

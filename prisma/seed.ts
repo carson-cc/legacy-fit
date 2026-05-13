@@ -46,48 +46,63 @@ function pickWords(targets: { dominance: number; extraversion: number; patience:
 }
 
 async function main() {
+  // ─── Default organization ────────────────────────────────────────────────
+  // With the multi-tenant migration every Client/Job/HM belongs to an Org.
+  // We seed one demo firm and one admin user. A second org is created by
+  // the tenant-isolation test fixture (see lib/__tests__/tenant-isolation).
+  const demoOrg = await prisma.organization.upsert({
+    where: { slug: 'demo-firm' },
+    update: {},
+    create: { id: 'org-demo', name: 'Demo Search Firm', slug: 'demo-firm' },
+  })
+
   // Seed admin user
   const hashedPassword = await bcrypt.hash('admin123', 10)
   await prisma.user.upsert({
     where: { email: 'admin@veltro.ai' },
-    update: {},
+    update: { orgId: demoOrg.id, role: 'owner' },
     create: {
       email: 'admin@veltro.ai',
       password: hashedPassword,
       name: 'Admin User',
+      orgId: demoOrg.id,
+      role: 'owner',
     },
   })
 
   // Seed sample clients
   const gilbane = await prisma.client.upsert({
     where: { id: 'client-gilbane' },
-    update: {},
+    update: { orgId: demoOrg.id },
     create: {
       id: 'client-gilbane',
       name: 'Gilbane Construction',
       industry: 'Commercial Construction',
+      orgId: demoOrg.id,
     },
   })
 
   const ford = await prisma.client.upsert({
     where: { id: 'client-ford' },
-    update: {},
+    update: { orgId: demoOrg.id },
     create: {
       id: 'client-ford',
       name: 'Ford Motor Company',
       industry: 'Automotive Manufacturing',
+      orgId: demoOrg.id,
     },
   })
 
   // Seed sample jobs
   const supeJob = await prisma.job.upsert({
     where: { id: 'job-supe-chi' },
-    update: {},
+    update: { orgId: demoOrg.id },
     create: {
       id: 'job-supe-chi',
       title: 'Superintendent — Chicago',
       roleType: 'superintendent',
       clientId: gilbane.id,
+      orgId: demoOrg.id,
     },
   })
 
@@ -106,12 +121,13 @@ async function main() {
 
   const foremanJob = await prisma.job.upsert({
     where: { id: 'job-foreman-cle' },
-    update: {},
+    update: { orgId: demoOrg.id },
     create: {
       id: 'job-foreman-cle',
       title: 'Foreman — Cleveland',
       roleType: 'foreman',
       clientId: gilbane.id,
+      orgId: demoOrg.id,
     },
   })
 
@@ -129,12 +145,13 @@ async function main() {
 
   const fordJob = await prisma.job.upsert({
     where: { id: 'job-trades-dearborn' },
-    update: {},
+    update: { orgId: demoOrg.id },
     create: {
       id: 'job-trades-dearborn',
       title: 'Skilled Trades — Dearborn',
       roleType: 'foreman',
       clientId: ford.id,
+      orgId: demoOrg.id,
     },
   })
 
@@ -355,32 +372,35 @@ async function main() {
       list2Order: JSON.stringify(ADJECTIVES.map(a => a.word)),
       list1Count: sarahList1.length,
       list2Count: sarahList2.length,
-      timeOnPage1Ms: 230000,
-      timeOnPage2Ms: 215000,
+      timeOnPage1Ms: 160000,
+      timeOnPage2Ms: 140000,
       scoringVersion: SCORING_VERSION,
       rushed: false,
     },
   })
 
-  // Pending invite (no result) — Derek Henderson
-  await prisma.candidateInvite.upsert({
-    where: { id: 'invite-derek' },
+  // Mark Sarah as placed and retained for outcome data
+  await prisma.placementOutcome.upsert({
+    where: { inviteId: sarahInvite.id },
     update: {},
     create: {
-      id: 'invite-derek',
-      jobId: supeJob.id,
-      token: 'demo-derek-token',
-      name: 'Derek Henderson',
+      inviteId: sarahInvite.id,
+      placed: true,
+      retainedAt90: true,
+      retainedAt180: true,
+      performanceRating: 4,
+      notes: 'Strong placement. Onboarded smoothly.',
     },
   })
 
-  console.log('Seed complete.')
-  console.log(`  Marcus: ${marcusResult.profile.name} (fit: ${marcusResult.fitPct}%)`)
-  console.log(`  Keisha: ${keishaResult.profile.name} (fit: ${keishaResult.fitPct}%)`)
-  console.log(`  Andre:  ${andreResult.profile.name} (fit: ${andreResult.fitPct}%)`)
-  console.log(`  Sarah:  ${sarahResult.profile.name} (fit: ${sarahResult.fitPct}%)`)
+  console.log('✅ Seed complete.')
 }
 
 main()
-  .catch(console.error)
-  .finally(() => prisma.$disconnect())
+  .catch((e) => {
+    console.error(e)
+    process.exit(1)
+  })
+  .finally(async () => {
+    await prisma.$disconnect()
+  })

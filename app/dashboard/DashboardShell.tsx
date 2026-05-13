@@ -11,6 +11,8 @@ const NAV_ITEMS = [
   { label: 'Candidates', href: '/dashboard/candidates' },
   { label: 'Roles', href: '/dashboard/jobs' },
   { label: 'Clients', href: '/dashboard/clients' },
+  { label: 'Team', href: '/dashboard/settings/team' },
+  { label: 'Branding', href: '/dashboard/settings/branding' },
 ]
 
 export default function DashboardShell({ children }: { children: React.ReactNode }) {
@@ -129,8 +131,6 @@ export default function DashboardShell({ children }: { children: React.ReactNode
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflowY: 'auto' }}>
         <main style={{ flex: 1 }}>{children}</main>
       </div>
-
-      <ToastContainer />
     </div>
   )
 }

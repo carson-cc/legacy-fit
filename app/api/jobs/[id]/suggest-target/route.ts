@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { requireOrg, assertJobInOrg } from '@/lib/auth-helpers'
 import Anthropic from '@anthropic-ai/sdk'
 
 type Params = { params: Promise<{ id: string }> }
 
 export async function POST(req: NextRequest, { params }: Params) {
-  const session = await auth()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const ctx = await requireOrg()
+  if (ctx instanceof NextResponse) return ctx
 
-  await params // consume params to avoid warning
+  const { id } = await params
+  if (!(await assertJobInOrg(id, ctx.orgId))) {
+    return NextResponse.json({ error: 'Job not found' }, { status: 404 })
+  }
 
   try {
     const { roleDescription } = await req.json()
@@ -51,7 +54,6 @@ Return ONLY valid JSON in this exact format, no other text:
       .map(b => b.text)
       .join('')
 
-    // Extract JSON from response (handle potential markdown wrapping)
     const jsonMatch = text.match(/\{[\s\S]*\}/)
     if (!jsonMatch) {
       return NextResponse.json({ error: 'Could not parse AI response.' }, { status: 500 })
@@ -59,10 +61,8 @@ Return ONLY valid JSON in this exact format, no other text:
 
     const parsed = JSON.parse(jsonMatch[0])
 
-    // Validate and clamp values
     const clamp = (v: unknown) => Math.max(0, Math.min(1, Number(v) || 0.5))
 
-    // Map from AI response (new dimension names) back to internal DB field names
     const result = {
       dominance: clamp(parsed.execution),
       extraversion: clamp(parsed.collaboration),

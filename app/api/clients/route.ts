@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { auth } from '@/lib/auth'
+import { requireOrg } from '@/lib/auth-helpers'
+import { validate, nonEmptyStr, optional, str } from '@/lib/validation'
 
 export async function GET() {
-  const session = await auth()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const ctx = await requireOrg()
+  if (ctx instanceof NextResponse) return ctx
 
   try {
     const clients = await prisma.client.findMany({
+      where: { orgId: ctx.orgId },
       orderBy: { name: 'asc' },
       include: {
         hiringManagers: {
@@ -37,13 +39,29 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const ctx = await requireOrg()
+  if (ctx instanceof NextResponse) return ctx
 
   try {
-    const { name, industry } = await req.json()
-    if (!name) return NextResponse.json({ error: 'Name is required' }, { status: 400 })
-    const client = await prisma.client.create({ data: { name, industry } })
+    const body = await req.json()
+    const v = validate(body, {
+      name: nonEmptyStr(200),
+      industry: optional(str(120)),
+    })
+    if (!v.ok) return NextResponse.json({ error: v.error }, { status: 400 })
+
+    const client = await prisma.client.create({
+      data: {
+        name: v.value.name,
+        industry: v.value.industry ?? null,
+        orgId: ctx.orgId,
+      },
+    })
+
+    await prisma.eventLog.create({
+      data: { event: 'client.created', entityId: client.id, orgId: ctx.orgId, userId: ctx.userId },
+    })
+
     return NextResponse.json({
       data: { ...client, completedHMs: [], pendingHMs: 0, activeJobs: 0 },
     })

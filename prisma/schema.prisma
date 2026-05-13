@@ -3,38 +3,130 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  // PgBouncer-pooled DATABASE_URL doesn't support all session-level features that
+  // `prisma migrate` needs (prepared statements, advisory locks). Migrations use
+  // the direct (non-pooled) URL; runtime app queries use the pooled URL.
+  directUrl = env("DIRECT_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Tenancy
+// ---------------------------------------------------------------------------
+//
+// Every recruiter belongs to exactly one Organization (a search firm).
+// All customer-owned records (Client, Job, HiringManagerAssessment, EventLog)
+// carry orgId so the API can scope queries. Cross-tenant reads are blocked
+// at the helper layer in lib/auth-helpers.ts and verified by the test in
+// lib/__tests__/tenant-isolation.test.ts.
+
+model Organization {
+  id                  String                    @id @default(cuid())
+  name                String
+  slug                String                    @unique
+  createdAt           DateTime                  @default(now())
+  // White-label branding for client portal
+  brandLogoUrl        String?
+  brandPrimaryColor   String?                   // hex e.g. "#1D4ED8"
+  brandPartnerName    String?
+  brandPartnerEmail   String?
+  users               User[]
+  clients             Client[]
+  jobs                Job[]
+  hms                 HiringManagerAssessment[]
+  events              EventLog[]
+  invites             OrgInvite[]
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  name      String?
-  role      String   @default("recruiter")
-  createdAt DateTime @default(now())
+  id                  String               @id @default(cuid())
+  email               String               @unique
+  password            String
+  name                String?
+  // Per-org role. "owner" can manage billing + team; "admin" can manage team;
+  // "member" can use the product but not invite. Single role per user for v1
+  // (each user belongs to one org).
+  role                String               @default("member")
+  isPlatformAdmin     Boolean              @default(false)
+  orgId               String?
+  org                 Organization?        @relation(fields: [orgId], references: [id], onDelete: SetNull)
+  emailVerifiedAt     DateTime?
+  createdAt           DateTime             @default(now())
+  passwordResets      PasswordResetToken[]
+  events              EventLog[]
+  candidateNotes      CandidateNote[]
+
+  @@index([orgId])
 }
+
+// Time-limited token for password-reset emails. Single-use; we delete on
+// successful reset and prune expired rows via a maintenance task.
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// Pending invite to join an org. acceptedAt is set when the invitee signs up
+// via /accept-invite/[token]. We bind the invite to an email so a different
+// account cannot claim it.
+model OrgInvite {
+  id         String       @id @default(cuid())
+  orgId      String
+  org        Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  email      String
+  role       String       @default("member")
+  token      String       @unique @default(cuid())
+  invitedBy  String       // userId of the inviter
+  expiresAt  DateTime
+  acceptedAt DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime     @default(now())
+
+  @@index([orgId])
+  @@index([email])
+}
+
+// ---------------------------------------------------------------------------
+// Domain models
+// ---------------------------------------------------------------------------
 
 model Client {
   id             String                    @id @default(cuid())
+  orgId          String
+  org            Organization              @relation(fields: [orgId], references: [id], onDelete: Cascade)
   name           String
   industry       String?
   createdAt      DateTime                  @default(now())
   jobs           Job[]
   hiringManagers HiringManagerAssessment[]
+
+  @@index([orgId])
 }
 
 model Job {
-  id         String            @id @default(cuid())
-  title      String
-  roleType   String
-  clientId   String
-  client     Client            @relation(fields: [clientId], references: [id])
-  target     JobTarget?
-  invites    CandidateInvite[]
-  createdAt  DateTime          @default(now())
-  archivedAt DateTime?
+  id             String            @id @default(cuid())
+  orgId          String
+  org            Organization      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  title          String
+  roleType       String
+  clientId       String
+  client         Client            @relation(fields: [clientId], references: [id])
+  target         JobTarget?
+  invites        CandidateInvite[]
+  clientContacts ClientContact[]
+  createdAt      DateTime          @default(now())
+  archivedAt     DateTime?
+
+  @@index([orgId])
+  @@index([clientId])
 }
 
 model JobTarget {
@@ -51,23 +143,38 @@ model JobTarget {
 }
 
 model CandidateInvite {
-  id          String            @id @default(cuid())
-  jobId       String
-  job         Job               @relation(fields: [jobId], references: [id])
-  token       String            @unique @default(cuid())
-  name        String?
-  email       String?
-  phone       String?
-  sentAt      DateTime?
-  completedAt DateTime?
-  result      AssessmentResult?
-  outcome     PlacementOutcome?
-  createdAt   DateTime          @default(now())
+  id                 String            @id @default(cuid())
+  jobId              String
+  job                Job               @relation(fields: [jobId], references: [id])
+  token              String            @unique @default(cuid())
+  name               String?
+  email              String?
+  phone              String?
+  // "candidate" | "team_member"
+  inviteType         String            @default("candidate")
+  // Process flags
+  stage              String            @default("longlist") // longlist | shortlist | client_ready | rejected | client_approved
+  offLimits          Boolean           @default(false)
+  // Partner approval gate: owner/admin must approve before candidate appears in portal
+  approvedForClient  Boolean           @default(false)
+  approvedByUserId   String?
+  approvedAt         DateTime?
+  sentAt             DateTime?
+  completedAt        DateTime?
+  result             AssessmentResult?
+  outcome            PlacementOutcome?
+  notes              CandidateNote[]
+  createdAt          DateTime          @default(now())
+
+  @@index([jobId])
 }
 
 model AssessmentResult {
   id               String          @id @default(cuid())
   shareToken       String          @unique @default(cuid())
+  // Token expiry: clients/recruiters can revoke or auto-expire share links.
+  // Reads in app/api/report/[shareToken] check this before returning data.
+  shareTokenExpiresAt DateTime?
   inviteId         String          @unique
   invite           CandidateInvite @relation(fields: [inviteId], references: [id])
   dominance        Float
@@ -100,8 +207,21 @@ model AssessmentResult {
   scoringVersion   String    @default("v3.0.0")
   scoringVariant   String    @default("v2_quadratic")
   rushed           Boolean   @default(false)
-  recruiterNotes   String?
   createdAt        DateTime  @default(now())
+}
+
+// Append-only thread of recruiter notes on a candidate. Replaces the
+// single AssessmentResult.recruiterNotes text field.
+model CandidateNote {
+  id           String          @id @default(cuid())
+  inviteId     String
+  invite       CandidateInvite @relation(fields: [inviteId], references: [id], onDelete: Cascade)
+  authorUserId String
+  author       User            @relation(fields: [authorUserId], references: [id], onDelete: Cascade)
+  body         String
+  createdAt    DateTime        @default(now())
+
+  @@index([inviteId])
 }
 
 model PlacementOutcome {
@@ -117,25 +237,61 @@ model PlacementOutcome {
 }
 
 model HiringManagerAssessment {
-  id           String    @id @default(cuid())
+  id           String        @id @default(cuid())
+  orgId        String
+  org          Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
   clientId     String
-  client       Client    @relation(fields: [clientId], references: [id])
+  client       Client        @relation(fields: [clientId], references: [id])
   name         String
   email        String?
-  dominance    Float     @default(0)
-  extraversion Float     @default(0)
-  patience     Float     @default(0)
-  formality    Float     @default(0)
-  profileType  String    @default("")
-  token        String    @unique @default(cuid())
+  dominance    Float         @default(0)
+  extraversion Float         @default(0)
+  patience     Float         @default(0)
+  formality    Float         @default(0)
+  profileType  String        @default("")
+  token        String        @unique @default(cuid())
   completedAt  DateTime?
-  createdAt    DateTime  @default(now())
+  createdAt    DateTime      @default(now())
+
+  @@index([orgId])
+  @@index([clientId])
 }
 
+// Magic-link access for the hiring company's point of contact at a search.
+// One job can have multiple contacts (e.g., two partners at the hiring firm).
+// The token IS the credential — treat it like a password; it expires and is
+// rotated on each new send. Portal auth sets an HttpOnly cookie; every
+// portal API route validates the cookie against this table.
+model ClientContact {
+  id           String    @id @default(cuid())
+  jobId        String
+  job          Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  name         String
+  email        String
+  token        String    @unique @default(cuid())
+  expiresAt    DateTime
+  lastAccessAt DateTime?
+  revokedAt    DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@index([jobId])
+  @@index([token])
+}
+
+// Append-only audit log. userId is nullable for system events (e.g. a
+// candidate completing their assessment, where there is no logged-in user).
 model EventLog {
-  id        String   @id @default(cuid())
+  id        String        @id @default(cuid())
   event     String
   entityId  String
+  orgId     String?
+  org       Organization? @relation(fields: [orgId], references: [id], onDelete: SetNull)
+  userId    String?
+  user      User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
   meta      String?
-  createdAt DateTime @default(now())
+  createdAt DateTime      @default(now())
+
+  @@index([orgId])
+  @@index([userId])
+  @@index([event])
 }
