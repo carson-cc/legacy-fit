@@ -107,6 +107,11 @@ export async function GET(_req: NextRequest, { params }: Params) {
         name: invite.name,
         email: invite.email,
         completedAt: invite.completedAt,
+        stage: invite.stage,
+        offLimits: invite.offLimits,
+        approvedForClient: invite.approvedForClient,
+        approvedAt: invite.approvedAt,
+        approvedByUserId: invite.approvedByUserId,
         job: {
           id: invite.job.id,
           title: invite.job.title,
@@ -153,7 +158,6 @@ export async function GET(_req: NextRequest, { params }: Params) {
         list2Count: result.list2Count,
         resultId: result.id,
         shareToken: result.shareToken,
-        recruiterNotes: result.recruiterNotes || '',
       },
     })
   } catch {

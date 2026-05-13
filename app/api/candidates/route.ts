@@ -18,19 +18,27 @@ export async function GET() {
 
     const data = invites.map(invite => {
       const r = invite.result!
-      const fitPct = r.fitPct ?? 0
-      const rec = fitPct >= 85 ? 'Strong Hire' : fitPct >= 70 ? 'Proceed with Caution' : 'Do Not Hire'
-      const conf = fitPct >= 80 ? 'High' : fitPct >= 60 ? 'Medium' : 'Low'
-      const benchmarkTag = invite.job.target
-        ? fitPct >= 85 ? 'Above benchmark' : fitPct >= 70 ? 'At benchmark' : 'Below benchmark'
-        : 'No benchmark'
+      const fitPct = r.fitPct  // null when no benchmark was set
+      const hasBenchmark = fitPct !== null
+      const rec = !hasBenchmark ? null
+        : fitPct! >= 85 ? 'Strong Fit'
+        : fitPct! >= 70 ? 'Explore Further'
+        : fitPct! >= 55 ? 'Needs Discussion'
+        : 'Low Fit'
+      const conf = !hasBenchmark ? null
+        : fitPct! >= 80 ? 'High' : fitPct! >= 60 ? 'Medium' : 'Low'
+      const benchmarkTag = !invite.job.target ? 'No benchmark'
+        : fitPct! >= 85 ? 'Above benchmark'
+        : fitPct! >= 70 ? 'At benchmark'
+        : 'Below benchmark'
 
       return {
         id: invite.id,
         name: invite.name,
         email: invite.email,
         completedAt: invite.completedAt,
-        fitPct,
+        fitPct,          // null when no benchmark
+        hasBenchmark,
         recommendation: rec,
         confidence: conf,
         benchmarkTag,

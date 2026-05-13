@@ -51,18 +51,27 @@ model JobTarget {
 }
 
 model CandidateInvite {
-  id          String            @id @default(cuid())
-  jobId       String
-  job         Job               @relation(fields: [jobId], references: [id])
-  token       String            @unique @default(cuid())
-  name        String?
-  email       String?
-  phone       String?
-  sentAt      DateTime?
-  completedAt DateTime?
-  result      AssessmentResult?
-  outcome     PlacementOutcome?
-  createdAt   DateTime          @default(now())
+  id                String            @id @default(cuid())
+  jobId             String
+  job               Job               @relation(fields: [jobId], references: [id])
+  token             String            @unique @default(cuid())
+  name              String?
+  email             String?
+  phone             String?
+  // "candidate" | "team_member"
+  inviteType        String            @default("candidate")
+  sentAt            DateTime?
+  completedAt       DateTime?
+  // Process tracking
+  stage             String            @default("longlist")
+  offLimits         Boolean           @default(false)
+  approvedForClient Boolean           @default(false)
+  approvedByUserId  String?
+  approvedAt        DateTime?
+  result            AssessmentResult?
+  outcome           PlacementOutcome?
+  notes             CandidateNote[]
+  createdAt         DateTime          @default(now())
 }
 
 model AssessmentResult {
@@ -100,7 +109,6 @@ model AssessmentResult {
   scoringVersion   String    @default("v3.0.0")
   scoringVariant   String    @default("v2_quadratic")
   rushed           Boolean   @default(false)
-  recruiterNotes   String?
   createdAt        DateTime  @default(now())
 }
 
@@ -130,6 +138,16 @@ model HiringManagerAssessment {
   token        String    @unique @default(cuid())
   completedAt  DateTime?
   createdAt    DateTime  @default(now())
+}
+
+model CandidateNote {
+  id           String          @id @default(cuid())
+  inviteId     String
+  invite       CandidateInvite @relation(fields: [inviteId], references: [id])
+  authorUserId String?
+  authorName   String?
+  body         String
+  createdAt    DateTime        @default(now())
 }
 
 model EventLog {

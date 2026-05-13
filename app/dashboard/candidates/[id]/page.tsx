@@ -16,7 +16,6 @@ interface Scores {
   patience: number
   formality: number
 }
-// API returns scores with renamed keys
 interface ApiScores {
   execution: number
   collaboration: number
@@ -53,11 +52,22 @@ interface InterviewQuestion {
   gap: number
   questions: string[]
 }
+interface CandidateNote {
+  id: string
+  authorName: string | null
+  body: string
+  createdAt: string
+}
 interface Candidate {
   id: string
   name: string
   email: string
   completedAt: string
+  stage: string
+  offLimits: boolean
+  approvedForClient: boolean
+  approvedAt: string | null
+  approvedByUserId: string | null
   job: Job
   scores: ApiScores
   list1Scores: ApiScores
@@ -75,10 +85,22 @@ interface Candidate {
   list2Count: number
   resultId: string
   shareToken: string
-  recruiterNotes: string
 }
 
-// Dimension mapping — Veltro-facing labels only
+const STAGES = [
+  { value: 'longlist', label: 'Longlist' },
+  { value: 'shortlist', label: 'Shortlist' },
+  { value: 'client-ready', label: 'Client-Ready' },
+  { value: 'rejected', label: 'Rejected' },
+]
+
+const STAGE_COLORS: Record<string, { bg: string; fg: string }> = {
+  longlist: { bg: '#F3F4F6', fg: '#6B7280' },
+  shortlist: { bg: 'rgba(59,130,246,0.1)', fg: '#2563EB' },
+  'client-ready': { bg: 'rgba(34,197,94,0.1)', fg: '#16A34A' },
+  rejected: { bg: 'rgba(239,68,68,0.1)', fg: '#DC2626' },
+}
+
 const DIMENSION_MAP = [
   { key: 'dominance' as const, label: 'Execution' },
   { key: 'formality' as const, label: 'Ownership' },
@@ -88,6 +110,10 @@ const DIMENSION_MAP = [
 
 function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+function fmtTime(iso: string): string {
+  return new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
 }
 
 function recommendationLabel(fitPct: number): 'Strong Hire' | 'Proceed with Caution' | 'Do Not Hire' {
@@ -122,22 +148,16 @@ function benchmarkComparison(fitPct: number, roleType: string): string {
   return `Significant misalignment against the current benchmark for ${roleType} roles.`
 }
 
-
 function getStrengths(c: Candidate, mapped: Scores): string[] {
   const base = c.profile?.strengths?.slice(0, 3) ?? []
   if (base.length) return base
-  try {
-    return generateStrongestBehaviors(mapped).slice(0, 3)
-  } catch {
-    return []
-  }
+  try { return generateStrongestBehaviors(mapped).slice(0, 3) } catch { return [] }
 }
 
 function getRisks(c: Candidate): string[] {
   return c.profile?.traps?.slice(0, 3) ?? []
 }
 
-// Animated score ring
 function ScoreRing({ score, color, size = 100 }: { score: number; color: string; size?: number }) {
   const [displayed, setDisplayed] = useState(0)
   const r = (size / 2) - 4
@@ -188,9 +208,20 @@ export default function CandidateDetailPage() {
   const [candidate, setCandidate] = useState<Candidate | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [notes, setNotes] = useState('')
-  const [notesSaving, setNotesSaving] = useState(false)
   const [linkCopied, setLinkCopied] = useState(false)
+
+  const [stage, setStage] = useState('longlist')
+  const [offLimits, setOffLimits] = useState(false)
+  const [stageSaving, setStageSaving] = useState(false)
+
+  const [approvedForClient, setApprovedForClient] = useState(false)
+  const [approvedAt, setApprovedAt] = useState<string | null>(null)
+  const [approvalBusy, setApprovalBusy] = useState(false)
+  const [userRole, setUserRole] = useState<string>('recruiter')
+
+  const [notes, setNotes] = useState<CandidateNote[]>([])
+  const [noteBody, setNoteBody] = useState('')
+  const [noteSubmitting, setNoteSubmitting] = useState(false)
 
   const load = useCallback(() => {
     setLoading(true)
@@ -198,50 +229,117 @@ export default function CandidateDetailPage() {
       .then((r) => { if (!r.ok) throw new Error(); return r.json() })
       .then((d) => {
         setCandidate(d.data)
-        setNotes(d.data.recruiterNotes ?? '')
+        setStage(d.data.stage ?? 'longlist')
+        setOffLimits(d.data.offLimits ?? false)
+        setApprovedForClient(d.data.approvedForClient ?? false)
+        setApprovedAt(d.data.approvedAt ?? null)
         setLoading(false)
       })
-      .catch(() => {
-        setError('Could not load candidate')
-        setLoading(false)
-      })
+      .catch(() => { setError('Could not load candidate'); setLoading(false) })
   }, [id])
 
-  useEffect(() => { load() }, [load])
+  const loadNotes = useCallback(() => {
+    fetch(`/api/candidates/${id}/notes`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.data) setNotes(d.data) })
+      .catch(() => {})
+  }, [id])
 
+  useEffect(() => {
+    fetch('/api/auth/session')
+      .then(r => r.json())
+      .then(s => { if (s?.user?.role) setUserRole(s.user.role) })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => { load() }, [load])
+  useEffect(() => { loadNotes() }, [loadNotes])
   useEffect(() => {
     if (candidate?.name) document.title = `Veltro — ${candidate.name}`
   }, [candidate?.name])
 
-  async function saveNotes(notesValue?: string) {
-    if (!candidate) return
-    const value = notesValue ?? notes
-    setNotesSaving(true)
+  async function updateStage(newStage: string) {
+    setStageSaving(true)
     try {
-      await fetch(`/api/candidates/${id}/notes`, {
+      const res = await fetch(`/api/candidates/${id}/stage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notes: value }),
+        body: JSON.stringify({ stage: newStage }),
       })
-      showToast('Notes saved')
+      if (!res.ok) throw new Error()
+      setStage(newStage)
+      showToast(`Stage updated to ${newStage}`)
     } catch {
-      showToast('Could not save notes', 'error')
+      showToast('Could not update stage', 'error')
     } finally {
-      setNotesSaving(false)
+      setStageSaving(false)
     }
   }
 
-  async function autoSaveNotes() {
-    if (!candidate || notesSaving) return
-    setNotesSaving(true)
+  async function toggleOffLimits() {
+    const next = !offLimits
+    setStageSaving(true)
     try {
-      await fetch(`/api/candidates/${id}/notes`, {
+      const res = await fetch(`/api/candidates/${id}/stage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notes }),
+        body: JSON.stringify({ offLimits: next }),
       })
-    } catch { /* silent on auto-save */ }
-    finally { setNotesSaving(false) }
+      if (!res.ok) throw new Error()
+      setOffLimits(next)
+      showToast(next ? 'Marked off-limits' : 'Off-limits removed')
+    } catch {
+      showToast('Could not update off-limits', 'error')
+    } finally {
+      setStageSaving(false)
+    }
+  }
+
+  async function handleApprove() {
+    const isPartner = userRole === 'owner' || userRole === 'admin'
+    const action = isPartner ? 'approve' : 'request'
+    setApprovalBusy(true)
+    try {
+      const res = await fetch(`/api/candidates/${id}/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      })
+      const body = await res.json()
+      if (!res.ok) throw new Error(body.error)
+      if (action === 'approve') {
+        setApprovedForClient(true)
+        setApprovedAt(new Date().toISOString())
+        showToast('Candidate approved for client')
+      } else {
+        const sent = body.data?.emailsSent ?? 0
+        showToast(`Approval request sent to ${sent} partner${sent !== 1 ? 's' : ''}`)
+      }
+    } catch (e: any) {
+      showToast(e?.message || 'Could not process approval', 'error')
+    } finally {
+      setApprovalBusy(false)
+    }
+  }
+
+  async function submitNote() {
+    if (!noteBody.trim()) return
+    setNoteSubmitting(true)
+    try {
+      const res = await fetch(`/api/candidates/${id}/notes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ body: noteBody }),
+      })
+      if (!res.ok) throw new Error()
+      setNoteBody('')
+      loadNotes()
+      showToast('Note added')
+    } catch {
+      showToast('Could not add note', 'error')
+    } finally {
+      setNoteSubmitting(false)
+    }
   }
 
   function copyShareLink() {
@@ -273,8 +371,6 @@ export default function CandidateDetailPage() {
     )
   }
 
-  // API sends scores as execution/collaboration/adaptability/ownership
-  // FitModel expects dominance/extraversion/patience/formality
   const safeScores = {
     dominance: Number(candidate.scores.execution),
     extraversion: Number(candidate.scores.collaboration),
@@ -288,38 +384,28 @@ export default function CandidateDetailPage() {
   const confidence = confidenceLevel(fitScore, candidate.adaptationStress)
   const percentile = percentileLabel(fitScore)
   const benchmark = benchmarkComparison(fitScore, candidate.job.roleType || candidate.job.title)
-  const rationale = getRecommendationRationale(
-    fitScore,
-    safeScores.dominance,
-    safeScores.extraversion,
-    safeScores.patience,
-    safeScores.formality,
-  )
+  const rationale = getRecommendationRationale(fitScore, safeScores.dominance, safeScores.extraversion, safeScores.patience, safeScores.formality)
   const strengths = getStrengths(candidate, safeScores)
   const risks = getRisks(candidate)
   const totalSignals = 94
+  const isPartner = userRole === 'owner' || userRole === 'admin'
 
   let summary = ''
   try { summary = generateBehavioralSummary(safeScores, candidate.name || 'This candidate') } catch { summary = '' }
 
   const W = 1200
   const card: React.CSSProperties = {
-    background: '#FFF',
-    border: '1px solid #E5E7EB',
-    borderRadius: 12,
-    boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-    padding: 24,
+    background: '#FFF', border: '1px solid #E5E7EB', borderRadius: 12,
+    boxShadow: '0 1px 4px rgba(0,0,0,0.04)', padding: 24,
   }
-  const label: React.CSSProperties = {
+  const lbl: React.CSSProperties = {
     fontSize: 11, fontWeight: 600, letterSpacing: '0.08em',
-    color: '#9CA3AF', textTransform: 'uppercase',
-    marginBottom: 8, display: 'block',
+    color: '#9CA3AF', textTransform: 'uppercase', marginBottom: 8, display: 'block',
   }
 
   return (
     <div style={{ minHeight: '100vh', background: '#F9FAFB' }}>
 
-      {/* Page header */}
       <div style={{ background: '#FFF', borderBottom: '1px solid #E5E7EB', padding: '20px 32px' }}>
         <div style={{ maxWidth: W, margin: '0 auto' }}>
           <button
@@ -331,30 +417,97 @@ export default function CandidateDetailPage() {
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 24 }}>
             <div>
-              <h1 style={{ margin: 0, fontSize: 28, fontWeight: 700, color: '#111827' }}>{candidate.name}</h1>
-              <p style={{ margin: '6px 0 0', fontSize: 16, color: '#6B7280' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 4 }}>
+                <h1 style={{ margin: 0, fontSize: 28, fontWeight: 700, color: '#111827' }}>{candidate.name}</h1>
+                {offLimits && (
+                  <span style={{ fontSize: 12, fontWeight: 600, color: '#DC2626', background: 'rgba(239,68,68,0.1)', padding: '3px 10px', borderRadius: 9999 }}>
+                    Off-limits
+                  </span>
+                )}
+              </div>
+              <p style={{ margin: '0 0 12px', fontSize: 16, color: '#6B7280' }}>
                 {candidate.job.title} · {candidate.job.client}
               </p>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 0, marginTop: 8, alignItems: 'center' }}>
-                {[
-                  `Evaluated ${fmtDate(candidate.completedAt)}`,
-                  `Based on ${totalSignals} behavioral signals`,
-                  'Role benchmark active',
-                ].map((item, i) => (
-                  <span key={item} style={{ fontSize: 12, color: '#9CA3AF' }}>
-                    {i > 0 && <span style={{ margin: '0 8px', color: '#E5E7EB' }}>·</span>}
-                    {item}
-                  </span>
-                ))}
+
+              {/* Stage selector */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 12, color: '#9CA3AF' }}>Stage:</span>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  {STAGES.map(s => {
+                    const active = stage === s.value
+                    const colors = STAGE_COLORS[s.value]
+                    return (
+                      <button
+                        key={s.value}
+                        onClick={() => !stageSaving && updateStage(s.value)}
+                        disabled={stageSaving}
+                        style={{
+                          fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 9999,
+                          border: active ? 'none' : '1px solid #E5E7EB',
+                          background: active ? colors.bg : 'transparent',
+                          color: active ? colors.fg : '#9CA3AF',
+                          cursor: stageSaving ? 'default' : 'pointer',
+                          transition: 'all 150ms ease', opacity: stageSaving ? 0.6 : 1,
+                        }}
+                      >
+                        {s.label}
+                      </button>
+                    )
+                  })}
+                </div>
+                {/* Off-limits toggle */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 8, paddingLeft: 8, borderLeft: '1px solid #E5E7EB' }}>
+                  <span style={{ fontSize: 12, color: '#6B7280' }}>Off-limits</span>
+                  <div
+                    onClick={() => !stageSaving && toggleOffLimits()}
+                    style={{
+                      width: 32, height: 18, borderRadius: 9999,
+                      background: offLimits ? '#DC2626' : '#E5E7EB',
+                      position: 'relative', cursor: 'pointer', transition: 'background 150ms ease', flexShrink: 0,
+                    }}
+                  >
+                    <div style={{
+                      position: 'absolute', top: 2, left: offLimits ? 16 : 2,
+                      width: 14, height: 14, borderRadius: '50%', background: '#FFF',
+                      transition: 'left 150ms ease', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                    }} />
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+            <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
+              {!approvedForClient ? (
+                <button
+                  onClick={handleApprove}
+                  disabled={approvalBusy}
+                  style={{
+                    height: 36, padding: '0 16px', borderRadius: 8,
+                    background: isPartner ? '#16A34A' : '#FFF',
+                    color: isPartner ? '#FFF' : '#374151',
+                    border: isPartner ? 'none' : '1px solid #E5E7EB',
+                    fontSize: 13, fontWeight: 600, cursor: approvalBusy ? 'default' : 'pointer',
+                    opacity: approvalBusy ? 0.6 : 1, transition: 'all 150ms ease',
+                  }}
+                >
+                  {approvalBusy ? '...' : isPartner ? 'Approve for client' : 'Request approval'}
+                </button>
+              ) : (
+                <div style={{
+                  height: 36, padding: '0 16px', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 6,
+                  background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)',
+                  fontSize: 13, fontWeight: 600, color: '#16A34A',
+                }}>
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path d="M2.5 7.5l2.5 2.5L11.5 4" stroke="#16A34A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  Approved
+                  {approvedAt && <span style={{ fontSize: 11, fontWeight: 400, color: '#6B7280' }}>· {fmtDate(approvedAt)}</span>}
+                </div>
+              )}
               <button onClick={copyShareLink} style={{
-                height: 36, padding: '0 16px', borderRadius: 8,
-                background: '#111827', color: '#FFF',
-                fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer',
-                transition: 'all 150ms ease',
+                height: 36, padding: '0 16px', borderRadius: 8, background: '#111827', color: '#FFF',
+                fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer', transition: 'all 150ms ease',
               }}
                 onMouseEnter={e => e.currentTarget.style.background = '#1F2937'}
                 onMouseLeave={e => e.currentTarget.style.background = '#111827'}
@@ -362,10 +515,8 @@ export default function CandidateDetailPage() {
                 {linkCopied ? 'Copied' : 'Share report'}
               </button>
               <button onClick={() => window.print()} style={{
-                height: 36, padding: '0 16px', borderRadius: 8,
-                background: '#FFF', color: '#374151',
-                border: '1px solid #E5E7EB',
-                fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                height: 36, padding: '0 16px', borderRadius: 8, background: '#FFF', color: '#374151',
+                border: '1px solid #E5E7EB', fontSize: 13, fontWeight: 500, cursor: 'pointer',
               }}>
                 Export PDF
               </button>
@@ -376,40 +527,24 @@ export default function CandidateDetailPage() {
 
       <div style={{ maxWidth: W, margin: '0 auto', padding: '24px 32px 64px' }}>
 
-        {/* A. DECISION PANEL — dominant */}
+        {/* A. DECISION PANEL */}
         <div style={{ ...card, marginBottom: 24 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: 40, alignItems: 'start' }}>
-
-            {/* Left — score + recommendation */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 12 }}>
               <ScoreRing score={fitScore} color={recColor} size={100} />
               <div>
                 <div style={{ fontSize: 16, fontWeight: 600, color: recColor }}>{recommendation}</div>
-                <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 4 }}>
-                  {confidence} confidence · {percentile}
-                </div>
+                <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 4 }}>{confidence} confidence · {percentile}</div>
               </div>
             </div>
-
-            {/* Right — benchmark + rationale */}
             <div>
               <div style={{ borderLeft: '1px solid #F3F4F6', paddingLeft: 40 }}>
-                <span style={label}>Benchmark Comparison</span>
-                <p style={{ fontSize: 18, fontWeight: 600, color: '#111827', lineHeight: 1.4, marginBottom: 24 }}>
-                  {benchmark}
-                </p>
-
-                <span style={label}>Recommendation Rationale</span>
-                <p style={{ fontSize: 15, color: '#374151', lineHeight: 1.7, marginBottom: 24 }}>
-                  {rationale}
-                </p>
-
+                <span style={lbl}>Benchmark Comparison</span>
+                <p style={{ fontSize: 18, fontWeight: 600, color: '#111827', lineHeight: 1.4, marginBottom: 24 }}>{benchmark}</p>
+                <span style={lbl}>Recommendation Rationale</span>
+                <p style={{ fontSize: 15, color: '#374151', lineHeight: 1.7, marginBottom: 24 }}>{rationale}</p>
                 <div style={{ borderTop: '1px solid #F3F4F6', paddingTop: 16, display: 'flex', flexWrap: 'wrap', gap: 0, alignItems: 'center' }}>
-                  {[
-                    `Based on ${totalSignals} behavioral signals`,
-                    'Role benchmark active',
-                    'Recommendation generated from calibrated signal analysis',
-                  ].map((item, i) => (
+                  {[`Based on ${totalSignals} behavioral signals`, 'Role benchmark active', 'Recommendation generated from calibrated signal analysis'].map((item, i) => (
                     <span key={item} style={{ fontSize: 11, color: '#9CA3AF' }}>
                       {i > 0 && <span style={{ margin: '0 8px', color: '#E5E7EB' }}>·</span>}
                       {item}
@@ -424,7 +559,7 @@ export default function CandidateDetailPage() {
         {/* B. STRENGTHS + RISKS */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24 }}>
           <div style={card}>
-            <span style={label}>Top Strengths</span>
+            <span style={lbl}>Top Strengths</span>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 8 }}>
               {strengths.length ? strengths.map((s) => (
                 <div key={s} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
@@ -435,7 +570,7 @@ export default function CandidateDetailPage() {
             </div>
           </div>
           <div style={card}>
-            <span style={label}>Primary Risks</span>
+            <span style={lbl}>Primary Risks</span>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 8 }}>
               {risks.length ? risks.map((r) => (
                 <div key={r} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
@@ -450,10 +585,8 @@ export default function CandidateDetailPage() {
         {/* C. FIT MODEL + BENCHMARK SUMMARY */}
         <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: 24, marginBottom: 24, alignItems: 'stretch' }}>
           <div style={card}>
-            <span style={label}>Fit Model</span>
-            <p style={{ fontSize: 14, color: '#6B7280', lineHeight: 1.6, marginBottom: 24 }}>
-              Observed signal pattern against the active role benchmark.
-            </p>
+            <span style={lbl}>Fit Model</span>
+            <p style={{ fontSize: 14, color: '#6B7280', lineHeight: 1.6, marginBottom: 24 }}>Observed signal pattern against the active role benchmark.</p>
             <div style={{ display: 'flex', justifyContent: 'center' }}>
               <FitModelLight
                 scores={safeScores}
@@ -467,9 +600,8 @@ export default function CandidateDetailPage() {
               />
             </div>
           </div>
-
           <div style={card}>
-            <span style={label}>Benchmark Summary</span>
+            <span style={lbl}>Benchmark Summary</span>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 0, marginTop: 8 }}>
               {DIMENSION_MAP.map(({ key, label: dimLabel }) => {
                 const value = Math.round(safeScores[key] * 100)
@@ -479,9 +611,7 @@ export default function CandidateDetailPage() {
                   <div key={key} style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 16, alignItems: 'center', padding: '14px 0', borderBottom: '1px solid #F3F4F6' }}>
                     <div>
                       <div style={{ fontSize: 14, fontWeight: 600, color: '#111827' }}>{dimLabel}</div>
-                      <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>
-                        {target == null ? 'No benchmark set' : `Target ${target}`}
-                      </div>
+                      <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>{target == null ? 'No benchmark set' : `Target ${target}`}</div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
                       <div style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>{value}</div>
@@ -501,7 +631,7 @@ export default function CandidateDetailPage() {
         {/* D. RECOMMENDATION RATIONALE + AI INTERPRETATION */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24 }}>
           <div style={card}>
-            <span style={label}>Recommendation Rationale</span>
+            <span style={lbl}>Recommendation Rationale</span>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 0, marginTop: 8 }}>
               {[
                 { title: 'Benchmark alignment', body: benchmark },
@@ -515,22 +645,18 @@ export default function CandidateDetailPage() {
               ))}
             </div>
           </div>
-
-          {/* AI Interpretation — visually subordinate */}
           <div style={{ ...card, background: '#F9FAFB', border: '1px solid #F3F4F6', boxShadow: 'none' }}>
-            <span style={{ ...label, color: '#BFBFBF' }}>AI Interpretation</span>
-            <p style={{ fontSize: 11, color: '#BFBFBF', marginBottom: 16, lineHeight: 1.5 }}>
-              AI-assisted summary based on observed signal patterns.
-            </p>
+            <span style={{ ...lbl, color: '#BFBFBF' }}>AI Interpretation</span>
+            <p style={{ fontSize: 11, color: '#BFBFBF', marginBottom: 16, lineHeight: 1.5 }}>AI-assisted summary based on observed signal patterns.</p>
             <p style={{ fontSize: 14, color: '#6B7280', lineHeight: 1.7 }}>
               {candidate.name} shows a behavioral pattern strongest in execution, pace, and practical decision-making relative to the active role benchmark. The recommendation is best supported when the role values ownership and visible forward motion. The main caution is fit in environments requiring slower consensus, heavier process discipline, or tighter behavioral consistency across contexts.
             </p>
           </div>
         </div>
 
-        {/* E. SUPPORTING EVIDENCE */}
+        {/* E. SUPPORTING EVIDENCE + NOTES */}
         <div style={{ ...card, marginBottom: 24 }}>
-          <span style={label}>Supporting Evidence</span>
+          <span style={lbl}>Supporting Evidence</span>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginTop: 16 }}>
             <div>
               <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', color: '#9CA3AF', textTransform: 'uppercase', marginBottom: 12 }}>
@@ -550,51 +676,62 @@ export default function CandidateDetailPage() {
                 </p>
               )}
             </div>
+
+            {/* Threaded notes */}
             <div>
               <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', color: '#9CA3AF', textTransform: 'uppercase', marginBottom: 12 }}>
                 Recruiter Notes
               </div>
+              {notes.length > 0 && (
+                <div style={{ marginBottom: 12, display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 240, overflowY: 'auto' }}>
+                  {notes.map(note => (
+                    <div key={note.id} style={{ background: '#F9FAFB', border: '1px solid #F3F4F6', borderRadius: 8, padding: '10px 12px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>{note.authorName ?? 'Unknown'}</span>
+                        <span style={{ fontSize: 11, color: '#9CA3AF' }}>{fmtTime(note.createdAt)}</span>
+                      </div>
+                      <p style={{ margin: 0, fontSize: 13, color: '#374151', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{note.body}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
               <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                onBlur={() => autoSaveNotes()}
-                placeholder="Private notes about this candidate..."
-                rows={5}
+                value={noteBody}
+                onChange={e => setNoteBody(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); submitNote() } }}
+                placeholder={`Add a note...${notes.length === 0 ? '' : ' (⌘↵ to submit)'}`}
+                rows={3}
                 style={{
                   width: '100%', border: '1px solid #E5E7EB', borderRadius: 8,
-                  padding: '12px 16px', fontSize: 14, color: '#111827',
+                  padding: '10px 12px', fontSize: 13, color: '#111827',
                   resize: 'vertical', outline: 'none', fontFamily: 'inherit',
-                  boxSizing: 'border-box', lineHeight: 1.6,
-                  transition: 'border-color 150ms ease',
+                  boxSizing: 'border-box', lineHeight: 1.6, transition: 'border-color 150ms ease',
                 }}
                 onFocus={e => (e.target.style.borderColor = '#2563EB')}
+                onBlur={e => (e.target.style.borderColor = '#E5E7EB')}
               />
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
-                <button onClick={() => saveNotes()} style={{
-                  height: 34, padding: '0 14px', borderRadius: 8,
-                  border: '1px solid #E5E7EB', background: '#FFF',
-                  color: '#111827', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                  transition: 'all 150ms ease',
-                }}
-                  onMouseEnter={e => e.currentTarget.style.background = '#F9FAFB'}
-                  onMouseLeave={e => e.currentTarget.style.background = '#FFF'}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 6 }}>
+                <button
+                  onClick={submitNote}
+                  disabled={noteSubmitting || !noteBody.trim()}
+                  style={{
+                    height: 32, padding: '0 14px', borderRadius: 8,
+                    background: '#2563EB', color: '#FFF', border: 'none',
+                    fontSize: 12, fontWeight: 600,
+                    cursor: noteSubmitting || !noteBody.trim() ? 'default' : 'pointer',
+                    opacity: noteSubmitting || !noteBody.trim() ? 0.5 : 1, transition: 'all 150ms ease',
+                  }}
                 >
-                  {notesSaving ? 'Saving...' : 'Save notes'}
+                  {noteSubmitting ? 'Adding...' : 'Add note'}
                 </button>
-                {notesSaving && (
-                  <span style={{ fontSize: 12, color: '#9CA3AF' }}>Auto-saving...</span>
-                )}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Footer metadata */}
+        {/* Footer */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 0, alignItems: 'center' }}>
-          {[
-            `Report ID: ${candidate.resultId?.slice(0, 8) ?? 'N/A'}`,
-            `Assessment completed ${fmtDate(candidate.completedAt)}`,
-          ].map((item, i) => (
+          {[`Report ID: ${candidate.resultId?.slice(0, 8) ?? 'N/A'}`, `Assessment completed ${fmtDate(candidate.completedAt)}`].map((item, i) => (
             <span key={item} style={{ fontSize: 11, color: '#BFBFBF' }}>
               {i > 0 && <span style={{ margin: '0 8px', color: '#E5E7EB' }}>·</span>}
               {item}
