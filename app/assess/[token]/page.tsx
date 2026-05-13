@@ -162,7 +162,7 @@ const PROC_DIMS = ['EXECUTION', 'OWNERSHIP', 'ADAPTABILITY', 'COLLABORATION', 'D
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type Phase = 'loading' | 'welcome' | 'list1' | 'list2' | 'processing' | 'complete' | 'error'
+type Phase = 'loading' | 'consent' | 'welcome' | 'list1' | 'list2' | 'processing' | 'complete' | 'error'
 
 interface CompletionData {
   profileName: string
@@ -265,7 +265,7 @@ export default function AssessPage() {
           setPhase('complete')
         } else {
           setCandidateName(data.candidateName || '')
-          if (phase === 'loading') setPhase('welcome')
+          if (phase === 'loading') setPhase('consent')
         }
       })
       .catch(() => {
@@ -448,6 +448,87 @@ export default function AssessPage() {
           <p style={{ fontSize: 15, color: 'rgba(238,236,230,0.45)', lineHeight: 1.6 }}>{errorMsg}</p>
         </div>
         <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+      </div>
+    )
+  }
+
+  // ─── CONSENT ─────────────────────────────────────────────────────────────
+
+  if (phase === 'consent') {
+    return (
+      <div style={{ minHeight: '100svh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#080808', padding: '32px 24px', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif' }}>
+        <style>{`@keyframes fadeUp { from { opacity: 0; transform: translateY(12px) } to { opacity: 1; transform: translateY(0) } }`}</style>
+        <div style={{ width: '100%', maxWidth: 480, animation: 'fadeUp 400ms ease-out both' }}>
+
+          {/* Wordmark */}
+          <div style={{ textAlign: 'center', marginBottom: 56 }}>
+            <span style={{ fontSize: 15, fontWeight: 500, color: 'rgba(238,236,230,0.5)', letterSpacing: '-0.01em' }}>{PRODUCT_NAME}</span>
+          </div>
+
+          <h1 style={{ fontSize: 22, fontWeight: 600, color: '#eeece6', margin: '0 0 8px', letterSpacing: '-0.02em', lineHeight: 1.25 }}>
+            Before you begin
+          </h1>
+          <p style={{ fontSize: 15, color: 'rgba(238,236,230,0.45)', margin: '0 0 32px', fontWeight: 300, lineHeight: 1.55 }}>
+            This assessment collects behavioral signals. Here&rsquo;s what you should know.
+          </p>
+
+          {/* Disclosure cards */}
+          {([
+            {
+              icon: (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+                  <rect x="9" y="3" width="6" height="4" rx="1"/>
+                </svg>
+              ),
+              label: 'What we collect',
+              body: 'Your word selections and completion time. No other personal data is captured during the assessment. Your name and email were provided by the firm that invited you.',
+            },
+            {
+              icon: (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                </svg>
+              ),
+              label: 'How long we retain it',
+              body: 'Your profile is retained for the duration of the search process and for up to 12 months afterward. You may request deletion at any time.',
+            },
+            {
+              icon: (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+              ),
+              label: 'Your rights',
+              body: 'You can request a copy or deletion of your data by emailing privacy@veltro.ai. Results are shared with the firm that invited you and are not sold to third parties.',
+            },
+          ] as const).map(({ icon, label, body }) => (
+            <div key={label} style={{ display: 'flex', gap: 16, padding: '16px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: 'rgba(238,236,230,0.5)' }}>
+                {icon}
+              </div>
+              <div>
+                <p style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 600, color: 'rgba(238,236,230,0.8)', letterSpacing: '-0.01em' }}>{label}</p>
+                <p style={{ margin: 0, fontSize: 13, color: 'rgba(238,236,230,0.42)', fontWeight: 300, lineHeight: 1.6 }}>{body}</p>
+              </div>
+            </div>
+          ))}
+
+          <div style={{ marginTop: 32 }}>
+            <button
+              onClick={() => setPhase('welcome')}
+              style={{ width: '100%', height: 52, borderRadius: 100, background: '#eeece6', color: '#080808', fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer', transition: 'all 160ms ease', letterSpacing: '-0.01em' }}
+              onMouseEnter={e => { e.currentTarget.style.background = '#ffffff'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = '#eeece6'; e.currentTarget.style.transform = 'translateY(0)' }}
+            >
+              I understand — continue
+            </button>
+            <p style={{ fontSize: 11, color: 'rgba(238,236,230,0.2)', textAlign: 'center', marginTop: 14, lineHeight: 1.6 }}>
+              By continuing you acknowledge that your responses will be processed as described above.
+            </p>
+          </div>
+
+        </div>
       </div>
     )
   }
