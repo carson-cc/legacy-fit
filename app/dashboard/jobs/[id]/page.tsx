@@ -59,6 +59,15 @@ function fitColor(pct: number): string {
   return '#EF4444'
 }
 
+function stageColor(stage: string): { bg: string; fg: string } {
+  switch (stage) {
+    case 'shortlist':    return { bg: 'rgba(217,119,6,0.1)',   fg: '#D97706' }
+    case 'client_ready': return { bg: 'rgba(5,150,105,0.1)',   fg: '#059669' }
+    case 'rejected':     return { bg: 'rgba(220,38,38,0.1)',   fg: '#DC2626' }
+    default:             return { bg: 'rgba(37,99,235,0.1)',    fg: '#2563EB' }
+  }
+}
+
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', {
     month: 'short',
@@ -177,9 +186,11 @@ export default function JobDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  /* Search & sort */
+  /* Search, sort & stage filter */
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState<SortKey>('fit')
+  const [stageFilter, setStageFilter] = useState<string>('all')
+  const [stageDropdown, setStageDropdown] = useState<string | null>(null)
 
   /* Invite form */
   const [showInviteForm, setShowInviteForm] = useState(false)
@@ -212,13 +223,13 @@ export default function JobDetailPage() {
   const [moveMenu, setMoveMenu] = useState<string | null>(null)
   const [movingStage, setMovingStage] = useState<string | null>(null)
 
-  /* Close move menu on outside click */
+  /* Close move menu / stage dropdown on outside click */
   useEffect(() => {
-    if (!moveMenu) return
-    const close = () => setMoveMenu(null)
+    if (!moveMenu && !stageDropdown) return
+    const close = () => { setMoveMenu(null); setStageDropdown(null) }
     document.addEventListener('click', close)
     return () => document.removeEventListener('click', close)
-  }, [moveMenu])
+  }, [moveMenu, stageDropdown])
 
   /* Fetch */
   const fetchJob = useCallback(() => {
@@ -443,6 +454,7 @@ export default function JobDetailPage() {
 
   const candidates = allCompleted
     .filter(i => {
+      if (stageFilter !== 'all' && (i.stage || 'longlist') !== stageFilter) return false
       if (!search) return true
       const q = search.toLowerCase()
       return (
@@ -1174,6 +1186,61 @@ export default function JobDetailPage() {
       {view === 'list' && allCompleted.length > 0 && (
         <div style={{ marginBottom: 48 }}>
 
+          {/* Stage filter tabs */}
+          <div style={{ display: 'flex', gap: 4, marginBottom: 16, flexWrap: 'wrap' }}>
+            {([
+              { key: 'all', label: 'All' },
+              { key: 'longlist', label: 'Longlist' },
+              { key: 'shortlist', label: 'Shortlist' },
+              { key: 'client_ready', label: 'Client Ready' },
+              { key: 'rejected', label: 'Rejected' },
+            ] as const).map(({ key, label }) => {
+              const count = key === 'all'
+                ? allCompleted.length
+                : allCompleted.filter(i => (i.stage || 'longlist') === key).length
+              const active = stageFilter === key
+              const sc = key !== 'all' ? stageColor(key) : null
+              return (
+                <button
+                  key={key}
+                  onClick={() => setStageFilter(key)}
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 500,
+                    padding: '5px 12px',
+                    borderRadius: 20,
+                    border: active
+                      ? `1px solid ${sc?.fg ?? '#111827'}`
+                      : '1px solid #E5E7EB',
+                    background: active
+                      ? (sc?.bg ?? '#111827')
+                      : '#FFFFFF',
+                    color: active
+                      ? (sc?.fg ?? '#111827')
+                      : '#6B7280',
+                    cursor: 'pointer',
+                    transition: 'all 150ms ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 5,
+                  }}
+                >
+                  {label}
+                  <span style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    background: active ? 'rgba(0,0,0,0.1)' : '#F3F4F6',
+                    color: active ? (sc?.fg ?? '#111827') : '#9CA3AF',
+                    borderRadius: 99,
+                    padding: '0px 5px',
+                  }}>
+                    {count}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+
           {/* Section header + controls */}
           <div
             style={{
@@ -1194,7 +1261,7 @@ export default function JobDetailPage() {
                 letterSpacing: '0.08em',
               }}
             >
-              Candidates ({candidates.length})
+              {stageFilter === 'all' ? `Candidates (${candidates.length})` : `${STAGE_LABELS[stageFilter]} (${candidates.length})`}
             </span>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -1309,7 +1376,7 @@ export default function JobDetailPage() {
                     </p>
                   </div>
 
-                  {/* Right: date + arrow */}
+                  {/* Right: stage pill + date + arrow */}
                   <div
                     style={{
                       display: 'flex',
@@ -1318,6 +1385,76 @@ export default function JobDetailPage() {
                       flexShrink: 0,
                     }}
                   >
+                    {/* Stage pill — stops navigation, opens dropdown */}
+                    <div style={{ position: 'relative' }}>
+                      <button
+                        onClick={e => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          setStageDropdown(stageDropdown === invite.id ? null : invite.id)
+                        }}
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 600,
+                          padding: '3px 9px',
+                          borderRadius: 99,
+                          border: `1px solid ${stageColor(invite.stage || 'longlist').fg}`,
+                          background: stageColor(invite.stage || 'longlist').bg,
+                          color: stageColor(invite.stage || 'longlist').fg,
+                          cursor: 'pointer',
+                          transition: 'opacity 150ms ease',
+                          whiteSpace: 'nowrap',
+                        }}
+                        onMouseEnter={e => (e.currentTarget.style.opacity = '0.75')}
+                        onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+                      >
+                        {STAGE_LABELS[invite.stage || 'longlist']} ▾
+                      </button>
+
+                      {stageDropdown === invite.id && (
+                        <div
+                          style={{
+                            position: 'absolute', right: 0, top: '100%', marginTop: 4,
+                            zIndex: 30, background: '#FFFFFF',
+                            border: '1px solid #E5E7EB', borderRadius: 8,
+                            padding: 4, boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+                            minWidth: 140,
+                          }}
+                          onClick={e => { e.preventDefault(); e.stopPropagation() }}
+                        >
+                          {STAGES.filter(s => s !== (invite.stage || 'longlist')).map(s => {
+                            const sc = stageColor(s)
+                            return (
+                              <button
+                                key={s}
+                                onClick={async e => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  setStageDropdown(null)
+                                  await handleMoveStage(invite.id, s)
+                                }}
+                                style={{
+                                  display: 'flex', alignItems: 'center', gap: 8,
+                                  width: '100%', textAlign: 'left',
+                                  fontSize: 13, padding: '7px 12px', border: 'none',
+                                  background: 'none', cursor: 'pointer', borderRadius: 6,
+                                  color: '#374151', transition: 'background 120ms ease',
+                                }}
+                                onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')}
+                                onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                              >
+                                <span style={{
+                                  width: 8, height: 8, borderRadius: '50%',
+                                  background: sc.fg, flexShrink: 0,
+                                }} />
+                                {STAGE_LABELS[s]}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+
                     <span style={{ fontSize: 12, color: '#9CA3AF' }}>
                       {invite.completedAt ? formatDate(invite.completedAt) : ''}
                     </span>
@@ -1327,9 +1464,11 @@ export default function JobDetailPage() {
               )
             })}
 
-            {candidates.length === 0 && search && (
+            {candidates.length === 0 && (search || stageFilter !== 'all') && (
               <p style={{ fontSize: 14, color: '#9CA3AF', textAlign: 'center', padding: 24 }}>
-                No candidates match &ldquo;{search}&rdquo;
+                {search
+                  ? `No candidates match "${search}"${stageFilter !== 'all' ? ` in ${STAGE_LABELS[stageFilter]}` : ''}`
+                  : `No candidates in ${STAGE_LABELS[stageFilter]}`}
               </p>
             )}
           </div>
