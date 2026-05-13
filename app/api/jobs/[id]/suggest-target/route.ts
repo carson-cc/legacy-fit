@@ -1,3 +1,4 @@
+import { logError } from '@/lib/log'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireOrg, assertJobInOrg } from '@/lib/auth-helpers'
 import Anthropic from '@anthropic-ai/sdk'
@@ -75,7 +76,7 @@ Return ONLY valid JSON in this exact format, no other text:
 
     return NextResponse.json({ data: result })
   } catch (err) {
-    console.error('Suggest target error:', err)
+    logError(err, { route: '/api/jobs/[id]/suggest-target' })
     return NextResponse.json({ error: 'Could not generate a suggestion. Set the target manually.' }, { status: 500 })
   }
 }

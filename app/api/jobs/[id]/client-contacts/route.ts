@@ -1,3 +1,4 @@
+import { logWarn } from '@/lib/log'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireRole, assertJobInOrg } from '@/lib/auth-helpers'
@@ -79,7 +80,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       expiresInDays: PORTAL_EXPIRY_DAYS,
     })
   } catch (err) {
-    console.error('sendClientPortalEmail failed', err)
+    logWarn('portal_email_failed', { route: '/api/jobs/[id]/client-contacts' })
     return NextResponse.json(
       { data: contact, warning: 'Contact created but email delivery failed.' },
       { status: 207 },

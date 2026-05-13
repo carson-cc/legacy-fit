@@ -1,3 +1,4 @@
+import { logError, logWarn } from '@/lib/log'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireOrg } from '@/lib/auth-helpers'
@@ -51,7 +52,7 @@ export async function POST(req: NextRequest, { params }: Params) {
 
         emailSent = true
       } catch (emailErr) {
-        console.error('Failed to send invite email:', emailErr)
+        logWarn('invite_email_failed', { route: '/api/jobs/[id]/invites' })
       }
     }
 
@@ -59,7 +60,8 @@ export async function POST(req: NextRequest, { params }: Params) {
       data: { ...invite, assessUrl: `/assess/${invite.token}` },
       emailSent,
     })
-  } catch {
+  } catch (err) {
+    logError(err)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }

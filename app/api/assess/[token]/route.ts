@@ -1,3 +1,4 @@
+import { logError, logWarn } from '@/lib/log'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { scoreAssessment, SCORING_VERSION, fitLabel, getModelConfidence, getPercentileLabel } from '@/lib/scoring'
@@ -61,7 +62,8 @@ export async function GET(req: NextRequest, { params }: Params) {
     }
 
     return NextResponse.json({ error: 'Invalid assessment link' }, { status: 404 })
-  } catch {
+  } catch (err) {
+    logError(err)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }
@@ -194,7 +196,7 @@ export async function POST(req: NextRequest, { params }: Params) {
               reportUrl,
             })
           }),
-        ]).catch(err => console.error('Post-assessment email error:', err))
+        ]).catch(err => logWarn('post_assessment_email_failed', { route: '/api/assess/[token]' }))
       }
 
       return NextResponse.json({
@@ -241,7 +243,7 @@ export async function POST(req: NextRequest, { params }: Params) {
 
     return NextResponse.json({ error: 'Invalid assessment link' }, { status: 404 })
   } catch (err) {
-    console.error('Assessment submission error:', err)
+    logError(err, { route: '/api/assess/[token]' })
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }

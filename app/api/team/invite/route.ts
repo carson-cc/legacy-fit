@@ -1,3 +1,4 @@
+﻿import { logWarn } from '@/lib/log'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireRole } from '@/lib/auth-helpers'
@@ -57,7 +58,7 @@ export async function POST(req: NextRequest) {
     })
     emailSent = true
   } catch (err) {
-    console.error('Failed to send team invite email:', err)
+    logWarn('team_invite_email_failed', { route: '/api/team/invite' })
   }
 
   await prisma.eventLog.create({

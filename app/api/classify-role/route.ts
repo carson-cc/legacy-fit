@@ -1,3 +1,4 @@
+﻿import { logError } from '@/lib/log'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireOrg } from '@/lib/auth-helpers'
 import Anthropic from '@anthropic-ai/sdk'
@@ -76,7 +77,7 @@ Return ONLY valid JSON, no markdown, no extra text:
       },
     })
   } catch (err) {
-    console.error('Classify role error:', err)
+    logError(err, { route: '/api/classify-role' })
     return NextResponse.json({ error: 'Classification failed. Set the benchmark manually.' }, { status: 500 })
   }
 }

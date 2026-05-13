@@ -1,3 +1,4 @@
+import { logError } from '@/lib/log'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireOrg, assertClientInOrg } from '@/lib/auth-helpers'
@@ -19,7 +20,8 @@ export async function GET(_req: NextRequest, { params }: Params) {
       select: { id: true, name: true, email: true, profileType: true, completedAt: true, token: true, dominance: true, extraversion: true, patience: true, formality: true },
     })
     return NextResponse.json({ data: hms })
-  } catch {
+  } catch (err) {
+    logError(err)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }
@@ -43,7 +45,8 @@ export async function POST(req: NextRequest, { params }: Params) {
     return NextResponse.json({
       data: { ...hm, assessmentUrl: `/assess/${hm.token}?type=hm` },
     })
-  } catch {
+  } catch (err) {
+    logError(err)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }
