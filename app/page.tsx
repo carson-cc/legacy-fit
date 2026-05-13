@@ -297,8 +297,10 @@ export default function HomePage() {
         .report-card-right::-webkit-scrollbar { display: none }
         @media (max-width: 768px) {
           .report-card-body  { flex-direction: column !important; }
-          .report-card-left  { width: 100% !important; border-right: none !important; border-bottom: 1px solid rgba(255,255,255,0.07) !important; }
+          .report-card-left  { width: 100% !important; max-height: 420px !important; border-right: none !important; border-bottom: 1px solid rgba(255,255,255,0.07) !important; overflow-y: auto !important; }
           .report-card-right { padding: 16px !important; }
+          .report-card       { height: auto !important; min-height: calc(100svh - 110px) !important; }
+          .report-card-header-right { display: none !important; }
         }
         .team-row { transition: background 150ms ease; border-radius: 6px; padding: 5px 6px; margin: 0 -6px; cursor: default; }
         .team-row:hover { background: rgba(255,255,255,0.04) !important; }
@@ -337,7 +339,7 @@ export default function HomePage() {
       {/* ── BEAT 2 — The card ── */}
       <section
         ref={reportRef}
-        className="snap-beat"
+        className="snap-beat report-beat"
         style={{ background: '#080808', position: 'relative', overflow: 'hidden', justifyContent: 'flex-start', paddingTop: '68px', paddingBottom: '8px', paddingLeft: 0, paddingRight: 0 }}
       >
         <div style={{
@@ -349,7 +351,7 @@ export default function HomePage() {
         }} />
 
         <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
-          <div style={{
+          <div className="report-card" style={{
             width: '100%',
             maxWidth: 'min(1060px, calc(100vw - clamp(40px, 8vw, 160px)))',
             height: 'calc(100svh - 76px)',
@@ -369,7 +371,7 @@ export default function HomePage() {
               <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.28)', letterSpacing: '0.16em', textTransform: 'uppercase' }}>
                 Candidate Recommendation Report
               </span>
-              <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.22)', letterSpacing: '0.16em', textTransform: 'uppercase' }}>
+              <span className="report-card-header-right" style={{ fontSize: 9, color: 'rgba(255,255,255,0.22)', letterSpacing: '0.16em', textTransform: 'uppercase' }}>
                 Presented to client · Mar 14, 2026
               </span>
             </div>

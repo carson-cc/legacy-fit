@@ -258,6 +258,69 @@ export async function sendRecruiterNotificationEmail(opts: {
   })
 }
 
+// ─── Candidate reminder email ──────────────────────────────────────────────
+
+export async function sendCandidateReminderEmail(opts: {
+  candidateName: string
+  candidateEmail: string
+  recruiterName: string
+  firmName: string
+  jobTitle: string
+  assessUrl: string
+  reminderNumber: 1 | 2
+}) {
+  const { candidateName, candidateEmail, recruiterName, firmName, jobTitle, assessUrl, reminderNumber } = opts
+  const firstName = candidateName.split(' ')[0]
+  const subject = reminderNumber === 1
+    ? `Reminder: your behavioral evaluation for ${jobTitle} is waiting`
+    : `Final reminder: ${jobTitle} evaluation — link expires soon`
+
+  const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><style>
+  body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;background:#f9fafb;margin:0;padding:0}
+  .wrap{max-width:560px;margin:40px auto;background:#fff;border-radius:8px;overflow:hidden;border:1px solid #e5e7eb}
+  .body{padding:40px;color:#374151;font-size:15px;line-height:1.7}
+  .btn{display:inline-block;background:#2563EB;color:#fff !important;text-decoration:none;padding:13px 28px;border-radius:8px;font-weight:600;font-size:15px;margin:24px 0}
+  .footer{padding:16px 40px;border-top:1px solid #E5E7EB;font-size:12px;color:#9CA3AF}
+  p{margin:0 0 16px}
+</style></head>
+<body>
+  <div class="wrap">
+    <div class="body">
+      <p>Hi ${firstName},</p>
+      <p>Just a reminder — ${recruiterName} at ${firmName} is still waiting on your behavioral evaluation for the <strong>${jobTitle}</strong> process.</p>
+      <p>It takes about 6 minutes. No login required.</p>
+      <a href="${assessUrl}" class="btn">Complete Evaluation &rarr;</a>
+      <p style="font-size:13px;color:#6B7280">If you&rsquo;ve already completed this or have questions, please reply to this email.</p>
+      <p style="margin-top:24px;color:#6B7280">&mdash; ${PRODUCT_NAME}</p>
+    </div>
+    <div class="footer">${PRODUCT_NAME} &middot; ${COMPANY_URL}</div>
+  </div>
+</body>
+</html>`
+
+  const text = [
+    `Hi ${firstName},`,
+    '',
+    `Just a reminder — ${recruiterName} at ${firmName} is still waiting on your behavioral evaluation for the ${jobTitle} process.`,
+    '',
+    'It takes about 6 minutes. No login required.',
+    '',
+    assessUrl,
+    '',
+    `If you've already completed this or have questions, reply to this email.\n\n— ${PRODUCT_NAME}`,
+  ].join('\n')
+
+  await client().send({
+    to: candidateEmail,
+    from: FROM,
+    subject,
+    html,
+    text,
+  })
+}
+
 // ─── Client portal magic-link email ────────────────────────────────────────
 
 export async function sendClientPortalEmail(opts: {

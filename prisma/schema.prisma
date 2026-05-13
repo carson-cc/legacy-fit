@@ -161,9 +161,12 @@ model CandidateInvite {
   approvedAt         DateTime?
   sentAt             DateTime?
   completedAt        DateTime?
+  // Optional adverse-impact monitoring: candidate opted in on assessment entry screen
+  demographicsConsent Boolean          @default(false)
   result             AssessmentResult?
   outcome            PlacementOutcome?
   notes              CandidateNote[]
+  demographics       CandidateDemographics?
   createdAt          DateTime          @default(now())
 
   @@index([jobId])
@@ -220,6 +223,28 @@ model CandidateNote {
   author       User            @relation(fields: [authorUserId], references: [id], onDelete: Cascade)
   body         String
   createdAt    DateTime        @default(now())
+
+  @@index([inviteId])
+}
+
+// Optional voluntary self-identification for adverse-impact monitoring.
+// All fields are nullable — each question is independently skippable.
+// NEVER returned individually to any recruiter UI — only as org-level aggregates.
+model CandidateDemographics {
+  id          String          @id @default(cuid())
+  inviteId    String          @unique
+  invite      CandidateInvite @relation(fields: [inviteId], references: [id], onDelete: Cascade)
+  // EEOC gender: male | female | nonbinary | prefer_not
+  gender      String?
+  // EEOC race: white | black | hispanic | asian | aian | nhpi | two_or_more | prefer_not
+  race        String?
+  // Age range: under_30 | 30_39 | 40_49 | 50_59 | 60_plus | prefer_not
+  ageRange    String?
+  // ADA / Section 503 disability: yes | no | prefer_not
+  disability  String?
+  // VEVRAA veteran: protected | not_protected | prefer_not
+  veteran     String?
+  createdAt   DateTime        @default(now())
 
   @@index([inviteId])
 }

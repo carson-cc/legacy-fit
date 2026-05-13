@@ -170,6 +170,73 @@ npm run build
 - The approve endpoint requires `owner` or `admin` role. Members see the button but get a toast error — by design (visible affordance, server enforced).
 - Bulk import fires emails best-effort. Failed email sends do not fail the row — the invite is created regardless.
 
+## Session 5: Candidate experience polish (2026-05-13)
+
+### What was built
+
+**Mobile responsive pass** — no schema changes, no migration required:
+- `/assess/[token]` — top bar and low-count warning padding fixed at 375px; archetype name clamp lowered so long names (Trailblazer, Navigator) don't overflow.
+- `/` (landing page) — sample report card height unlocked on mobile (Beat 2 scrolls); right header span hidden on small screens.
+- `/report/[shareToken]` — nav rail right-side hidden at ≤500px; existing 900px grid stack preserved.
+- `/portal/shortlist` — candidate card grid stacks at ≤500px; action buttons go horizontal.
+- `app/globals.css` — added `.report-beat` class rule to allow Beat 2 to scroll vertically on mobile.
+
+**Reminder emails for non-completers**:
+- `lib/email.ts` — `sendCandidateReminderEmail()` — two-variant reminder (reminderNumber 1 or 2) with appropriate subject lines.
+- `app/api/maintenance/send-reminders/route.ts` — `GET` endpoint:
+  - Finds invites where `sentAt ≤ now-3d`, `completedAt IS NULL`, email + name set.
+  - Skips if 2+ reminders already sent (cap), or if a reminder was sent in the last 24 hours.
+  - Sends reminder 1 at the 3-day mark; reminder 2 only once `sentAt ≤ now-7d`.
+  - Logs to `EventLog` as `invite.reminder_sent` with `reminderNumber` in `meta`.
+  - Protected by `Authorization: Bearer <CRON_SECRET>` if `CRON_SECRET` env var is set.
+- `vercel.json` — cron entry: `"0 9 * * *"` (daily at 09:00 UTC) hitting `/api/maintenance/send-reminders`.
+
+**Optional demographic capture** (adverse-impact monitoring):
+- Schema: `CandidateInvite.demographicsConsent Boolean @default(false)` + new `CandidateDemographics` model (see below).
+- `/assess/[token]` — new `demographics` phase inserted between `consent` and `welcome`; single-screen skip-in-one-tap design.
+- `/api/settings/adverse-impact` — aggregate selection rates by demographic group; never returns individual data.
+- `/dashboard/settings/adverse-impact` — 4/5-rule flag table.
+
+### New schema (requires migration `candidate_ux`)
+
+```prisma
+// On CandidateInvite:
+demographicsConsent  Boolean  @default(false)
+
+// New model:
+model CandidateDemographics {
+  id             String          @id @default(cuid())
+  inviteId       String          @unique
+  invite         CandidateInvite @relation(fields: [inviteId], references: [id], onDelete: Cascade)
+  gender         String?   // "male" | "female" | "nonbinary" | "prefer_not"
+  race           String?   // EEOC categories: "white" | "black" | "hispanic" | "asian" | "aian" | "nhpi" | "two_or_more" | "prefer_not"
+  ageRange       String?   // "under_30" | "30_39" | "40_49" | "50_59" | "60_plus" | "prefer_not"
+  disability     String?   // "yes" | "no" | "prefer_not"
+  veteran        String?   // "protected" | "not_protected" | "prefer_not"
+  createdAt      DateTime  @default(now())
+
+  @@index([inviteId])
+}
+```
+
+### New ENV var
+
+```
+CRON_SECRET=   # random string; Vercel sends it as Authorization: Bearer <value> on cron calls
+```
+
+Generate with: `openssl rand -base64 32`. Set in Vercel project settings under Environment Variables.
+
+### What must run before these changes work
+
+```bash
+npx prisma migrate dev --name candidate_ux
+npx prisma generate
+npm run build
+```
+
+---
+
 ## What was deliberately deferred to a future session
 
 These are real gaps that the audit identified. Each is a separate, bounded chunk of work.

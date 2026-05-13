@@ -17,6 +17,7 @@ const NAV_ITEMS = [
 
 const SETTINGS_ITEMS = [
   { label: 'Audit Log', href: '/dashboard/settings/audit' },
+  { label: 'Adverse Impact', href: '/dashboard/settings/adverse-impact' },
 ]
 
 export default function DashboardShell({ children }: { children: React.ReactNode }) {
