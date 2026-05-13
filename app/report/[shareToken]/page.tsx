@@ -681,6 +681,10 @@ export default function SharedReportPage() {
           .rpt-proof-grid { grid-template-columns:1fr !important; }
           .rpt-hero-grid > div:last-child  { border-left:none !important; padding-left:0 !important; border-top:1px solid rgba(255,255,255,0.07); padding-top:28px !important; }
         }
+        @media (max-width:500px) {
+          .rpt-nav-right { display:none !important; }
+          .rpt-nav { padding:0 16px !important; }
+        }
         .team-row { border-radius:8px; transition:background 150ms ease; }
         .team-row:hover { background:rgba(255,255,255,0.025) !important; }
         .q-row { transition:background 150ms ease, border-color 150ms ease; }
@@ -702,7 +706,7 @@ export default function SharedReportPage() {
             Candidate Recommendation Report
           </span>
         </div>
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+        <div className="rpt-nav-right" style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', letterSpacing: '0.06em', fontFamily: FONT }}>
             {c.job.client} · {formatDate(c.completedAt)}
           </span>

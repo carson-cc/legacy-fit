@@ -162,7 +162,15 @@ const PROC_DIMS = ['EXECUTION', 'OWNERSHIP', 'ADAPTABILITY', 'COLLABORATION', 'D
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type Phase = 'loading' | 'consent' | 'welcome' | 'list1' | 'list2' | 'processing' | 'complete' | 'error'
+type Phase = 'loading' | 'consent' | 'demographics' | 'welcome' | 'list1' | 'list2' | 'processing' | 'complete' | 'error'
+
+interface DemographicsData {
+  gender:     string | null
+  race:       string | null
+  ageRange:   string | null
+  disability: string | null
+  veteran:    string | null
+}
 
 interface CompletionData {
   profileName: string
@@ -191,6 +199,8 @@ export default function AssessPage() {
   const page2StartRef = useRef<number>(0)
   const [timeOnPage1Ms, setTimeOnPage1Ms] = useState(0)
   const [timeOnPage2Ms, setTimeOnPage2Ms] = useState(0)
+
+  const [demographics, setDemographics] = useState<DemographicsData>({ gender: null, race: null, ageRange: null, disability: null, veteran: null })
 
   const [showLowCountWarning, setShowLowCountWarning] = useState(false)
   const [pendingAction, setPendingAction] = useState<'finishList1' | 'submitAssessment' | null>(null)
@@ -516,7 +526,7 @@ export default function AssessPage() {
 
           <div style={{ marginTop: 32 }}>
             <button
-              onClick={() => setPhase('welcome')}
+              onClick={() => setPhase('demographics')}
               style={{ width: '100%', height: 52, borderRadius: 100, background: '#eeece6', color: '#080808', fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer', transition: 'all 160ms ease', letterSpacing: '-0.01em' }}
               onMouseEnter={e => { e.currentTarget.style.background = '#ffffff'; e.currentTarget.style.transform = 'translateY(-1px)' }}
               onMouseLeave={e => { e.currentTarget.style.background = '#eeece6'; e.currentTarget.style.transform = 'translateY(0)' }}
@@ -528,6 +538,163 @@ export default function AssessPage() {
             </p>
           </div>
 
+        </div>
+      </div>
+    )
+  }
+
+  // ─── DEMOGRAPHICS ────────────────────────────────────────────────────────
+
+  if (phase === 'demographics') {
+    const DEMO_FIELDS: Array<{
+      key: keyof DemographicsData
+      question: string
+      options: Array<{ value: string; label: string }>
+    }> = [
+      {
+        key: 'gender',
+        question: 'Gender identity',
+        options: [
+          { value: 'male',       label: 'Man' },
+          { value: 'female',     label: 'Woman' },
+          { value: 'nonbinary',  label: 'Non-binary / gender non-conforming' },
+          { value: 'prefer_not', label: 'Prefer not to say' },
+        ],
+      },
+      {
+        key: 'race',
+        question: 'Race / Ethnicity',
+        options: [
+          { value: 'white',       label: 'White' },
+          { value: 'black',       label: 'Black or African American' },
+          { value: 'hispanic',    label: 'Hispanic or Latino' },
+          { value: 'asian',       label: 'Asian' },
+          { value: 'aian',        label: 'American Indian or Alaska Native' },
+          { value: 'nhpi',        label: 'Native Hawaiian or Pacific Islander' },
+          { value: 'two_or_more', label: 'Two or more races' },
+          { value: 'prefer_not',  label: 'Prefer not to say' },
+        ],
+      },
+      {
+        key: 'ageRange',
+        question: 'Age range',
+        options: [
+          { value: 'under_30',   label: 'Under 30' },
+          { value: '30_39',      label: '30–39' },
+          { value: '40_49',      label: '40–49' },
+          { value: '50_59',      label: '50–59' },
+          { value: '60_plus',    label: '60 or older' },
+          { value: 'prefer_not', label: 'Prefer not to say' },
+        ],
+      },
+      {
+        key: 'disability',
+        question: 'Disability status',
+        options: [
+          { value: 'yes',        label: 'Yes, I have a disability' },
+          { value: 'no',         label: 'No disability' },
+          { value: 'prefer_not', label: 'Prefer not to say' },
+        ],
+      },
+      {
+        key: 'veteran',
+        question: 'Veteran status',
+        options: [
+          { value: 'protected',     label: 'I am a protected veteran' },
+          { value: 'not_protected', label: 'I am not a protected veteran' },
+          { value: 'prefer_not',    label: 'Prefer not to say' },
+        ],
+      },
+    ]
+
+    async function saveDemographics(demo: DemographicsData, consented: boolean) {
+      if (!consented) { setPhase('welcome'); return }
+      try {
+        await fetch(`/api/assess/${token}/demographics`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(demo),
+        })
+      } catch { /* best-effort */ }
+      setPhase('welcome')
+    }
+
+    const anyAnswered = Object.values(demographics).some(v => v !== null)
+
+    return (
+      <div style={{ minHeight: '100svh', background: '#080808', fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif', overflowY: 'auto' }}>
+        <style>{`@keyframes fadeUp { from { opacity: 0; transform: translateY(12px) } to { opacity: 1; transform: translateY(0) } }`}</style>
+        <div style={{ maxWidth: 480, margin: '0 auto', padding: '48px 24px 64px', animation: 'fadeUp 350ms ease-out both' }}>
+
+          <div style={{ textAlign: 'center', marginBottom: 40 }}>
+            <span style={{ fontSize: 15, fontWeight: 500, color: 'rgba(238,236,230,0.5)', letterSpacing: '-0.01em' }}>{PRODUCT_NAME}</span>
+          </div>
+          <h1 style={{ fontSize: 20, fontWeight: 600, color: '#eeece6', margin: '0 0 8px', letterSpacing: '-0.02em' }}>
+            Optional: help us monitor for fairness
+          </h1>
+          <p style={{ fontSize: 14, color: 'rgba(238,236,230,0.42)', margin: '0 0 6px', fontWeight: 300, lineHeight: 1.55 }}>
+            This is voluntary. Your answers are anonymized in aggregate reports and never shared with the hiring firm for your individual assessment.
+          </p>
+          <p style={{ fontSize: 13, color: 'rgba(238,236,230,0.28)', margin: '0 0 32px', fontWeight: 300 }}>
+            Each question is independently skippable.
+          </p>
+
+          {DEMO_FIELDS.map(field => (
+            <div key={field.key} style={{ marginBottom: 24 }}>
+              <p style={{ fontSize: 12, fontWeight: 600, color: 'rgba(238,236,230,0.5)', letterSpacing: '0.06em', textTransform: 'uppercase', margin: '0 0 10px' }}>
+                {field.question}
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {field.options.map(opt => {
+                  const selected = demographics[field.key] === opt.value
+                  return (
+                    <button
+                      key={opt.value}
+                      onClick={() => setDemographics(prev => ({ ...prev, [field.key]: selected ? null : opt.value }))}
+                      style={{
+                        padding: '8px 14px', borderRadius: 100, fontSize: 13,
+                        border: selected ? '1px solid rgba(255,255,255,0.4)' : '1px solid rgba(255,255,255,0.1)',
+                        background: selected ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.03)',
+                        color: selected ? 'rgba(238,236,230,0.95)' : 'rgba(238,236,230,0.5)',
+                        cursor: 'pointer', transition: 'all 120ms ease', fontFamily: 'inherit',
+                      }}
+                    >
+                      {opt.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
+
+          <div style={{ marginTop: 40, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <button
+              onClick={() => saveDemographics(demographics, anyAnswered)}
+              style={{
+                width: '100%', height: 52, borderRadius: 100,
+                background: '#eeece6', color: '#080808',
+                fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer',
+                transition: 'all 160ms ease', letterSpacing: '-0.01em',
+              }}
+            >
+              {anyAnswered ? 'Submit and continue' : 'Continue without answering'}
+            </button>
+            <button
+              onClick={() => setPhase('welcome')}
+              style={{
+                width: '100%', height: 44, borderRadius: 100,
+                background: 'transparent', color: 'rgba(238,236,230,0.35)',
+                fontSize: 13, border: '1px solid rgba(255,255,255,0.06)',
+                cursor: 'pointer', transition: 'all 160ms ease', letterSpacing: '-0.01em',
+              }}
+            >
+              Skip entirely
+            </button>
+          </div>
+
+          <p style={{ fontSize: 11, color: 'rgba(238,236,230,0.18)', textAlign: 'center', marginTop: 16, lineHeight: 1.6 }}>
+            Answers are aggregated across all candidates and never attributed to you individually.
+          </p>
         </div>
       </div>
     )
@@ -833,7 +1000,7 @@ export default function AssessPage() {
               {/* Archetype name — verdict stamp */}
               {resultMoment >= 4 && completionData && (
                 <h1 style={{
-                  fontSize: 'clamp(72px, 12vw, 108px)', fontWeight: 900, color: '#eeece6',
+                  fontSize: 'clamp(48px, 14vw, 108px)', fontWeight: 900, color: '#eeece6',
                   letterSpacing: '-0.025em', lineHeight: 1, margin: '16px 0 0', textAlign: 'center',
                   fontFamily: '"Barlow Condensed", "SF Pro Display", -apple-system, sans-serif',
                   animation: 'arch-reveal 480ms cubic-bezier(0.22,0.61,0.36,1) both',
@@ -1420,11 +1587,13 @@ export default function AssessPage() {
           .word-chips { padding: 0 16px !important; }
           .list-header { padding: 24px 16px 16px !important; }
           .bottom-bar { padding: 0 16px !important; }
+          .top-bar { padding: 0 16px !important; }
+          .warn-bar { padding: 0 16px !important; }
         }
       `}</style>
 
       {/* Top bar */}
-      <div style={{ height: 48, borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 48px', position: 'sticky', top: 0, zIndex: 20, background: 'rgba(8,8,8,0.98)', backdropFilter: 'blur(8px)' }}>
+      <div className="top-bar" style={{ height: 48, borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 48px', position: 'sticky', top: 0, zIndex: 20, background: 'rgba(8,8,8,0.98)', backdropFilter: 'blur(8px)' }}>
         <span style={{ fontSize: 13, color: 'rgba(238,236,230,0.3)', fontWeight: 400 }}>{PRODUCT_NAME}</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <div style={{ width: 7, height: 7, borderRadius: '50%', background: isList1 ? '#2563EB' : 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 250ms ease', flexShrink: 0 }}>
@@ -1486,7 +1655,7 @@ export default function AssessPage() {
       <div className="bottom-bar" style={{ position: 'fixed', bottom: 0, left: 0, right: 0, height: 72, background: 'rgba(8,8,8,0.97)', backdropFilter: 'blur(8px)', borderTop: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 48px', zIndex: 10 }}>
         {/* Low count warning */}
         {showLowCountWarning && (
-          <div style={{ position: 'absolute', bottom: 80, left: 0, right: 0, padding: '0 48px' }}>
+          <div className="warn-bar" style={{ position: 'absolute', bottom: 80, left: 0, right: 0, padding: '0 48px' }}>
             <div style={{ background: 'rgba(249,115,22,0.07)', border: '1px solid rgba(249,115,22,0.18)', borderRadius: 8, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
               <span style={{ fontSize: 13, color: 'rgba(238,236,230,0.65)', lineHeight: 1.4, fontWeight: 300 }}>
                 Fewer than 15 words selected. Results may be less accurate.

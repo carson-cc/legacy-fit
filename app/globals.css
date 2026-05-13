@@ -530,6 +530,13 @@ button, a, input, select, textarea {
   .snap-beat {
     padding: clamp(40px, 6vh, 60px) 20px;
   }
+  /* Beat 2: report card beat scrolls vertically on mobile */
+  .report-beat {
+    height: auto !important;
+    min-height: 100svh !important;
+    overflow-y: auto !important;
+    padding-bottom: 40px !important;
+  }
   .snap-beat-scroll {
     padding: clamp(28px, 4vh, 40px) 20px;
   }

@@ -118,7 +118,17 @@ export default function PortalShortlistPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#F9FAFB', fontFamily: '-apple-system,BlinkMacSystemFont,sans-serif' }}>
-      <div style={{ background: primary, padding: '0 32px' }}>
+      <style>{`
+        @media (max-width:500px) {
+          .portal-header { padding: 0 16px !important; }
+          .portal-content { padding: 20px 16px 0 !important; }
+          .portal-cards { padding: 16px !important; }
+          .portal-candidate-card { grid-template-columns: 1fr !important; }
+          .portal-candidate-actions { flex-direction: row !important; flex-wrap: wrap !important; gap: 8px !important; min-width: unset !important; width: 100% !important; }
+          .portal-candidate-actions a, .portal-candidate-actions button { flex: 1 !important; min-width: 80px !important; }
+        }
+      `}</style>
+      <div className="portal-header" style={{ background: primary, padding: '0 32px' }}>
         <div style={{ maxWidth: 960, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 64 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             {branding.logoUrl
@@ -139,7 +149,7 @@ export default function PortalShortlistPage() {
         </div>
       </div>
 
-      <div style={{ maxWidth: 960, margin: '0 auto', padding: '32px 32px 0' }}>
+      <div className="portal-content" style={{ maxWidth: 960, margin: '0 auto', padding: '32px 32px 0' }}>
         <p style={{ fontSize: 12, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 4px' }}>
           {job.clientName}
         </p>
@@ -151,7 +161,7 @@ export default function PortalShortlistPage() {
         </p>
       </div>
 
-      <div style={{ maxWidth: 960, margin: '0 auto', padding: 32, display: 'grid', gap: 16 }}>
+      <div className="portal-cards" style={{ maxWidth: 960, margin: '0 auto', padding: 32, display: 'grid', gap: 16 }}>
         {candidates.length === 0 && (
           <div style={{ padding: '48px 0', textAlign: 'center', color: '#9CA3AF' }}>
             No candidates are ready for review yet.
@@ -165,7 +175,7 @@ export default function PortalShortlistPage() {
           const isPending  = busy === c.inviteId
 
           return (
-            <div key={c.inviteId} style={{
+            <div key={c.inviteId} className="portal-candidate-card" style={{
               background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB',
               padding: 24, display: 'grid', gridTemplateColumns: '1fr auto', gap: 24, alignItems: 'start',
             }}>
@@ -197,7 +207,7 @@ export default function PortalShortlistPage() {
                   </>
                 )}
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 160 }}>
+              <div className="portal-candidate-actions" style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 160 }}>
                 {r && (
                   <a href={`/portal/report/${r.shareToken}`} style={{
                     display: 'block', textAlign: 'center', padding: '9px 16px',
