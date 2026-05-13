@@ -1,3 +1,4 @@
+﻿import { logWarn } from '@/lib/log'
 import { NextRequest, NextResponse } from 'next/server'
 import { randomBytes } from 'crypto'
 import { prisma } from '@/lib/prisma'
@@ -32,7 +33,7 @@ export async function POST(req: NextRequest) {
     try {
       await sendPasswordResetEmail({ to: user.email, name: user.name, resetUrl })
     } catch (err) {
-      console.error('Password reset email failed:', err)
+      logWarn('password_reset_email_failed', { route: '/api/auth/forgot-password' })
     }
   }
 

@@ -1,3 +1,4 @@
+﻿import { logError } from '@/lib/log'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireOrg } from '@/lib/auth-helpers'
 import Anthropic from '@anthropic-ai/sdk'
@@ -112,7 +113,7 @@ Return ONLY valid JSON:
       },
     })
   } catch (err) {
-    console.error('Generate benchmark error:', err)
+    logError(err, { route: '/api/generate-benchmark' })
     return NextResponse.json({ error: 'Generation failed. Please try again.' }, { status: 500 })
   }
 }

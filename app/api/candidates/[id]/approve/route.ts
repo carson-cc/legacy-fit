@@ -1,3 +1,4 @@
+import { logError } from '@/lib/log'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireRole, assertInviteInOrg } from '@/lib/auth-helpers'
@@ -47,7 +48,8 @@ export async function POST(req: NextRequest, { params }: Params) {
         approvedAt: invite.approvedAt,
       },
     })
-  } catch {
+  } catch (err) {
+    logError(err)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }

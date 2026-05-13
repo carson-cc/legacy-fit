@@ -1,3 +1,4 @@
+import { logError } from '@/lib/log'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireOrg, assertClientInOrg } from '@/lib/auth-helpers'
@@ -33,7 +34,8 @@ export async function GET() {
     }))
 
     return NextResponse.json({ data })
-  } catch {
+  } catch (err) {
+    logError(err)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }
@@ -71,7 +73,8 @@ export async function POST(req: NextRequest) {
     })
 
     return NextResponse.json({ data: job })
-  } catch {
+  } catch (err) {
+    logError(err)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }

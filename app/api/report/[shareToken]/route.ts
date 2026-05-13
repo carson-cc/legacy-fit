@@ -1,3 +1,4 @@
+import { logError } from '@/lib/log'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { REFERENCE_PROFILES } from '@/lib/data/profiles'
@@ -195,7 +196,8 @@ export async function GET(req: NextRequest, { params }: Params) {
         teamFit,
       },
     })
-  } catch {
+  } catch (err) {
+    logError(err)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }

@@ -1,3 +1,4 @@
+import { logError } from '@/lib/log'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireOrg } from '@/lib/auth-helpers'
@@ -50,7 +51,7 @@ export async function POST(_req: NextRequest, { params }: Params) {
     return NextResponse.json({ ok: true })
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
-    console.error('Resend error:', msg)
+    logError(err, { route: '/api/jobs/[id]/invites/[inviteId]/resend' })
     return NextResponse.json({ error: msg }, { status: 500 })
   }
 }

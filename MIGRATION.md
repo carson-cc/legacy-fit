@@ -241,3 +241,78 @@ curl -X POST http://localhost:3000/api/auth/signup \
 ```
 
 If step 5 leaks Alice's data, the multi-tenant guards are broken. Open the route in question and confirm it uses `requireOrg()` + `where: { orgId: ctx.orgId }` (or one of the assert helpers).
+
+## Session 5: Operational hardening (2026-05-13)
+
+### What was built
+
+**Error tracking (Sentry)**
+- `@sentry/nextjs` v10 installed.
+- `instrumentation.ts` — Next.js 16 hook that initialises Sentry on both `nodejs` and `edge` runtimes. Exports `onRequestError` so unhandled route errors also reach Sentry.
+- `sentry.client.config.ts` — client-side Sentry init with Session Replay (errors at 100 %, sessions at 5 %).
+- `next.config.ts` — wrapped with `withSentryConfig`.
+- `app/api/debug/throw/route.ts` — **temporary** GET route that throws intentionally. Hit it once, confirm the error in Sentry, then delete the file.
+
+**Structured logging (`lib/log.ts`)**
+- `logError(err, meta?)` — captures to Sentry and emits a JSON line at `console.error`. Vercel's log drain picks it up and makes it queryable.
+- `logWarn(message, meta?)` — emits a JSON line at `console.warn` without a Sentry capture (for best-effort ops like email sends).
+- All `console.error` calls in API routes replaced. All 500-returning `catch` blocks now bind `err` and call `logError`.
+
+**Health check (`GET /api/healthz`)**
+- Returns `{ ok, db, version, uptime }`. Pings Postgres with `SELECT 1` and times it.
+- Returns HTTP 200 on success, 503 if the DB is unreachable.
+- `version` reads `VERCEL_GIT_COMMIT_SHA` (auto-set by Vercel) for a 7-char commit SHA.
+
+**Status page (`/status`)**
+- Public, no auth, SSR. Runs the same DB check inline and shows green / red dot + DB latency + version.
+- Recommended uptime monitor: **BetterStack** — free tier, 3-minute ping interval, good alerting.
+  1. Sign up at https://betterstack.com/uptime and create a new Monitor.
+  2. URL: `https://yourdomain.com/api/healthz`, method GET, expected status 200.
+  3. Alert via email / Slack on first failure.
+
+**Error boundaries**
+- `app/error.tsx` — root-level fallback; shows "Something went wrong" + Try again.
+- `app/dashboard/error.tsx` — dashboard fallback; shows Reload button + "Contact support" mailto.
+- `app/portal/error.tsx` — portal fallback; less technical copy for client contacts.
+- All three capture to Sentry via `useEffect`.
+
+**EventLog retention cron**
+- `app/api/cron/prune-event-log/route.ts` — `GET` endpoint that deletes rows older than 180 days, keeping audit-trail events forever.
+- Protected by `Authorization: Bearer <CRON_SECRET>` header (Vercel sets this automatically).
+- `vercel.json` — cron schedule: `0 3 * * *` (3 AM UTC daily).
+
+### New ENV vars required
+
+```
+SENTRY_DSN=                 # From sentry.io → Settings → Client Keys (DSN)
+NEXT_PUBLIC_SENTRY_DSN=     # Same value — exposed to browser for client-side capture
+SENTRY_ORG=                 # Sentry org slug (for build-time source-map uploads)
+SENTRY_PROJECT=             # Sentry project slug
+CRON_SECRET=                # openssl rand -base64 32 — Vercel auto-injects on cron calls
+```
+
+### Steps to activate
+
+```bash
+# Sentry setup (one-time)
+# 1. Go to https://sentry.io → New Project → Next.js
+# 2. Copy the DSN into your Vercel env vars (SENTRY_DSN + NEXT_PUBLIC_SENTRY_DSN)
+# 3. Set SENTRY_ORG and SENTRY_PROJECT to enable source-map uploads on deploy
+# 4. Hit GET /api/debug/throw to confirm errors appear in Sentry
+# 5. Delete app/api/debug/throw/route.ts once confirmed
+
+# BetterStack uptime monitor (one-time)
+# 1. https://betterstack.com/uptime → New Monitor
+# 2. URL: https://yourdomain.com/api/healthz, method GET, keyword "\"ok\":true"
+# 3. Set CRON_SECRET in Vercel project settings
+
+# Build + migrate (no schema changes this session)
+npm run build
+```
+
+### Notes
+
+- `instrumentation.ts` requires no `experimental.instrumentationHook` flag in Next.js 16 — it is stable.
+- The `onRequestError` export from `@sentry/nextjs` catches errors that reach Next.js's own error handler (i.e., those NOT caught by a route's own `catch` block). Our routes catch their own errors, so the explicit `logError` calls in each catch block are the primary capture path.
+- EventLog prune keeps these events forever: `outcome.recorded`, `placement.created`, `org.created`, `client_portal.client_approved`, `client_portal.rejected`. Everything else is pruned at 180 days.
+- The `/status` page re-runs the DB check on every request (`force-dynamic`). It does not cache historical uptime data — use BetterStack for that dashboard.
