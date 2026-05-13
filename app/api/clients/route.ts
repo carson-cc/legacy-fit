@@ -43,7 +43,8 @@ export async function POST(req: NextRequest) {
   try {
     const { name, industry } = await req.json()
     if (!name) return NextResponse.json({ error: 'Name is required' }, { status: 400 })
-    const client = await prisma.client.create({ data: { name, industry } })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const client = await prisma.client.create({ data: { name, industry } as any })
     return NextResponse.json({
       data: { ...client, completedHMs: [], pendingHMs: 0, activeJobs: 0 },
     })

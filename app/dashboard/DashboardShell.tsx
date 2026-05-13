@@ -13,6 +13,10 @@ const NAV_ITEMS = [
   { label: 'Clients', href: '/dashboard/clients' },
 ]
 
+const SETTINGS_ITEMS = [
+  { label: 'Audit Log', href: '/dashboard/settings/audit' },
+]
+
 export default function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -100,6 +104,49 @@ export default function DashboardShell({ children }: { children: React.ReactNode
             )
           })}
         </nav>
+
+        {/* Settings section */}
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 8 }}>
+          <div style={{ padding: '8px 20px 4px', fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            Settings
+          </div>
+          {SETTINGS_ITEMS.map((item) => {
+            const active = pathname === item.href || pathname.startsWith(item.href)
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  height: 36,
+                  padding: '0 20px',
+                  fontSize: 13,
+                  fontWeight: active ? 600 : 400,
+                  color: active ? '#FFFFFF' : 'rgba(255,255,255,0.5)',
+                  background: active ? 'rgba(255,255,255,0.07)' : 'transparent',
+                  borderLeft: active ? '2px solid #2563EB' : '2px solid transparent',
+                  textDecoration: 'none',
+                  transition: 'all 150ms ease',
+                }}
+                onMouseEnter={(e) => {
+                  if (!active) {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.04)'
+                    e.currentTarget.style.color = 'rgba(255,255,255,0.75)'
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!active) {
+                    e.currentTarget.style.background = 'transparent'
+                    e.currentTarget.style.color = 'rgba(255,255,255,0.5)'
+                  }
+                }}
+              >
+                {item.label}
+              </Link>
+            )
+          })}
+        </div>
 
         {/* Footer */}
         <div style={{

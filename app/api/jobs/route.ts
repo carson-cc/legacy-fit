@@ -47,8 +47,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const job = await prisma.job.create({
-      data: { title, roleType, clientId },
+      data: { title, roleType, clientId } as any,
     })
 
     return NextResponse.json({ data: job })
