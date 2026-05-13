@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { auth } from '@/lib/auth'
+import { requireOrg } from '@/lib/auth-helpers'
 import { REFERENCE_PROFILES } from '@/lib/data/profiles'
 import { INTERVIEW_QUESTIONS } from '@/lib/data/questions'
 import { ADJECTIVES } from '@/lib/data/adjectives'
@@ -11,8 +11,8 @@ import { getTeamFit } from '@/lib/data/teamfit'
 type Params = { params: Promise<{ id: string }> }
 
 export async function GET(_req: NextRequest, { params }: Params) {
-  const session = await auth()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const ctx = await requireOrg()
+  if (ctx instanceof NextResponse) return ctx
 
   const { id } = await params
   try {
@@ -25,7 +25,9 @@ export async function GET(_req: NextRequest, { params }: Params) {
       },
     })
 
-    if (!invite) return NextResponse.json({ error: 'Candidate not found' }, { status: 404 })
+    // Returning 404 (not 403) on cross-tenant access avoids leaking the
+    // existence of records in other orgs.
+    if (!invite || invite.job.orgId !== ctx.orgId) return NextResponse.json({ error: 'Candidate not found' }, { status: 404 })
     if (!invite.result) return NextResponse.json({ error: 'Assessment not completed' }, { status: 400 })
 
     const result = invite.result
@@ -46,7 +48,6 @@ export async function GET(_req: NextRequest, { params }: Params) {
       }
     } catch { /* fallback to zeros */ }
 
-    // Look up hiring manager profile for this client
     let hmProfile: string | null = null
     try {
       const hm = await prisma.hiringManagerAssessment.findFirst({
@@ -56,10 +57,8 @@ export async function GET(_req: NextRequest, { params }: Params) {
       if (hm) hmProfile = hm.profileType
     } catch { /* ignore */ }
 
-    // Team fit
     const teamFit = getTeamFit(result.profileName, hmProfile)
 
-    // Generate interview guide if target exists
     const dimensionLabelMap: Record<string, string> = {
       dominance: 'Execution',
       extraversion: 'Collaboration',
@@ -95,7 +94,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
     }
 
     await prisma.eventLog.create({
-      data: { event: 'candidate.viewed', entityId: id },
+      data: { event: 'candidate.viewed', entityId: id, orgId: ctx.orgId, userId: ctx.userId },
     })
 
     const fitPct = result.fitPct ?? 0
@@ -107,6 +106,8 @@ export async function GET(_req: NextRequest, { params }: Params) {
         name: invite.name,
         email: invite.email,
         completedAt: invite.completedAt,
+        stage: invite.stage,
+        offLimits: invite.offLimits,
         job: {
           id: invite.job.id,
           title: invite.job.title,
@@ -136,7 +137,6 @@ export async function GET(_req: NextRequest, { params }: Params) {
         interviewGuide,
         outcome: invite.outcome,
         teamFit,
-        // Enriched fields
         confidence: getModelConfidence(fitPct),
         percentile: getPercentileLabel(fitPct),
         benchmarkComparison: getBenchmarkComparison(fitPct, invite.job.roleType ?? undefined),
@@ -153,7 +153,8 @@ export async function GET(_req: NextRequest, { params }: Params) {
         list2Count: result.list2Count,
         resultId: result.id,
         shareToken: result.shareToken,
-        recruiterNotes: result.recruiterNotes || '',
+        approvedForClient: invite.approvedForClient,
+        approvedAt: invite.approvedAt,
       },
     })
   } catch {

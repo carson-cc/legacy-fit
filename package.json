@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "seed": "npx tsx prisma/seed.ts",
-    "test": "npx tsx --test lib/__tests__/scoring.test.ts"
+    "test": "npx tsx --test lib/__tests__/scoring.test.ts lib/__tests__/tenant-isolation.test.ts",
+    "test:scoring": "npx tsx --test lib/__tests__/scoring.test.ts",
+    "test:tenancy": "npx tsx --test lib/__tests__/tenant-isolation.test.ts"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"

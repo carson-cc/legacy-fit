@@ -9,9 +9,25 @@ import { getTeamFit } from '@/lib/data/teamfit'
 
 type Params = { params: Promise<{ shareToken: string }> }
 
-// Public — no auth required
-export async function GET(_req: NextRequest, { params }: Params) {
+// Public — no auth required. The shareToken IS the credential.
+//
+// Two added defenses since the audit:
+//  1. Rate limit by IP via EventLog count over the past hour.
+//  2. Honour shareTokenExpiresAt so issuers can revoke a link.
+export async function GET(req: NextRequest, { params }: Params) {
   const { shareToken } = await params
+
+  // Coarse rate limit — abuse a single token from a single IP triggers 429.
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+  const rateKey = `report_view:${ip}`
+  const recent = await prisma.eventLog.count({
+    where: { event: 'report.view_attempt', entityId: rateKey, createdAt: { gte: new Date(Date.now() - 3600_000) } },
+  })
+  if (recent >= 60) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+  }
+  await prisma.eventLog.create({ data: { event: 'report.view_attempt', entityId: rateKey } })
+
   try {
     const result = await prisma.assessmentResult.findUnique({
       where: { shareToken },
@@ -28,11 +44,17 @@ export async function GET(_req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: 'Report not found' }, { status: 404 })
     }
 
+    // Expired share tokens look identical to missing ones from the caller's
+    // perspective — no leakage of "this link was real but is now expired."
+    if (result.shareTokenExpiresAt && result.shareTokenExpiresAt < new Date()) {
+      return NextResponse.json({ error: 'Report not found' }, { status: 404 })
+    }
+
     const invite = result.invite
     const profile = REFERENCE_PROFILES.find(p => p.name === result.profileName)
     const secondaryProfile = REFERENCE_PROFILES.find(p => p.name === result.secondaryProfile)
 
-    // Re-derive list1 scores
+    // Re-derive list1 scores from stored raw responses for self-concept overlay
     let list1Scores = { execution: 0, collaboration: 0, adaptability: 0, ownership: 0 }
     try {
       const list1Checked: string[] = JSON.parse(result.list1Responses)
@@ -92,15 +114,13 @@ export async function GET(_req: NextRequest, { params }: Params) {
     } catch { /* ignore */ }
     const teamFit = getTeamFit(result.profileName, hmProfile)
 
-    // Null-safe fitPct — never fabricate a verdict from a missing benchmark
-    const fitPct = result.fitPct  // Int | null
+    const fitPct = result.fitPct
     const hasBenchmark = fitPct !== null
     const totalSignals = (result.list1Count ?? 0) + (result.list2Count ?? 0)
 
     const rawScores = { dominance: result.dominance, extraversion: result.extraversion, patience: result.patience, formality: result.formality }
     const compositeDims = computeCompositeDimensions(rawScores)
 
-    // Compute composite deltas vs benchmark when available
     const target = invite.job.target
     const benchmarkDims = target
       ? computeCompositeDimensions({ dominance: target.dominance, extraversion: target.extraversion, patience: target.patience, formality: target.formality })
@@ -114,7 +134,6 @@ export async function GET(_req: NextRequest, { params }: Params) {
       { label: 'Decision Speed',score: compositeDims.decisionSpeed, benchmark: benchmarkDims?.decisionSpeed ?? null, delta: benchmarkDims ? compositeDims.decisionSpeed - benchmarkDims.decisionSpeed : null },
     ]
 
-    // Verdict — only computed when a benchmark exists
     const verdict = hasBenchmark ? {
       fitPct,
       recommendation: fitLabel(fitPct!),

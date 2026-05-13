@@ -1,14 +1,18 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { auth } from '@/lib/auth'
+import { requireOrg } from '@/lib/auth-helpers'
 
 export async function GET() {
-  const session = await auth()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const ctx = await requireOrg()
+  if (ctx instanceof NextResponse) return ctx
 
   try {
     const invites = await prisma.candidateInvite.findMany({
-      where: { result: { isNot: null } },
+      where: {
+        result: { isNot: null },
+        // Reach into Job → orgId to scope candidates to this org.
+        job: { orgId: ctx.orgId },
+      },
       include: {
         result: true,
         job: { include: { client: true, target: true } },
@@ -18,7 +22,7 @@ export async function GET() {
 
     const data = invites.map(invite => {
       const r = invite.result!
-      const fitPct = r.fitPct  // null when no benchmark was set
+      const fitPct = r.fitPct
       const hasBenchmark = fitPct !== null
       const rec = !hasBenchmark ? null
         : fitPct! >= 85 ? 'Strong Fit'
@@ -37,7 +41,7 @@ export async function GET() {
         name: invite.name,
         email: invite.email,
         completedAt: invite.completedAt,
-        fitPct,          // null when no benchmark
+        fitPct,
         hasBenchmark,
         recommendation: rec,
         confidence: conf,
@@ -46,6 +50,8 @@ export async function GET() {
         profileGroup: r.profileGroup,
         adaptationStress: r.adaptationStress,
         rushed: r.rushed,
+        stage: invite.stage,
+        offLimits: invite.offLimits,
         job: {
           id: invite.job.id,
           title: invite.job.title,
