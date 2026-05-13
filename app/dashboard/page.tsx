@@ -7,9 +7,10 @@ interface Candidate {
   id: string
   name: string
   completedAt: string
-  fitPct: number
-  recommendation: string
-  confidence: string
+  fitPct: number | null
+  hasBenchmark: boolean
+  recommendation: string | null
+  confidence: string | null
   benchmarkTag: string
   profileName: string
   adaptationStress: number
@@ -23,24 +24,31 @@ interface Candidate {
   }
 }
 
-function fitColor(pct: number): string {
+function fitColor(pct: number | null): string {
+  if (pct === null) return '#9CA3AF'
   if (pct >= 85) return '#22C55E'
   if (pct >= 70) return '#EAB308'
+  if (pct >= 55) return '#F97316'
   return '#EF4444'
 }
-function fitBg(pct: number): string {
+function fitBg(pct: number | null): string {
+  if (pct === null) return 'rgba(156,163,175,0.10)'
   if (pct >= 85) return 'rgba(34,197,94,0.10)'
   if (pct >= 70) return 'rgba(234,179,8,0.10)'
+  if (pct >= 55) return 'rgba(249,115,22,0.10)'
   return 'rgba(239,68,68,0.10)'
 }
-function fitBorder(pct: number): string {
+function fitBorder(pct: number | null): string {
+  if (pct === null) return 'rgba(156,163,175,0.25)'
   if (pct >= 85) return 'rgba(34,197,94,0.25)'
   if (pct >= 70) return 'rgba(234,179,8,0.25)'
+  if (pct >= 55) return 'rgba(249,115,22,0.25)'
   return 'rgba(239,68,68,0.25)'
 }
-function recColor(rec: string): string {
-  if (rec === 'Strong Hire') return '#22C55E'
-  if (rec === 'Proceed with Caution') return '#EAB308'
+function recColor(rec: string | null): string {
+  if (rec === 'Strong Fit') return '#22C55E'
+  if (rec === 'Explore Further') return '#EAB308'
+  if (rec === 'Needs Discussion') return '#F97316'
   return '#EF4444'
 }
 function fmtDate(iso: string): string {
@@ -132,16 +140,17 @@ export default function HiringOverview() {
         const q = search.toLowerCase()
         if (!c.name.toLowerCase().includes(q) && !c.job.title.toLowerCase().includes(q) && !c.job.client.toLowerCase().includes(q)) return false
       }
-      if (recFilter === 'strong' && c.fitPct < 85) return false
-      if (recFilter === 'caution' && (c.fitPct < 70 || c.fitPct >= 85)) return false
-      if (recFilter === 'nohire' && c.fitPct >= 70) return false
+      if (recFilter === 'strong'   && (c.fitPct ?? -1) < 85) return false
+      if (recFilter === 'explore'  && ((c.fitPct ?? -1) < 70 || (c.fitPct ?? -1) >= 85)) return false
+      if (recFilter === 'discuss'  && ((c.fitPct ?? -1) < 55 || (c.fitPct ?? -1) >= 70)) return false
+      if (recFilter === 'low'      && (c.fitPct ?? -1) >= 55) return false
       return true
     })
-    .sort((a, b) => b.fitPct - a.fitPct)
+    .sort((a, b) => (b.fitPct ?? -1) - (a.fitPct ?? -1))
 
-  const flaggedRisks = candidates.filter(c => c.fitPct >= 70 && c.fitPct < 80)
+  const flaggedRisks = candidates.filter(c => c.fitPct !== null && c.fitPct >= 70 && c.fitPct < 80)
   const recentEvals = [...candidates].slice(0, 5)
-  const needsCoverage = candidates.filter(c => c.fitPct < 70 || !c.job.hasTarget)
+  const needsCoverage = candidates.filter(c => !c.hasBenchmark || (c.fitPct !== null && c.fitPct < 55))
 
   return (
     <div style={{ minHeight: '100vh', background: '#F9FAFB' }}>
@@ -214,9 +223,10 @@ export default function HiringOverview() {
           }}
         >
           <option value="all">All recommendations</option>
-          <option value="strong">Strong Hire</option>
-          <option value="caution">Proceed with Caution</option>
-          <option value="nohire">Do Not Hire</option>
+          <option value="strong">Strong Fit</option>
+          <option value="explore">Explore Further</option>
+          <option value="discuss">Needs Discussion</option>
+          <option value="low">Low Fit</option>
         </select>
       </div>
 
@@ -299,7 +309,7 @@ export default function HiringOverview() {
                     fontSize: 13, fontWeight: 700, color: fitColor(c.fitPct),
                     flexShrink: 0,
                   }}>
-                    {c.fitPct}
+                    {c.fitPct ?? '—'}
                   </div>
 
                   {/* Candidate info */}
@@ -318,7 +328,7 @@ export default function HiringOverview() {
                   {/* Recommendation */}
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 600, color: recColor(c.recommendation) }}>
-                      {c.recommendation}
+                      {c.recommendation ?? 'No benchmark'}
                     </div>
                   </div>
 
@@ -411,7 +421,7 @@ export default function HiringOverview() {
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           fontSize: 11, fontWeight: 700, color: fitColor(c.fitPct), padding: '0 6px',
                         }}>
-                          {c.fitPct}
+                          {c.fitPct ?? '—'}
                         </div>
                       </div>
                     </Link>
@@ -435,7 +445,9 @@ export default function HiringOverview() {
                           <span style={{ fontSize: 13, color: '#111827', fontWeight: 500 }}>{c.name}</span>
                           <div style={{ fontSize: 11, color: '#9CA3AF' }}>{c.job.title}</div>
                         </div>
-                        <span style={{ fontSize: 11, color: '#9CA3AF' }}>{c.fitPct < 70 ? 'Do Not Hire' : 'No benchmark'}</span>
+                        <span style={{ fontSize: 11, color: c.recommendation ? recColor(c.recommendation) : '#9CA3AF' }}>
+                          {c.recommendation ?? 'No benchmark'}
+                        </span>
                       </div>
                     </Link>
                   ))}

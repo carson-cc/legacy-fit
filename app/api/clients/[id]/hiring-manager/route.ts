@@ -30,8 +30,9 @@ export async function POST(req: NextRequest, { params }: Params) {
     const { name, email } = await req.json()
     if (!name) return NextResponse.json({ error: 'Name is required' }, { status: 400 })
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const hm = await prisma.hiringManagerAssessment.create({
-      data: { clientId: id, name, email: email || null },
+      data: { clientId: id, name, email: email || null } as any,
     })
 
     return NextResponse.json({

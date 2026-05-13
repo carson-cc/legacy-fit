@@ -26,6 +26,9 @@ interface Invite {
   completedAt: string | null
   sentAt: string | null
   result: InviteResult | null
+  stage: string
+  offLimits: boolean
+  approvedForClient: boolean
 }
 
 interface Target {
@@ -43,6 +46,7 @@ interface Job {
   client: { id: string; name: string }
   target: Target | null
   invites: Invite[]
+  teamMembers: Invite[]   // team_member invites separated by API
 }
 
 /* ------------------------------------------------------------------ */
@@ -69,6 +73,15 @@ const GROUP_LABELS: Record<string, string> = {
   process_structure: 'Operators',
   strategic_drive: 'Stabilizers',
 }
+
+const STAGE_LABELS: Record<string, string> = {
+  longlist: 'Longlist',
+  shortlist: 'Shortlist',
+  client_ready: 'Client Ready',
+  rejected: 'Rejected',
+}
+
+const STAGES = ['longlist', 'shortlist', 'client_ready', 'rejected'] as const
 
 type SortKey = 'fit' | 'name' | 'date'
 
@@ -100,9 +113,9 @@ function ScoreRing({ pct }: { pct: number }) {
 /*  Badge                                                              */
 /* ------------------------------------------------------------------ */
 
-function Badge({ label, variant }: { label: string; variant: 'amber' | 'red' }) {
-  const bg = variant === 'amber' ? 'rgba(234,179,8,0.12)' : 'rgba(239,68,68,0.12)'
-  const fg = variant === 'amber' ? '#EAB308' : '#EF4444'
+function Badge({ label, variant }: { label: string; variant: 'amber' | 'red' | 'green' }) {
+  const bg = variant === 'amber' ? 'rgba(234,179,8,0.12)' : variant === 'green' ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)'
+  const fg = variant === 'amber' ? '#EAB308' : variant === 'green' ? '#22C55E' : '#EF4444'
   return (
     <span
       style={{
@@ -161,6 +174,7 @@ export default function JobDetailPage() {
 
   /* Invite form */
   const [showInviteForm, setShowInviteForm] = useState(false)
+  const [inviteType, setInviteType] = useState<'candidate' | 'team_member'>('candidate')
   const [inviteFirstName, setInviteFirstName] = useState('')
   const [inviteLastName, setInviteLastName] = useState('')
   const [inviteEmail, setInviteEmail] = useState('')
@@ -170,6 +184,19 @@ export default function JobDetailPage() {
   const [inviteEmailSent, setInviteEmailSent] = useState(false)
   const [copied, setCopied] = useState(false)
   const [resending, setResending] = useState<string | null>(null)
+
+  /* Pipeline view */
+  const [view, setView] = useState<'list' | 'pipeline'>('list')
+  const [moveMenu, setMoveMenu] = useState<string | null>(null)
+  const [movingStage, setMovingStage] = useState<string | null>(null)
+
+  /* Close move menu on outside click */
+  useEffect(() => {
+    if (!moveMenu) return
+    const close = () => setMoveMenu(null)
+    document.addEventListener('click', close)
+    return () => document.removeEventListener('click', close)
+  }, [moveMenu])
 
   /* Fetch */
   const fetchJob = useCallback(() => {
@@ -211,6 +238,7 @@ export default function JobDetailPage() {
           name: `${firstName} ${lastName}`,
           email,
           roleTitle: inviteRoleTitle.trim() || job?.title,
+          inviteType,
         }),
       })
       if (!res.ok) throw new Error('Failed to create invite')
@@ -229,6 +257,7 @@ export default function JobDetailPage() {
 
   function resetInviteForm() {
     setShowInviteForm(false)
+    setInviteType('candidate')
     setInviteFirstName('')
     setInviteLastName('')
     setInviteEmail('')
@@ -256,6 +285,28 @@ export default function JobDetailPage() {
     }
   }
 
+  async function handleMoveStage(inviteId: string, stage: string) {
+    setMovingStage(inviteId)
+    setMoveMenu(null)
+    try {
+      const res = await fetch(`/api/candidates/${inviteId}/stage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stage }),
+      })
+      if (res.ok) {
+        showToast(`Moved to ${STAGE_LABELS[stage]}`)
+        fetchJob()
+      } else {
+        showToast('Failed to move candidate', 'error')
+      }
+    } catch {
+      showToast('Network error', 'error')
+    } finally {
+      setMovingStage(null)
+    }
+  }
+
   function copyLink() {
     if (!inviteLink) return
     navigator.clipboard.writeText(inviteLink)
@@ -268,6 +319,8 @@ export default function JobDetailPage() {
 
   const allCompleted = (job?.invites ?? []).filter(i => i.result !== null)
   const pending = (job?.invites ?? []).filter(i => i.result === null)
+  const teamCompleted = (job?.teamMembers ?? []).filter(i => i.result !== null)
+  const teamPending = (job?.teamMembers ?? []).filter(i => i.result === null)
 
   const candidates = allCompleted
     .filter(i => {
@@ -385,7 +438,7 @@ export default function JobDetailPage() {
   /* ------------------------------------------------------------------ */
 
   return (
-    <div style={{ padding: '32px 48px', maxWidth: 960, margin: '0 auto' }}>
+    <div style={{ padding: '32px 48px', maxWidth: view === 'pipeline' ? 'none' : 960, margin: view === 'pipeline' ? 0 : '0 auto' }}>
 
       {/* ---- Back link ---- */}
       <Link
@@ -428,6 +481,28 @@ export default function JobDetailPage() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {/* View toggle */}
+          <div style={{ display: 'flex', border: '1px solid #E5E7EB', borderRadius: 8, overflow: 'hidden' }}>
+            {(['list', 'pipeline'] as const).map(v => (
+              <button
+                key={v}
+                onClick={() => setView(v)}
+                style={{
+                  fontSize: 13,
+                  fontWeight: 500,
+                  padding: '7px 14px',
+                  border: 'none',
+                  background: view === v ? '#111827' : '#FFFFFF',
+                  color: view === v ? '#FFFFFF' : '#6B7280',
+                  cursor: 'pointer',
+                  transition: 'all 150ms ease',
+                }}
+              >
+                {v === 'list' ? 'List' : 'Pipeline'}
+              </button>
+            ))}
+          </div>
+
           <Link
             href={`/dashboard/jobs/${job.id}/target`}
             style={{ ...secondaryBtnStyle, textDecoration: 'none' }}
@@ -475,9 +550,27 @@ export default function JobDetailPage() {
               marginBottom: 16,
             }}
           >
-            <h3 style={{ fontSize: 16, fontWeight: 600, color: '#111827', margin: 0 }}>
-              Invite Candidate
-            </h3>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              {(['candidate', 'team_member'] as const).map(t => (
+                <button
+                  key={t}
+                  onClick={() => setInviteType(t)}
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 500,
+                    padding: '5px 14px',
+                    borderRadius: 20,
+                    border: inviteType === t ? 'none' : '1px solid #E5E7EB',
+                    background: inviteType === t ? '#111827' : 'transparent',
+                    color: inviteType === t ? '#FFFFFF' : '#6B7280',
+                    cursor: 'pointer',
+                    transition: 'all 180ms ease',
+                  }}
+                >
+                  {t === 'candidate' ? 'Candidate' : 'Team Member'}
+                </button>
+              ))}
+            </div>
             <button
               onClick={resetInviteForm}
               style={{
@@ -512,7 +605,7 @@ export default function JobDetailPage() {
                   {inviteEmailSent ? (
                     <>
                       <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: '#111827' }}>
-                        Evaluation sent to {inviteEmail}
+                        {inviteType === 'team_member' ? 'Team member invite' : 'Evaluation'} sent to {inviteEmail}
                       </p>
                       <p style={{ margin: 0, fontSize: 12, color: '#9CA3AF' }}>
                         {inviteFirstName} {inviteLastName} will receive the invite email shortly
@@ -521,7 +614,7 @@ export default function JobDetailPage() {
                   ) : (
                     <>
                       <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: '#111827' }}>
-                        Invite created for {inviteFirstName} {inviteLastName}
+                        {inviteType === 'team_member' ? 'Team member invite' : 'Invite'} created for {inviteFirstName} {inviteLastName}
                       </p>
                       <p style={{ margin: 0, fontSize: 12, color: '#9CA3AF' }}>Share the link below</p>
                     </>
@@ -653,7 +746,7 @@ export default function JobDetailPage() {
                 }}
                 onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}
               >
-                {inviteSubmitting ? 'Sending...' : 'Send evaluation'}
+                {inviteSubmitting ? 'Sending...' : inviteType === 'team_member' ? 'Send team invite' : 'Send evaluation'}
               </button>
             </form>
           )}
@@ -661,7 +754,7 @@ export default function JobDetailPage() {
       )}
 
       {/* ---- Empty State ---- */}
-      {allCompleted.length === 0 && pending.length === 0 && !showInviteForm && (
+      {allCompleted.length === 0 && pending.length === 0 && teamCompleted.length === 0 && teamPending.length === 0 && !showInviteForm && (
         <div
           style={{
             ...cardStyle,
@@ -700,8 +793,157 @@ export default function JobDetailPage() {
         </div>
       )}
 
+      {/* ---- Pipeline View ---- */}
+      {view === 'pipeline' && allCompleted.length > 0 && (
+        <div style={{ overflowX: 'auto', paddingBottom: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(240px, 1fr))', gap: 16, minWidth: 960 }}>
+            {STAGES.map(stage => {
+              const stageCandidates = allCompleted.filter(i => (i.stage || 'longlist') === stage)
+              return (
+                <div key={stage}>
+                  {/* Column header */}
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12,
+                    padding: '10px 14px',
+                    background: '#F9FAFB', borderRadius: 8, border: '1px solid #E5E7EB',
+                  }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>{STAGE_LABELS[stage]}</span>
+                    <span style={{
+                      fontSize: 11, fontWeight: 600, color: '#9CA3AF',
+                      background: '#E5E7EB', borderRadius: 99, padding: '1px 7px',
+                    }}>
+                      {stageCandidates.length}
+                    </span>
+                  </div>
+
+                  {/* Cards */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {stageCandidates.map(invite => {
+                      const r = invite.result!
+                      const groupLabel = GROUP_LABELS[r.profileGroup] ?? r.profileGroup
+                      const isMoving = movingStage === invite.id
+
+                      return (
+                        <div
+                          key={invite.id}
+                          style={{
+                            background: invite.offLimits ? 'rgba(239,68,68,0.04)' : '#FFFFFF',
+                            border: `1px solid ${invite.offLimits ? 'rgba(239,68,68,0.2)' : '#E5E7EB'}`,
+                            borderRadius: 8,
+                            padding: '12px 14px',
+                            opacity: isMoving ? 0.5 : 1,
+                            transition: 'opacity 180ms ease',
+                            position: 'relative',
+                          }}
+                        >
+                          {/* Top row: name + badges */}
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 4 }}>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <Link
+                                href={`/dashboard/candidates/${invite.id}`}
+                                style={{
+                                  fontSize: 14,
+                                  fontWeight: 600,
+                                  color: '#111827',
+                                  textDecoration: invite.offLimits ? 'line-through' : 'none',
+                                  textDecorationColor: '#EF4444',
+                                }}
+                              >
+                                {invite.name}
+                              </Link>
+                            </div>
+                            <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                              {invite.offLimits && <Badge label="Off-limits" variant="red" />}
+                              {invite.approvedForClient && <Badge label="Approved" variant="green" />}
+                            </div>
+                          </div>
+
+                          {/* Profile + fit */}
+                          <p style={{ fontSize: 12, color: '#6B7280', margin: '0 0 10px' }}>
+                            {r.profileName} · {groupLabel}
+                            <span style={{
+                              marginLeft: 6,
+                              fontWeight: 600,
+                              color: fitColor(r.fitPct),
+                            }}>
+                              {r.fitPct}%
+                            </span>
+                          </p>
+
+                          {/* Move button */}
+                          <div style={{ position: 'relative' }}>
+                            <button
+                              onClick={() => setMoveMenu(moveMenu === invite.id ? null : invite.id)}
+                              disabled={isMoving}
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 500,
+                                color: '#6B7280',
+                                background: 'none',
+                                border: '1px solid #E5E7EB',
+                                borderRadius: 6,
+                                padding: '3px 10px',
+                                cursor: isMoving ? 'default' : 'pointer',
+                                transition: 'all 150ms ease',
+                              }}
+                              onMouseEnter={e => { if (!isMoving) { e.currentTarget.style.borderColor = '#9CA3AF'; e.currentTarget.style.color = '#374151' } }}
+                              onMouseLeave={e => { e.currentTarget.style.borderColor = '#E5E7EB'; e.currentTarget.style.color = '#6B7280' }}
+                            >
+                              {isMoving ? 'Moving…' : 'Move →'}
+                            </button>
+
+                            {moveMenu === invite.id && (
+                              <div
+                                style={{
+                                  position: 'absolute', left: 0, top: '100%', marginTop: 4,
+                                  zIndex: 20, background: '#FFFFFF',
+                                  border: '1px solid #E5E7EB', borderRadius: 8,
+                                  padding: 4, boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+                                  minWidth: 140,
+                                }}
+                              >
+                                {STAGES.filter(s => s !== stage).map(s => (
+                                  <button
+                                    key={s}
+                                    onClick={() => handleMoveStage(invite.id, s)}
+                                    style={{
+                                      display: 'block', width: '100%', textAlign: 'left',
+                                      fontSize: 13, padding: '7px 12px', border: 'none',
+                                      background: 'none', cursor: 'pointer', borderRadius: 6,
+                                      color: '#374151', transition: 'background 120ms ease',
+                                    }}
+                                    onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')}
+                                    onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                                  >
+                                    {STAGE_LABELS[s]}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+
+                    {stageCandidates.length === 0 && (
+                      <div style={{
+                        border: '1px dashed #E5E7EB', borderRadius: 8,
+                        padding: '20px 14px', textAlign: 'center',
+                        color: '#D1D5DB', fontSize: 12,
+                      }}>
+                        No candidates
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {/* ---- Candidates Section ---- */}
-      {allCompleted.length > 0 && (
+      {view === 'list' && allCompleted.length > 0 && (
         <div style={{ marginBottom: 48 }}>
 
           {/* Section header + controls */}
@@ -862,7 +1104,7 @@ export default function JobDetailPage() {
       )}
 
       {/* ---- Pending Section ---- */}
-      {pending.length > 0 && (
+      {view === 'list' && pending.length > 0 && (
         <div>
           <span
             style={{
@@ -920,6 +1162,128 @@ export default function JobDetailPage() {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* ---- Team Members Section ---- */}
+      {(teamCompleted.length > 0 || teamPending.length > 0) && (
+        <div style={{ marginTop: 40 }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16,
+            paddingTop: 32, borderTop: '1px solid #F3F4F6',
+          }}>
+            <span style={{
+              fontSize: 12, fontWeight: 600, color: '#9CA3AF',
+              textTransform: 'uppercase', letterSpacing: '0.08em',
+            }}>
+              Team Profiles ({teamCompleted.length + teamPending.length})
+            </span>
+            <span style={{
+              fontSize: 11, color: '#9CA3AF', background: '#F9FAFB',
+              border: '1px solid #E5E7EB', borderRadius: 4, padding: '2px 7px',
+            }}>
+              For team fit analysis
+            </span>
+          </div>
+
+          {teamCompleted.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+              {teamCompleted.map(invite => {
+                const r = invite.result!
+                const groupLabel = GROUP_LABELS[r.profileGroup] ?? r.profileGroup
+                return (
+                  <Link
+                    key={invite.id}
+                    href={`/dashboard/candidates/${invite.id}`}
+                    style={{
+                      ...cardStyle,
+                      textDecoration: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 16,
+                      transition: 'all 180ms ease',
+                      borderLeft: '3px solid #E5E7EB',
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)'
+                      e.currentTarget.style.transform = 'translateY(-1px)'
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.06)'
+                      e.currentTarget.style.transform = 'translateY(0)'
+                    }}
+                  >
+                    {/* Profile badge */}
+                    <div style={{
+                      width: 40, height: 40, borderRadius: '50%',
+                      background: '#F3F4F6', border: '1px solid #E5E7EB',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                    }}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+                      </svg>
+                    </div>
+
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ fontSize: 15, fontWeight: 600, color: '#111827' }}>
+                        {invite.name}
+                      </span>
+                      <p style={{ fontSize: 13, color: '#6B7280', margin: '2px 0 0' }}>
+                        {r.profileName} · {groupLabel}
+                      </p>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                      <span style={{ fontSize: 12, color: '#9CA3AF' }}>
+                        {invite.completedAt ? formatDate(invite.completedAt) : ''}
+                      </span>
+                      <span style={{ fontSize: 14, color: '#9CA3AF' }}>&rarr;</span>
+                    </div>
+                  </Link>
+                )
+              })}
+            </div>
+          )}
+
+          {teamPending.length > 0 && (
+            <div>
+              {teamPending.map(invite => (
+                <div
+                  key={invite.id}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '12px 0', borderBottom: '1px solid rgba(0,0,0,0.06)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 14, color: '#9CA3AF', fontWeight: 500 }}>
+                      {invite.name}
+                    </span>
+                    <span style={{ fontSize: 11, color: '#9CA3AF', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 4, padding: '1px 6px' }}>
+                      pending
+                    </span>
+                    {invite.sentAt && (
+                      <span style={{ fontSize: 12, color: '#9CA3AF' }}>
+                        · Sent {formatDate(invite.sentAt)}
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => handleResend(invite.id)}
+                    disabled={resending === invite.id}
+                    style={{
+                      background: 'none', border: 'none', fontSize: 12,
+                      color: resending === invite.id ? '#9CA3AF' : '#2563EB',
+                      cursor: resending === invite.id ? 'default' : 'pointer',
+                      textDecoration: 'underline',
+                    }}
+                  >
+                    {resending === invite.id ? 'Sending…' : 'Resend'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

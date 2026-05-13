@@ -8,39 +8,57 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  name      String?
-  role      String   @default("recruiter")
-  createdAt DateTime @default(now())
+  id                 String               @id @default(cuid())
+  email              String               @unique
+  password           String
+  name               String?
+  role               String               @default("member")
+  isPlatformAdmin    Boolean              @default(false)
+  orgId              String?
+  emailVerifiedAt    DateTime?
+  createdAt          DateTime             @default(now())
+  CandidateNote      CandidateNote[]
+  EventLog           EventLog[]
+  PasswordResetToken PasswordResetToken[]
+  Organization       Organization?        @relation(fields: [orgId], references: [id])
+
+  @@index([orgId])
 }
 
 model Client {
   id             String                    @id @default(cuid())
+  orgId          String
   name           String
   industry       String?
   createdAt      DateTime                  @default(now())
-  jobs           Job[]
+  Organization   Organization              @relation(fields: [orgId], references: [id], onDelete: Cascade)
   hiringManagers HiringManagerAssessment[]
+  jobs           Job[]
+
+  @@index([orgId])
 }
 
 model Job {
-  id         String            @id @default(cuid())
-  title      String
-  roleType   String
-  clientId   String
-  client     Client            @relation(fields: [clientId], references: [id])
-  target     JobTarget?
-  invites    CandidateInvite[]
-  createdAt  DateTime          @default(now())
-  archivedAt DateTime?
+  id            String            @id @default(cuid())
+  orgId         String
+  title         String
+  roleType      String
+  clientId      String
+  createdAt     DateTime          @default(now())
+  archivedAt    DateTime?
+  invites       CandidateInvite[]
+  ClientContact ClientContact[]
+  client        Client            @relation(fields: [clientId], references: [id])
+  Organization  Organization      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  target        JobTarget?
+
+  @@index([clientId])
+  @@index([orgId])
 }
 
 model JobTarget {
   id           String   @id @default(cuid())
   jobId        String   @unique
-  job          Job      @relation(fields: [jobId], references: [id])
   dominance    Float
   extraversion Float
   patience     Float
@@ -48,94 +66,192 @@ model JobTarget {
   notes        String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  job          Job      @relation(fields: [jobId], references: [id])
 }
 
 model CandidateInvite {
-  id          String            @id @default(cuid())
-  jobId       String
-  job         Job               @relation(fields: [jobId], references: [id])
-  token       String            @unique @default(cuid())
-  name        String?
-  email       String?
-  phone       String?
-  sentAt      DateTime?
-  completedAt DateTime?
-  result      AssessmentResult?
-  outcome     PlacementOutcome?
-  createdAt   DateTime          @default(now())
+  id                String            @id @default(cuid())
+  jobId             String
+  token             String            @unique @default(cuid())
+  name              String?
+  email             String?
+  phone             String?
+  inviteType        String            @default("candidate")
+  stage             String            @default("longlist")
+  offLimits         Boolean           @default(false)
+  sentAt            DateTime?
+  completedAt       DateTime?
+  createdAt         DateTime          @default(now())
+  approvedAt        DateTime?
+  approvedByUserId  String?
+  approvedForClient Boolean           @default(false)
+  result            AssessmentResult?
+  job               Job               @relation(fields: [jobId], references: [id])
+  CandidateNote     CandidateNote[]
+  outcome           PlacementOutcome?
+
+  @@index([jobId])
 }
 
 model AssessmentResult {
-  id               String          @id @default(cuid())
-  shareToken       String          @unique @default(cuid())
-  inviteId         String          @unique
-  invite           CandidateInvite @relation(fields: [inviteId], references: [id])
-  dominance        Float
-  extraversion     Float
-  patience         Float
-  formality        Float
-  domPercentile    Float
-  extPercentile    Float
-  patPercentile    Float
-  forPercentile    Float
-  profileName      String
-  profileGroup     String
-  secondaryProfile String?
-  adaptationStress Float
-  fitPct           Int?
-  list1Responses   String
-  list2Responses   String
-  list1Order       String
-  list2Order       String
-  list1Count       Int
-  list2Count       Int
-  timeOnPage1Ms    Int?
-  timeOnPage2Ms    Int?
-  domAdaptation    Float?
-  extAdaptation    Float?
-  patAdaptation    Float?
-  forAdaptation    Float?
-  fitLow           Int?
-  fitHigh          Int?
-  scoringVersion   String    @default("v3.0.0")
-  scoringVariant   String    @default("v2_quadratic")
-  rushed           Boolean   @default(false)
-  recruiterNotes   String?
-  createdAt        DateTime  @default(now())
+  id                  String          @id @default(cuid())
+  shareToken          String          @unique @default(cuid())
+  shareTokenExpiresAt DateTime?
+  inviteId            String          @unique
+  dominance           Float
+  extraversion        Float
+  patience            Float
+  formality           Float
+  domPercentile       Float
+  extPercentile       Float
+  patPercentile       Float
+  forPercentile       Float
+  profileName         String
+  profileGroup        String
+  secondaryProfile    String?
+  adaptationStress    Float
+  fitPct              Int?
+  list1Responses      String
+  list2Responses      String
+  list1Order          String
+  list2Order          String
+  list1Count          Int
+  list2Count          Int
+  timeOnPage1Ms       Int?
+  timeOnPage2Ms       Int?
+  domAdaptation       Float?
+  extAdaptation       Float?
+  patAdaptation       Float?
+  forAdaptation       Float?
+  fitLow              Int?
+  fitHigh             Int?
+  scoringVersion      String          @default("v3.0.0")
+  scoringVariant      String          @default("v2_quadratic")
+  rushed              Boolean         @default(false)
+  recruiterNotes      String?
+  createdAt           DateTime        @default(now())
+  invite              CandidateInvite @relation(fields: [inviteId], references: [id])
 }
 
 model PlacementOutcome {
   id                String          @id @default(cuid())
   inviteId          String          @unique
-  invite            CandidateInvite @relation(fields: [inviteId], references: [id])
   placed            Boolean
   retainedAt90      Boolean?
   retainedAt180     Boolean?
   performanceRating Int?
   notes             String?
   recordedAt        DateTime        @default(now())
+  invite            CandidateInvite @relation(fields: [inviteId], references: [id])
 }
 
 model HiringManagerAssessment {
-  id           String    @id @default(cuid())
+  id           String       @id @default(cuid())
+  orgId        String
   clientId     String
-  client       Client    @relation(fields: [clientId], references: [id])
   name         String
   email        String?
-  dominance    Float     @default(0)
-  extraversion Float     @default(0)
-  patience     Float     @default(0)
-  formality    Float     @default(0)
-  profileType  String    @default("")
-  token        String    @unique @default(cuid())
+  dominance    Float        @default(0)
+  extraversion Float        @default(0)
+  patience     Float        @default(0)
+  formality    Float        @default(0)
+  profileType  String       @default("")
+  token        String       @unique @default(cuid())
   completedAt  DateTime?
-  createdAt    DateTime  @default(now())
+  createdAt    DateTime     @default(now())
+  client       Client       @relation(fields: [clientId], references: [id])
+  Organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([orgId])
 }
 
 model EventLog {
-  id        String   @id @default(cuid())
-  event     String
-  entityId  String
-  meta      String?
-  createdAt DateTime @default(now())
+  id           String        @id @default(cuid())
+  event        String
+  entityId     String
+  orgId        String?
+  userId       String?
+  meta         String?
+  createdAt    DateTime      @default(now())
+  Organization Organization? @relation(fields: [orgId], references: [id])
+  User         User?         @relation(fields: [userId], references: [id])
+
+  @@index([event])
+  @@index([orgId])
+  @@index([userId])
+}
+
+model CandidateNote {
+  id              String          @id
+  inviteId        String
+  authorUserId    String
+  body            String
+  createdAt       DateTime        @default(now())
+  User            User            @relation(fields: [authorUserId], references: [id], onDelete: Cascade)
+  CandidateInvite CandidateInvite @relation(fields: [inviteId], references: [id], onDelete: Cascade)
+
+  @@index([inviteId])
+}
+
+model ClientContact {
+  id           String    @id
+  jobId        String
+  name         String
+  email        String
+  token        String    @unique
+  expiresAt    DateTime
+  lastAccessAt DateTime?
+  revokedAt    DateTime?
+  createdAt    DateTime  @default(now())
+  Job          Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@index([token])
+}
+
+model OrgInvite {
+  id           String       @id
+  orgId        String
+  email        String
+  role         String       @default("member")
+  token        String       @unique
+  invitedBy    String
+  expiresAt    DateTime
+  acceptedAt   DateTime?
+  revokedAt    DateTime?
+  createdAt    DateTime     @default(now())
+  Organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([email])
+  @@index([orgId])
+}
+
+model Organization {
+  id                      String                    @id
+  name                    String
+  slug                    String                    @unique
+  createdAt               DateTime                  @default(now())
+  brandLogoUrl            String?
+  brandPrimaryColor       String?
+  brandPartnerName        String?
+  brandPartnerEmail       String?
+  Client                  Client[]
+  EventLog                EventLog[]
+  HiringManagerAssessment HiringManagerAssessment[]
+  Job                     Job[]
+  OrgInvite               OrgInvite[]
+  User                    User[]
+}
+
+model PasswordResetToken {
+  id        String    @id
+  userId    String
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  User      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
