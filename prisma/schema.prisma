@@ -8,12 +8,13 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  name      String?
-  role      String   @default("recruiter")
-  createdAt DateTime @default(now())
+  id             String          @id @default(cuid())
+  email          String          @unique
+  password       String
+  name           String?
+  role           String          @default("recruiter")
+  createdAt      DateTime        @default(now())
+  candidateNotes CandidateNote[]
 }
 
 model Client {
@@ -51,21 +52,27 @@ model JobTarget {
 }
 
 model CandidateInvite {
-  id          String            @id @default(cuid())
-  jobId       String
-  job         Job               @relation(fields: [jobId], references: [id])
-  token       String            @unique @default(cuid())
-  name        String?
-  email       String?
-  phone       String?
+  id                String            @id @default(cuid())
+  jobId             String
+  job               Job               @relation(fields: [jobId], references: [id])
+  token             String            @unique @default(cuid())
+  name              String?
+  email             String?
+  phone             String?
   // "candidate" | "team_member"
   // team_member invites profile existing team for compatibility analysis
-  inviteType  String            @default("candidate")
-  sentAt      DateTime?
-  completedAt DateTime?
-  result      AssessmentResult?
-  outcome     PlacementOutcome?
-  createdAt   DateTime          @default(now())
+  inviteType        String            @default("candidate")
+  stage             String            @default("longlist")
+  offLimits         Boolean           @default(false)
+  approvedForClient Boolean           @default(false)
+  approvedByUserId  String?
+  approvedAt        DateTime?
+  sentAt            DateTime?
+  completedAt       DateTime?
+  result            AssessmentResult?
+  outcome           PlacementOutcome?
+  notes             CandidateNote[]
+  createdAt         DateTime          @default(now())
 }
 
 model AssessmentResult {
@@ -139,6 +146,19 @@ model EventLog {
   id        String   @id @default(cuid())
   event     String
   entityId  String
+  userId    String?
   meta      String?
   createdAt DateTime @default(now())
+}
+
+model CandidateNote {
+  id           String          @id
+  inviteId     String
+  authorUserId String
+  body         String
+  createdAt    DateTime        @default(now())
+  author       User            @relation(fields: [authorUserId], references: [id])
+  invite       CandidateInvite @relation(fields: [inviteId], references: [id])
+
+  @@index([inviteId])
 }
