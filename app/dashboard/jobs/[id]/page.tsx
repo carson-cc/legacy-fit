@@ -28,6 +28,9 @@ interface Invite {
   stage: string
   offLimits: boolean
   result: InviteResult | null
+  stage: string
+  offLimits: boolean
+  approvedForClient: boolean
 }
 
 interface Target {
@@ -73,6 +76,15 @@ const GROUP_LABELS: Record<string, string> = {
   strategic_drive: 'Stabilizers',
 }
 
+const STAGE_LABELS: Record<string, string> = {
+  longlist: 'Longlist',
+  shortlist: 'Shortlist',
+  client_ready: 'Client Ready',
+  rejected: 'Rejected',
+}
+
+const STAGES = ['longlist', 'shortlist', 'client_ready', 'rejected'] as const
+
 type SortKey = 'fit' | 'name' | 'date'
 
 interface ClientContact {
@@ -112,9 +124,9 @@ function ScoreRing({ pct }: { pct: number }) {
 /*  Badge                                                              */
 /* ------------------------------------------------------------------ */
 
-function Badge({ label, variant }: { label: string; variant: 'amber' | 'red' }) {
-  const bg = variant === 'amber' ? 'rgba(234,179,8,0.12)' : 'rgba(239,68,68,0.12)'
-  const fg = variant === 'amber' ? '#EAB308' : '#EF4444'
+function Badge({ label, variant }: { label: string; variant: 'amber' | 'red' | 'green' }) {
+  const bg = variant === 'amber' ? 'rgba(234,179,8,0.12)' : variant === 'green' ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)'
+  const fg = variant === 'amber' ? '#EAB308' : variant === 'green' ? '#22C55E' : '#EF4444'
   return (
     <span
       style={{
@@ -196,6 +208,19 @@ export default function JobDetailPage() {
   const [bulkRows, setBulkRows]           = useState<{name:string;email:string;phone?:string}[]>([])
   const [bulkCommitting, setBulkCommitting] = useState(false)
   const [bulkResults, setBulkResults]     = useState<{row:number;name:string;email:string;status:string;error?:string}[]|null>(null)
+
+  /* Pipeline view */
+  const [view, setView] = useState<'list' | 'pipeline'>('list')
+  const [moveMenu, setMoveMenu] = useState<string | null>(null)
+  const [movingStage, setMovingStage] = useState<string | null>(null)
+
+  /* Close move menu on outside click */
+  useEffect(() => {
+    if (!moveMenu) return
+    const close = () => setMoveMenu(null)
+    document.addEventListener('click', close)
+    return () => document.removeEventListener('click', close)
+  }, [moveMenu])
 
   /* Fetch */
   const fetchJob = useCallback(() => {
@@ -326,6 +351,28 @@ export default function JobDetailPage() {
       showToast('Network error', 'error')
     } finally {
       setRevoking(null)
+    }
+  }
+
+  async function handleMoveStage(inviteId: string, stage: string) {
+    setMovingStage(inviteId)
+    setMoveMenu(null)
+    try {
+      const res = await fetch(`/api/candidates/${inviteId}/stage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stage }),
+      })
+      if (res.ok) {
+        showToast(`Moved to ${STAGE_LABELS[stage]}`)
+        fetchJob()
+      } else {
+        showToast('Failed to move candidate', 'error')
+      }
+    } catch {
+      showToast('Network error', 'error')
+    } finally {
+      setMovingStage(null)
     }
   }
 
@@ -512,7 +559,7 @@ export default function JobDetailPage() {
   /* ------------------------------------------------------------------ */
 
   return (
-    <div style={{ padding: '32px 48px', maxWidth: 960, margin: '0 auto' }}>
+    <div style={{ padding: '32px 48px', maxWidth: view === 'pipeline' ? 'none' : 960, margin: view === 'pipeline' ? 0 : '0 auto' }}>
 
       {/* ---- Back link ---- */}
       <Link
@@ -555,6 +602,28 @@ export default function JobDetailPage() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {/* View toggle */}
+          <div style={{ display: 'flex', border: '1px solid #E5E7EB', borderRadius: 8, overflow: 'hidden' }}>
+            {(['list', 'pipeline'] as const).map(v => (
+              <button
+                key={v}
+                onClick={() => setView(v)}
+                style={{
+                  fontSize: 13,
+                  fontWeight: 500,
+                  padding: '7px 14px',
+                  border: 'none',
+                  background: view === v ? '#111827' : '#FFFFFF',
+                  color: view === v ? '#FFFFFF' : '#6B7280',
+                  cursor: 'pointer',
+                  transition: 'all 150ms ease',
+                }}
+              >
+                {v === 'list' ? 'List' : 'Pipeline'}
+              </button>
+            ))}
+          </div>
+
           <Link
             href={`/dashboard/jobs/${job.id}/target`}
             style={{ ...secondaryBtnStyle, textDecoration: 'none' }}
@@ -954,8 +1023,157 @@ export default function JobDetailPage() {
         </div>
       )}
 
+      {/* ---- Pipeline View ---- */}
+      {view === 'pipeline' && allCompleted.length > 0 && (
+        <div style={{ overflowX: 'auto', paddingBottom: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(240px, 1fr))', gap: 16, minWidth: 960 }}>
+            {STAGES.map(stage => {
+              const stageCandidates = allCompleted.filter(i => (i.stage || 'longlist') === stage)
+              return (
+                <div key={stage}>
+                  {/* Column header */}
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12,
+                    padding: '10px 14px',
+                    background: '#F9FAFB', borderRadius: 8, border: '1px solid #E5E7EB',
+                  }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>{STAGE_LABELS[stage]}</span>
+                    <span style={{
+                      fontSize: 11, fontWeight: 600, color: '#9CA3AF',
+                      background: '#E5E7EB', borderRadius: 99, padding: '1px 7px',
+                    }}>
+                      {stageCandidates.length}
+                    </span>
+                  </div>
+
+                  {/* Cards */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {stageCandidates.map(invite => {
+                      const r = invite.result!
+                      const groupLabel = GROUP_LABELS[r.profileGroup] ?? r.profileGroup
+                      const isMoving = movingStage === invite.id
+
+                      return (
+                        <div
+                          key={invite.id}
+                          style={{
+                            background: invite.offLimits ? 'rgba(239,68,68,0.04)' : '#FFFFFF',
+                            border: `1px solid ${invite.offLimits ? 'rgba(239,68,68,0.2)' : '#E5E7EB'}`,
+                            borderRadius: 8,
+                            padding: '12px 14px',
+                            opacity: isMoving ? 0.5 : 1,
+                            transition: 'opacity 180ms ease',
+                            position: 'relative',
+                          }}
+                        >
+                          {/* Top row: name + badges */}
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 4 }}>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <Link
+                                href={`/dashboard/candidates/${invite.id}`}
+                                style={{
+                                  fontSize: 14,
+                                  fontWeight: 600,
+                                  color: '#111827',
+                                  textDecoration: invite.offLimits ? 'line-through' : 'none',
+                                  textDecorationColor: '#EF4444',
+                                }}
+                              >
+                                {invite.name}
+                              </Link>
+                            </div>
+                            <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                              {invite.offLimits && <Badge label="Off-limits" variant="red" />}
+                              {invite.approvedForClient && <Badge label="Approved" variant="green" />}
+                            </div>
+                          </div>
+
+                          {/* Profile + fit */}
+                          <p style={{ fontSize: 12, color: '#6B7280', margin: '0 0 10px' }}>
+                            {r.profileName} · {groupLabel}
+                            <span style={{
+                              marginLeft: 6,
+                              fontWeight: 600,
+                              color: fitColor(r.fitPct),
+                            }}>
+                              {r.fitPct}%
+                            </span>
+                          </p>
+
+                          {/* Move button */}
+                          <div style={{ position: 'relative' }}>
+                            <button
+                              onClick={() => setMoveMenu(moveMenu === invite.id ? null : invite.id)}
+                              disabled={isMoving}
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 500,
+                                color: '#6B7280',
+                                background: 'none',
+                                border: '1px solid #E5E7EB',
+                                borderRadius: 6,
+                                padding: '3px 10px',
+                                cursor: isMoving ? 'default' : 'pointer',
+                                transition: 'all 150ms ease',
+                              }}
+                              onMouseEnter={e => { if (!isMoving) { e.currentTarget.style.borderColor = '#9CA3AF'; e.currentTarget.style.color = '#374151' } }}
+                              onMouseLeave={e => { e.currentTarget.style.borderColor = '#E5E7EB'; e.currentTarget.style.color = '#6B7280' }}
+                            >
+                              {isMoving ? 'Moving…' : 'Move →'}
+                            </button>
+
+                            {moveMenu === invite.id && (
+                              <div
+                                style={{
+                                  position: 'absolute', left: 0, top: '100%', marginTop: 4,
+                                  zIndex: 20, background: '#FFFFFF',
+                                  border: '1px solid #E5E7EB', borderRadius: 8,
+                                  padding: 4, boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+                                  minWidth: 140,
+                                }}
+                              >
+                                {STAGES.filter(s => s !== stage).map(s => (
+                                  <button
+                                    key={s}
+                                    onClick={() => handleMoveStage(invite.id, s)}
+                                    style={{
+                                      display: 'block', width: '100%', textAlign: 'left',
+                                      fontSize: 13, padding: '7px 12px', border: 'none',
+                                      background: 'none', cursor: 'pointer', borderRadius: 6,
+                                      color: '#374151', transition: 'background 120ms ease',
+                                    }}
+                                    onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')}
+                                    onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                                  >
+                                    {STAGE_LABELS[s]}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+
+                    {stageCandidates.length === 0 && (
+                      <div style={{
+                        border: '1px dashed #E5E7EB', borderRadius: 8,
+                        padding: '20px 14px', textAlign: 'center',
+                        color: '#D1D5DB', fontSize: 12,
+                      }}>
+                        No candidates
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {/* ---- Candidates Section ---- */}
-      {allCompleted.length > 0 && (
+      {view === 'list' && allCompleted.length > 0 && (
         <div style={{ marginBottom: 48 }}>
 
           {/* Section header + controls */}
@@ -1121,7 +1339,7 @@ export default function JobDetailPage() {
       )}
 
       {/* ---- Pending Section ---- */}
-      {pending.length > 0 && (
+      {view === 'list' && pending.length > 0 && (
         <div>
           <span
             style={{
