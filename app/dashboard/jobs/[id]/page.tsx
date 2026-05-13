@@ -28,8 +28,6 @@ interface Invite {
   stage: string
   offLimits: boolean
   result: InviteResult | null
-  stage: string
-  offLimits: boolean
   approvedForClient: boolean
 }
 
