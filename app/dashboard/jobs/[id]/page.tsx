@@ -36,6 +36,15 @@ interface Target {
   notes: string | null
 }
 
+interface ClientContact {
+  id: string
+  name: string
+  email: string
+  token: string
+  createdAt: string
+  revokedAt: string | null
+}
+
 interface Job {
   id: string
   title: string
@@ -44,6 +53,7 @@ interface Job {
   target: Target | null
   invites: Invite[]
   teamMembers: Invite[]   // team_member invites separated by API
+  clientContacts: ClientContact[]
 }
 
 /* ------------------------------------------------------------------ */
@@ -173,6 +183,15 @@ export default function JobDetailPage() {
   const [copied, setCopied] = useState(false)
   const [resending, setResending] = useState<string | null>(null)
 
+  /* Client access */
+  const [showContactForm, setShowContactForm] = useState(false)
+  const [contactName, setContactName] = useState('')
+  const [contactEmail, setContactEmail] = useState('')
+  const [contactSubmitting, setContactSubmitting] = useState(false)
+  const [newContactToken, setNewContactToken] = useState<string | null>(null)
+  const [contactLinkCopied, setContactLinkCopied] = useState(false)
+  const [revokingContact, setRevokingContact] = useState<string | null>(null)
+
   /* Fetch */
   const fetchJob = useCallback(() => {
     setLoading(true)
@@ -266,6 +285,51 @@ export default function JobDetailPage() {
     setCopied(true)
     showToast('Link copied')
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  async function handleAddContact(e: React.FormEvent) {
+    e.preventDefault()
+    if (!contactName.trim() || !contactEmail.trim()) return
+    setContactSubmitting(true)
+    try {
+      const res = await fetch(`/api/jobs/${id}/client-contacts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: contactName.trim(), email: contactEmail.trim() }),
+      })
+      if (!res.ok) throw new Error()
+      const d = await res.json()
+      setNewContactToken(d.data.token)
+      setContactLinkCopied(false)
+      setContactName('')
+      setContactEmail('')
+      fetchJob()
+    } catch {
+      showToast('Could not add contact', 'error')
+    } finally {
+      setContactSubmitting(false)
+    }
+  }
+
+  async function handleRevokeContact(contactId: string) {
+    setRevokingContact(contactId)
+    try {
+      await fetch(`/api/jobs/${id}/client-contacts/${contactId}/revoke`, { method: 'POST' })
+      showToast('Access revoked')
+      fetchJob()
+    } catch {
+      showToast('Could not revoke access', 'error')
+    } finally {
+      setRevokingContact(null)
+    }
+  }
+
+  function copyContactLink(token: string) {
+    const url = `${window.location.origin}/portal/${token}`
+    navigator.clipboard.writeText(url)
+    setContactLinkCopied(true)
+    showToast('Portal link copied')
+    setTimeout(() => setContactLinkCopied(false), 2000)
   }
 
   /* ---- Derived data ------------------------------------------------ */
@@ -1068,6 +1132,166 @@ export default function JobDetailPage() {
           )}
         </div>
       )}
+
+      {/* ---- Client Access Section ---- */}
+      <div style={{ marginTop: 40, paddingTop: 32, borderTop: '1px solid #F3F4F6' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <span style={{
+            fontSize: 12, fontWeight: 600, color: '#9CA3AF',
+            textTransform: 'uppercase', letterSpacing: '0.08em',
+          }}>
+            Client Access
+          </span>
+          {!showContactForm && (
+            <button
+              onClick={() => { setShowContactForm(true); setNewContactToken(null) }}
+              style={{
+                fontSize: 12, fontWeight: 600, color: '#2563EB',
+                background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+              }}
+            >
+              + Add contact
+            </button>
+          )}
+        </div>
+
+        {/* Add contact form */}
+        {showContactForm && !newContactToken && (
+          <form
+            onSubmit={handleAddContact}
+            style={{
+              ...cardStyle,
+              marginBottom: 16,
+              display: 'flex', flexDirection: 'column', gap: 12,
+            }}
+          >
+            <div style={{ display: 'flex', gap: 12 }}>
+              <input
+                type="text"
+                placeholder="Name"
+                value={contactName}
+                onChange={e => setContactName(e.target.value)}
+                required
+                style={{ ...inputStyle, flex: 1 }}
+                onFocus={e => { e.target.style.borderColor = '#2563EB'; e.target.style.boxShadow = '0 0 0 3px rgba(37,99,235,0.08)' }}
+                onBlur={e => { e.target.style.borderColor = '#E5E7EB'; e.target.style.boxShadow = 'none' }}
+              />
+              <input
+                type="email"
+                placeholder="Email"
+                value={contactEmail}
+                onChange={e => setContactEmail(e.target.value)}
+                required
+                style={{ ...inputStyle, flex: 1 }}
+                onFocus={e => { e.target.style.borderColor = '#2563EB'; e.target.style.boxShadow = '0 0 0 3px rgba(37,99,235,0.08)' }}
+                onBlur={e => { e.target.style.borderColor = '#E5E7EB'; e.target.style.boxShadow = 'none' }}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => { setShowContactForm(false); setContactName(''); setContactEmail('') }}
+                style={{ ...secondaryBtnStyle, fontSize: 13 }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={contactSubmitting}
+                style={{ ...primaryBtnStyle, fontSize: 13, opacity: contactSubmitting ? 0.6 : 1 }}
+              >
+                {contactSubmitting ? 'Creating…' : 'Create link'}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* Generated link */}
+        {newContactToken && (
+          <div style={{
+            ...cardStyle,
+            marginBottom: 16,
+            background: '#F0FDF4', border: '1px solid #BBF7D0',
+          }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#15803D', marginBottom: 8 }}>
+              Portal link created
+            </div>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <code style={{
+                flex: 1, fontSize: 12, color: '#374151',
+                background: '#FFF', border: '1px solid #D1FAE5',
+                borderRadius: 6, padding: '6px 10px',
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              }}>
+                {`${window.location.origin}/portal/${newContactToken}`}
+              </code>
+              <button
+                onClick={() => copyContactLink(newContactToken)}
+                style={{ ...primaryBtnStyle, fontSize: 12, background: '#15803D' }}
+              >
+                {contactLinkCopied ? 'Copied' : 'Copy link'}
+              </button>
+            </div>
+            <button
+              onClick={() => { setNewContactToken(null); setShowContactForm(false) }}
+              style={{ marginTop: 10, background: 'none', border: 'none', fontSize: 12, color: '#6B7280', cursor: 'pointer', padding: 0 }}
+            >
+              Done
+            </button>
+          </div>
+        )}
+
+        {/* Existing contacts */}
+        {(job.clientContacts ?? []).length === 0 && !showContactForm ? (
+          <p style={{ fontSize: 14, color: '#9CA3AF' }}>No client access links yet.</p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            {(job.clientContacts ?? []).map(contact => (
+              <div
+                key={contact.id}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '12px 0', borderBottom: '1px solid rgba(0,0,0,0.06)',
+                  opacity: contact.revokedAt ? 0.5 : 1,
+                }}
+              >
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 14, fontWeight: 500, color: '#111827' }}>
+                      {contact.name}
+                    </span>
+                    {contact.revokedAt && (
+                      <span style={{ fontSize: 11, fontWeight: 600, color: '#EF4444', background: '#FEE2E2', borderRadius: 4, padding: '1px 6px' }}>
+                        Revoked
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>
+                    {contact.email} · Created {formatDate(contact.createdAt)}
+                  </div>
+                </div>
+                {!contact.revokedAt && (
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+                    <button
+                      onClick={() => copyContactLink(contact.token)}
+                      style={{ background: 'none', border: 'none', fontSize: 12, color: '#2563EB', cursor: 'pointer', textDecoration: 'underline' }}
+                    >
+                      Copy link
+                    </button>
+                    <button
+                      onClick={() => handleRevokeContact(contact.id)}
+                      disabled={revokingContact === contact.id}
+                      style={{ background: 'none', border: 'none', fontSize: 12, color: '#EF4444', cursor: revokingContact === contact.id ? 'default' : 'pointer', textDecoration: 'underline' }}
+                    >
+                      {revokingContact === contact.id ? 'Revoking…' : 'Revoke'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

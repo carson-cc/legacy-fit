@@ -32,10 +32,11 @@ model Job {
   roleType   String
   clientId   String
   client     Client            @relation(fields: [clientId], references: [id])
-  target     JobTarget?
-  invites    CandidateInvite[]
-  createdAt  DateTime          @default(now())
-  archivedAt DateTime?
+  target         JobTarget?
+  invites        CandidateInvite[]
+  clientContacts ClientContact[]
+  createdAt      DateTime          @default(now())
+  archivedAt     DateTime?
 }
 
 model JobTarget {
@@ -161,4 +162,20 @@ model CandidateNote {
   invite       CandidateInvite @relation(fields: [inviteId], references: [id])
 
   @@index([inviteId])
+}
+
+model ClientContact {
+  id           String    @id
+  jobId        String
+  name         String
+  email        String
+  token        String    @unique
+  expiresAt    DateTime
+  lastAccessAt DateTime?
+  revokedAt    DateTime?
+  createdAt    DateTime  @default(now())
+  job          Job       @relation(fields: [jobId], references: [id])
+
+  @@index([jobId])
+  @@index([token])
 }

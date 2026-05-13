@@ -19,6 +19,9 @@ export async function GET(_req: NextRequest, { params }: Params) {
           include: { result: true },
           orderBy: { createdAt: 'desc' },
         },
+        clientContacts: {
+          orderBy: { createdAt: 'asc' },
+        },
       },
     })
 
@@ -28,7 +31,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
     const candidates   = job.invites.filter(i => i.inviteType !== 'team_member')
     const teamMembers  = job.invites.filter(i => i.inviteType === 'team_member')
 
-    return NextResponse.json({ data: { ...job, invites: candidates, teamMembers } })
+    return NextResponse.json({ data: { ...job, invites: candidates, teamMembers, clientContacts: job.clientContacts } })
   } catch {
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }

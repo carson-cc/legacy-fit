@@ -247,6 +247,7 @@ export default function CandidateDetailPage() {
   const [offLimits, setOffLimits] = useState(false)
   const [approvedForClient, setApprovedForClient] = useState(false)
   const [approvedAt, setApprovedAt] = useState<string | null>(null)
+  const [stage, setStage] = useState('longlist')
   const [controlsSaving, setControlsSaving] = useState(false)
 
   // Notes state
@@ -263,6 +264,7 @@ export default function CandidateDetailPage() {
         setOffLimits(d.data.offLimits ?? false)
         setApprovedForClient(d.data.approvedForClient ?? false)
         setApprovedAt(d.data.approvedAt ?? null)
+        setStage(d.data.stage ?? 'longlist')
         setLoading(false)
       })
       .catch(() => {
@@ -318,6 +320,28 @@ export default function CandidateDetailPage() {
     } catch {
       setApprovedForClient(!value)
       showToast('Could not update approval', 'error')
+    } finally {
+      setControlsSaving(false)
+    }
+  }
+
+  async function changeStage(value: string) {
+    const prev = stage
+    setStage(value)
+    setControlsSaving(true)
+    try {
+      await fetch(`/api/candidates/${id}/stage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stage: value }),
+      })
+      showToast('Stage updated')
+      if (value !== 'client_ready' && approvedForClient) {
+        setApprovedForClient(false)
+      }
+    } catch {
+      setStage(prev)
+      showToast('Could not update stage', 'error')
     } finally {
       setControlsSaving(false)
     }
@@ -498,6 +522,30 @@ export default function CandidateDetailPage() {
           <span style={label}>Process Controls</span>
           <div style={{ display: 'flex', gap: 32, alignItems: 'flex-start', flexWrap: 'wrap' }}>
 
+            {/* Stage selector */}
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', color: '#9CA3AF', textTransform: 'uppercase', marginBottom: 6 }}>Stage</div>
+              <select
+                value={stage}
+                onChange={e => changeStage(e.target.value)}
+                disabled={controlsSaving}
+                style={{
+                  fontSize: 14, fontWeight: 500, color: '#111827',
+                  border: '1px solid #E5E7EB', borderRadius: 8,
+                  padding: '6px 10px', background: '#FFF',
+                  cursor: controlsSaving ? 'not-allowed' : 'pointer',
+                  outline: 'none',
+                }}
+              >
+                <option value="longlist">Longlist</option>
+                <option value="shortlist">Shortlist</option>
+                <option value="client_ready">Client Ready</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
+
+            <div style={{ width: 1, background: '#F3F4F6', alignSelf: 'stretch' }} />
+
             {/* Off-limits toggle */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <Toggle checked={offLimits} onChange={toggleOffLimits} disabled={controlsSaving} />
@@ -515,14 +563,14 @@ export default function CandidateDetailPage() {
                 <Toggle
                   checked={approvedForClient}
                   onChange={toggleApproval}
-                  disabled={controlsSaving || candidate.stage !== 'client_ready'}
+                  disabled={controlsSaving || stage !== 'client_ready'}
                 />
               </div>
               <div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: approvedForClient ? '#22C55E' : '#111827', opacity: candidate.stage !== 'client_ready' ? 0.4 : 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: approvedForClient ? '#22C55E' : '#111827', opacity: stage !== 'client_ready' ? 0.4 : 1 }}>
                   Approved for client
                 </div>
-                {candidate.stage !== 'client_ready' ? (
+                {stage !== 'client_ready' ? (
                   <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>Only available when stage is Client Ready</div>
                 ) : approvedForClient && approvedAt ? (
                   <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>Approved {fmtDate(approvedAt)}</div>
