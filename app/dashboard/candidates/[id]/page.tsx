@@ -16,7 +16,6 @@ interface Scores {
   patience: number
   formality: number
 }
-// API returns scores with renamed keys
 interface ApiScores {
   execution: number
   collaboration: number
@@ -76,9 +75,20 @@ interface Candidate {
   resultId: string
   shareToken: string
   recruiterNotes: string
+  stage: string
+  offLimits: boolean
+  approvedForClient: boolean
+  approvedByUserId: string | null
+  approvedAt: string | null
 }
 
-// Dimension mapping — Veltro-facing labels only
+interface Note {
+  id: string
+  body: string
+  createdAt: string
+  authorName: string
+}
+
 const DIMENSION_MAP = [
   { key: 'dominance' as const, label: 'Execution' },
   { key: 'formality' as const, label: 'Ownership' },
@@ -88,6 +98,16 @@ const DIMENSION_MAP = [
 
 function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+function fmtRelative(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime()
+  const m = Math.floor(diff / 60000)
+  if (m < 1) return 'just now'
+  if (m < 60) return `${m}m ago`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `${h}h ago`
+  return fmtDate(iso)
 }
 
 function recommendationLabel(fitPct: number): 'Strong Hire' | 'Proceed with Caution' | 'Do Not Hire' {
@@ -122,7 +142,6 @@ function benchmarkComparison(fitPct: number, roleType: string): string {
   return `Significant misalignment against the current benchmark for ${roleType} roles.`
 }
 
-
 function getStrengths(c: Candidate, mapped: Scores): string[] {
   const base = c.profile?.strengths?.slice(0, 3) ?? []
   if (base.length) return base
@@ -137,7 +156,6 @@ function getRisks(c: Candidate): string[] {
   return c.profile?.traps?.slice(0, 3) ?? []
 }
 
-// Animated score ring
 function ScoreRing({ score, color, size = 100 }: { score: number; color: string; size?: number }) {
   const [displayed, setDisplayed] = useState(0)
   const r = (size / 2) - 4
@@ -181,6 +199,41 @@ function ScoreRing({ score, color, size = 100 }: { score: number; color: string;
   )
 }
 
+function Toggle({
+  checked,
+  onChange,
+  disabled,
+}: {
+  checked: boolean
+  onChange: (v: boolean) => void
+  disabled?: boolean
+}) {
+  return (
+    <button
+      role="switch"
+      aria-checked={checked}
+      disabled={disabled}
+      onClick={() => onChange(!checked)}
+      style={{
+        width: 36, height: 20, borderRadius: 10,
+        background: checked ? '#111827' : '#E5E7EB',
+        border: 'none', cursor: disabled ? 'not-allowed' : 'pointer',
+        position: 'relative', transition: 'background 150ms ease',
+        flexShrink: 0, opacity: disabled ? 0.4 : 1,
+      }}
+    >
+      <span style={{
+        position: 'absolute', top: 2,
+        left: checked ? 18 : 2,
+        width: 16, height: 16, borderRadius: '50%',
+        background: '#FFF',
+        transition: 'left 150ms ease',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+      }} />
+    </button>
+  )
+}
+
 export default function CandidateDetailPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
@@ -188,9 +241,19 @@ export default function CandidateDetailPage() {
   const [candidate, setCandidate] = useState<Candidate | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [notes, setNotes] = useState('')
-  const [notesSaving, setNotesSaving] = useState(false)
   const [linkCopied, setLinkCopied] = useState(false)
+
+  // Process controls state
+  const [offLimits, setOffLimits] = useState(false)
+  const [approvedForClient, setApprovedForClient] = useState(false)
+  const [approvedAt, setApprovedAt] = useState<string | null>(null)
+  const [stage, setStage] = useState('longlist')
+  const [controlsSaving, setControlsSaving] = useState(false)
+
+  // Notes state
+  const [notes, setNotes] = useState<Note[]>([])
+  const [noteBody, setNoteBody] = useState('')
+  const [noteSubmitting, setNoteSubmitting] = useState(false)
 
   const load = useCallback(() => {
     setLoading(true)
@@ -198,7 +261,10 @@ export default function CandidateDetailPage() {
       .then((r) => { if (!r.ok) throw new Error(); return r.json() })
       .then((d) => {
         setCandidate(d.data)
-        setNotes(d.data.recruiterNotes ?? '')
+        setOffLimits(d.data.offLimits ?? false)
+        setApprovedForClient(d.data.approvedForClient ?? false)
+        setApprovedAt(d.data.approvedAt ?? null)
+        setStage(d.data.stage ?? 'longlist')
         setLoading(false)
       })
       .catch(() => {
@@ -207,41 +273,108 @@ export default function CandidateDetailPage() {
       })
   }, [id])
 
+  const loadNotes = useCallback(() => {
+    fetch(`/api/candidates/${id}/notes`)
+      .then((r) => r.ok ? r.json() : Promise.reject())
+      .then((d) => setNotes(d.data ?? []))
+      .catch(() => {/* silent */})
+  }, [id])
+
   useEffect(() => { load() }, [load])
+  useEffect(() => { loadNotes() }, [loadNotes])
 
   useEffect(() => {
     if (candidate?.name) document.title = `Veltro — ${candidate.name}`
   }, [candidate?.name])
 
-  async function saveNotes(notesValue?: string) {
-    if (!candidate) return
-    const value = notesValue ?? notes
-    setNotesSaving(true)
+  async function toggleOffLimits(value: boolean) {
+    setOffLimits(value)
+    setControlsSaving(true)
     try {
-      await fetch(`/api/candidates/${id}/notes`, {
+      await fetch(`/api/candidates/${id}/off-limits`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notes: value }),
+        body: JSON.stringify({ offLimits: value }),
       })
-      showToast('Notes saved')
+      showToast(value ? 'Marked off-limits' : 'Off-limits removed')
     } catch {
-      showToast('Could not save notes', 'error')
+      setOffLimits(!value)
+      showToast('Could not update off-limits status', 'error')
     } finally {
-      setNotesSaving(false)
+      setControlsSaving(false)
     }
   }
 
-  async function autoSaveNotes() {
-    if (!candidate || notesSaving) return
-    setNotesSaving(true)
+  async function toggleApproval(value: boolean) {
+    setApprovedForClient(value)
+    setControlsSaving(true)
     try {
-      await fetch(`/api/candidates/${id}/notes`, {
+      const res = await fetch(`/api/candidates/${id}/approve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notes }),
+        body: JSON.stringify({ approved: value }),
       })
-    } catch { /* silent on auto-save */ }
-    finally { setNotesSaving(false) }
+      const json = await res.json()
+      setApprovedAt(json.data?.approvedAt ?? null)
+      showToast(value ? 'Approved for client portal' : 'Approval removed')
+    } catch {
+      setApprovedForClient(!value)
+      showToast('Could not update approval', 'error')
+    } finally {
+      setControlsSaving(false)
+    }
+  }
+
+  async function changeStage(value: string) {
+    const prev = stage
+    setStage(value)
+    setControlsSaving(true)
+    try {
+      await fetch(`/api/candidates/${id}/stage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stage: value }),
+      })
+      showToast('Stage updated')
+      if (value !== 'client_ready' && approvedForClient) {
+        setApprovedForClient(false)
+      }
+    } catch {
+      setStage(prev)
+      showToast('Could not update stage', 'error')
+    } finally {
+      setControlsSaving(false)
+    }
+  }
+
+  async function submitNote() {
+    if (!noteBody.trim()) return
+    setNoteSubmitting(true)
+    const optimisticNote: Note = {
+      id: `tmp-${Date.now()}`,
+      body: noteBody.trim(),
+      createdAt: new Date().toISOString(),
+      authorName: 'You',
+    }
+    setNotes(prev => [optimisticNote, ...prev])
+    setNoteBody('')
+    try {
+      const res = await fetch(`/api/candidates/${id}/notes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ body: noteBody.trim() }),
+      })
+      const json = await res.json()
+      if (json.data) {
+        setNotes(prev => prev.map(n => n.id === optimisticNote.id ? json.data : n))
+      }
+    } catch {
+      setNotes(prev => prev.filter(n => n.id !== optimisticNote.id))
+      setNoteBody(optimisticNote.body)
+      showToast('Could not save note', 'error')
+    } finally {
+      setNoteSubmitting(false)
+    }
   }
 
   function copyShareLink() {
@@ -273,8 +406,6 @@ export default function CandidateDetailPage() {
     )
   }
 
-  // API sends scores as execution/collaboration/adaptability/ownership
-  // FitModel expects dominance/extraversion/patience/formality
   const safeScores = {
     dominance: Number(candidate.scores.execution),
     extraversion: Number(candidate.scores.collaboration),
@@ -316,11 +447,14 @@ export default function CandidateDetailPage() {
     marginBottom: 8, display: 'block',
   }
 
+  const headerBg = offLimits ? '#FEF2F2' : '#FFF'
+  const headerBorder = offLimits ? '1px solid #FECACA' : '1px solid #E5E7EB'
+
   return (
     <div style={{ minHeight: '100vh', background: '#F9FAFB' }}>
 
       {/* Page header */}
-      <div style={{ background: '#FFF', borderBottom: '1px solid #E5E7EB', padding: '20px 32px' }}>
+      <div style={{ background: headerBg, borderBottom: headerBorder, padding: '20px 32px', transition: 'background 200ms ease, border-color 200ms ease' }}>
         <div style={{ maxWidth: W, margin: '0 auto' }}>
           <button
             onClick={() => router.back()}
@@ -331,7 +465,9 @@ export default function CandidateDetailPage() {
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 24 }}>
             <div>
-              <h1 style={{ margin: 0, fontSize: 28, fontWeight: 700, color: '#111827' }}>{candidate.name}</h1>
+              <h1 style={{ margin: 0, fontSize: 28, fontWeight: 700, color: offLimits ? '#EF4444' : '#111827', textDecoration: offLimits ? 'line-through' : 'none', transition: 'color 200ms ease' }}>
+                {candidate.name}
+              </h1>
               <p style={{ margin: '6px 0 0', fontSize: 16, color: '#6B7280' }}>
                 {candidate.job.title} · {candidate.job.client}
               </p>
@@ -346,6 +482,11 @@ export default function CandidateDetailPage() {
                     {item}
                   </span>
                 ))}
+                {offLimits && (
+                  <span style={{ marginLeft: 12, fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: '#EF4444', background: '#FEE2E2', padding: '2px 8px', borderRadius: 4, textTransform: 'uppercase' }}>
+                    Off-limits
+                  </span>
+                )}
               </div>
             </div>
 
@@ -376,11 +517,74 @@ export default function CandidateDetailPage() {
 
       <div style={{ maxWidth: W, margin: '0 auto', padding: '24px 32px 64px' }}>
 
-        {/* A. DECISION PANEL — dominant */}
+        {/* PROCESS CONTROLS */}
+        <div style={{ ...card, marginBottom: 24 }}>
+          <span style={label}>Process Controls</span>
+          <div style={{ display: 'flex', gap: 32, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+
+            {/* Stage selector */}
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', color: '#9CA3AF', textTransform: 'uppercase', marginBottom: 6 }}>Stage</div>
+              <select
+                value={stage}
+                onChange={e => changeStage(e.target.value)}
+                disabled={controlsSaving}
+                style={{
+                  fontSize: 14, fontWeight: 500, color: '#111827',
+                  border: '1px solid #E5E7EB', borderRadius: 8,
+                  padding: '6px 10px', background: '#FFF',
+                  cursor: controlsSaving ? 'not-allowed' : 'pointer',
+                  outline: 'none',
+                }}
+              >
+                <option value="longlist">Longlist</option>
+                <option value="shortlist">Shortlist</option>
+                <option value="client_ready">Client Ready</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
+
+            <div style={{ width: 1, background: '#F3F4F6', alignSelf: 'stretch' }} />
+
+            {/* Off-limits toggle */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <Toggle checked={offLimits} onChange={toggleOffLimits} disabled={controlsSaving} />
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: offLimits ? '#EF4444' : '#111827' }}>Off-limits</div>
+                <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>Flag candidate as unavailable for this role</div>
+              </div>
+            </div>
+
+            <div style={{ width: 1, background: '#F3F4F6', alignSelf: 'stretch' }} />
+
+            {/* Approve for client toggle */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+              <div style={{ paddingTop: 2 }}>
+                <Toggle
+                  checked={approvedForClient}
+                  onChange={toggleApproval}
+                  disabled={controlsSaving || stage !== 'client_ready'}
+                />
+              </div>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: approvedForClient ? '#22C55E' : '#111827', opacity: stage !== 'client_ready' ? 0.4 : 1 }}>
+                  Approved for client
+                </div>
+                {stage !== 'client_ready' ? (
+                  <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>Only available when stage is Client Ready</div>
+                ) : approvedForClient && approvedAt ? (
+                  <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>Approved {fmtDate(approvedAt)}</div>
+                ) : (
+                  <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>Share candidate with client portal</div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* A. DECISION PANEL */}
         <div style={{ ...card, marginBottom: 24 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: 40, alignItems: 'start' }}>
-
-            {/* Left — score + recommendation */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 12 }}>
               <ScoreRing score={fitScore} color={recColor} size={100} />
               <div>
@@ -391,7 +595,6 @@ export default function CandidateDetailPage() {
               </div>
             </div>
 
-            {/* Right — benchmark + rationale */}
             <div>
               <div style={{ borderLeft: '1px solid #F3F4F6', paddingLeft: 40 }}>
                 <span style={label}>Benchmark Comparison</span>
@@ -516,7 +719,6 @@ export default function CandidateDetailPage() {
             </div>
           </div>
 
-          {/* AI Interpretation — visually subordinate */}
           <div style={{ ...card, background: '#F9FAFB', border: '1px solid #F3F4F6', boxShadow: 'none' }}>
             <span style={{ ...label, color: '#BFBFBF' }}>AI Interpretation</span>
             <p style={{ fontSize: 11, color: '#BFBFBF', marginBottom: 16, lineHeight: 1.5 }}>
@@ -528,7 +730,7 @@ export default function CandidateDetailPage() {
           </div>
         </div>
 
-        {/* E. SUPPORTING EVIDENCE */}
+        {/* E. SUPPORTING EVIDENCE + NOTES THREAD */}
         <div style={{ ...card, marginBottom: 24 }}>
           <span style={label}>Supporting Evidence</span>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginTop: 16 }}>
@@ -550,40 +752,67 @@ export default function CandidateDetailPage() {
                 </p>
               )}
             </div>
+
+            {/* Notes thread */}
             <div>
               <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', color: '#9CA3AF', textTransform: 'uppercase', marginBottom: 12 }}>
                 Recruiter Notes
               </div>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                onBlur={() => autoSaveNotes()}
-                placeholder="Private notes about this candidate..."
-                rows={5}
-                style={{
-                  width: '100%', border: '1px solid #E5E7EB', borderRadius: 8,
-                  padding: '12px 16px', fontSize: 14, color: '#111827',
-                  resize: 'vertical', outline: 'none', fontFamily: 'inherit',
-                  boxSizing: 'border-box', lineHeight: 1.6,
-                  transition: 'border-color 150ms ease',
-                }}
-                onFocus={e => (e.target.style.borderColor = '#2563EB')}
-              />
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
-                <button onClick={() => saveNotes()} style={{
-                  height: 34, padding: '0 14px', borderRadius: 8,
-                  border: '1px solid #E5E7EB', background: '#FFF',
-                  color: '#111827', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                  transition: 'all 150ms ease',
-                }}
-                  onMouseEnter={e => e.currentTarget.style.background = '#F9FAFB'}
-                  onMouseLeave={e => e.currentTarget.style.background = '#FFF'}
-                >
-                  {notesSaving ? 'Saving...' : 'Save notes'}
-                </button>
-                {notesSaving && (
-                  <span style={{ fontSize: 12, color: '#9CA3AF' }}>Auto-saving...</span>
-                )}
+
+              {/* Compose box */}
+              <div style={{ marginBottom: 16 }}>
+                <textarea
+                  value={noteBody}
+                  onChange={(e) => setNoteBody(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                      e.preventDefault()
+                      submitNote()
+                    }
+                  }}
+                  placeholder="Add a note... (⌘↵ to submit)"
+                  rows={3}
+                  style={{
+                    width: '100%', border: '1px solid #E5E7EB', borderRadius: 8,
+                    padding: '10px 14px', fontSize: 14, color: '#111827',
+                    resize: 'vertical', outline: 'none', fontFamily: 'inherit',
+                    boxSizing: 'border-box', lineHeight: 1.6,
+                    transition: 'border-color 150ms ease',
+                  }}
+                  onFocus={e => (e.target.style.borderColor = '#2563EB')}
+                  onBlur={e => (e.target.style.borderColor = '#E5E7EB')}
+                />
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
+                  <button
+                    onClick={submitNote}
+                    disabled={noteSubmitting || !noteBody.trim()}
+                    style={{
+                      height: 32, padding: '0 14px', borderRadius: 8,
+                      background: noteBody.trim() ? '#111827' : '#F3F4F6',
+                      color: noteBody.trim() ? '#FFF' : '#9CA3AF',
+                      fontSize: 12, fontWeight: 600, border: 'none',
+                      cursor: noteBody.trim() ? 'pointer' : 'default',
+                      transition: 'all 150ms ease',
+                    }}
+                  >
+                    {noteSubmitting ? 'Saving...' : 'Add note'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Note thread — newest first */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxHeight: 320, overflowY: 'auto' }}>
+                {notes.length === 0 ? (
+                  <p style={{ fontSize: 13, color: '#9CA3AF', margin: 0 }}>No notes yet.</p>
+                ) : notes.map((note) => (
+                  <div key={note.id} style={{ padding: '10px 14px', background: '#F9FAFB', borderRadius: 8, border: '1px solid #F3F4F6' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>{note.authorName}</span>
+                      <span style={{ fontSize: 11, color: '#9CA3AF' }}>{fmtRelative(note.createdAt)}</span>
+                    </div>
+                    <p style={{ fontSize: 14, color: '#111827', lineHeight: 1.6, margin: 0, whiteSpace: 'pre-wrap' }}>{note.body}</p>
+                  </div>
+                ))}
               </div>
             </div>
           </div>

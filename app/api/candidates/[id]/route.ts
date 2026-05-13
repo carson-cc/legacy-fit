@@ -154,6 +154,11 @@ export async function GET(_req: NextRequest, { params }: Params) {
         resultId: result.id,
         shareToken: result.shareToken,
         recruiterNotes: result.recruiterNotes || '',
+        stage: invite.stage,
+        offLimits: invite.offLimits,
+        approvedForClient: invite.approvedForClient,
+        approvedByUserId: invite.approvedByUserId,
+        approvedAt: invite.approvedAt,
       },
     })
   } catch {

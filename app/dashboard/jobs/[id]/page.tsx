@@ -36,6 +36,15 @@ interface Target {
   notes: string | null
 }
 
+interface ClientContact {
+  id: string
+  name: string
+  email: string
+  token: string
+  createdAt: string
+  revokedAt: string | null
+}
+
 interface Job {
   id: string
   title: string
@@ -43,6 +52,8 @@ interface Job {
   client: { id: string; name: string }
   target: Target | null
   invites: Invite[]
+  teamMembers: Invite[]   // team_member invites separated by API
+  clientContacts: ClientContact[]
 }
 
 /* ------------------------------------------------------------------ */
@@ -161,6 +172,7 @@ export default function JobDetailPage() {
 
   /* Invite form */
   const [showInviteForm, setShowInviteForm] = useState(false)
+  const [inviteType, setInviteType] = useState<'candidate' | 'team_member'>('candidate')
   const [inviteFirstName, setInviteFirstName] = useState('')
   const [inviteLastName, setInviteLastName] = useState('')
   const [inviteEmail, setInviteEmail] = useState('')
@@ -170,6 +182,15 @@ export default function JobDetailPage() {
   const [inviteEmailSent, setInviteEmailSent] = useState(false)
   const [copied, setCopied] = useState(false)
   const [resending, setResending] = useState<string | null>(null)
+
+  /* Client access */
+  const [showContactForm, setShowContactForm] = useState(false)
+  const [contactName, setContactName] = useState('')
+  const [contactEmail, setContactEmail] = useState('')
+  const [contactSubmitting, setContactSubmitting] = useState(false)
+  const [newContactToken, setNewContactToken] = useState<string | null>(null)
+  const [contactLinkCopied, setContactLinkCopied] = useState(false)
+  const [revokingContact, setRevokingContact] = useState<string | null>(null)
 
   /* Fetch */
   const fetchJob = useCallback(() => {
@@ -211,6 +232,7 @@ export default function JobDetailPage() {
           name: `${firstName} ${lastName}`,
           email,
           roleTitle: inviteRoleTitle.trim() || job?.title,
+          inviteType,
         }),
       })
       if (!res.ok) throw new Error('Failed to create invite')
@@ -229,6 +251,7 @@ export default function JobDetailPage() {
 
   function resetInviteForm() {
     setShowInviteForm(false)
+    setInviteType('candidate')
     setInviteFirstName('')
     setInviteLastName('')
     setInviteEmail('')
@@ -264,10 +287,57 @@ export default function JobDetailPage() {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  async function handleAddContact(e: React.FormEvent) {
+    e.preventDefault()
+    if (!contactName.trim() || !contactEmail.trim()) return
+    setContactSubmitting(true)
+    try {
+      const res = await fetch(`/api/jobs/${id}/client-contacts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: contactName.trim(), email: contactEmail.trim() }),
+      })
+      if (!res.ok) throw new Error()
+      const d = await res.json()
+      setNewContactToken(d.data.token)
+      setContactLinkCopied(false)
+      setContactName('')
+      setContactEmail('')
+      fetchJob()
+    } catch {
+      showToast('Could not add contact', 'error')
+    } finally {
+      setContactSubmitting(false)
+    }
+  }
+
+  async function handleRevokeContact(contactId: string) {
+    setRevokingContact(contactId)
+    try {
+      await fetch(`/api/jobs/${id}/client-contacts/${contactId}/revoke`, { method: 'POST' })
+      showToast('Access revoked')
+      fetchJob()
+    } catch {
+      showToast('Could not revoke access', 'error')
+    } finally {
+      setRevokingContact(null)
+    }
+  }
+
+  function copyContactLink(token: string) {
+    const url = `${window.location.origin}/portal/${token}`
+    navigator.clipboard.writeText(url)
+    setContactLinkCopied(true)
+    showToast('Portal link copied')
+    setTimeout(() => setContactLinkCopied(false), 2000)
+  }
+
   /* ---- Derived data ------------------------------------------------ */
 
   const allCompleted = (job?.invites ?? []).filter(i => i.result !== null)
   const pending = (job?.invites ?? []).filter(i => i.result === null)
+  const teamCompleted = (job?.teamMembers ?? []).filter(i => i.result !== null)
+  const teamPending = (job?.teamMembers ?? []).filter(i => i.result === null)
 
   const candidates = allCompleted
     .filter(i => {
@@ -475,9 +545,27 @@ export default function JobDetailPage() {
               marginBottom: 16,
             }}
           >
-            <h3 style={{ fontSize: 16, fontWeight: 600, color: '#111827', margin: 0 }}>
-              Invite Candidate
-            </h3>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              {(['candidate', 'team_member'] as const).map(t => (
+                <button
+                  key={t}
+                  onClick={() => setInviteType(t)}
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 500,
+                    padding: '5px 14px',
+                    borderRadius: 20,
+                    border: inviteType === t ? 'none' : '1px solid #E5E7EB',
+                    background: inviteType === t ? '#111827' : 'transparent',
+                    color: inviteType === t ? '#FFFFFF' : '#6B7280',
+                    cursor: 'pointer',
+                    transition: 'all 180ms ease',
+                  }}
+                >
+                  {t === 'candidate' ? 'Candidate' : 'Team Member'}
+                </button>
+              ))}
+            </div>
             <button
               onClick={resetInviteForm}
               style={{
@@ -512,7 +600,7 @@ export default function JobDetailPage() {
                   {inviteEmailSent ? (
                     <>
                       <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: '#111827' }}>
-                        Evaluation sent to {inviteEmail}
+                        {inviteType === 'team_member' ? 'Team member invite' : 'Evaluation'} sent to {inviteEmail}
                       </p>
                       <p style={{ margin: 0, fontSize: 12, color: '#9CA3AF' }}>
                         {inviteFirstName} {inviteLastName} will receive the invite email shortly
@@ -521,7 +609,7 @@ export default function JobDetailPage() {
                   ) : (
                     <>
                       <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: '#111827' }}>
-                        Invite created for {inviteFirstName} {inviteLastName}
+                        {inviteType === 'team_member' ? 'Team member invite' : 'Invite'} created for {inviteFirstName} {inviteLastName}
                       </p>
                       <p style={{ margin: 0, fontSize: 12, color: '#9CA3AF' }}>Share the link below</p>
                     </>
@@ -653,7 +741,7 @@ export default function JobDetailPage() {
                 }}
                 onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}
               >
-                {inviteSubmitting ? 'Sending...' : 'Send evaluation'}
+                {inviteSubmitting ? 'Sending...' : inviteType === 'team_member' ? 'Send team invite' : 'Send evaluation'}
               </button>
             </form>
           )}
@@ -661,7 +749,7 @@ export default function JobDetailPage() {
       )}
 
       {/* ---- Empty State ---- */}
-      {allCompleted.length === 0 && pending.length === 0 && !showInviteForm && (
+      {allCompleted.length === 0 && pending.length === 0 && teamCompleted.length === 0 && teamPending.length === 0 && !showInviteForm && (
         <div
           style={{
             ...cardStyle,
@@ -922,6 +1010,288 @@ export default function JobDetailPage() {
           </div>
         </div>
       )}
+
+      {/* ---- Team Members Section ---- */}
+      {(teamCompleted.length > 0 || teamPending.length > 0) && (
+        <div style={{ marginTop: 40 }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16,
+            paddingTop: 32, borderTop: '1px solid #F3F4F6',
+          }}>
+            <span style={{
+              fontSize: 12, fontWeight: 600, color: '#9CA3AF',
+              textTransform: 'uppercase', letterSpacing: '0.08em',
+            }}>
+              Team Profiles ({teamCompleted.length + teamPending.length})
+            </span>
+            <span style={{
+              fontSize: 11, color: '#9CA3AF', background: '#F9FAFB',
+              border: '1px solid #E5E7EB', borderRadius: 4, padding: '2px 7px',
+            }}>
+              For team fit analysis
+            </span>
+          </div>
+
+          {teamCompleted.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+              {teamCompleted.map(invite => {
+                const r = invite.result!
+                const groupLabel = GROUP_LABELS[r.profileGroup] ?? r.profileGroup
+                return (
+                  <Link
+                    key={invite.id}
+                    href={`/dashboard/candidates/${invite.id}`}
+                    style={{
+                      ...cardStyle,
+                      textDecoration: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 16,
+                      transition: 'all 180ms ease',
+                      borderLeft: '3px solid #E5E7EB',
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)'
+                      e.currentTarget.style.transform = 'translateY(-1px)'
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.06)'
+                      e.currentTarget.style.transform = 'translateY(0)'
+                    }}
+                  >
+                    {/* Profile badge */}
+                    <div style={{
+                      width: 40, height: 40, borderRadius: '50%',
+                      background: '#F3F4F6', border: '1px solid #E5E7EB',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                    }}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+                      </svg>
+                    </div>
+
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ fontSize: 15, fontWeight: 600, color: '#111827' }}>
+                        {invite.name}
+                      </span>
+                      <p style={{ fontSize: 13, color: '#6B7280', margin: '2px 0 0' }}>
+                        {r.profileName} · {groupLabel}
+                      </p>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                      <span style={{ fontSize: 12, color: '#9CA3AF' }}>
+                        {invite.completedAt ? formatDate(invite.completedAt) : ''}
+                      </span>
+                      <span style={{ fontSize: 14, color: '#9CA3AF' }}>&rarr;</span>
+                    </div>
+                  </Link>
+                )
+              })}
+            </div>
+          )}
+
+          {teamPending.length > 0 && (
+            <div>
+              {teamPending.map(invite => (
+                <div
+                  key={invite.id}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '12px 0', borderBottom: '1px solid rgba(0,0,0,0.06)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 14, color: '#9CA3AF', fontWeight: 500 }}>
+                      {invite.name}
+                    </span>
+                    <span style={{ fontSize: 11, color: '#9CA3AF', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 4, padding: '1px 6px' }}>
+                      pending
+                    </span>
+                    {invite.sentAt && (
+                      <span style={{ fontSize: 12, color: '#9CA3AF' }}>
+                        · Sent {formatDate(invite.sentAt)}
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => handleResend(invite.id)}
+                    disabled={resending === invite.id}
+                    style={{
+                      background: 'none', border: 'none', fontSize: 12,
+                      color: resending === invite.id ? '#9CA3AF' : '#2563EB',
+                      cursor: resending === invite.id ? 'default' : 'pointer',
+                      textDecoration: 'underline',
+                    }}
+                  >
+                    {resending === invite.id ? 'Sending…' : 'Resend'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ---- Client Access Section ---- */}
+      <div style={{ marginTop: 40, paddingTop: 32, borderTop: '1px solid #F3F4F6' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <span style={{
+            fontSize: 12, fontWeight: 600, color: '#9CA3AF',
+            textTransform: 'uppercase', letterSpacing: '0.08em',
+          }}>
+            Client Access
+          </span>
+          {!showContactForm && (
+            <button
+              onClick={() => { setShowContactForm(true); setNewContactToken(null) }}
+              style={{
+                fontSize: 12, fontWeight: 600, color: '#2563EB',
+                background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+              }}
+            >
+              + Add contact
+            </button>
+          )}
+        </div>
+
+        {/* Add contact form */}
+        {showContactForm && !newContactToken && (
+          <form
+            onSubmit={handleAddContact}
+            style={{
+              ...cardStyle,
+              marginBottom: 16,
+              display: 'flex', flexDirection: 'column', gap: 12,
+            }}
+          >
+            <div style={{ display: 'flex', gap: 12 }}>
+              <input
+                type="text"
+                placeholder="Name"
+                value={contactName}
+                onChange={e => setContactName(e.target.value)}
+                required
+                style={{ ...inputStyle, flex: 1 }}
+                onFocus={e => { e.target.style.borderColor = '#2563EB'; e.target.style.boxShadow = '0 0 0 3px rgba(37,99,235,0.08)' }}
+                onBlur={e => { e.target.style.borderColor = '#E5E7EB'; e.target.style.boxShadow = 'none' }}
+              />
+              <input
+                type="email"
+                placeholder="Email"
+                value={contactEmail}
+                onChange={e => setContactEmail(e.target.value)}
+                required
+                style={{ ...inputStyle, flex: 1 }}
+                onFocus={e => { e.target.style.borderColor = '#2563EB'; e.target.style.boxShadow = '0 0 0 3px rgba(37,99,235,0.08)' }}
+                onBlur={e => { e.target.style.borderColor = '#E5E7EB'; e.target.style.boxShadow = 'none' }}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => { setShowContactForm(false); setContactName(''); setContactEmail('') }}
+                style={{ ...secondaryBtnStyle, fontSize: 13 }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={contactSubmitting}
+                style={{ ...primaryBtnStyle, fontSize: 13, opacity: contactSubmitting ? 0.6 : 1 }}
+              >
+                {contactSubmitting ? 'Creating…' : 'Create link'}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* Generated link */}
+        {newContactToken && (
+          <div style={{
+            ...cardStyle,
+            marginBottom: 16,
+            background: '#F0FDF4', border: '1px solid #BBF7D0',
+          }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#15803D', marginBottom: 8 }}>
+              Portal link created
+            </div>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <code style={{
+                flex: 1, fontSize: 12, color: '#374151',
+                background: '#FFF', border: '1px solid #D1FAE5',
+                borderRadius: 6, padding: '6px 10px',
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              }}>
+                {`${window.location.origin}/portal/${newContactToken}`}
+              </code>
+              <button
+                onClick={() => copyContactLink(newContactToken)}
+                style={{ ...primaryBtnStyle, fontSize: 12, background: '#15803D' }}
+              >
+                {contactLinkCopied ? 'Copied' : 'Copy link'}
+              </button>
+            </div>
+            <button
+              onClick={() => { setNewContactToken(null); setShowContactForm(false) }}
+              style={{ marginTop: 10, background: 'none', border: 'none', fontSize: 12, color: '#6B7280', cursor: 'pointer', padding: 0 }}
+            >
+              Done
+            </button>
+          </div>
+        )}
+
+        {/* Existing contacts */}
+        {(job.clientContacts ?? []).length === 0 && !showContactForm ? (
+          <p style={{ fontSize: 14, color: '#9CA3AF' }}>No client access links yet.</p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            {(job.clientContacts ?? []).map(contact => (
+              <div
+                key={contact.id}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '12px 0', borderBottom: '1px solid rgba(0,0,0,0.06)',
+                  opacity: contact.revokedAt ? 0.5 : 1,
+                }}
+              >
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 14, fontWeight: 500, color: '#111827' }}>
+                      {contact.name}
+                    </span>
+                    {contact.revokedAt && (
+                      <span style={{ fontSize: 11, fontWeight: 600, color: '#EF4444', background: '#FEE2E2', borderRadius: 4, padding: '1px 6px' }}>
+                        Revoked
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>
+                    {contact.email} · Created {formatDate(contact.createdAt)}
+                  </div>
+                </div>
+                {!contact.revokedAt && (
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+                    <button
+                      onClick={() => copyContactLink(contact.token)}
+                      style={{ background: 'none', border: 'none', fontSize: 12, color: '#2563EB', cursor: 'pointer', textDecoration: 'underline' }}
+                    >
+                      Copy link
+                    </button>
+                    <button
+                      onClick={() => handleRevokeContact(contact.id)}
+                      disabled={revokingContact === contact.id}
+                      style={{ background: 'none', border: 'none', fontSize: 12, color: '#EF4444', cursor: revokingContact === contact.id ? 'default' : 'pointer', textDecoration: 'underline' }}
+                    >
+                      {revokingContact === contact.id ? 'Revoking…' : 'Revoke'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

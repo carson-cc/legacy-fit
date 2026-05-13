@@ -41,99 +41,99 @@ function profileToValues(coords: { dominance: number; extraversion: number; pati
 
 const INSIGHTS: Record<string, { coreSignal: string; whereYouWin: string; watchFor: string; emotionalLine: string }> = {
   Conductor: {
-    coreSignal: "You adapt your authority to the room — and that's exactly what makes people trust you.",
-    whereYouWin: "Environments where execution speed and team cohesion both matter — neither alone is enough.",
-    watchFor: "You may absorb friction that should belong to others just to keep things moving.",
+    coreSignal: "You clear the path for other people's execution without making it obvious that's what you're doing. The room moves because you removed the friction — they just don't always know when you did it.",
+    whereYouWin: "Roles where authority is expected but formal title is not enough — where results require pulling the right people in the right direction, across competing agendas, without creating enemies.",
+    watchFor: "The alignment you manufacture is real but fragile. You can surface buy-in without fully testing it, and gaps show up later at the worst possible moment.",
     emotionalLine: "Rooms reorganize themselves around you — sometimes before you say a word.",
   },
   Pioneer: {
-    coreSignal: "You move before permission arrives — and you're usually right to.",
-    whereYouWin: "High-stakes autonomous environments where decisive ownership is the competitive advantage.",
-    watchFor: "Speed without patience can leave behind people who had something important to say.",
+    coreSignal: "You act before the room has agreed on what to do, and the gap between your decision and everyone else's awareness rarely bothers you. Ownership isn't something you wait to be assigned.",
+    whereYouWin: "Roles where accountability is individual, authority is implicit, and the organization rewards outcomes over process. Any environment where the cost of waiting exceeds the cost of being wrong.",
+    watchFor: "You leave people behind not out of malice but out of momentum. The information they had was relevant. You moved anyway. This repeats.",
     emotionalLine: "You were already three steps ahead before anyone called the meeting.",
   },
   Purist: {
-    coreSignal: "You hold the line on standards when everyone else is looking for the shortcut.",
-    whereYouWin: "Quality-critical environments where the cost of getting it wrong compounds over time.",
-    watchFor: "High standards without warmth can create fear in rooms that needed excellence.",
+    coreSignal: "You hold the standard even after the room has quietly decided the standard no longer applies. You're not moralistic about it — you just don't accept the rationalization.",
+    whereYouWin: "Environments where the cost of error compounds — compliance, finance, safety-critical operations, technical quality. Anywhere the wrong answer is expensive and invisible until it isn't.",
+    watchFor: "You apply the same rigor to low-stakes decisions that you apply to high-stakes ones. This is not efficient. You probably know it and do it anyway.",
     emotionalLine: "You hold the line on quality when everyone else has rationalized their way past it.",
   },
   Renegade: {
-    coreSignal: "You change the energy in a room the moment you walk in — and the direction shortly after.",
-    whereYouWin: "Competitive, high-visibility environments where momentum is the product.",
-    watchFor: "What you start brilliantly needs someone to finish — and that someone isn't always there.",
+    coreSignal: "You create forward motion by force of presence — and the motion persists longer than the friction you leave behind. You change what the room is doing by being in it.",
+    whereYouWin: "High-visibility competitive environments where energy is a structural resource. Sales, turnarounds, launches, anything where someone needs to ignite a room that has gone cold.",
+    watchFor: "What you start brilliantly needs someone to finish. That someone is rarely you, and the cycle repeats at a rate others notice before you do.",
     emotionalLine: "You say the thing no one else will say, then prove you were right.",
   },
   Catalyst: {
-    coreSignal: "You make things feel possible — then make them feel urgent.",
-    whereYouWin: "Launch phases and new initiatives where energy is the scarce resource.",
-    watchFor: "The gap between what you start and what gets completed can quietly widen.",
+    coreSignal: "You convert latent possibility into active motion without needing the full plan in place first. You make the outcome feel achievable, which is often the precondition for it becoming achievable.",
+    whereYouWin: "Early-stage work, stalled teams, new initiatives — any situation where someone needs to believe before the evidence is there. You supply the conviction that gets things off the ground.",
+    watchFor: "Initiation and completion are structurally separate for you. The gap between them is a real cost you carry, and it accumulates across projects.",
     emotionalLine: "You create motion in rooms that had gone completely still.",
   },
   Diplomat: {
-    coreSignal: "You set expectations before the problem develops — and people remember that.",
-    whereYouWin: "Stakeholder-intensive environments where trust is the actual deliverable.",
-    watchFor: "Prioritizing alignment over speed can cost you decisions that needed to be made.",
+    coreSignal: "You manage the relationship layer that everyone else is pretending doesn't exist. You set expectations before misalignment becomes visible, and people trust you because of it.",
+    whereYouWin: "Multi-stakeholder environments where trust is the actual delivery mechanism. Any role where what you say matters less than whether people believe you'll follow through.",
+    watchFor: "The alignment you build can outlast the decision it's built around. You can sustain a flawed direction by making every stakeholder feel heard.",
     emotionalLine: "You hold people together through situations that should have broken them apart.",
   },
   Rainmaker: {
-    coreSignal: "You open doors through warmth, not pressure — and they stay open.",
-    whereYouWin: "External-facing roles where authentic relationships determine outcomes.",
-    watchFor: "Your generosity can be mistaken for a blank check by people who will test its limits.",
+    coreSignal: "You build the kind of relationships that make people want to help you before they fully understand why. Warmth is not a tactic — it's how you operate, and others can tell the difference.",
+    whereYouWin: "Roles where the path runs through people — business development, client partnership, any environment where outcomes depend on trust built over time rather than authority exercised in the moment.",
+    watchFor: "Your warmth creates expectations that don't always match your capacity or interest. People who test your limits will eventually find them.",
     emotionalLine: "You open doors that shouldn't open, through warmth alone.",
   },
   Unifier: {
-    coreSignal: "You notice when people are struggling before anyone else does — and you do something about it.",
-    whereYouWin: "Team-intensive environments where interpersonal trust is what makes everything else work.",
-    watchFor: "Protecting people from discomfort can let problems fester longer than they should.",
+    coreSignal: "You notice what's wrong with the team before it's been named, and you do something about it without making it an event. The team's functioning is something you feel as a personal responsibility.",
+    whereYouWin: "Team-intensive environments where the interpersonal layer is what actually determines output. Roles where holding the group together through difficulty is itself the high-leverage function.",
+    watchFor: "Protecting people from discomfort can become protecting dysfunction from accountability. The team you're holding together may need to break before it can reform correctly.",
     emotionalLine: "People trust you before they know why. That's not charm — that's integrity.",
   },
   Anchor: {
-    coreSignal: "You prioritize consistency over visibility — and people notice.",
-    whereYouWin: "Operations-intensive roles where reliability and follow-through are the actual product.",
-    watchFor: "Being the person everything goes through can quietly become the person everything depends on.",
+    coreSignal: "You deliver in a straight line regardless of what the environment is doing around you. Consistency isn't your brand — it's your structural default, and it shows up in the quality of your output over time.",
+    whereYouWin: "Operations-intensive roles where the product is consistent reliable output and the cost of variability compounds. Anywhere the machine needs to keep running regardless of who is watching.",
+    watchFor: "Being the person everything runs through eventually becomes being the person everything depends on. The difference matters when you're not there.",
     emotionalLine: "Steady isn't a compromise. For you, it's the strategy.",
   },
   Navigator: {
-    coreSignal: "You already planned for the problem someone is about to bring you.",
-    whereYouWin: "Complex environments where the ability to sequence and anticipate determines outcomes.",
-    watchFor: "Waiting for perfect information can delay decisions that needed to happen yesterday.",
+    coreSignal: "You build the map before anyone knows they'll need it, then let others follow it without explaining where it came from. Anticipation is not instinct for you — it's method.",
+    whereYouWin: "Complex multi-variable environments where foresight is structurally valuable — project leadership, operations planning, any role where poor sequencing creates downstream costs that are hard to recover from.",
+    watchFor: "You can stay in preparation long enough to arrive late. The pull to refine the plan one more time is real and you don't always recognize when it has become the problem.",
     emotionalLine: "You see three moves ahead and let others think it was obvious.",
   },
   Sentinel: {
-    coreSignal: "You catch the thing nobody was looking for — before it becomes the thing nobody can ignore.",
-    whereYouWin: "Compliance and quality roles where accuracy has real consequences that compound.",
-    watchFor: "Precision applied to low-stakes decisions can slow environments that need momentum.",
+    coreSignal: "You catch what others rationalize past — not sometimes, but as a structural feature of how you operate. The thing that seems minor is the thing you track.",
+    whereYouWin: "High-accuracy, high-consequence environments where the system fails if someone misses what others considered low-priority. Compliance, audit, quality control, risk, anything where the wrong detail is expensive.",
+    watchFor: "The same scrutiny you apply to critical decisions you also apply to minor ones. You can't always distinguish between them in the moment, and the cost is pace.",
     emotionalLine: "You catch what would embarrass the organization later. Quietly. Every time.",
   },
   Standard: {
-    coreSignal: "You deliver the same quality in year ten that you delivered in week one.",
-    whereYouWin: "Process-dependent roles where repeatability is more valuable than variability.",
-    watchFor: "Consistency can become inertia when the situation genuinely requires adaptation.",
+    coreSignal: "You repeat quality at a rate others can't sustain. Not through discipline alone — it's become structural. Year one and year ten produce the same thing, and that's rarer than it sounds.",
+    whereYouWin: "Process-dependent roles where repeatability is more valuable than innovation, and the cost of variability compounds over time. Operations, production, service delivery at scale.",
+    watchFor: "The consistency that makes you reliable can become the inertia that makes you hard to change. When the situation genuinely requires a different approach, you may not recognize the signal in time.",
     emotionalLine: "The machine runs because you run it. That's not small — that's everything.",
   },
   Agent: {
-    coreSignal: "You know things that can't be learned quickly — and everyone in the room knows it.",
-    whereYouWin: "Specialist and expert roles where depth of knowledge is the actual differentiator.",
-    watchFor: "The influence you carry through mastery doesn't always travel outside your domain.",
+    coreSignal: "You bring depth that others don't question in the moment, even when they should. The knowledge you carry took years to build and it shows in how you operate — including how little you need to assert it.",
+    whereYouWin: "Specialist roles where domain depth is the actual differentiator. Advisory, technical leadership, expert functions where shallow generalism creates real risk and only depth resolves it.",
+    watchFor: "The authority your expertise grants doesn't transfer cleanly to adjacent domains. The confidence carries, but the foundation doesn't, and the gap isn't always visible until it is.",
     emotionalLine: "You know things that can't be learned quickly, and everyone in the room knows it.",
   },
   Executor: {
-    coreSignal: "You don't just win — you build the organization that keeps winning after you've moved on.",
-    whereYouWin: "Scaling environments where ambition and operational discipline are required simultaneously.",
-    watchFor: "Perfectionism can become a bottleneck when good enough shipped beats perfect pending.",
+    coreSignal: "You build the structures that keep producing after you've moved on — then move on. Scale isn't an aspiration; it's the operating context you're designed for.",
+    whereYouWin: "Scaling environments where ambition and operational discipline are required simultaneously and the role demands someone who can hold both without trading one for the other.",
+    watchFor: "You distinguish poorly between people who can't meet your standard and people who won't. The difference matters for how you manage it, and the error is costly.",
     emotionalLine: "You don't wait for permission. You wait for clarity — then you move.",
   },
   Trailblazer: {
-    coreSignal: "You set a pace others didn't know was possible — and then hold it.",
-    whereYouWin: "Competitive scaling environments where performance itself is the differentiator.",
-    watchFor: "The bar you set can exhaust people who are genuinely trying to keep up.",
+    coreSignal: "You set the pace by operating at it — not by announcing it. Others adjust their sense of what's possible around you, sometimes before they've consciously noticed what you've done.",
+    whereYouWin: "Performance-intensive environments where output is the actual differentiator. Competitive sales, individual contributor leadership, any context where your own numbers are the measure that matters.",
+    watchFor: "You can exhaust people who are genuinely trying to match your standard, and you may read their exhaustion as insufficient effort rather than real limit.",
     emotionalLine: "You raise what everyone thought was possible, then make it look routine.",
   },
   Veteran: {
-    coreSignal: "You've seen what happens when people cut corners — and you show up every time to make sure it doesn't.",
-    whereYouWin: "Operations and project leadership where sustained reliable performance matters most.",
-    watchFor: "You may stay loyal to approaches that have quietly stopped working.",
+    coreSignal: "You've seen this break before. That's not a credential — it's what makes your judgment structurally different from someone who hasn't watched the same mistake compound across time.",
+    whereYouWin: "Long-horizon roles where institutional knowledge and sustained reliability are what the function actually requires. Operations, program leadership, any context where the stakes accumulate over years.",
+    watchFor: "Experience is a pattern-matching system. The pattern you've seen before may not be the right frame for what's in front of you now, and you may not notice until the mismatch is expensive.",
     emotionalLine: "You're the person teams rely on when things quietly start to fall apart.",
   },
 }
@@ -314,19 +314,15 @@ export default function AssessPage() {
     setHoveredDim(null)
     setExpandedDim(null)
 
-    // Greeting → fades → pentagon mounts → name blur-reveals → category → separator+line → insights → emotional → close → explore cue
-    schedule(() => setResultMoment(1),   200)   // greeting appears
+    // Phase 1: full-screen calibration reveal (fixed overlay, moments 1–6)
+    // Phase 2: fixed overlay fades out, scrollable page fades in (moment 7+)
+    schedule(() => setResultMoment(1),   200)   // greeting
     schedule(() => setResultMoment(2),   500)   // greeting fades
-    schedule(() => setResultMoment(3),   600)   // pentagon + content mounts; CSS handles rings/axis/stroke internally
-    schedule(() => setResultMoment(4),  1360)   // archetype name blur-reveal (760ms after pentagon mounts)
-    schedule(() => setResultMoment(5),  1780)   // category label (420ms after name)
-    schedule(() => setResultMoment(6),  1920)   // separator + interpretive line
-    schedule(() => setResultMoment(7),  2200)   // CORE SIGNAL
-    schedule(() => setResultMoment(8),  2440)   // WHERE YOU WIN
-    schedule(() => setResultMoment(9),  2680)   // WATCH FOR
-    schedule(() => setResultMoment(10), 3060)   // emotional line
-    schedule(() => setResultMoment(11), 3620)   // closing box
-    schedule(() => setResultMoment(12), 4600)   // explore cue
+    schedule(() => setResultMoment(3),   600)   // large pentagon mounts + draws (CSS handles sequence internally)
+    schedule(() => setResultMoment(4),  1900)   // archetype name blur-reveals (1300ms after pentagon mounts)
+    schedule(() => setResultMoment(5),  2380)   // category label
+    schedule(() => setResultMoment(6),  2540)   // interpretive line
+    schedule(() => setResultMoment(7),  3200)   // COLLAPSE reveal → scrollable page fades in (all phase 2 content uses CSS delays)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, completionData])
 
@@ -570,9 +566,18 @@ export default function AssessPage() {
     const insights = completionData ? INSIGHTS[completionData.profileName] : null
     const interpretiveLine = getInterpretiveLine(pentagonValues)
 
+    // Large reveal pentagon dimensions
+    const RCX = 200, RCY = 200, R_MAX = 160
+    // Perimeter of pentagon inscribed in r=160: 5 × 2×160×sin(π/5) ≈ 939
+    const R_PERIM = 939
+
+    // Compact profile pentagon dimensions
     const cx = 110, cy = 110, maxR = 95
-    // Perimeter of pentagon inscribed in r=95: 5 × 2r×sin(π/5) ≈ 558
     const PENT_PERIMETER = 558
+
+    // Phase 1 is the full-screen reveal stage (moments 1–6).
+    // Phase 2 content starts appearing at moment 7 as a scrollable page below.
+    const inRevealStage = resultMoment < 7
 
     return (
       <div style={{ minHeight: '100svh', background: '#080808', overflowX: 'hidden' }}>
@@ -580,157 +585,299 @@ export default function AssessPage() {
           @keyframes fadeIn  { from { opacity: 0 } to { opacity: 1 } }
           @keyframes fadeUp  { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: translateY(0) } }
           @keyframes rings-in { from { opacity: 0 } to { opacity: 1 } }
+          @keyframes axis-draw {
+            from { stroke-dashoffset: 200px; opacity: 0; }
+            to   { stroke-dashoffset: 0px;   opacity: 1; }
+          }
+          @keyframes pent-draw {
+            from { stroke-dashoffset: ${R_PERIM}px; }
+            to   { stroke-dashoffset: 0px; }
+          }
+          @keyframes pent-fill { from { fill-opacity: 0 } to { fill-opacity: 1 } }
+          @keyframes pent-pulse {
+            0%   { filter: drop-shadow(0 0 0px rgba(37,99,235,0)); }
+            50%  { filter: drop-shadow(0 0 12px rgba(37,99,235,0.35)); }
+            100% { filter: drop-shadow(0 0 0px rgba(37,99,235,0)); }
+          }
           @keyframes pent-stroke {
             from { stroke-dashoffset: ${PENT_PERIMETER}px; }
             to   { stroke-dashoffset: 0px; }
           }
-          @keyframes pent-fill { from { fill-opacity: 0 } to { fill-opacity: 1 } }
           @keyframes arch-reveal {
-            from { opacity: 0; transform: translateY(10px); filter: blur(8px); }
-            to   { opacity: 1; transform: translateY(0);   filter: blur(0px);  }
+            from { opacity: 0; transform: translateY(12px); filter: blur(10px); }
+            to   { opacity: 1; transform: translateY(0);    filter: blur(0px);  }
+          }
+          @keyframes reveal-collapse {
+            from { opacity: 1; transform: scale(1) translateY(0); }
+            to   { opacity: 0; transform: scale(0.88) translateY(-20px); }
+          }
+          @keyframes radial-glow {
+            from { opacity: 0; transform: scale(0.7); }
+            to   { opacity: 1; transform: scale(1); }
           }
         `}</style>
 
-        {/* Greeting — fullscreen, fades out */}
+        {/* ═══════════════════════════════════════════════════
+            PHASE 1 — FULL-SCREEN REVEAL STAGE
+        ═══════════════════════════════════════════════════ */}
         <div style={{
-          position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          pointerEvents: 'none', zIndex: 10,
-          opacity: resultMoment === 1 ? 1 : 0,
-          transition: resultMoment >= 2 ? 'opacity 220ms ease' : 'none',
+          position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+          background: '#080808', zIndex: 20, pointerEvents: inRevealStage ? 'auto' : 'none',
+          opacity: inRevealStage ? 1 : 0,
+          transition: !inRevealStage ? 'opacity 500ms ease' : 'none',
         }}>
-          {resultMoment >= 1 && (
-            <p style={{ fontSize: 18, fontWeight: 300, color: 'rgba(238,236,230,0.45)', margin: 0, animation: 'fadeIn 280ms ease both' }}>
-              {firstName ? `You're done, ${firstName}.` : "You're done."}
-            </p>
+
+          {/* Greeting — fades before pentagon mounts */}
+          <div style={{
+            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            opacity: resultMoment === 1 ? 1 : 0,
+            transition: resultMoment >= 2 ? 'opacity 220ms ease' : 'none',
+            pointerEvents: 'none',
+          }}>
+            {resultMoment >= 1 && (
+              <p style={{ fontSize: 18, fontWeight: 300, color: 'rgba(238,236,230,0.45)', margin: 0, animation: 'fadeIn 280ms ease both' }}>
+                {firstName ? `You're done, ${firstName}.` : "You're done."}
+              </p>
+            )}
+          </div>
+
+          {/* Large calibration pentagon */}
+          {resultMoment >= 3 && (
+            <div style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              animation: 'fadeIn 400ms ease both',
+              marginTop: '-6vh',
+            }}>
+              {/* Radial atmosphere */}
+              <div style={{
+                position: 'absolute',
+                width: 'min(520px, 90vw)', height: 'min(520px, 90vw)',
+                borderRadius: '50%',
+                background: 'radial-gradient(circle, rgba(37,99,235,0.04) 0%, rgba(37,99,235,0.01) 50%, transparent 75%)',
+                animation: 'radial-glow 800ms ease both',
+                pointerEvents: 'none',
+              }} />
+
+              <div style={{ width: 'min(440px, 88vw)', aspectRatio: '440 / 428', position: 'relative' }}>
+                <svg width="100%" height="100%" viewBox="-64 -48 528 496">
+
+                  {/* Outer ring */}
+                  <polygon points={ringPts(RCX, RCY, R_MAX)}
+                    fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="0.75"
+                    style={{ animation: 'rings-in 400ms ease-out both', animationDelay: '0ms' }} />
+                  {/* Mid ring */}
+                  <polygon points={ringPts(RCX, RCY, Math.round(R_MAX * 0.63))}
+                    fill="none" stroke="rgba(255,255,255,0.045)" strokeWidth="0.5"
+                    style={{ animation: 'rings-in 400ms ease-out both', animationDelay: '60ms' }} />
+                  {/* Inner ring */}
+                  <polygon points={ringPts(RCX, RCY, Math.round(R_MAX * 0.33))}
+                    fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="0.5"
+                    style={{ animation: 'rings-in 400ms ease-out both', animationDelay: '120ms' }} />
+
+                  {/* Axis lines draw outward from center */}
+                  {Array.from({ length: 5 }, (_, i) => {
+                    const a = (270 + i * 72) * Math.PI / 180
+                    return (
+                      <line key={i}
+                        x1={RCX} y1={RCY}
+                        x2={(RCX + R_MAX * Math.cos(a)).toFixed(2)}
+                        y2={(RCY + R_MAX * Math.sin(a)).toFixed(2)}
+                        stroke="rgba(255,255,255,0.08)" strokeWidth="0.75"
+                        strokeDasharray="200"
+                        style={{ animation: `axis-draw 380ms ease-out ${180 + i * 40}ms both` }}
+                      />
+                    )
+                  })}
+
+                  {/* Data polygon — draws then pulses to confirm */}
+                  <polygon
+                    points={pentagonPts(pentagonValues, RCX, RCY, R_MAX)}
+                    fill="rgba(37,99,235,0.07)"
+                    stroke="#2563EB"
+                    strokeWidth="2.5"
+                    strokeLinejoin="round"
+                    style={{
+                      strokeDasharray: R_PERIM,
+                      strokeDashoffset: R_PERIM,
+                      fillOpacity: 0,
+                      animation: `pent-draw 1100ms cubic-bezier(0.25,0.46,0.45,0.94) 380ms forwards,
+                                   pent-fill 500ms ease 1300ms forwards,
+                                   pent-pulse 600ms ease-out 1500ms both`,
+                    }}
+                  />
+
+                  {/* Vertex dots */}
+                  {pentagonValues.map((v, i) => {
+                    const a = (270 + i * 72) * Math.PI / 180
+                    const dotDelay = 380 + Math.round((i / 5) * 1100) + 120
+                    return (
+                      <circle key={i}
+                        cx={(RCX + v * R_MAX * Math.cos(a)).toFixed(2)}
+                        cy={(RCY + v * R_MAX * Math.sin(a)).toFixed(2)}
+                        r="3.5" fill="#2563EB"
+                        style={{ opacity: 0, animation: `fadeIn 250ms ease ${dotDelay}ms both` }}
+                      />
+                    )
+                  })}
+
+                  {/* Axis labels */}
+                  {PENTAGON_LABELS.map((label, i) => {
+                    const a = (270 + i * 72) * Math.PI / 180
+                    const lx = RCX + 192 * Math.cos(a)
+                    const ly = RCY + 192 * Math.sin(a)
+                    const labelDelay = 380 + Math.round((i / 5) * 1100) + 280
+                    const parts = label.split(' ')
+                    return (
+                      <text key={label} textAnchor="middle"
+                        fill="rgba(238,236,230,0.28)" fontSize="13"
+                        fontFamily="DM Sans, -apple-system, BlinkMacSystemFont, sans-serif"
+                        fontWeight="300"
+                        style={{ opacity: 0, animation: `fadeIn 240ms ease ${labelDelay}ms both` }}
+                      >
+                        {parts.length === 1
+                          ? <tspan x={lx.toFixed(1)} y={ly.toFixed(1)}>{parts[0]}</tspan>
+                          : <>
+                              <tspan x={lx.toFixed(1)} y={(ly - 8).toFixed(1)}>{parts[0]}</tspan>
+                              <tspan x={lx.toFixed(1)} y={(ly + 9).toFixed(1)}>{parts[1]}</tspan>
+                            </>
+                        }
+                      </text>
+                    )
+                  })}
+                </svg>
+              </div>
+
+              {/* Archetype name — verdict stamp */}
+              {resultMoment >= 4 && completionData && (
+                <h1 style={{
+                  fontSize: 'clamp(72px, 12vw, 108px)', fontWeight: 900, color: '#eeece6',
+                  letterSpacing: '-0.025em', lineHeight: 1, margin: '16px 0 0', textAlign: 'center',
+                  fontFamily: '"Barlow Condensed", "SF Pro Display", -apple-system, sans-serif',
+                  animation: 'arch-reveal 480ms cubic-bezier(0.22,0.61,0.36,1) both',
+                }}>
+                  {completionData.profileName}
+                </h1>
+              )}
+
+              {/* Category label */}
+              {resultMoment >= 5 && completionData && (
+                <p style={{
+                  fontSize: 15, fontStyle: 'italic', color: 'rgba(238,236,230,0.36)',
+                  fontWeight: 300, margin: '10px 0 0', textAlign: 'center',
+                  animation: 'fadeIn 300ms ease both',
+                }}>
+                  {completionData.profileGroup}
+                </p>
+              )}
+
+              {/* Interpretive line */}
+              {resultMoment >= 6 && (
+                <p style={{
+                  fontSize: 12, color: 'rgba(238,236,230,0.38)', textAlign: 'center',
+                  margin: '18px 0 0', fontWeight: 300, letterSpacing: '0.02em',
+                  animation: 'fadeIn 300ms ease both',
+                }}>
+                  {interpretiveLine}
+                </p>
+              )}
+            </div>
           )}
         </div>
 
-        {/* Main reveal — mounts at moment 3 */}
-        {resultMoment >= 3 && (
+        {/* ═══════════════════════════════════════════════════
+            PHASE 2 — SCROLLABLE PROFILE PAGE
+            Mounts beneath fixed reveal stage; reveal fades out
+        ═══════════════════════════════════════════════════ */}
+        {resultMoment >= 7 && (
           <div style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center',
-            padding: '56px 24px 80px',
+            paddingTop: '48px', paddingBottom: '80px', paddingLeft: '24px', paddingRight: '24px',
+            animation: 'fadeIn 500ms ease both',
           }}>
 
-            {/* ── Pentagon ── */}
-            <div style={{ width: 'min(252px, 86vw)', aspectRatio: '252 / 244', position: 'relative' }}>
+            {/* ── Compact pentagon + identity ── */}
+            <div style={{ width: 'min(240px, 80vw)', aspectRatio: '240 / 232', position: 'relative', marginBottom: '8px' }}>
               <svg width="100%" height="100%" viewBox="-38 -28 296 276">
-
-                {/* Outer reference ring */}
-                <polygon
-                  points={ringPts(cx, cy, maxR)}
-                  fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="0.5"
-                  style={{ animation: 'rings-in 300ms ease-out both', animationDelay: '0ms' }}
-                />
-                {/* Mid ring */}
-                <polygon
-                  points={ringPts(cx, cy, Math.round(maxR * 0.63))}
-                  fill="none" stroke="rgba(255,255,255,0.055)" strokeWidth="0.5"
-                  style={{ animation: 'rings-in 300ms ease-out both', animationDelay: '40ms' }}
-                />
-                {/* Inner ring */}
-                <polygon
-                  points={ringPts(cx, cy, Math.round(maxR * 0.33))}
-                  fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="0.5"
-                  style={{ animation: 'rings-in 300ms ease-out both', animationDelay: '80ms' }}
-                />
-
-                {/* Axis lines */}
+                <polygon points={ringPts(cx, cy, maxR)}
+                  fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="0.5" />
+                <polygon points={ringPts(cx, cy, Math.round(maxR * 0.63))}
+                  fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="0.5" />
+                <polygon points={ringPts(cx, cy, Math.round(maxR * 0.33))}
+                  fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="0.5" />
                 {Array.from({ length: 5 }, (_, i) => {
                   const a = (270 + i * 72) * Math.PI / 180
                   return (
-                    <line key={i}
-                      x1={cx} y1={cy}
+                    <line key={i} x1={cx} y1={cy}
                       x2={(cx + maxR * Math.cos(a)).toFixed(2)}
                       y2={(cy + maxR * Math.sin(a)).toFixed(2)}
-                      stroke={hoveredDim === i ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.06)'}
+                      stroke={hoveredDim === i ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.07)'}
                       strokeWidth="0.5"
-                      style={{
-                        animation: 'rings-in 300ms ease-out 180ms both',
-                        transition: 'stroke 200ms ease',
-                      }}
+                      style={{ transition: 'stroke 180ms ease' }}
                     />
                   )
                 })}
-
-                {/* Data polygon — stroke draws in 900ms, fill fades in after */}
                 <polygon
                   points={pentagonPts(pentagonValues, cx, cy, maxR)}
-                  fill="rgba(37,99,235,0.09)"
-                  stroke="#2563EB"
-                  strokeWidth="2"
-                  strokeLinejoin="round"
+                  fill="rgba(37,99,235,0.09)" stroke="#2563EB" strokeWidth="2" strokeLinejoin="round"
                   style={{
-                    strokeDasharray: PENT_PERIMETER,
-                    strokeDashoffset: PENT_PERIMETER,
-                    fillOpacity: 0,
-                    animation: `pent-stroke 900ms cubic-bezier(0.25,0.46,0.45,0.94) 220ms forwards,
-                                 pent-fill 400ms ease 1000ms forwards`,
+                    strokeDasharray: PENT_PERIMETER, strokeDashoffset: PENT_PERIMETER, fillOpacity: 0,
+                    animation: `pent-stroke 700ms cubic-bezier(0.25,0.46,0.45,0.94) 100ms forwards,
+                                 pent-fill 350ms ease 700ms forwards`,
                   }}
                 />
-
-                {/* Vertex dots */}
                 {pentagonValues.map((v, i) => {
                   const a = (270 + i * 72) * Math.PI / 180
-                  const vx = cx + v * maxR * Math.cos(a)
-                  const vy = cy + v * maxR * Math.sin(a)
-                  const dotDelay = 220 + Math.round((i / 5) * 900) + 80
                   return (
                     <circle key={i}
-                      cx={vx.toFixed(2)} cy={vy.toFixed(2)} r="2.5"
+                      cx={(cx + v * maxR * Math.cos(a)).toFixed(2)}
+                      cy={(cy + v * maxR * Math.sin(a)).toFixed(2)}
+                      r="2.5"
                       fill={hoveredDim === i ? '#60a5fa' : '#2563EB'}
                       style={{
-                        opacity: 0,
-                        animation: `fadeIn 200ms ease ${dotDelay}ms both`,
+                        opacity: 0, animation: `fadeIn 200ms ease ${500 + i * 80}ms both`,
                         filter: hoveredDim === i ? 'drop-shadow(0 0 4px rgba(37,99,235,0.7))' : 'none',
                         transition: 'fill 180ms ease, filter 180ms ease',
                       }}
                     />
                   )
                 })}
-
-                {/* Axis labels — split "Decision Speed" to two lines */}
                 {PENTAGON_LABELS.map((label, i) => {
                   const a = (270 + i * 72) * Math.PI / 180
-                  const lx = cx + 115 * Math.cos(a)
-                  const ly = cy + 115 * Math.sin(a)
-                  const labelDelay = 220 + Math.round((i / 5) * 900) + 200
-                  const isHov = hoveredDim === i
+                  const lx = cx + 116 * Math.cos(a)
+                  const ly = cy + 116 * Math.sin(a)
                   const parts = label.split(' ')
-                  const textFill = isHov ? 'rgba(238,236,230,0.78)' : 'rgba(238,236,230,0.35)'
+                  const isHov = hoveredDim === i
                   return (
-                    <text key={label}
-                      textAnchor="middle"
-                      fill={textFill}
+                    <text key={label} textAnchor="middle"
+                      fill={isHov ? 'rgba(238,236,230,0.78)' : 'rgba(238,236,230,0.32)'}
                       fontSize="9.5"
                       fontFamily="DM Sans, -apple-system, BlinkMacSystemFont, sans-serif"
                       fontWeight="300"
                       style={{
-                        opacity: 0,
-                        animation: `fadeIn 200ms ease ${labelDelay}ms both`,
-                        cursor: 'pointer',
-                        transition: 'fill 180ms ease',
+                        opacity: 0, animation: `fadeIn 200ms ease ${700 + i * 80}ms both`,
+                        cursor: 'pointer', transition: 'fill 180ms ease',
                       }}
                       onMouseEnter={() => setHoveredDim(i)}
                       onMouseLeave={() => setHoveredDim(null)}
                       onClick={() => setHoveredDim(hoveredDim === i ? null : i)}
                     >
-                      {parts.length === 1 ? (
-                        <tspan x={lx.toFixed(1)} y={ly.toFixed(1)}>{parts[0]}</tspan>
-                      ) : (
-                        <>
-                          <tspan x={lx.toFixed(1)} y={(ly - 5.5).toFixed(1)}>{parts[0]}</tspan>
-                          <tspan x={lx.toFixed(1)} y={(ly + 6.5).toFixed(1)}>{parts[1]}</tspan>
-                        </>
-                      )}
+                      {parts.length === 1
+                        ? <tspan x={lx.toFixed(1)} y={ly.toFixed(1)}>{parts[0]}</tspan>
+                        : <>
+                            <tspan x={lx.toFixed(1)} y={(ly - 5.5).toFixed(1)}>{parts[0]}</tspan>
+                            <tspan x={lx.toFixed(1)} y={(ly + 6.5).toFixed(1)}>{parts[1]}</tspan>
+                          </>
+                      }
                     </text>
                   )
                 })}
               </svg>
             </div>
 
-            {/* Dim caption — reserved 20px slot to prevent layout shift */}
-            <div style={{ height: 22, marginTop: 6, marginBottom: 22, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {/* Dim caption slot */}
+            <div style={{ height: 22, marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {hoveredDim !== null && (
                 <p style={{
                   fontSize: 11, color: 'rgba(238,236,230,0.48)', margin: 0, fontWeight: 300,
@@ -742,123 +889,107 @@ export default function AssessPage() {
               )}
             </div>
 
-            {/* ── Archetype name — blur reveal, no typewriter ── */}
-            {resultMoment >= 4 && completionData && (
+            {/* Archetype name (compact, page anchor) */}
+            {completionData && (
               <h1 style={{
-                fontSize: 'clamp(64px, 10vw, 96px)', fontWeight: 900, color: '#eeece6',
+                fontSize: 'clamp(52px, 8vw, 80px)', fontWeight: 900, color: '#eeece6',
                 letterSpacing: '-0.02em', lineHeight: 1, margin: 0, textAlign: 'center',
                 fontFamily: '"Barlow Condensed", "SF Pro Display", -apple-system, sans-serif',
-                animation: 'arch-reveal 420ms cubic-bezier(0.25,0.46,0.45,0.94) both',
+                animation: 'fadeIn 300ms ease both',
               }}>
                 {completionData.profileName}
               </h1>
             )}
 
-            {/* ── Category label ── */}
-            {resultMoment >= 5 && completionData && (
+            {/* Category label */}
+            {completionData && (
               <p style={{
-                fontSize: 15, fontStyle: 'italic', color: 'rgba(238,236,230,0.38)',
-                fontWeight: 300, margin: '10px 0 0', textAlign: 'center',
-                animation: 'fadeIn 280ms ease both',
+                fontSize: 15, fontStyle: 'italic', color: 'rgba(238,236,230,0.36)',
+                fontWeight: 300, margin: '8px 0 0', textAlign: 'center',
+                animation: 'fadeIn 300ms ease 80ms both',
               }}>
                 {completionData.profileGroup}
               </p>
             )}
 
-            {/* ── Separator + interpretive line ── */}
-            {resultMoment >= 6 && (
-              <>
-                <div style={{
-                  width: 40, height: 1, background: 'rgba(255,255,255,0.12)',
-                  margin: '22px 0 16px',
-                  animation: 'fadeIn 200ms ease both',
-                }} />
-                <p style={{
-                  fontSize: 12, color: 'rgba(238,236,230,0.42)', textAlign: 'center',
-                  margin: 0, fontWeight: 300, letterSpacing: '0.01em',
-                  animation: 'fadeIn 280ms ease 80ms both',
-                }}>
-                  {interpretiveLine}
-                </p>
-              </>
-            )}
+            {/* Separator + interpretive line */}
+            <>
+              <div style={{ width: 40, height: 1, background: 'rgba(255,255,255,0.11)', margin: '20px 0 14px', animation: 'fadeIn 200ms ease both' }} />
+              <p style={{
+                fontSize: 12, color: 'rgba(238,236,230,0.4)', textAlign: 'center',
+                margin: 0, fontWeight: 300, letterSpacing: '0.01em',
+                animation: 'fadeIn 300ms ease 100ms both',
+              }}>
+                {interpretiveLine}
+              </p>
+            </>
 
-            {/* ── Insight blocks ── */}
+            {/* ── Insight blocks — staggered by CSS delay, all present when phase2 mounts ── */}
             {insights && (
               <div style={{ width: '100%', maxWidth: 500, marginTop: 34, textAlign: 'left' }}>
-                {resultMoment >= 7 && (
-                  <div style={{ marginBottom: 20, animation: 'fadeUp 320ms ease both' }}>
-                    <p style={{ fontSize: 10, color: 'rgba(238,236,230,0.38)', textTransform: 'uppercase', letterSpacing: '0.18em', margin: '0 0 7px', fontWeight: 600 }}>Core Signal</p>
-                    <p style={{ fontSize: 14, color: 'rgba(238,236,230,0.75)', lineHeight: 1.65, margin: 0, fontWeight: 400 }}>{insights.coreSignal}</p>
-                  </div>
-                )}
-                {resultMoment >= 8 && (
-                  <div style={{ marginBottom: 20, animation: 'fadeUp 320ms ease both' }}>
-                    <p style={{ fontSize: 10, color: '#3aa868', textTransform: 'uppercase', letterSpacing: '0.18em', margin: '0 0 7px', fontWeight: 600 }}>Where You Win</p>
-                    <p style={{ fontSize: 14, color: 'rgba(238,236,230,0.75)', lineHeight: 1.65, margin: 0, fontWeight: 300 }}>{insights.whereYouWin}</p>
-                  </div>
-                )}
-                {resultMoment >= 9 && (
-                  <div style={{ marginBottom: 0, animation: 'fadeUp 320ms ease both' }}>
-                    <p style={{ fontSize: 10, color: '#c8a832', textTransform: 'uppercase', letterSpacing: '0.18em', margin: '0 0 7px', fontWeight: 600 }}>Watch For</p>
-                    <p style={{ fontSize: 14, color: 'rgba(238,236,230,0.55)', lineHeight: 1.65, margin: 0, fontWeight: 300, fontStyle: 'italic' }}>{insights.watchFor}</p>
-                  </div>
-                )}
+                <div style={{ marginBottom: 20, animation: 'fadeUp 320ms ease 0ms both' }}>
+                  <p style={{ fontSize: 10, color: 'rgba(238,236,230,0.38)', textTransform: 'uppercase', letterSpacing: '0.18em', margin: '0 0 7px', fontWeight: 600 }}>Core Signal</p>
+                  <p style={{ fontSize: 14, color: 'rgba(238,236,230,0.75)', lineHeight: 1.65, margin: 0, fontWeight: 400 }}>{insights.coreSignal}</p>
+                </div>
+                <div style={{ marginBottom: 20, animation: 'fadeUp 320ms ease 200ms both' }}>
+                  <p style={{ fontSize: 10, color: '#3aa868', textTransform: 'uppercase', letterSpacing: '0.18em', margin: '0 0 7px', fontWeight: 600 }}>Where You Win</p>
+                  <p style={{ fontSize: 14, color: 'rgba(238,236,230,0.75)', lineHeight: 1.65, margin: 0, fontWeight: 300 }}>{insights.whereYouWin}</p>
+                </div>
+                <div style={{ marginBottom: 0, animation: 'fadeUp 320ms ease 400ms both' }}>
+                  <p style={{ fontSize: 10, color: '#c8a832', textTransform: 'uppercase', letterSpacing: '0.18em', margin: '0 0 7px', fontWeight: 600 }}>Watch For</p>
+                  <p style={{ fontSize: 14, color: 'rgba(238,236,230,0.55)', lineHeight: 1.65, margin: 0, fontWeight: 300, fontStyle: 'italic' }}>{insights.watchFor}</p>
+                </div>
               </div>
             )}
 
             {/* ── Emotional line ── */}
-            {resultMoment >= 10 && insights && (
+            {insights && (
               <p style={{
                 fontSize: 'clamp(17px, 2.2vw, 21px)', fontWeight: 400, color: 'rgba(238,236,230,0.8)',
                 lineHeight: 1.6, margin: '52px 0 0', textAlign: 'center',
                 maxWidth: 520, fontStyle: 'italic',
-                animation: 'fadeIn 550ms ease both',
+                animation: 'fadeIn 600ms ease 600ms both',
               }}>
                 {insights.emotionalLine}
               </p>
             )}
 
             {/* ── Closing box ── */}
-            {resultMoment >= 11 && (
-              <div style={{ width: '100%', maxWidth: 440, marginTop: 48, animation: 'fadeIn 400ms ease both' }}>
-                <div style={{
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: 12, padding: '20px 24px',
-                }}>
-                  <p style={{ fontSize: 13, color: '#eeece6', margin: '0 0 5px', fontWeight: 500 }}>
-                    Your profile has been shared with your search partner.
-                  </p>
-                  <p style={{ fontSize: 12, color: 'rgba(238,236,230,0.42)', margin: 0, fontWeight: 300, lineHeight: 1.55 }}>
-                    They&rsquo;ll use this to evaluate role alignment. Your results are on file.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* ── Explore divider (auto-reveals, no click required) ── */}
-            {resultMoment >= 12 && (
+            <div style={{ width: '100%', maxWidth: 440, marginTop: 48, animation: 'fadeIn 400ms ease 900ms both' }}>
               <div style={{
-                marginTop: 64, display: 'flex', alignItems: 'center', gap: 14,
-                width: '100%', maxWidth: 500,
-                animation: 'fadeIn 600ms ease both',
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 12, padding: '20px 24px',
               }}>
-                <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.07)' }} />
-                <span style={{ fontSize: 10, color: 'rgba(238,236,230,0.28)', letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 400, whiteSpace: 'nowrap' }}>
-                  your behavioral profile
-                </span>
-                <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.07)' }} />
+                <p style={{ fontSize: 13, color: '#eeece6', margin: '0 0 5px', fontWeight: 500 }}>
+                  Your profile has been shared with your search partner.
+                </p>
+                <p style={{ fontSize: 12, color: 'rgba(238,236,230,0.42)', margin: 0, fontWeight: 300, lineHeight: 1.55 }}>
+                  They&rsquo;ll use this to evaluate role alignment. Your results are on file.
+                </p>
               </div>
-            )}
+            </div>
+
+            {/* ── Explore divider ── */}
+            <div style={{
+              marginTop: 64, display: 'flex', alignItems: 'center', gap: 14,
+              width: '100%', maxWidth: 500,
+              animation: 'fadeIn 600ms ease 1100ms both',
+            }}>
+              <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.07)' }} />
+              <span style={{ fontSize: 10, color: 'rgba(238,236,230,0.28)', letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 400, whiteSpace: 'nowrap' }}>
+                your behavioral profile
+              </span>
+              <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.07)' }} />
+            </div>
 
           </div>
         )}
 
         {/* ═══════════════════════════════════════════════════
-            PHASE 2 — BEHAVIORAL SYSTEM EXPLORER
+            DEPTH SECTIONS — BEHAVIORAL SYSTEM EXPLORER
         ═══════════════════════════════════════════════════ */}
-        {resultMoment >= 12 && completionData && (() => {
+        {resultMoment >= 7 && completionData && (() => {
           const depth = DEPTH[completionData.profileName]
           if (!depth) return null
 
