@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { auth } from '@/lib/auth'
+import { requireOrg, assertClientInOrg } from '@/lib/auth-helpers'
+import { validate, nonEmptyStr } from '@/lib/validation'
 
 export async function GET() {
-  const session = await auth()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const ctx = await requireOrg()
+  if (ctx instanceof NextResponse) return ctx
 
   try {
     const jobs = await prisma.job.findMany({
-      where: { archivedAt: null },
+      where: { orgId: ctx.orgId, archivedAt: null },
       include: {
         client: true,
         target: true,
@@ -38,17 +39,35 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const ctx = await requireOrg()
+  if (ctx instanceof NextResponse) return ctx
 
   try {
-    const { title, roleType, clientId } = await req.json()
-    if (!title || !roleType || !clientId) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    const body = await req.json()
+    const v = validate(body, {
+      title: nonEmptyStr(200),
+      roleType: nonEmptyStr(80),
+      clientId: nonEmptyStr(60),
+    })
+    if (!v.ok) return NextResponse.json({ error: v.error }, { status: 400 })
+
+    // Confirm the client belongs to this org before linking — otherwise
+    // a user could reach across tenants by submitting an arbitrary clientId.
+    if (!(await assertClientInOrg(v.value.clientId, ctx.orgId))) {
+      return NextResponse.json({ error: 'Client not found' }, { status: 404 })
     }
 
     const job = await prisma.job.create({
-      data: { title, roleType, clientId },
+      data: {
+        title: v.value.title,
+        roleType: v.value.roleType,
+        clientId: v.value.clientId,
+        orgId: ctx.orgId,
+      },
+    })
+
+    await prisma.eventLog.create({
+      data: { event: 'job.created', entityId: job.id, orgId: ctx.orgId, userId: ctx.userId },
     })
 
     return NextResponse.json({ data: job })

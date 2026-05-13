@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { auth } from '@/lib/auth'
+import { requireOrg } from '@/lib/auth-helpers'
 import { sendInviteEmail } from '@/lib/email'
 
 type Params = { params: Promise<{ id: string; inviteId: string }> }
 
-export async function POST(req: NextRequest, { params }: Params) {
-  const session = await auth()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+export async function POST(_req: NextRequest, { params }: Params) {
+  const ctx = await requireOrg()
+  if (ctx instanceof NextResponse) return ctx
 
   const { id, inviteId } = await params
   try {
@@ -16,7 +16,9 @@ export async function POST(req: NextRequest, { params }: Params) {
       include: { job: { include: { client: true } } },
     })
 
-    if (!invite) return NextResponse.json({ error: 'Invite not found' }, { status: 404 })
+    if (!invite || invite.job.orgId !== ctx.orgId) {
+      return NextResponse.json({ error: 'Invite not found' }, { status: 404 })
+    }
     if (invite.completedAt) return NextResponse.json({ error: 'Assessment already completed' }, { status: 400 })
 
     const candidateEmail = invite.email
@@ -29,7 +31,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     await sendInviteEmail({
       candidateName,
       candidateEmail,
-      recruiterName: session.user?.name || 'Your recruiter',
+      recruiterName: ctx.email,
       firmName: invite.job.client.name,
       jobTitle: invite.job.title,
       roleTitle: invite.job.title,
@@ -42,7 +44,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     })
 
     await prisma.eventLog.create({
-      data: { event: 'invite.resent', entityId: inviteId },
+      data: { event: 'invite.resent', entityId: inviteId, orgId: ctx.orgId, userId: ctx.userId },
     })
 
     return NextResponse.json({ ok: true })

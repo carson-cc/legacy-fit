@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 
-type ActivePage = 'archetypes' | 'profiles' | 'sample-report'
+type ActivePage = 'archetypes' | 'profiles'
 
 interface NavProps {
   activePage?: ActivePage
@@ -11,9 +11,8 @@ interface NavProps {
 }
 
 const LINKS: { label: string; href: string; page: ActivePage }[] = [
-  { label: 'Archetypes',    href: '/archetypes',    page: 'archetypes' },
-  { label: 'Method',        href: '/profiles',      page: 'profiles' },
-  { label: 'Sample Report', href: '/sample-report', page: 'sample-report' },
+  { label: 'Archetypes', href: '/archetypes', page: 'archetypes' },
+  { label: 'Method',     href: '/profiles',   page: 'profiles' },
 ]
 
 export default function Nav({ activePage, light = false }: NavProps) {

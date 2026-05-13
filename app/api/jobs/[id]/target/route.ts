@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { auth } from '@/lib/auth'
+import { requireOrg, assertJobInOrg } from '@/lib/auth-helpers'
 
 type Params = { params: Promise<{ id: string }> }
 
 export async function POST(req: NextRequest, { params }: Params) {
-  const session = await auth()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const ctx = await requireOrg()
+  if (ctx instanceof NextResponse) return ctx
 
   const { id } = await params
+  if (!(await assertJobInOrg(id, ctx.orgId))) {
+    return NextResponse.json({ error: 'Job not found' }, { status: 404 })
+  }
+
   try {
     const { dominance, extraversion, patience, formality, notes } = await req.json()
 
@@ -19,7 +23,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     })
 
     await prisma.eventLog.create({
-      data: { event: 'job_target.set', entityId: id },
+      data: { event: 'job_target.set', entityId: id, orgId: ctx.orgId, userId: ctx.userId },
     })
 
     return NextResponse.json({ data: target })

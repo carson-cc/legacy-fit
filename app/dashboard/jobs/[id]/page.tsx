@@ -25,6 +25,8 @@ interface Invite {
   email: string | null
   completedAt: string | null
   sentAt: string | null
+  stage: string
+  offLimits: boolean
   result: InviteResult | null
 }
 
@@ -72,6 +74,15 @@ const GROUP_LABELS: Record<string, string> = {
 }
 
 type SortKey = 'fit' | 'name' | 'date'
+
+interface ClientContact {
+  id:           string
+  name:         string
+  email:        string
+  expiresAt:    string
+  lastAccessAt: string | null
+  createdAt:    string
+}
 
 /* ------------------------------------------------------------------ */
 /*  Score Ring                                                         */
@@ -173,6 +184,19 @@ export default function JobDetailPage() {
   const [copied, setCopied] = useState(false)
   const [resending, setResending] = useState<string | null>(null)
 
+  /* Client portal */
+  const [contacts, setContacts]           = useState<ClientContact[]>([])
+  const [portalName, setPortalName]       = useState('')
+  const [portalEmail, setPortalEmail]     = useState('')
+  const [portalSubmitting, setPortalSubmitting] = useState(false)
+  const [revoking, setRevoking]           = useState<string | null>(null)
+
+  /* Bulk import */
+  const [showBulk, setShowBulk]           = useState(false)
+  const [bulkRows, setBulkRows]           = useState<{name:string;email:string;phone?:string}[]>([])
+  const [bulkCommitting, setBulkCommitting] = useState(false)
+  const [bulkResults, setBulkResults]     = useState<{row:number;name:string;email:string;status:string;error?:string}[]|null>(null)
+
   /* Fetch */
   const fetchJob = useCallback(() => {
     setLoading(true)
@@ -192,6 +216,15 @@ export default function JobDetailPage() {
   }, [id])
 
   useEffect(() => { fetchJob() }, [fetchJob])
+
+  const fetchContacts = useCallback(() => {
+    fetch(`/api/jobs/${id}/client-contacts`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.data) setContacts(d.data) })
+      .catch(() => {})
+  }, [id])
+
+  useEffect(() => { fetchContacts() }, [fetchContacts])
 
   useEffect(() => {
     if (job?.title) document.title = `Veltro — ${job.title}`
@@ -260,12 +293,100 @@ export default function JobDetailPage() {
     }
   }
 
+  async function handlePortalInvite(e: React.FormEvent) {
+    e.preventDefault()
+    if (!portalName.trim() || !portalEmail.trim()) return
+    setPortalSubmitting(true)
+    try {
+      const res = await fetch(`/api/jobs/${id}/client-contacts`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ name: portalName.trim(), email: portalEmail.trim() }),
+      })
+      if (res.status === 207) showToast('Contact added — email delivery failed', 'error')
+      else if (!res.ok) showToast('Could not send portal link', 'error')
+      else showToast('Portal link sent')
+      setPortalName('')
+      setPortalEmail('')
+      fetchContacts()
+    } catch {
+      showToast('Network error', 'error')
+    } finally {
+      setPortalSubmitting(false)
+    }
+  }
+
+  async function revokeContact(contactId: string) {
+    setRevoking(contactId)
+    try {
+      const res = await fetch(`/api/jobs/${id}/client-contacts/${contactId}`, { method: 'DELETE' })
+      if (res.ok) { showToast('Access revoked'); fetchContacts() }
+      else showToast('Could not revoke', 'error')
+    } catch {
+      showToast('Network error', 'error')
+    } finally {
+      setRevoking(null)
+    }
+  }
+
   function copyLink() {
     if (!inviteLink) return
     navigator.clipboard.writeText(inviteLink)
     setCopied(true)
     showToast('Link copied')
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  function handleCSVDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault()
+    const file = e.dataTransfer.files[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = ev => parseCSVPreview(ev.target?.result as string)
+    reader.readAsText(file)
+  }
+
+  function handleCSVInput(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = ev => parseCSVPreview(ev.target?.result as string)
+    reader.readAsText(file)
+  }
+
+  function parseCSVPreview(text: string) {
+    const lines = text.trim().split(/\r?\n/)
+    const header = lines[0].toLowerCase().split(',').map(h => h.trim())
+    const nameIdx = header.indexOf('name')
+    const emailIdx = header.indexOf('email')
+    const phoneIdx = header.indexOf('phone')
+    if (nameIdx === -1 || emailIdx === -1) { showToast('CSV must have "name" and "email" columns', 'error'); return }
+    const rows = lines.slice(1).map(line => {
+      const cols = line.split(',').map(c => c.trim().replace(/^"|"$/g, ''))
+      return { name: cols[nameIdx] ?? '', email: cols[emailIdx] ?? '', phone: phoneIdx >= 0 ? (cols[phoneIdx] || undefined) : undefined }
+    }).filter(r => r.name || r.email)
+    setBulkRows(rows)
+    setBulkResults(null)
+  }
+
+  async function commitBulk() {
+    if (!bulkRows.length) return
+    setBulkCommitting(true)
+    try {
+      const res = await fetch(`/api/jobs/${id}/invites/bulk`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bulkRows),
+      })
+      const data = await res.json()
+      setBulkResults(data.results ?? [])
+      if (data.created > 0) { showToast(`${data.created} candidate${data.created > 1 ? 's' : ''} added`); fetchJob() }
+      if (data.failed > 0) showToast(`${data.failed} row${data.failed > 1 ? 's' : ''} failed`, 'error')
+    } catch {
+      showToast('Bulk import failed', 'error')
+    } finally {
+      setBulkCommitting(false)
+    }
   }
 
   /* ---- Derived data ------------------------------------------------ */
@@ -442,6 +563,14 @@ export default function JobDetailPage() {
           >
             {job.target ? 'Edit Target' : 'Set Target'}
           </Link>
+          <button
+            onClick={() => { setShowBulk(v => !v); setBulkRows([]); setBulkResults(null) }}
+            style={secondaryBtnStyle}
+            onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')}
+            onMouseLeave={e => (e.currentTarget.style.background = '#FFFFFF')}
+          >
+            Bulk import
+          </button>
           <button
             onClick={() => {
               resetInviteForm()
@@ -684,6 +813,107 @@ export default function JobDetailPage() {
         </div>
       )}
 
+      {/* ---- Bulk Import Panel ---- */}
+      {showBulk && (
+        <div style={{ ...cardStyle, marginBottom: 24, animation: 'slideDown 180ms ease' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <div>
+              <span style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>Bulk import candidates</span>
+              <p style={{ fontSize: 13, color: '#6B7280', margin: '2px 0 0' }}>CSV must have &ldquo;name&rdquo; and &ldquo;email&rdquo; columns. &ldquo;phone&rdquo; is optional.</p>
+            </div>
+            <button onClick={() => { setShowBulk(false); setBulkRows([]); setBulkResults(null) }} style={{ background: 'none', border: 'none', fontSize: 12, color: '#9CA3AF', cursor: 'pointer' }}>Cancel</button>
+          </div>
+
+          {!bulkResults && (
+            <>
+              {/* Drop zone */}
+              <div
+                onDragOver={e => e.preventDefault()}
+                onDrop={handleCSVDrop}
+                style={{ border: '2px dashed #E5E7EB', borderRadius: 10, padding: '32px 24px', textAlign: 'center', marginBottom: 16, transition: 'border-color 150ms ease', cursor: 'pointer' }}
+                onDragEnter={e => (e.currentTarget.style.borderColor = '#2563EB')}
+                onDragLeave={e => (e.currentTarget.style.borderColor = '#E5E7EB')}
+              >
+                <p style={{ fontSize: 14, color: '#6B7280', margin: '0 0 12px' }}>Drop a CSV file here, or</p>
+                <label style={{ display: 'inline-block', cursor: 'pointer' }}>
+                  <span style={{ ...secondaryBtnStyle, display: 'inline-block' }}>Browse file</span>
+                  <input type="file" accept=".csv,text/csv" onChange={handleCSVInput} style={{ display: 'none' }}/>
+                </label>
+              </div>
+
+              {/* Preview table */}
+              {bulkRows.length > 0 && (
+                <div>
+                  <p style={{ fontSize: 13, color: '#6B7280', marginBottom: 8 }}>{bulkRows.length} rows ready to import. Emails will be sent automatically.</p>
+                  <div style={{ maxHeight: 240, overflowY: 'auto', border: '1px solid #E5E7EB', borderRadius: 8, marginBottom: 16 }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                      <thead>
+                        <tr style={{ background: '#F9FAFB', borderBottom: '1px solid #E5E7EB' }}>
+                          {['#', 'Name', 'Email', 'Phone'].map(h => (
+                            <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 600, color: '#6B7280' }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {bulkRows.map((row, i) => (
+                          <tr key={i} style={{ borderBottom: '1px solid #F3F4F6' }}>
+                            <td style={{ padding: '8px 12px', color: '#9CA3AF' }}>{i + 1}</td>
+                            <td style={{ padding: '8px 12px', color: '#111827' }}>{row.name}</td>
+                            <td style={{ padding: '8px 12px', color: '#6B7280' }}>{row.email}</td>
+                            <td style={{ padding: '8px 12px', color: '#6B7280' }}>{row.phone ?? '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <button
+                    onClick={commitBulk}
+                    disabled={bulkCommitting}
+                    style={{ ...primaryBtnStyle, opacity: bulkCommitting ? 0.6 : 1 }}
+                    onMouseEnter={e => { if (!bulkCommitting) e.currentTarget.style.boxShadow = '0 4px 12px rgba(37,99,235,0.3)' }}
+                    onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}
+                  >
+                    {bulkCommitting ? 'Importing…' : `Import ${bulkRows.length} candidate${bulkRows.length > 1 ? 's' : ''}`}
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Results */}
+          {bulkResults && (
+            <div>
+              <div style={{ maxHeight: 240, overflowY: 'auto', border: '1px solid #E5E7EB', borderRadius: 8, marginBottom: 16 }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ background: '#F9FAFB', borderBottom: '1px solid #E5E7EB' }}>
+                      {['#', 'Name', 'Email', 'Status'].map(h => (
+                        <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 600, color: '#6B7280' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bulkResults.map(row => (
+                      <tr key={row.row} style={{ borderBottom: '1px solid #F3F4F6' }}>
+                        <td style={{ padding: '8px 12px', color: '#9CA3AF' }}>{row.row}</td>
+                        <td style={{ padding: '8px 12px', color: '#111827' }}>{row.name}</td>
+                        <td style={{ padding: '8px 12px', color: '#6B7280' }}>{row.email}</td>
+                        <td style={{ padding: '8px 12px' }}>
+                          {row.status === 'created'
+                            ? <span style={{ color: '#059669', fontWeight: 600 }}>✓ Created</span>
+                            : <span style={{ color: '#DC2626' }}>{row.error ?? 'Error'}</span>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <button onClick={() => { setBulkRows([]); setBulkResults(null) }} style={secondaryBtnStyle}>Import more</button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ---- Empty State ---- */}
       {allCompleted.length === 0 && pending.length === 0 && teamCompleted.length === 0 && teamPending.length === 0 && !showInviteForm && (
         <div
@@ -836,9 +1066,14 @@ export default function JobDetailPage() {
                   {/* Middle: name, profile, badges */}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: 16, fontWeight: 600, color: '#111827' }}>
+                      <span style={{ fontSize: 16, fontWeight: 600, color: invite.offLimits ? '#9CA3AF' : '#111827', textDecoration: invite.offLimits ? 'line-through' : 'none', textDecorationColor: '#EF4444' }}>
                         {invite.name}
                       </span>
+                      {invite.offLimits && (
+                        <span style={{ fontSize: 11, fontWeight: 700, color: '#DC2626', background: '#FEE2E2', border: '1px solid #FECACA', borderRadius: 9999, padding: '1px 7px', marginLeft: 8, whiteSpace: 'nowrap', letterSpacing: '0.04em' }}>
+                          OFF-LIMITS
+                        </span>
+                      )}
                       {r.adaptationStress > 0.2 && (
                         <Badge label="Adapting" variant="amber" />
                       )}
@@ -1064,6 +1299,82 @@ export default function JobDetailPage() {
                   </button>
                 </div>
               ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Client Portal ─────────────────────────────────────────────── */}
+      {job && (
+        <div style={{ ...cardStyle, marginTop: 24 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <div>
+              <h2 style={{ fontSize: 16, fontWeight: 700, color: '#111827', margin: '0 0 2px' }}>Client Portal</h2>
+              <p style={{ fontSize: 13, color: '#6B7280', margin: 0 }}>
+                Send a magic link to your client so they can review the shortlist privately.
+              </p>
+            </div>
+          </div>
+
+          {/* Send form */}
+          <form onSubmit={handlePortalInvite} style={{ display: 'flex', gap: 8, marginBottom: contacts.length ? 20 : 0, flexWrap: 'wrap' }}>
+            <input
+              value={portalName} onChange={e => setPortalName(e.target.value)}
+              placeholder="Contact name" required
+              style={{ ...inputStyle, flex: '1 1 160px', minWidth: 140 }}
+            />
+            <input
+              value={portalEmail} onChange={e => setPortalEmail(e.target.value)}
+              placeholder="Contact email" type="email" required
+              style={{ ...inputStyle, flex: '1 1 200px', minWidth: 180 }}
+            />
+            <button type="submit" disabled={portalSubmitting} style={{ ...primaryBtnStyle, opacity: portalSubmitting ? 0.6 : 1 }}>
+              {portalSubmitting ? 'Sending…' : 'Send link'}
+            </button>
+          </form>
+
+          {/* Existing contacts */}
+          {contacts.length > 0 && (
+            <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: 16 }}>
+              <p style={{ fontSize: 12, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 10px' }}>Active access</p>
+              {contacts.map(c => {
+                const expired = new Date(c.expiresAt) < new Date()
+                return (
+                  <div key={c.id} style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '10px 0', borderBottom: '1px solid rgba(0,0,0,0.05)',
+                  }}>
+                    <div>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: '#111827' }}>{c.name}</span>
+                      <span style={{ fontSize: 13, color: '#6B7280', marginLeft: 8 }}>{c.email}</span>
+                      <span style={{
+                        fontSize: 11, marginLeft: 8, padding: '1px 6px', borderRadius: 4,
+                        background: expired ? '#FEE2E2' : '#D1FAE5',
+                        color:      expired ? '#991B1B' : '#065F46',
+                      }}>
+                        {expired ? 'Expired' : `Expires ${formatDate(c.expiresAt)}`}
+                      </span>
+                      {c.lastAccessAt && (
+                        <span style={{ fontSize: 12, color: '#9CA3AF', marginLeft: 8 }}>
+                          · Viewed {formatDate(c.lastAccessAt)}
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => revokeContact(c.id)}
+                      disabled={revoking === c.id}
+                      style={{
+                        background: 'none', border: 'none', fontSize: 12,
+                        color: revoking === c.id ? '#9CA3AF' : '#EF4444',
+                        cursor: revoking === c.id ? 'default' : 'pointer',
+                        textDecoration: 'underline',
+                      }}
+                    >
+                      {revoking === c.id ? 'Revoking…' : 'Revoke'}
+                    </button>
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>
