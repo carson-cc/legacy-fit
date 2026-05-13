@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { auth } from '@/lib/auth'
+import { requireOrg } from '@/lib/auth-helpers'
 
 const PAGE_SIZE = 50
 
 export async function GET(req: NextRequest) {
-  const session = await auth()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const ctx = await requireOrg()
+  if (ctx instanceof NextResponse) return ctx
 
   const { searchParams } = req.nextUrl
   const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10))
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   const from = searchParams.get('from') ?? ''
   const to = searchParams.get('to') ?? ''
 
-  const where: Record<string, unknown> = {}
+  const where: Record<string, unknown> = { orgId: ctx.orgId }
   if (eventType) where.event = eventType
   if (userId) where.userId = userId
   if (from || to) {
@@ -35,13 +35,14 @@ export async function GET(req: NextRequest) {
         take: PAGE_SIZE,
       }),
       prisma.user.findMany({
+        where: { orgId: ctx.orgId },
         select: { id: true, name: true, email: true },
         orderBy: { name: 'asc' },
       }),
     ])
 
-    // Collect distinct event types for filter dropdown
     const eventTypes = await prisma.eventLog.findMany({
+      where: { orgId: ctx.orgId },
       select: { event: true },
       distinct: ['event'],
       orderBy: { event: 'asc' },

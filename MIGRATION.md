@@ -170,6 +170,83 @@ npm run build
 - The approve endpoint requires `owner` or `admin` role. Members see the button but get a toast error — by design (visible affordance, server enforced).
 - Bulk import fires emails best-effort. Failed email sends do not fail the row — the invite is created regardless.
 
+## Session 5: Legal + sales pack (2026-05-13)
+
+### Engineering cleanup
+
+**Audit log route fix.** `app/api/settings/audit-log/route.ts` was the one route that hadn't
+received the multi-tenant treatment during the previous session's cherry-pick. It used the bare
+`auth()` call and queried `EventLog` without an `orgId` filter. Fixed to use `requireOrg()` and
+scope all three queries (count, findMany, distinct event types) plus the user list to
+`ctx.orgId`.
+
+No schema changes. No migration needed.
+
+### Legal documents (drafts — attorney review required before use)
+
+All files are in `docs/legal/`. Every document contains `[TODO]` markers where attorney input is
+required (entity name, jurisdiction, liability caps, SCC attachment, etc.).
+
+| File | What it is |
+|---|---|
+| `docs/legal/privacy-policy.md` | Full privacy policy covering candidates, clients, and hiring orgs |
+| `docs/legal/terms-of-service.md` | ToS for recruiter-facing clients |
+| `docs/legal/msa-template.md` | Master Services Agreement template |
+| `docs/legal/order-form-template.md` | Order Form template referencing the MSA |
+| `docs/legal/dpa.md` | Data Processing Agreement (GDPR Art. 28), with Annex I (sub-processors), Annex II (security measures), and placeholder for SCCs (Annex III) |
+| `docs/legal/candidate-consent.md` | Consent screen language + implementation notes for `/assess/[token]` |
+
+**Attorney TODO list** (do not go live without these):
+- Fill in legal entity name, registered address, governing law, jurisdiction
+- Set liability caps in MSA Section 10 and ToS Section 8
+- Attach EU Standard Contractual Clauses (DPA Annex III) if EU candidates will be assessed
+- Designate EU representative if required under GDPR Art. 27
+- Insert effective dates in Privacy Policy and ToS
+- Confirm CCPA disclosures are adequate if California candidates will be assessed
+- Review candidate consent language for compliance with GDPR Art. 7
+
+### Web pages
+
+| Route | What it renders |
+|---|---|
+| `/privacy` | Privacy Policy (inline JSX, sourced from the same content as docs/legal/privacy-policy.md) |
+| `/terms` | Terms of Service |
+| `/pricing` | Three-tier pricing (Design Partner / Boutique / Firm), all "Talk to sales" CTAs |
+| `/about` | Founder bio (placeholder), methodology summary, contact |
+| `/demo` | Demo request form (name, firm, email, searches); submits to `/api/demo-request` |
+
+### Sales collateral
+
+| File | What it is |
+|---|---|
+| `docs/sales/methodology.md` | One-pager: 4-dimension DISC model, 2.245M norm sample, fit scoring formula, scientific grounding, and what Veltro does NOT claim |
+| `docs/sales/security.md` | One-pager: hosting, encryption, multi-tenant isolation, audit logging, sub-processors, known gaps |
+| `docs/sales/one-pager.md` | What it is, who it's for, how it works, pricing table, three proof points |
+| `docs/sales/pitch-deck.md` | 12-slide deck outline: problem, solution, demo screens, methodology, market, business model, traction, team, ask |
+
+### API changes
+
+**`POST /api/demo-request`** — public, unauthenticated. Accepts `{ name, firm, email, searches }`.
+Logs a `demo.request` event to `EventLog` (orgId null). Emails the founder via SendGrid using
+`FOUNDER_EMAIL` env var. Rate-limited: 3 requests per IP per 60 seconds. Best-effort email (logs
+to console on failure, does not return an error to the caller).
+
+**New env var required:**
+```
+FOUNDER_EMAIL=   # where demo requests are emailed (e.g. you@yourfirm.com)
+```
+
+### What must run before these changes work
+
+No schema changes. No migration needed. Add `FOUNDER_EMAIL` to your environment.
+
+```bash
+# Verify build
+npm run build
+```
+
+---
+
 ## What was deliberately deferred to a future session
 
 These are real gaps that the audit identified. Each is a separate, bounded chunk of work.
@@ -201,10 +278,16 @@ These are real gaps that the audit identified. Each is a separate, bounded chunk
 - Mobile pass at 375px.
 - Optional demographic capture for adverse-impact monitoring (this is a sales feature for the firms, not a UX detail).
 
-**Legal / commercial**
-- Privacy Policy, ToS, candidate consent text, MSA / Order Form / DPA drafts.
-- Pricing page, demo request form, methodology one-pager, security one-pager.
-- About / team page.
+**Legal / commercial** *(completed in Session 5 — see below)*
+- ~~Privacy Policy, ToS, candidate consent text, MSA / Order Form / DPA drafts.~~
+- ~~Pricing page, demo request form, methodology one-pager, security one-pager.~~
+- ~~About / team page.~~
+- Attorney review of all legal docs before execution (TODO items throughout each doc).
+- Founder bio on `/about` page (placeholder in place).
+- Insert effective dates in Privacy Policy and ToS before publishing.
+- EU representative designation (GDPR Art. 27) if EU candidates will be assessed.
+- SCCs / international transfer mechanism in DPA (Annex III is blank).
+- Stripe billing and self-serve subscription management.
 
 **Billing**
 - No Stripe / subscription / metering yet. Charge design partners by invoice for now.
