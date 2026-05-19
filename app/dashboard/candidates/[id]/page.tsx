@@ -199,6 +199,10 @@ export default function CandidateDetailPage() {
   const [approved, setApproved] = useState(false)
   const [approving, setApproving] = useState(false)
 
+  // Delete
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
   // Notes thread
   const [noteThread, setNoteThread] = useState<CandidateNote[]>([])
   const [notesLoading, setNotesLoading] = useState(false)
@@ -269,6 +273,22 @@ export default function CandidateDetailPage() {
       setOffLimits(!next)
     } finally {
       setOffLimitsSaving(false)
+    }
+  }
+
+  async function handleDelete() {
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/candidates/${id}`, { method: 'DELETE' })
+      if (res.status === 403) { showToast('Only owners and admins can delete candidates', 'error'); return }
+      if (!res.ok) throw new Error()
+      showToast('Candidate deleted')
+      router.push('/dashboard')
+    } catch {
+      showToast('Could not delete candidate', 'error')
+    } finally {
+      setDeleting(false)
+      setShowDeleteConfirm(false)
     }
   }
 
@@ -410,6 +430,9 @@ export default function CandidateDetailPage() {
               </button>
               <button onClick={() => window.print()} style={{ height: 36, padding: '0 16px', borderRadius: 8, background: '#FFF', color: '#374151', border: '1px solid #E5E7EB', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
                 Export PDF
+              </button>
+              <button onClick={() => setShowDeleteConfirm(true)} style={{ height: 36, padding: '0 16px', borderRadius: 8, background: '#FFF', color: '#DC2626', border: '1px solid #FECACA', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
+                Delete
               </button>
             </div>
           </div>
@@ -677,6 +700,30 @@ export default function CandidateDetailPage() {
       </div>
 
       <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+
+      {/* Delete confirmation modal */}
+      {showDeleteConfirm && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
+          onClick={() => !deleting && setShowDeleteConfirm(false)}>
+          <div style={{ background: '#FFF', borderRadius: 12, padding: 32, width: 400, boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}
+            onClick={e => e.stopPropagation()}>
+            <h2 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 700, color: '#111827' }}>Delete candidate?</h2>
+            <p style={{ margin: '0 0 24px', fontSize: 14, color: '#6B7280', lineHeight: 1.6 }}>
+              <strong>{candidate.name}</strong> and all their assessment data, notes, and outcomes will be permanently deleted. This cannot be undone.
+            </p>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button onClick={() => setShowDeleteConfirm(false)} disabled={deleting}
+                style={{ height: 36, padding: '0 16px', borderRadius: 8, border: '1px solid #E5E7EB', background: '#FFF', color: '#374151', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
+                Cancel
+              </button>
+              <button onClick={handleDelete} disabled={deleting}
+                style={{ height: 36, padding: '0 16px', borderRadius: 8, border: 'none', background: '#DC2626', color: '#FFF', fontSize: 13, fontWeight: 600, cursor: deleting ? 'wait' : 'pointer', opacity: deleting ? 0.7 : 1 }}>
+                {deleting ? 'Deleting…' : 'Delete candidate'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
