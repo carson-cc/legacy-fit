@@ -67,6 +67,7 @@ export default function ClientsPage() {
   const [name, setName] = useState('')
   const [industry, setIndustry] = useState('')
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     fetch('/api/clients')
@@ -83,6 +84,7 @@ export default function ClientsPage() {
     e.preventDefault()
     if (!name.trim()) return
     setSaving(true)
+    setError('')
     try {
       const res = await fetch('/api/clients', {
         method: 'POST',
@@ -90,13 +92,17 @@ export default function ClientsPage() {
         body: JSON.stringify({ name: name.trim(), industry: industry.trim() || null }),
       })
       const data = await res.json()
-      if (data.data) {
+      if (!res.ok) {
+        setError(data.error || 'Something went wrong')
+      } else if (data.data) {
         setClients(prev => [...prev, data.data].sort((a, b) => a.name.localeCompare(b.name)))
         setName('')
         setIndustry('')
         setShowForm(false)
       }
-    } catch { /* ignore */ }
+    } catch {
+      setError('Network error — please try again')
+    }
     setSaving(false)
   }
 
@@ -181,6 +187,9 @@ export default function ClientsPage() {
               />
             </div>
           </div>
+          {error && (
+            <p style={{ margin: '0 0 10px', fontSize: 13, color: '#dc2626' }}>{error}</p>
+          )}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <button
               type="submit"
@@ -196,7 +205,7 @@ export default function ClientsPage() {
             </button>
             <button
               type="button"
-              onClick={() => { setShowForm(false); setName(''); setIndustry('') }}
+              onClick={() => { setShowForm(false); setName(''); setIndustry(''); setError('') }}
               style={{
                 background: 'none', border: 'none', cursor: 'pointer',
                 fontSize: 13, color: '#9ca3af', padding: 0,
