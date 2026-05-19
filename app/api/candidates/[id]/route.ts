@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { requireOrg } from '@/lib/auth-helpers'
+import { requireOrg, requireRole } from '@/lib/auth-helpers'
 import { REFERENCE_PROFILES } from '@/lib/data/profiles'
 import { INTERVIEW_QUESTIONS } from '@/lib/data/questions'
 import { ADJECTIVES } from '@/lib/data/adjectives'
@@ -157,6 +157,38 @@ export async function GET(_req: NextRequest, { params }: Params) {
         approvedAt: invite.approvedAt,
       },
     })
+  } catch {
+    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+  }
+}
+
+export async function DELETE(_req: NextRequest, { params }: Params) {
+  const ctx = await requireRole('owner', 'admin')
+  if (ctx instanceof NextResponse) return ctx
+
+  const { id } = await params
+  try {
+    const invite = await prisma.candidateInvite.findUnique({
+      where: { id },
+      include: { job: { select: { orgId: true, id: true } } },
+    })
+
+    if (!invite || invite.job.orgId !== ctx.orgId)
+      return NextResponse.json({ error: 'Candidate not found' }, { status: 404 })
+
+    await prisma.eventLog.create({
+      data: {
+        event: 'candidate.deleted',
+        entityId: invite.job.id,
+        orgId: ctx.orgId,
+        userId: ctx.userId,
+        meta: JSON.stringify({ candidateId: id, name: invite.name, email: invite.email }),
+      },
+    })
+
+    await prisma.candidateInvite.delete({ where: { id } })
+
+    return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
