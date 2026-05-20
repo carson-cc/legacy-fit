@@ -295,15 +295,16 @@ describe('scoreAssessment', () => {
     //   exec=clamp(0*0.40+1*0.35+0*0.25)=35, own=clamp(1*0.55+0*0.25+0*0.20)=55
     //   adapt=clamp(1*0.40+1*0.30+1*0.30)=100, collab=80, dspd=clamp(1*0.45+0+1*0.20)=65
     // Gaps (cand - target): exec=40↑, own=20↑, adapt=-40↓, collab=0, dspd=-20↓
-    // Penalties: exec: gap=0.40,dir=0.5 → min(0.40^1.5*2.5,0.60)*0.5=min(0.6325,0.60)*0.5=0.30, w=0.20 → 0.06
-    //            own:  gap=0.20,dir=0.5 → min(0.20^1.5*2.5,0.60)*0.5=min(0.2236,0.60)*0.5=0.1118, w=0.20 → 0.02236
-    //            adapt:gap=0.40,dir=1.0 → 0.60*1.0=0.60, w=0.20 → 0.12
-    //            collab:gap=0,dir=0.65 → 0, w=0.20 → 0
-    //            dspd: gap=0.20,dir=1.0 → 0.2236, w=0.20 → 0.04472
-    // total = 0.06+0.02236+0.12+0+0.04472 = 0.24708
-    // fitPct = round((1-0.24708)*100) = round(75.292) = 75
-    assert.ok(result.fitPct! >= 73 && result.fitPct! <= 77,
-      `Expected fitPct ~75 (±2), got ${result.fitPct}%`)
+    // Penalties (multiplier=5.0):
+    //   exec: gap=0.40,dir=0.5 → min(0.40^1.5*5.0,0.60)*0.5=min(1.265,0.60)*0.5=0.30, w=0.20 → 0.06
+    //   own:  gap=0.20,dir=0.5 → min(0.20^1.5*5.0,0.60)*0.5=min(0.4472,0.60)*0.5=0.2236, w=0.20 → 0.04472
+    //   adapt:gap=0.40,dir=1.0 → 0.60, w=0.20 → 0.12
+    //   collab:gap=0,dir=0.65 → 0, w=0.20 → 0
+    //   dspd: gap=0.20,dir=1.0 → 0.4472, w=0.20 → 0.08944
+    // total = 0.06+0.04472+0.12+0+0.08944 = 0.31416
+    // fitPct = round((1-0.31416)*100) = round(68.584) = 69
+    assert.ok(result.fitPct! >= 67 && result.fitPct! <= 71,
+      `Expected fitPct ~69 (±2), got ${result.fitPct}%`)
   })
 
   it('Test 17: fitLabel boundary at 55 (new Needs Discussion floor)', () => {

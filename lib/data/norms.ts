@@ -153,14 +153,92 @@ export const ROLE_PRESETS = {
 
 export type RolePresetKey = keyof typeof ROLE_PRESETS
 
-export const COMPOSITE_ROLE_PRESETS: Record<RolePresetKey, { execution: number; ownership: number; adaptability: number; collaboration: number; decisionSpeed: number }> = {
-  superintendent:  { execution: 0.30, ownership: 0.25, decisionSpeed: 0.20, adaptability: 0.15, collaboration: 0.10 },
-  project_manager: { execution: 0.25, collaboration: 0.25, adaptability: 0.20, ownership: 0.20, decisionSpeed: 0.10 },
-  cfo:             { execution: 0.35, ownership: 0.25, decisionSpeed: 0.20, collaboration: 0.10, adaptability: 0.10 },
-  foreman:         { execution: 0.30, ownership: 0.25, decisionSpeed: 0.20, adaptability: 0.15, collaboration: 0.10 },
-  estimator:       { execution: 0.35, ownership: 0.20, decisionSpeed: 0.25, adaptability: 0.10, collaboration: 0.10 },
-  sales_rep:       { collaboration: 0.30, ownership: 0.25, decisionSpeed: 0.20, adaptability: 0.15, execution: 0.10 },
-} as const
+export interface CompositeWeights {
+  execution: number
+  ownership: number
+  adaptability: number
+  collaboration: number
+  decisionSpeed: number
+}
+
+// Equal-weight fallback — used when no role preset matches.
+export const DEFAULT_COMPOSITE_WEIGHTS: CompositeWeights = {
+  execution: 0.20, ownership: 0.20, adaptability: 0.20, collaboration: 0.20, decisionSpeed: 0.20,
+}
+
+// Per-role composite dimension weights (0–1, must sum to 1.0).
+//
+// Weight rationale per role family:
+//   Construction ops (superintendent, foreman, field_supervisor):
+//     Execution + Ownership dominate — site delivery is the primary accountability.
+//     Decision Speed matters; Collaboration less so in individual-contributor field contexts.
+//     Sources: Barrick & Mount (1991) Conscientiousness meta-analysis; Lord et al. (1986)
+//     leadership emergence — Dominance predicts independent accountability.
+//
+//   Estimator: highest Decision Speed weight (bid deadlines, reversible precision trade-offs)
+//     + Execution (accuracy and follow-through on deliverables).
+//
+//   Project Manager / Director / VP: Collaboration rises because cross-functional alignment
+//     is load-bearing. Ownership stays high — PM research (Slevin & Pinto, 1987) shows
+//     accountability is the top predictor of project success.
+//
+//   Executive / Operating Partner / Owner / GM: Ownership is the defining trait —
+//     Charan et al. (2001) "Leadership Pipeline" identifies accountability transfer as the
+//     key transition from manager to executive. Decision Speed reflects that speed of capital
+//     and people decisions scales disproportionately at this level.
+//
+//   CFO / Controller: Execution (accuracy, process follow-through) and Ownership
+//     (financial reporting accountability). Collaboration moderate — CFOs increasingly
+//     cross-functional but still execution-primary.
+//
+//   Sales: Collaboration (client relationship) + Decision Speed (closing) + Ownership
+//     (self-directed pipeline). Witt et al. (2002) meta-analysis: E+A strongest predictors
+//     of sales performance.
+//
+//   HR: Collaboration is the primary delivery vehicle. Adaptability for reading people
+//     and managing ambiguous interpersonal situations.
+export const COMPOSITE_ROLE_PRESETS: Record<string, CompositeWeights> = {
+  // ── Construction operations ──────────────────────────────────────
+  superintendent:    { execution: 0.30, ownership: 0.25, decisionSpeed: 0.20, adaptability: 0.15, collaboration: 0.10 },
+  foreman:           { execution: 0.30, ownership: 0.25, decisionSpeed: 0.20, adaptability: 0.15, collaboration: 0.10 },
+  field_supervisor:  { execution: 0.30, ownership: 0.25, decisionSpeed: 0.20, adaptability: 0.15, collaboration: 0.10 },
+  estimator:         { execution: 0.35, ownership: 0.20, decisionSpeed: 0.25, adaptability: 0.10, collaboration: 0.10 },
+  // ── Project / program management ─────────────────────────────────
+  project_manager:   { execution: 0.25, collaboration: 0.25, adaptability: 0.20, ownership: 0.20, decisionSpeed: 0.10 },
+  program_manager:   { execution: 0.25, collaboration: 0.25, adaptability: 0.20, ownership: 0.20, decisionSpeed: 0.10 },
+  // ── Executive / ownership ─────────────────────────────────────────
+  operating_partner: { ownership: 0.30, execution: 0.30, decisionSpeed: 0.25, adaptability: 0.10, collaboration: 0.05 },
+  owner:             { ownership: 0.35, decisionSpeed: 0.25, execution: 0.25, adaptability: 0.10, collaboration: 0.05 },
+  ceo:               { ownership: 0.30, decisionSpeed: 0.25, execution: 0.25, collaboration: 0.15, adaptability: 0.05 },
+  general_manager:   { ownership: 0.25, execution: 0.25, decisionSpeed: 0.20, collaboration: 0.20, adaptability: 0.10 },
+  vp:                { ownership: 0.25, execution: 0.25, decisionSpeed: 0.20, collaboration: 0.20, adaptability: 0.10 },
+  vice_president:    { ownership: 0.25, execution: 0.25, decisionSpeed: 0.20, collaboration: 0.20, adaptability: 0.10 },
+  director:          { ownership: 0.25, execution: 0.30, decisionSpeed: 0.20, collaboration: 0.15, adaptability: 0.10 },
+  principal:         { ownership: 0.35, decisionSpeed: 0.25, execution: 0.25, adaptability: 0.10, collaboration: 0.05 },
+  // ── Finance ───────────────────────────────────────────────────────
+  cfo:               { execution: 0.35, ownership: 0.25, decisionSpeed: 0.20, collaboration: 0.10, adaptability: 0.10 },
+  controller:        { execution: 0.40, ownership: 0.25, decisionSpeed: 0.15, collaboration: 0.15, adaptability: 0.05 },
+  // ── Sales ─────────────────────────────────────────────────────────
+  sales_rep:         { collaboration: 0.30, ownership: 0.25, decisionSpeed: 0.20, adaptability: 0.15, execution: 0.10 },
+  account_executive: { collaboration: 0.30, ownership: 0.25, decisionSpeed: 0.20, adaptability: 0.15, execution: 0.10 },
+  // ── People / HR ───────────────────────────────────────────────────
+  hr_manager:        { collaboration: 0.35, adaptability: 0.25, ownership: 0.20, execution: 0.15, decisionSpeed: 0.05 },
+  recruiter:         { collaboration: 0.35, adaptability: 0.25, ownership: 0.20, execution: 0.15, decisionSpeed: 0.05 },
+}
+
+// Normalize a raw job title / roleType string to a lookup key.
+// "Operating Partner" → "operating_partner", "VP of Ops" → "vp_of_ops" (falls back to default)
+function normalizeRoleKey(roleType: string): string {
+  return roleType.trim().toLowerCase().replace(/[\s\-/]+/g, '_').replace(/[^a-z0-9_]/g, '')
+}
+
+// Resolve composite weights from a raw roleType string (as stored in the DB).
+// Falls back to equal weights if no preset matches.
+export function resolveCompositeWeights(roleType: string | null | undefined): CompositeWeights {
+  if (!roleType) return DEFAULT_COMPOSITE_WEIGHTS
+  const key = normalizeRoleKey(roleType)
+  return COMPOSITE_ROLE_PRESETS[key] ?? DEFAULT_COMPOSITE_WEIGHTS
+}
 
 export const ROLE_PRESET_LABELS: Record<RolePresetKey, string> = {
   superintendent: "Superintendent",

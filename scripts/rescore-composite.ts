@@ -4,16 +4,7 @@
 
 import { prisma } from '@/lib/prisma'
 import { computeCompositeDimensions, computeFitComposite } from '@/lib/scoring'
-import { COMPOSITE_ROLE_PRESETS } from '@/lib/data/norms'
-import type { RolePresetKey } from '@/lib/data/norms'
-
-const DEFAULT_COMPOSITE_WEIGHTS = {
-  execution: 0.20,
-  ownership: 0.20,
-  adaptability: 0.20,
-  collaboration: 0.20,
-  decisionSpeed: 0.20,
-}
+import { resolveCompositeWeights } from '@/lib/data/norms'
 
 async function main() {
   const results = await prisma.assessmentResult.findMany({
@@ -54,8 +45,7 @@ async function main() {
       formality: target.formality,
     }
 
-    const roleType = record.invite.job.roleType as RolePresetKey
-    const compositeWeights = COMPOSITE_ROLE_PRESETS[roleType] ?? DEFAULT_COMPOSITE_WEIGHTS
+    const compositeWeights = resolveCompositeWeights(record.invite.job.roleType)
 
     const fitResult = computeFitComposite(
       computeCompositeDimensions(candidateScores),

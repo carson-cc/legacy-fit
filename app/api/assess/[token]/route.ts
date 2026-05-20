@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { scoreAssessment, SCORING_VERSION, fitLabel, getModelConfidence, getPercentileLabel } from '@/lib/scoring'
 import { ADJECTIVES } from '@/lib/data/adjectives'
-import { COMPOSITE_ROLE_PRESETS } from '@/lib/data/norms'
+import { resolveCompositeWeights } from '@/lib/data/norms'
 import { REFERENCE_PROFILES } from '@/lib/data/profiles'
 import { sendCandidateProfileEmail, sendRecruiterNotificationEmail } from '@/lib/email'
 import { generateCandidateProfilePdf } from '@/lib/pdf'
@@ -112,13 +112,11 @@ export async function POST(req: NextRequest, { params }: Params) {
         return NextResponse.json({ error: 'Assessment already completed' }, { status: 400 })
       }
 
-      const DEFAULT_COMPOSITE_WEIGHTS = { execution: 0.20, ownership: 0.20, adaptability: 0.20, collaboration: 0.20, decisionSpeed: 0.20 }
-
       // Build job target for fit scoring
       let jobTarget = null
       if (invite.job.target) {
         const t = invite.job.target
-        const compositeWeights = COMPOSITE_ROLE_PRESETS[invite.job.roleType as keyof typeof COMPOSITE_ROLE_PRESETS] ?? DEFAULT_COMPOSITE_WEIGHTS
+        const compositeWeights = resolveCompositeWeights(invite.job.roleType)
         jobTarget = {
           target: { dominance: t.dominance, extraversion: t.extraversion, patience: t.patience, formality: t.formality },
           compositeWeights,

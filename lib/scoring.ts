@@ -3,7 +3,7 @@ import { NORMS, COV_INV, scoreToPercentile } from './data/norms'
 import { REFERENCE_PROFILES, type ReferenceProfile } from './data/profiles'
 import { INTERVIEW_QUESTIONS } from './data/questions'
 
-export const SCORING_VERSION = 'v4.1.0'
+export const SCORING_VERSION = 'v4.2.0'
 
 // ── Composite display dimensions ───────────────────────────────
 // Maps the 4 raw DEPF scores (0–1) onto 5 recruiter-readable dimensions (0–100).
