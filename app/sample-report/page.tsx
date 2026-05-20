@@ -1,387 +1,1012 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import Link from 'next/link'
 
-// ── Brand tokens (homepage system) ───────────────────────────────────────
-const BG      = '#080808'
-const SURFACE = '#0f0f0f'
-const DIV     = 'rgba(255,255,255,0.07)'
-const TEXT    = '#eeece6'
-const SUB     = 'rgba(238,236,230,0.42)'
-const FAINT   = 'rgba(238,236,230,0.18)'
-const BLUE    = '#2563EB'
-const GREEN   = '#3aa868'
-const AMBER   = '#c8a832'
-const RED     = '#e05a3a'
-const FONT    = '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Helvetica Neue", sans-serif'
-const CONDENSED = '"Barlow Condensed", system-ui'
+// ── Brand tokens ──────────────────────────────────────────────────────────────
+const BG        = '#080808'
+const SURFACE   = '#0f0f0f'
+const SURFACE2  = '#0c0c0c'
+const DIV       = 'rgba(255,255,255,0.07)'
+const TEXT      = '#eeece6'
+const SUB       = 'rgba(238,236,230,0.42)'
+const FAINT     = 'rgba(238,236,230,0.18)'
+const BLUE      = '#2563EB'
+const GREEN     = '#3aa868'
+const AMBER     = '#c8a832'
+const RED       = '#e05a3a'
+const FONT      = '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Helvetica Neue", sans-serif'
+const CONDENSED = '"Barlow Condensed", system-ui, sans-serif'
 
-const surf: React.CSSProperties = {
-  background: SURFACE, border: `1px solid ${DIV}`, borderRadius: 12, padding: 32,
+// ── Dimension data ────────────────────────────────────────────────────────────
+type DimKey = 'execution' | 'ownership' | 'adaptability' | 'collaboration' | 'decisionSpeed'
+
+interface Dim {
+  key: DimKey
+  label: string
+  score: number
+  roleTarget: number
+  shortlistAvg: number
+  teamAvg: number
+  delta: number
+  impact: string
 }
 
-// ── Candidate + benchmark data ────────────────────────────────────────────
-const DIMENSIONS = [
-  { key: 'execution',     label: 'Execution',      score: 72, target: 64, delta: +8  },
-  { key: 'ownership',     label: 'Ownership',      score: 67, target: 66, delta: +1  },
-  { key: 'adaptability',  label: 'Adaptability',   score: 65, target: 50, delta: +15 },
-  { key: 'collaboration', label: 'Collaboration',  score: 49, target: 52, delta: -3  },
-  { key: 'decisionSpeed', label: 'Decision Speed', score: 85, target: 64, delta: +21 },
-]
-
-type DimKey = 'execution' | 'ownership' | 'adaptability' | 'collaboration' | 'decisionSpeed'
-type FitScores = Record<DimKey, number>
-
-const CANDIDATE: FitScores = { execution: 72, ownership: 67, adaptability: 65, collaboration: 49, decisionSpeed: 85 }
-const BENCHMARK: FitScores = { execution: 64, ownership: 66, adaptability: 50, collaboration: 52, decisionSpeed: 64 }
-
-// Derive Primary Tension from data — lowest delta vs. highest delta
-const tensionDim  = [...DIMENSIONS].sort((a, b) => a.delta - b.delta)[0]   // Collaboration −3
-const strengthDim = [...DIMENSIONS].sort((a, b) => b.delta - a.delta)[0]   // Decision Speed +21
-
-const TEAM = [
+const DIMENSIONS: Dim[] = [
   {
-    name: 'David Mercer', role: 'Hiring Manager',
-    scores: { execution: 44, ownership: 56, adaptability: 60, collaboration: 72, decisionSpeed: 54 } as FitScores,
-    compat: 74, statusColor: AMBER,
-    note: 'Aligned on pace. Escalation expectations differ — address before Marcus starts.',
+    key: 'execution', label: 'Execution', score: 72, roleTarget: 64, shortlistAvg: 68, teamAvg: 66,
+    delta: +8, impact: 'Above benchmark. Field leadership pattern — moves forward, does not wait.',
   },
   {
-    name: 'Sarah Chen', role: 'Project Manager',
-    scores: { execution: 55, ownership: 60, adaptability: 65, collaboration: 78, decisionSpeed: 48 } as FitScores,
-    compat: 61, statusColor: RED,
-    note: 'Collaboration gap is the friction point. Agree on decision authority before their work overlaps.',
+    key: 'ownership', label: 'Ownership', score: 67, roleTarget: 66, shortlistAvg: 64, teamAvg: 61,
+    delta: +1, impact: 'Meets the bar but does not exceed it. Monitor in high-accountability contexts.',
   },
   {
-    name: 'James Okafor', role: 'Site Supervisor',
-    scores: { execution: 70, ownership: 73, adaptability: 55, collaboration: 58, decisionSpeed: 71 } as FitScores,
-    compat: 88, statusColor: GREEN,
-    note: 'Strongest alignment on this team. Shared execution and ownership profile.',
+    key: 'adaptability', label: 'Adaptability', score: 65, roleTarget: 50, shortlistAvg: 58, teamAvg: 55,
+    delta: +15, impact: 'Well above benchmark. Handles scope shifts without losing execution edge.',
+  },
+  {
+    key: 'collaboration', label: 'Collaboration', score: 49, roleTarget: 52, shortlistAvg: 60, teamAvg: 63,
+    delta: -3, impact: 'Only dimension below benchmark. Within tolerance. Probe in cross-functional contexts. This is the tension.',
+  },
+  {
+    key: 'decisionSpeed', label: 'Decision Speed', score: 85, roleTarget: 64, shortlistAvg: 70, teamAvg: 58,
+    delta: +21, impact: 'Largest delta. Moves faster than most environments expect. Primary source of Operating Partner friction.',
   },
 ]
 
+type CompMode = 'role' | 'shortlist' | 'team'
+
+const COMP_LABELS: Record<CompMode, string> = {
+  role:      'vs Role',
+  shortlist: 'vs Shortlist',
+  team:      'vs Team',
+}
+
+function getBenchmarkVals(mode: CompMode): number[] {
+  return DIMENSIONS.map(d => {
+    if (mode === 'role')      return d.roleTarget
+    if (mode === 'shortlist') return d.shortlistAvg
+    return d.teamAvg
+  })
+}
+
+function getLargestDelta(mode: CompMode): { label: string; delta: number; sign: string } {
+  const vals = getBenchmarkVals(mode)
+  let maxAbs = -1, idx = 0
+  vals.forEach((v, i) => {
+    const diff = DIMENSIONS[i].score - v
+    if (Math.abs(diff) > maxAbs) { maxAbs = Math.abs(diff); idx = i }
+  })
+  const diff = DIMENSIONS[idx].score - vals[idx]
+  return { label: DIMENSIONS[idx].label, delta: diff, sign: diff >= 0 ? '+' : '' }
+}
+
+// ── Team Dynamics ─────────────────────────────────────────────────────────────
+const TEAM_DYNAMICS = [
+  {
+    role: 'CEO', subtitle: 'Direct report',
+    dots: 5, dotColor: GREEN,
+    alignedDims: ['execution', 'ownership'] as DimKey[],
+    alignment: 'Strong alignment',
+    implication: 'Will experience Marcus as highly effective. Speed and ownership match CEO expectations directly.',
+  },
+  {
+    role: 'Operating Partner', subtitle: null,
+    dots: 2, dotColor: AMBER,
+    alignedDims: ['decisionSpeed', 'collaboration'] as DimKey[],
+    alignment: 'Misaligned on pace',
+    implication: 'Friction on decision timing is structural, not interpersonal. Requires explicit alignment before they overlap.',
+  },
+  {
+    role: 'Board Member', subtitle: null,
+    dots: 3, dotColor: 'rgba(238,236,230,0.45)',
+    alignedDims: ['collaboration'] as DimKey[],
+    alignment: 'Moderate alignment',
+    implication: 'Low risk. May expect more structure on high-stakes calls. Not a friction point.',
+  },
+]
+
+// ── Interview probes ──────────────────────────────────────────────────────────
 const INTERVIEW_PROBES = [
-  'Tell me about a time you had to take charge of a situation before anyone asked you to. What made you step forward?',
-  'Walk me through a high-stakes decision you made with incomplete information. What was the pressure, and how did you move?',
-  'Describe a time you drove a stalled project forward when the team had lost momentum. What did you do first?',
+  {
+    question: 'Tell me about a time you had to take charge before anyone asked you to. What made you step forward?',
+    tests: 'Ownership',
+    dim: 'ownership' as DimKey,
+    risk: 'Low proactive accountability',
+    critical: false,
+    rationale: 'Ownership sits just +1 above benchmark. Confirm the pattern is genuine, not situational.',
+  },
+  {
+    question: 'Walk me through a high-stakes decision you made with incomplete information. What was the pressure and how did you move?',
+    tests: 'Decision Speed',
+    dim: 'decisionSpeed' as DimKey,
+    risk: 'Impulsive decisions under pressure',
+    critical: true,
+    rationale: 'Decision Speed is +21 — the largest delta. Confirm it&apos;s judgment-driven, not reckless.',
+  },
+  {
+    question: "Describe a time you drove a stalled project forward where cross-team buy-in was required — specifically what you did when people weren't moving.",
+    tests: 'Collaboration',
+    dim: 'collaboration' as DimKey,
+    risk: 'Independent execution that bypasses team',
+    critical: true,
+    rationale: 'Collaboration is the only dimension below benchmark. This question surfaces whether that gap is structural or situational.',
+  },
 ]
 
-// ── Label ─────────────────────────────────────────────────────────────────
+// ── Pentagon geometry ─────────────────────────────────────────────────────────
+const RADAR_COUNT = 5
+const radarAngle = (i: number) => -Math.PI / 2 + (Math.PI * 2 * i) / RADAR_COUNT
+const CAND_VALS = DIMENSIONS.map(d => d.score)
+
+function polyPath(vals: number[], cx: number, cy: number, r: number, prog = 1): string {
+  return vals.map((v, i) => {
+    const a = radarAngle(i)
+    const rv = r * (v / 100) * prog
+    return `${i === 0 ? 'M' : 'L'} ${cx + Math.cos(a) * rv} ${cy + Math.sin(a) * rv}`
+  }).join(' ') + ' Z'
+}
+
+function ringPath(f: number, cx: number, cy: number, r: number): string {
+  return DIMENSIONS.map((_, i) => {
+    const a = radarAngle(i)
+    return `${i === 0 ? 'M' : 'L'} ${cx + Math.cos(a) * r * f} ${cy + Math.sin(a) * r * f}`
+  }).join(' ') + ' Z'
+}
+
+// ── Utility ───────────────────────────────────────────────────────────────────
+function easeOutCubic(t: number) { return 1 - Math.pow(1 - t, 3) }
+
+// ── Sub-components ────────────────────────────────────────────────────────────
 function Label({ text }: { text: string }) {
   return (
     <p style={{
-      fontSize: 11, lineHeight: '16px', letterSpacing: '0.08em',
-      textTransform: 'uppercase', color: FAINT, fontWeight: 600, margin: 0,
+      fontSize: 10, lineHeight: '16px', letterSpacing: '0.1em',
+      textTransform: 'uppercase', color: FAINT, fontWeight: 700, margin: 0,
     }}>{text}</p>
   )
 }
 
-// ── Section divider ───────────────────────────────────────────────────────
-function LayerDivider() {
-  return <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '48px 0' }} />
+function ActTag({ n, title }: { n: number; title: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
+      <span style={{
+        fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.12)', letterSpacing: '0.18em',
+        textTransform: 'uppercase', fontFamily: CONDENSED,
+      }}>Act {n}</span>
+      <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.05)' }} />
+      <span style={{
+        fontSize: 10, color: 'rgba(255,255,255,0.14)', letterSpacing: '0.12em',
+        textTransform: 'uppercase',
+      }}>{title}</span>
+    </div>
+  )
 }
 
-// ── Animated score ring ───────────────────────────────────────────────────
-function ScoreRing({ score, color }: { score: number; color: string }) {
-  const [displayed, setDisplayed] = useState(0)
-  const size = 120, r = size / 2 - 6, circ = 2 * Math.PI * r
+function ActBreak() {
+  return (
+    <div style={{ position: 'relative', margin: '56px 0' }}>
+      <div style={{ height: 1, background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.07) 30%, rgba(255,255,255,0.07) 70%, transparent)' }} />
+    </div>
+  )
+}
+
+function DotRow({ filled, total = 5, color }: { filled: number; total?: number; color: string }) {
+  return (
+    <span style={{ display: 'inline-flex', gap: 4, alignItems: 'center' }}>
+      {Array.from({ length: total }, (_, i) => (
+        <span key={i} style={{
+          width: 7, height: 7, borderRadius: '50%', display: 'inline-block', flexShrink: 0,
+          background: i < filled ? color : 'transparent',
+          border: `1.5px solid ${i < filled ? color : 'rgba(255,255,255,0.16)'}`,
+          opacity: i < filled ? 0.85 : 1,
+        }} />
+      ))}
+    </span>
+  )
+}
+
+// ── Score ring ────────────────────────────────────────────────────────────────
+function ScoreRing({ score, color, animate, size = 140 }: { score: number; color: string; animate: boolean; size?: number }) {
+  const [displayed, setDisplayed] = useState(animate ? 0 : score)
+  const animRef = useRef(false)
+
   useEffect(() => {
-    const t0 = performance.now(), dur = 700
+    if (!animate || animRef.current) return
+    animRef.current = true
+    const t0 = performance.now(), dur = 1100
     let raf = 0
     const tick = (now: number) => {
       const p = Math.min((now - t0) / dur, 1)
-      setDisplayed(Math.round((1 - Math.pow(1 - p, 3)) * score))
+      setDisplayed(Math.round(easeOutCubic(p) * score))
       if (p < 1) raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [score])
+  }, [animate, score])
+
+  const r = size / 2 - 8, circ = 2 * Math.PI * r
+  const numSize = Math.round(size * 0.32)
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={5}/>
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color + '26'} strokeWidth={12}/>
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={5}
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-label={`Fit score ${score}`}>
+      {/* Subtle glow ring */}
+      <circle cx={size/2} cy={size/2} r={r + 4} fill="none" stroke={color + '08'} strokeWidth={14}/>
+      {/* Track */}
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth={5}/>
+      {/* Fill glow */}
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color + '18'} strokeWidth={10}/>
+      {/* Arc */}
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={3.5}
         strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={circ * (1 - displayed / 100)}
         transform={`rotate(-90 ${size/2} ${size/2})`}
-        style={{ transition: 'stroke-dashoffset 60ms ease-out' }}
+        style={{ transition: 'stroke-dashoffset 55ms linear' }}
       />
+      {/* Score number */}
       <text x={size/2} y={size/2 + 2} textAnchor="middle" dominantBaseline="middle"
-        fill={TEXT} fontSize={38} fontWeight={900} fontFamily={CONDENSED}>{displayed}</text>
+        fill={TEXT} fontSize={numSize} fontWeight={900} fontFamily={CONDENSED}
+        style={{ fontVariantNumeric: 'tabular-nums' }}>{displayed}</text>
     </svg>
   )
 }
 
-// ── Pentagon radar (with scroll animation) ────────────────────────────────
-const RADAR_DIMS: { key: DimKey; label: string }[] = [
-  { key: 'execution',     label: 'Execution' },
-  { key: 'ownership',     label: 'Ownership' },
-  { key: 'adaptability',  label: 'Adaptability' },
-  { key: 'collaboration', label: 'Collaboration' },
-  { key: 'decisionSpeed', label: 'Decision Speed' },
-]
-
+// ── Pentagon radar ─────────────────────────────────────────────────────────────
 function PentagonRadar({
-  candidate, benchmark, overlays = [], animated = false, size: svgSize = 300,
+  compMode,
+  hoveredDim,
+  onHoverDim,
+  animate,
+  pulseDim,
 }: {
-  candidate: FitScores
-  benchmark: FitScores | null
-  overlays?: { scores: FitScores; color: string; dash?: string }[]
-  animated?: boolean
-  size?: number
+  compMode: CompMode
+  hoveredDim: DimKey | null
+  onHoverDim: (k: DimKey | null) => void
+  animate: boolean
+  pulseDim: DimKey | null
 }) {
-  const [progress, setProgress] = useState(animated ? 0 : 1)
-  const svgRef = useRef<SVGSVGElement>(null)
+  const [progress, setProgress]       = useState(animate ? 0 : 1)
+  const [benchVisible, setBenchVisible] = useState(!animate)
+  const [prevBenchVals, setPrevBenchVals] = useState(getBenchmarkVals(compMode))
+  const [currBenchVals, setCurrBenchVals] = useState(getBenchmarkVals(compMode))
+  const [morphProg, setMorphProg]     = useState(1)
+  const morphRef   = useRef<number | null>(null)
+  const svgRef     = useRef<SVGSVGElement>(null)
+  const animDoneRef = useRef(false)
 
+  // Entrance
   useEffect(() => {
-    if (!animated) return
-    const el = svgRef.current
-    if (!el) return
+    if (!animate || animDoneRef.current) return
+    const el = svgRef.current; if (!el) return
     const obs = new IntersectionObserver(([entry]) => {
       if (!entry.isIntersecting) return
+      animDoneRef.current = true
       const t0 = performance.now(), dur = 800
       const tick = (now: number) => {
         const p = Math.min((now - t0) / dur, 1)
-        setProgress(1 - Math.pow(1 - p, 3))
+        setProgress(easeOutCubic(p))
         if (p < 1) requestAnimationFrame(tick)
+        else setBenchVisible(true)
       }
       requestAnimationFrame(tick)
       obs.disconnect()
     }, { threshold: 0.3 })
     obs.observe(el)
     return () => obs.disconnect()
-  }, [animated])
+  }, [animate])
 
-  const center = svgSize / 2, radius = svgSize * 0.33
-  const rings = [0.25, 0.5, 0.75, 1]
+  // Morph on mode change
+  useEffect(() => {
+    const next = getBenchmarkVals(compMode)
+    setPrevBenchVals(currBenchVals)
+    setCurrBenchVals(next)
+    setMorphProg(0)
+    if (morphRef.current) cancelAnimationFrame(morphRef.current)
+    const t0 = performance.now(), dur = 320
+    const tick = (now: number) => {
+      const p = Math.min((now - t0) / dur, 1)
+      setMorphProg(easeOutCubic(p))
+      if (p < 1) morphRef.current = requestAnimationFrame(tick)
+    }
+    morphRef.current = requestAnimationFrame(tick)
+    return () => { if (morphRef.current) cancelAnimationFrame(morphRef.current) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [compMode])
 
-  const pt = (val: number, i: number, prog = progress) => {
-    const a = -Math.PI / 2 + (Math.PI * 2 * i) / RADAR_DIMS.length
-    const rv = radius * (val / 100) * prog
-    return { x: center + Math.cos(a) * rv, y: center + Math.sin(a) * rv }
-  }
+  const cx = 200, cy = 158, rad = 110
+
+  const lerpVals = prevBenchVals.map((v, i) => v + (currBenchVals[i] - v) * morphProg)
+
   const labelPt = (i: number) => {
-    const a = -Math.PI / 2 + (Math.PI * 2 * i) / RADAR_DIMS.length
-    const rv = radius * 1.28
-    return { x: center + Math.cos(a) * rv, y: center + Math.sin(a) * rv }
+    const a = radarAngle(i)
+    const rv = rad * 1.22
+    return { x: cx + Math.cos(a) * rv, y: cy + Math.sin(a) * rv }
   }
-  const poly = (s: FitScores, prog = progress) =>
-    RADAR_DIMS.map((d, i) => pt(s[d.key], i, prog)).map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ') + ' Z'
-  const ringPts = (f: number) =>
-    RADAR_DIMS.map((_, i) => {
-      const a = -Math.PI / 2 + (Math.PI * 2 * i) / RADAR_DIMS.length
-      return `${center + Math.cos(a) * radius * f},${center + Math.sin(a) * radius * f}`
-    }).join(' ')
+
+  const vertexPt = (i: number, score: number, prog: number) => {
+    const a = radarAngle(i)
+    const rv = rad * (score / 100) * prog
+    return { x: cx + Math.cos(a) * rv, y: cy + Math.sin(a) * rv }
+  }
+
+  const BENCHMARK_COLORS: Record<CompMode, string> = {
+    role:      'rgba(255,255,255,0.28)',
+    shortlist: 'rgba(255,255,255,0.20)',
+    team:      'rgba(255,255,255,0.16)',
+  }
+  const benchStroke = BENCHMARK_COLORS[compMode]
 
   return (
-    <svg ref={svgRef} width="100%" style={{ maxWidth: svgSize }} viewBox={`0 0 ${svgSize} ${svgSize}`} aria-label="Fit model radar">
-      <defs>
-        <filter id="radar-glow">
-          <feGaussianBlur stdDeviation="3" result="blur"/>
-          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-        </filter>
-      </defs>
-      {rings.map(f => <polygon key={f} points={ringPts(f)} fill="none" stroke={DIV} strokeWidth="1"/>)}
-      {RADAR_DIMS.map((d, i) => {
-        const end = { x: center + Math.cos(-Math.PI / 2 + (Math.PI * 2 * i) / RADAR_DIMS.length) * radius, y: center + Math.sin(-Math.PI / 2 + (Math.PI * 2 * i) / RADAR_DIMS.length) * radius }
-        const lp = labelPt(i)
+    <svg
+      ref={svgRef}
+      width="100%"
+      overflow="visible"
+      style={{ maxWidth: 380, display: 'block', margin: '0 auto' }}
+      viewBox="0 0 380 316"
+      aria-label="Fit radar chart"
+    >
+      {/* Grid rings */}
+      {[0.25, 0.5, 0.75, 1].map(f => (
+        <path key={f} d={ringPath(f, cx, cy, rad)} fill="none"
+          stroke={f === 1 ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.035)'}
+          strokeWidth={f === 1 ? 1 : 0.75}
+        />
+      ))}
+      {/* Axis lines */}
+      {DIMENSIONS.map((d, i) => {
+        const a = radarAngle(i)
+        const ex = cx + Math.cos(a) * rad, ey = cy + Math.sin(a) * rad
+        const isAxisHov = hoveredDim === d.key
         return (
-          <g key={d.key}>
-            <line x1={center} y1={center} x2={end.x} y2={end.y} stroke={DIV} strokeWidth="1"/>
-            <text x={lp.x} y={lp.y} fill={SUB} fontSize="11" fontWeight="500" fontFamily={FONT}
-              textAnchor={lp.x < center - 15 ? 'end' : lp.x > center + 15 ? 'start' : 'middle'}
-              dominantBaseline={lp.y < center - 15 ? 'alphabetic' : lp.y > center + 15 ? 'hanging' : 'middle'}>
+          <line key={d.key + '-axis'} x1={cx} y1={cy} x2={ex} y2={ey}
+            stroke={isAxisHov ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.05)'}
+            strokeWidth={isAxisHov ? '1.5' : '0.75'}
+            style={{ transition: 'stroke 150ms ease, stroke-width 150ms ease' }}
+          />
+        )
+      })}
+
+      {/* Benchmark polygon */}
+      {benchVisible && (
+        <path d={polyPath(lerpVals, cx, cy, rad, 1)}
+          fill="rgba(255,255,255,0.015)"
+          stroke={benchStroke} strokeWidth="1.5" strokeDasharray="5 4"
+          style={{ transition: 'stroke 300ms ease' }}
+        />
+      )}
+
+      {/* Candidate polygon — filled */}
+      <path d={polyPath(CAND_VALS, cx, cy, rad, progress)}
+        fill={`rgba(37,99,235,${hoveredDim ? 0.07 : 0.11})`}
+        stroke={BLUE} strokeWidth="2"
+        style={{ transition: 'fill 200ms ease' }}
+      />
+
+      {/* Vertex dots + labels — rendered on top */}
+      {DIMENSIONS.map((d, i) => {
+        const lp = labelPt(i)
+        const vp = vertexPt(i, d.score, progress)
+        const isHov   = hoveredDim === d.key
+        const anyHov  = hoveredDim !== null
+        const isPulse = pulseDim === d.key
+        const score   = d.score
+        const benchVal = lerpVals[i]
+        const delta = score - benchVal
+        const deltaSign = delta >= 0 ? '+' : ''
+        const deltaColor = delta < 0 ? AMBER : delta >= 15 ? GREEN : 'rgba(58,168,104,0.85)'
+
+        return (
+          <g key={d.key} style={{ cursor: 'default' }}
+            onMouseEnter={() => onHoverDim(d.key)}
+            onMouseLeave={() => onHoverDim(null)}>
+            {/* Hit area */}
+            <circle cx={vp.x} cy={vp.y} r={18} fill="transparent" />
+            {/* Glow ring */}
+            {(isHov || isPulse) && (
+              <circle cx={vp.x} cy={vp.y} r={isPulse ? 12 : 10}
+                fill={isPulse ? AMBER + '20' : BLUE + '20'}
+                style={{ transition: 'r 200ms ease' }}
+              />
+            )}
+            {/* Vertex dot */}
+            <circle cx={vp.x} cy={vp.y}
+              r={isPulse ? 7 : isHov ? 6 : 4}
+              fill={isPulse ? AMBER : isHov ? TEXT : BLUE}
+              opacity={anyHov && !isHov && !isPulse ? 0.25 : 1}
+              style={{ transition: 'r 180ms ease, opacity 180ms ease, fill 180ms ease' }}
+            />
+            {/* Score + delta badge on hover */}
+            {isHov && (
+              <>
+                <text x={vp.x} y={vp.y - 16} textAnchor="middle" dominantBaseline="middle"
+                  fill={TEXT} fontSize="12" fontWeight="800" fontFamily={CONDENSED}
+                  opacity={0.95}
+                >{score}</text>
+                <text x={vp.x} y={vp.y - 29} textAnchor="middle" dominantBaseline="middle"
+                  fill={deltaColor} fontSize="10" fontWeight="700" fontFamily={CONDENSED}
+                  opacity={0.9}
+                >{deltaSign}{Math.round(delta)}</text>
+              </>
+            )}
+            {/* Dim label */}
+            <text x={lp.x} y={lp.y}
+              fill={isHov ? TEXT : anyHov ? 'rgba(238,236,230,0.18)' : 'rgba(238,236,230,0.5)'}
+              fontSize={isHov ? '12.5' : '11.5'} fontWeight={isHov ? '700' : '400'} fontFamily={FONT}
+              textAnchor={lp.x < cx - 8 ? 'end' : lp.x > cx + 8 ? 'start' : 'middle'}
+              dominantBaseline={lp.y < cy - 8 ? 'auto' : lp.y > cy + 8 ? 'hanging' : 'middle'}
+              style={{ transition: 'fill 150ms ease, font-size 150ms ease' }}>
               {d.label}
             </text>
           </g>
         )
       })}
-      {benchmark && (
-        <path d={poly(benchmark, 1)} fill="rgba(255,255,255,0.02)"
-          stroke="rgba(255,255,255,0.22)" strokeWidth="1.5" strokeDasharray="5 4"/>
-      )}
-      {overlays.map((ov, idx) => (
-        <path key={idx} d={poly(ov.scores, 1)} fill="none"
-          stroke={ov.color} strokeWidth="1.5" strokeDasharray={ov.dash ?? '4 3'} opacity={0.5}/>
-      ))}
-      <path d={poly(candidate)} fill="rgba(37,99,235,0.12)" stroke={BLUE} strokeWidth="2" filter="url(#radar-glow)"/>
-      {RADAR_DIMS.map((d, i) => {
-        const p = pt(candidate[d.key], i)
-        return <circle key={d.key} cx={p.x} cy={p.y} r="3.5" fill={BLUE}/>
-      })}
     </svg>
   )
 }
 
-// ── Dimension bar ─────────────────────────────────────────────────────────
-function DimBar({ label, score, target, delta, isTension }: {
-  label: string; score: number; target: number; delta: number; isTension: boolean
+// ── Dimension bar ─────────────────────────────────────────────────────────────
+function DimBar({
+  dim, compMode, isHovered, isPulse, anyHovered, onHover,
+}: {
+  dim: Dim
+  compMode: CompMode
+  isHovered: boolean
+  isPulse: boolean
+  anyHovered: boolean
+  onHover: (k: DimKey | null) => void
 }) {
-  const dc = isTension ? AMBER : delta > 0 ? GREEN : delta < 0 ? RED : SUB
+  const benchVal = compMode === 'role' ? dim.roleTarget : compMode === 'shortlist' ? dim.shortlistAvg : dim.teamAvg
+  const delta = dim.score - benchVal
+  const isTension = delta < 0
+  const isStrong  = delta >= 15
+  const dc = isPulse ? AMBER : isTension ? AMBER : isStrong ? GREEN : 'rgba(58,168,104,0.65)'
+  const dimmed = anyHovered && !isHovered && !isPulse
+
   return (
-    <div style={{ marginBottom: 18 }}>
+    <div
+      onMouseEnter={() => onHover(dim.key)}
+      onMouseLeave={() => onHover(null)}
+      style={{
+        padding: '8px 10px', margin: '0 -10px',
+        borderRadius: 7,
+        background: isHovered ? 'rgba(255,255,255,0.03)' : 'transparent',
+        borderLeft: isHovered ? `2px solid ${isTension ? AMBER : BLUE}40` : '2px solid transparent',
+        opacity: dimmed ? 0.3 : 1,
+        transition: 'background 150ms ease, opacity 150ms ease, border-color 150ms ease',
+        cursor: 'default',
+      }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 7 }}>
-        <span style={{ fontSize: isTension ? 15 : 14, fontWeight: isTension ? 700 : 600, color: TEXT, letterSpacing: isTension ? '-0.01em' : 'normal' }}>
-          {label}
+        <span style={{
+          fontSize: isTension || isPulse ? 13.5 : 13,
+          fontWeight: isTension || isPulse ? 700 : isHovered ? 600 : 500,
+          color: isTension ? AMBER : isPulse ? AMBER : isHovered ? TEXT : 'rgba(238,236,230,0.6)',
+          letterSpacing: '-0.01em',
+          transition: 'color 150ms ease',
+        }}>
+          {dim.label}
         </span>
         <div style={{ display: 'flex', gap: 10, alignItems: 'baseline' }}>
-          <span style={{ fontSize: 18, fontWeight: 700, color: TEXT }}>{score}</span>
-          <span style={{ fontSize: 13, fontWeight: 700, color: dc, minWidth: 34 }}>
+          <span style={{ fontSize: 15, fontWeight: 700, color: TEXT, letterSpacing: '-0.02em', fontFamily: CONDENSED }}>{dim.score}</span>
+          <span style={{
+            fontSize: 11, fontWeight: 700, color: dc, minWidth: 30,
+            fontFamily: CONDENSED, letterSpacing: '0.01em',
+            transition: 'color 200ms ease',
+          }}>
             {delta > 0 ? '+' : ''}{delta}
           </span>
         </div>
       </div>
-      <div style={{ position: 'relative', height: 4, background: 'rgba(255,255,255,0.07)', borderRadius: 2 }}>
+      <div style={{ position: 'relative', height: 3, background: 'rgba(255,255,255,0.07)', borderRadius: 2 }}>
         <div style={{
           position: 'absolute', left: 0, top: 0, height: '100%',
-          width: `${score}%`, borderRadius: 2,
-          background: isTension ? AMBER : BLUE, opacity: 0.75,
+          width: `${dim.score}%`, borderRadius: 2,
+          background: isTension ? `linear-gradient(90deg, ${AMBER}90, ${AMBER})` : `linear-gradient(90deg, ${BLUE}90, ${BLUE})`,
+          transition: 'width 300ms ease',
         }}/>
+        {/* Benchmark tick */}
         <div style={{
-          position: 'absolute', top: -4, width: 2, height: 12,
-          left: `${target}%`, background: 'rgba(255,255,255,0.35)', borderRadius: 1,
+          position: 'absolute', top: -4, width: 1.5, height: 11,
+          left: `${benchVal}%`, background: 'rgba(255,255,255,0.4)', borderRadius: 1,
+          transition: 'left 320ms ease',
         }}/>
       </div>
-      <p style={{ margin: '4px 0 0', fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>Benchmark {target}</p>
+      {isHovered && (
+        <p style={{
+          margin: '9px 0 2px', fontSize: 12, color: 'rgba(238,236,230,0.5)', lineHeight: 1.6,
+          animation: 'fadeSlideUp 160ms ease forwards',
+        }}>{dim.impact}</p>
+      )}
     </div>
   )
 }
 
-// ── Page ──────────────────────────────────────────────────────────────────
+// ── Page component ────────────────────────────────────────────────────────────
 export default function SampleReportPage() {
+  const [phase,          setPhase]          = useState(0)
+  const [compMode,       setCompMode]       = useState<CompMode>('role')
+  const [hoveredDim,     setHoveredDim]     = useState<DimKey | null>(null)
+  const [hoveredTeam,    setHoveredTeam]    = useState<string | null>(null)
+  const [hoveredQ,       setHoveredQ]       = useState<number | null>(null)
+  const [pulseDim,       setPulseDim]       = useState<DimKey | null>(null)
+  const [scoreAnimate,   setScoreAnimate]   = useState(false)
+  const [stickyVisible,  setStickyVisible]  = useState(false)
+  const [activeAct,      setActiveAct]      = useState(0)
+  const hasEntered   = useRef(false)
+  const heroRef      = useRef<HTMLElement>(null)
+  const actRefs      = useRef<(HTMLElement | null)[]>([null, null, null, null, null])
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  // Entrance sequence
+  useEffect(() => {
+    if (hasEntered.current) return
+    hasEntered.current = true
+    const key = 'veltro_sr_entered'
+    if (sessionStorage.getItem(key)) { setPhase(4); return }
+    sessionStorage.setItem(key, '1')
+    setTimeout(() => setPhase(1), 60)
+    setTimeout(() => setPhase(2), 320)
+    setTimeout(() => setPhase(3), 700)
+    setTimeout(() => { setPhase(4); setScoreAnimate(true) }, 1350)
+    setTimeout(() => setPulseDim('decisionSpeed'), 1700)
+    setTimeout(() => setPulseDim(null), 2400)
+  }, [])
+
+  // Sticky header
+  useEffect(() => {
+    const el = heroRef.current; if (!el) return
+    const check = () => setStickyVisible(el.getBoundingClientRect().bottom < 80)
+    check()
+    window.addEventListener('scroll', check, { passive: true })
+    return () => window.removeEventListener('scroll', check)
+  }, [])
+
+  // Active act tracking
+  useEffect(() => {
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const idx = actRefs.current.indexOf(entry.target as HTMLElement)
+          if (idx >= 0) setActiveAct(idx)
+        }
+      })
+    }, { threshold: 0.3 })
+    actRefs.current.forEach(el => el && obs.observe(el))
+    return () => obs.disconnect()
+  }, [])
+
+  // Effective hovered dim (bars > team > question)
+  const effectiveDim: DimKey | null = (() => {
+    if (hoveredDim) return hoveredDim
+    if (hoveredTeam) {
+      const t = TEAM_DYNAMICS.find(t => t.role === hoveredTeam)
+      return t ? t.alignedDims[0] : null
+    }
+    if (hoveredQ !== null) {
+      return INTERVIEW_PROBES[hoveredQ]?.dim ?? null
+    }
+    return null
+  })()
+
+  const anyHov = effectiveDim !== null
+  const largestDelta = getLargestDelta(compMode)
+
+  const setActRef = useCallback((el: HTMLElement | null, idx: number) => {
+    actRefs.current[idx] = el
+  }, [])
+
+  // Phase helpers
+  const p1: React.CSSProperties = {
+    opacity: phase >= 1 ? 1 : 0,
+    transform: phase >= 1 ? 'none' : 'translateY(10px)',
+    transition: 'opacity 550ms ease, transform 550ms ease',
+  }
+  const p2 = (delay = 0): React.CSSProperties => ({
+    opacity: phase >= 2 ? 1 : 0,
+    transform: phase >= 2 ? 'none' : 'translateY(7px)',
+    transition: `opacity 450ms ease ${delay}ms, transform 450ms ease ${delay}ms`,
+  })
+  const p3 = (delay = 0): React.CSSProperties => ({
+    opacity: phase >= 3 ? 1 : 0,
+    transform: phase >= 3 ? 'none' : 'translateY(5px)',
+    transition: `opacity 400ms ease ${delay}ms, transform 400ms ease ${delay}ms`,
+  })
+
   return (
     <>
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&display=swap');
+        @keyframes fadeSlideUp {
+          from { opacity: 0; transform: translateY(5px) }
+          to   { opacity: 1; transform: translateY(0) }
+        }
+        @keyframes stickyIn {
+          from { opacity: 0; transform: translateY(-10px) }
+          to   { opacity: 1; transform: translateY(0) }
+        }
+        @keyframes pulseRing {
+          0%   { opacity: 0.6; transform: scale(1) }
+          100% { opacity: 0; transform: scale(2.2) }
+        }
+        .sr-root-enter {
+          opacity: 0; transform: scale(0.988) translateY(10px);
+          transition: opacity 600ms ease, transform 600ms ease;
+        }
+        .sr-root-enter.sr-phase1 { opacity: 1; transform: none; }
         @media print {
-          body { background: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          .report-nav, .sr-demo-banner, .sr-cta { display: none !important; }
-          .report-root { background: #fff !important; color: #111 !important; }
+          body { background: #fff !important; -webkit-print-color-adjust: exact; }
+          .sr-banner, .sr-sticky { display: none !important; }
         }
         @media (max-width: 900px) {
           .rpt-hero-grid  { grid-template-columns: 1fr !important; }
           .rpt-two-col    { grid-template-columns: 1fr !important; }
-          .rpt-three-col  { grid-template-columns: 1fr !important; }
           .rpt-proof-grid { grid-template-columns: 1fr !important; }
         }
         @media (max-width: 767px) {
-          .rpt-nav-subtitle { display: none !important; }
+          .rpt-proof-grid > div:last-child { border-left: none !important; padding-left: 0 !important; border-top: 1px solid rgba(255,255,255,0.07); padding-top: 28px !important; }
+          .rpt-hero-grid > div:last-child  { border-left: none !important; padding-left: 0 !important; border-top: 1px solid rgba(255,255,255,0.07); padding-top: 28px !important; }
         }
+        .team-row { border-radius: 8px; transition: background 150ms ease; }
+        .team-row:hover { background: rgba(255,255,255,0.025) !important; }
+        .q-row { border-radius: 8px; transition: background 150ms ease; }
+        .q-row:hover { background: rgba(255,255,255,0.02) !important; }
+        .comp-btn { border: none; background: none; cursor: pointer; }
+        .act-section { }
       `}</style>
 
-      {/* ── Demo banner ── */}
-      <div className="sr-demo-banner" style={{
-        position: 'sticky', top: 0, zIndex: 50,
-        background: 'rgba(37,99,235,0.12)', borderBottom: '1px solid rgba(37,99,235,0.25)',
-        padding: '9px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        flexWrap: 'wrap', gap: 16, backdropFilter: 'blur(12px)',
+      {/* ── Document identity rail ────────────────────────────────────────────── */}
+      <div style={{
+        height: 38, padding: '0 28px', background: BG,
+        borderBottom: '1px solid rgba(255,255,255,0.07)',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        position: 'sticky', top: 0, zIndex: 60,
       }}>
-        <p style={{ margin: 0, fontSize: 12, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 700 }}>
+            Veltro
+          </span>
+          <span style={{ width: 1, height: 13, background: 'rgba(255,255,255,0.12)' }} />
+          <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.28)', letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 500 }}>
+            Candidate Recommendation Report
+          </span>
+        </div>
+        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+          Prepared for client · Mar 14, 2026
+        </span>
+      </div>
+
+      {/* ── Demo banner ──────────────────────────────────────────────────────── */}
+      <div className="sr-banner" style={{
+        position: 'sticky', top: 36, zIndex: 55,
+        background: 'rgba(37,99,235,0.08)', borderBottom: '1px solid rgba(37,99,235,0.15)',
+        padding: '9px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        flexWrap: 'wrap', gap: 12, backdropFilter: 'blur(12px)',
+      }}>
+        <p style={{ margin: 0, fontSize: 12, color: 'rgba(255,255,255,0.45)', lineHeight: 1.5 }}>
           <span style={{ fontWeight: 700, color: BLUE }}>Sample report</span>
-          {' — '}this is what your client sees. Every candidate you assess gets one.
+          {' — '}this is what your client receives for every candidate assessed.
         </p>
         <a href="mailto:team@veltro.ai?subject=Veltro%20Walkthrough%20Request" style={{
           flexShrink: 0, height: 30, padding: '0 16px', borderRadius: 8,
           background: BLUE, color: '#FFF', fontSize: 12, fontWeight: 600,
-          display: 'inline-flex', alignItems: 'center', textDecoration: 'none', whiteSpace: 'nowrap',
+          display: 'inline-flex', alignItems: 'center', textDecoration: 'none',
+          letterSpacing: '-0.01em',
         }}>Request a walkthrough</a>
       </div>
 
-      {/* ── Sticky report nav ── */}
-      <nav className="report-nav" style={{
-        position: 'sticky', top: 42, zIndex: 40, height: 56,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 24px', background: 'rgba(8,8,8,0.95)', borderBottom: `1px solid ${DIV}`,
-        backdropFilter: 'blur(12px)',
-      }}>
-        <Link href="/" style={{ fontSize: 14, color: TEXT, fontWeight: 700, textDecoration: 'none' }}>Veltro</Link>
-        <div className="rpt-nav-subtitle" style={{ fontSize: 12, color: SUB }}>Candidate Recommendation Report</div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button
-            onClick={() => {
-              if (navigator.clipboard) navigator.clipboard.writeText(window.location.href)
-            }}
-            style={{
-              height: 32, padding: '0 14px', borderRadius: 8, border: `1px solid ${DIV}`,
-              background: 'transparent', color: SUB, fontSize: 13, fontWeight: 500, cursor: 'pointer',
-            }}
-          >Copy link</button>
-          <button
-            onClick={() => window.print()}
-            style={{
-              height: 32, padding: '0 14px', borderRadius: 8, border: `1px solid ${DIV}`,
-              background: 'transparent', color: SUB, fontSize: 13, fontWeight: 500, cursor: 'pointer',
-            }}
-          >Print</button>
+      {/* ── Sticky executive header ───────────────────────────────────────────── */}
+      {stickyVisible && (
+        <div className="sr-sticky" style={{
+          position: 'fixed', top: 36, left: 0, right: 0, zIndex: 50,
+          height: 52, padding: '0 28px',
+          background: 'rgba(8,8,8,0.96)', borderBottom: '1px solid rgba(255,255,255,0.06)',
+          backdropFilter: 'blur(20px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20,
+          animation: 'stickyIn 180ms ease forwards',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, minWidth: 0 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: TEXT, whiteSpace: 'nowrap', letterSpacing: '-0.01em' }}>Marcus Thompson</span>
+            <span style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }}/>
+            <span style={{ fontSize: 11, fontWeight: 700, color: GREEN, letterSpacing: '0.06em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>Strong Hire</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(238,236,230,0.35)', fontFamily: CONDENSED }}>93</span>
+          </div>
+          <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
+            {(['role', 'shortlist', 'team'] as CompMode[]).map(m => (
+              <button key={m} className="comp-btn" onClick={() => setCompMode(m)} style={{
+                height: 26, padding: '0 11px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+                letterSpacing: '0.04em', color: compMode === m ? TEXT : 'rgba(255,255,255,0.28)',
+                background: compMode === m ? 'rgba(255,255,255,0.07)' : 'transparent',
+                transition: 'background 200ms ease, color 200ms ease',
+              }}>
+                {COMP_LABELS[m]}
+              </button>
+            ))}
+          </div>
+          <a href="mailto:team@veltro.ai?subject=Veltro%20Walkthrough%20Request" style={{
+            flexShrink: 0, height: 28, padding: '0 14px', borderRadius: 7,
+            background: BLUE, color: '#FFF', fontSize: 11, fontWeight: 700,
+            display: 'inline-flex', alignItems: 'center', textDecoration: 'none',
+            letterSpacing: '-0.01em',
+          }}>Request a walkthrough</a>
         </div>
-      </nav>
+      )}
 
-      <main className="report-root" style={{
-        minHeight: '100vh', background: BG, color: TEXT, fontFamily: FONT,
-      }}>
-        <div style={{ maxWidth: 960, margin: '0 auto', padding: '64px 24px 96px' }}>
+      <main ref={containerRef} style={{ minHeight: '100svh', background: BG, color: TEXT, fontFamily: FONT }}>
+        <div
+          className={`sr-root-enter${phase >= 1 ? ' sr-phase1' : ''}`}
+          style={{
+            maxWidth: 'min(980px, calc(100vw - clamp(40px, 8vw, 160px)))',
+            margin: '0 auto',
+            padding: 'clamp(48px, 7vh, 72px) clamp(16px, 3vw, 24px) clamp(72px, 10vh, 112px)',
+          }}>
 
-          {/* ── Report header ── */}
-          <header style={{ textAlign: 'center', marginBottom: 48 }}>
-            <p style={{ margin: '0 0 16px', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: FAINT, fontWeight: 600 }}>
+          {/* ── Report identity header ─────────────────────────────────────── */}
+          <header ref={heroRef} style={{ textAlign: 'center', marginBottom: 60, ...p1 }}>
+            <p style={{
+              margin: '0 0 20px', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase',
+              color: 'rgba(238,236,230,0.18)', fontWeight: 700,
+              display: 'inline-flex', alignItems: 'center', gap: 12,
+            }}>
+              <span style={{ width: 28, height: 1, background: 'rgba(255,255,255,0.15)', display: 'inline-block' }} />
               Candidate Recommendation Report
+              <span style={{ width: 28, height: 1, background: 'rgba(255,255,255,0.15)', display: 'inline-block' }} />
             </p>
-            <h1 style={{ margin: '0 0 8px', fontSize: 40, lineHeight: 1.15, letterSpacing: '-0.03em', fontWeight: 700, color: TEXT }}>
+            <h1 style={{
+              margin: '0 0 10px',
+              fontSize: 'clamp(36px, 5vw, 56px)', lineHeight: 1.0,
+              letterSpacing: '-0.035em', fontWeight: 800, color: TEXT, fontFamily: CONDENSED,
+            }}>
               Marcus Thompson
             </h1>
-            <p style={{ margin: 0, fontSize: 16, color: SUB }}>
-              Superintendent · Gilbane Construction · Mar 14, 2026
+            <p style={{
+              margin: '0 0 18px', fontSize: 13, color: 'rgba(238,236,230,0.32)', letterSpacing: '0.01em',
+            }}>
+              Superintendent · Gilbane Construction
+            </p>
+            {/* Verdict pill — visible immediately */}
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 14,
+              background: 'rgba(58,168,104,0.06)', border: '1px solid rgba(58,168,104,0.18)',
+              borderRadius: 100, padding: '8px 20px', marginBottom: 16,
+            }}>
+              <span style={{ fontSize: 14, fontWeight: 900, color: GREEN, letterSpacing: '0.04em', textTransform: 'uppercase', fontFamily: CONDENSED }}>
+                Strong Hire
+              </span>
+              <span style={{ width: 1, height: 14, background: 'rgba(58,168,104,0.25)' }} />
+              <span style={{ fontSize: 13, fontWeight: 800, color: GREEN, fontFamily: CONDENSED }}>93</span>
+            </div>
+            <p style={{ margin: 0, fontSize: 11, color: 'rgba(255,255,255,0.14)', letterSpacing: '0.04em' }}>
+              Assessment completed Mar 14, 2026 · Report ID a4f2c8d1
             </p>
           </header>
 
-          {/* ══════════════════════════════════════════════
-              LAYER 1 — THE CALL
-          ══════════════════════════════════════════════ */}
-          <section style={{ ...surf, marginBottom: 0 }}>
+          {/* ══════════════════════════════════════════════════════════════════
+              ACT 1 — VERDICT
+          ══════════════════════════════════════════════════════════════════ */}
+          <section
+            ref={el => setActRef(el, 0)}
+            className="act-section"
+            style={{ marginBottom: 0, ...p2(0) }}
+            aria-label="Act 1: Verdict"
+          >
+            <ActTag n={1} title="Verdict" />
 
-            {/* 1A — Score + Verdict */}
-            <div className="rpt-hero-grid" style={{
-              display: 'grid', gridTemplateColumns: '140px minmax(0,1fr)', gap: 40, alignItems: 'start',
+            <div style={{
+              background: SURFACE,
+              border: '1px solid rgba(255,255,255,0.06)',
+              borderRadius: 14,
+              padding: 'clamp(28px, 4vw, 44px)',
             }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 12 }}>
-                <Label text="Fit Score" />
-                <ScoreRing score={93} color={GREEN} />
-                <div>
-                  <p style={{ margin: 0, fontSize: 26, fontWeight: 800, color: GREEN, lineHeight: 1.1, fontFamily: CONDENSED, textTransform: 'uppercase', letterSpacing: '0.02em' }}>Strong Hire</p>
-                  <p style={{ margin: '4px 0 0', fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>Decision confidence: High</p>
+              <div className="rpt-hero-grid" style={{
+                display: 'grid', gridTemplateColumns: '160px minmax(0,1fr)', gap: 'clamp(28px, 5vw, 52px)', alignItems: 'start',
+              }}>
+
+                {/* Score + verdict column */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'flex-start' }}>
+                  <div>
+                    <Label text="Fit Score" />
+                    <div style={{ marginTop: 12 }}>
+                      <ScoreRing score={93} color={GREEN} animate={scoreAnimate} size={148} />
+                    </div>
+                  </div>
+                  <div>
+                    <p style={{
+                      margin: '0 0 3px', fontSize: 26, fontWeight: 900, color: GREEN,
+                      lineHeight: 1.0, fontFamily: CONDENSED, textTransform: 'uppercase', letterSpacing: '0.02em',
+                    }}>
+                      Strong Hire
+                    </p>
+                    <p style={{ margin: 0, fontSize: 11, color: 'rgba(255,255,255,0.2)', letterSpacing: '0.05em' }}>
+                      Decision confidence: High
+                    </p>
+                  </div>
+                  <div style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 7,
+                    background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
+                    borderRadius: 7, padding: '5px 11px',
+                  }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: TEXT, letterSpacing: '-0.01em' }}>Pioneer</span>
+                    <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', fontStyle: 'italic' }}>archetype</span>
+                  </div>
                 </div>
-                <div style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                  background: 'rgba(255,255,255,0.04)', border: `1px solid ${DIV}`,
-                  borderRadius: 6, padding: '4px 10px',
-                }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: TEXT, letterSpacing: '-0.01em' }}>Pioneer</span>
-                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontStyle: 'italic' }}>archetype</span>
+
+                {/* Verdict detail column */}
+                <div style={{ borderLeft: `1px solid ${DIV}`, paddingLeft: 'clamp(24px, 4vw, 44px)', display: 'flex', flexDirection: 'column', gap: 32 }}>
+
+                  {/* Primary tension block */}
+                  <div style={{
+                    borderLeft: `3px solid ${AMBER}`,
+                    background: 'rgba(200,168,50,0.03)', borderRadius: '0 10px 10px 0', padding: '20px 24px',
+                  }}>
+                    <p style={{ margin: '0 0 7px', fontSize: 10, fontWeight: 700, color: 'rgba(200,168,50,0.55)', letterSpacing: '0.14em', textTransform: 'uppercase' }}>
+                      Primary Tension
+                    </p>
+                    <p style={{ margin: '0 0 10px', fontSize: 24, fontWeight: 800, color: TEXT, letterSpacing: '-0.03em', lineHeight: 1.1, fontFamily: CONDENSED }}>
+                      Decision Speed vs. Collaboration
+                    </p>
+                    <p style={{ margin: 0, fontSize: 14, color: 'rgba(255,255,255,0.45)', lineHeight: 1.7 }}>
+                      Marcus decides before the room is ready. In field leadership, that&apos;s an asset. In cross-functional environments, it&apos;s the risk.
+                    </p>
+                  </div>
+
+                  {/* Recommendation */}
+                  <div>
+                    <Label text="Recommendation" />
+                    <p style={{ margin: '11px 0 0', fontSize: 15, lineHeight: 1.75, color: 'rgba(238,236,230,0.52)', fontWeight: 400, maxWidth: 560 }}>
+                      Marcus fits this role. Decisive under pressure, high execution drive, ownership without prompting — that&apos;s what field leadership demands. Collaboration is the only flag: below benchmark, worth probing, not a disqualifier.
+                    </p>
+                  </div>
+
+                  {/* Three stats */}
+                  <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap' }}>
+                    {[
+                      { label: 'Dimensions above', value: '4 / 5', color: GREEN },
+                      { label: 'Largest advantage', value: '+21 Dec. Speed', color: BLUE },
+                      { label: 'Only shortfall', value: 'Collaboration −3', color: AMBER },
+                    ].map(stat => (
+                      <div key={stat.label}>
+                        <p style={{ margin: '0 0 3px', fontSize: 9, color: FAINT, letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 600 }}>{stat.label}</p>
+                        <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: stat.color, fontFamily: CONDENSED, letterSpacing: '-0.01em' }}>{stat.value}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <ActBreak />
+
+          {/* ══════════════════════════════════════════════════════════════════
+              ACT 2 — WHY
+          ══════════════════════════════════════════════════════════════════ */}
+          <section
+            ref={el => setActRef(el, 1)}
+            className="act-section"
+            style={{ marginBottom: 0, ...p3(0) }}
+            aria-label="Act 2: Why"
+          >
+            <ActTag n={2} title="The Analysis" />
+
+            <div style={{
+              background: SURFACE,
+              border: '1px solid rgba(255,255,255,0.06)',
+              borderRadius: 14,
+              padding: 'clamp(28px, 4vw, 44px)',
+            }}>
+              {/* Section header + toggle */}
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 32, flexWrap: 'wrap' }}>
+                <div>
+                  <Label text="Signal Profile" />
+                  <p style={{ margin: '7px 0 0', fontSize: 22, fontWeight: 800, color: TEXT, letterSpacing: '-0.03em', lineHeight: 1.1, fontFamily: CONDENSED }}>
+                    Five dimensions. One tension.
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+                  <div style={{ display: 'flex', gap: 2, background: 'rgba(255,255,255,0.04)', borderRadius: 9, padding: 2 }}>
+                    {(['role', 'shortlist', 'team'] as CompMode[]).map(m => (
+                      <button key={m} className="comp-btn" onClick={() => setCompMode(m)} style={{
+                        height: 28, padding: '0 13px', borderRadius: 7, fontSize: 11, fontWeight: 600,
+                        letterSpacing: '0.03em', color: compMode === m ? TEXT : 'rgba(255,255,255,0.3)',
+                        background: compMode === m ? 'rgba(255,255,255,0.09)' : 'transparent',
+                        transition: 'background 200ms ease, color 200ms ease',
+                      }}>
+                        {COMP_LABELS[m]}
+                      </button>
+                    ))}
+                  </div>
+                  <p style={{ margin: 0, fontSize: 11, color: 'rgba(255,255,255,0.28)', textAlign: 'right' }}>
+                    Largest delta {compMode === 'role' ? 'vs role' : compMode === 'shortlist' ? 'vs shortlist' : 'vs team'}:{' '}
+                    <span style={{ color: 'rgba(238,236,230,0.6)', fontWeight: 700 }}>
+                      {largestDelta.label} ({largestDelta.sign}{largestDelta.delta})
+                    </span>
+                  </p>
                 </div>
               </div>
 
-              <div style={{ borderLeft: `1px solid ${DIV}`, paddingLeft: 40, display: 'grid', gap: 28 }}>
+              <div className="rpt-proof-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(280px,1.15fr) minmax(240px,0.85fr)', gap: 'clamp(24px, 4vw, 48px)' }}>
 
-                {/* 1B — Primary Tension */}
-                <div style={{
-                  borderLeft: `3px solid ${AMBER}`, paddingLeft: 16,
-                  background: 'rgba(234,179,8,0.04)', borderRadius: '0 8px 8px 0', padding: '14px 16px',
-                }}>
-                  <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 700, color: 'rgba(234,179,8,0.7)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                    Primary Tension
+                {/* Pentagon + operating style */}
+                <div>
+                  <PentagonRadar
+                    compMode={compMode}
+                    hoveredDim={effectiveDim}
+                    onHoverDim={setHoveredDim}
+                    animate={phase >= 3}
+                    pulseDim={pulseDim}
+                  />
+
+                  {/* Legend */}
+                  <div style={{ display: 'flex', gap: 22, justifyContent: 'center', marginTop: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                      <div style={{ width: 16, height: 2, background: BLUE, borderRadius: 1 }}/>
+                      <span style={{ fontSize: 11, color: 'rgba(238,236,230,0.38)' }}>Marcus Thompson</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                      <div style={{ width: 16, height: 2, borderRadius: 1, backgroundImage: 'repeating-linear-gradient(90deg, rgba(255,255,255,0.28) 0 5px, transparent 5px 9px)' }}/>
+                      <span style={{ fontSize: 11, color: 'rgba(238,236,230,0.38)' }}>
+                        {compMode === 'role' ? 'Role benchmark' : compMode === 'shortlist' ? 'Shortlist avg.' : 'Team avg.'}
+                      </span>
+                    </div>
+                  </div>
+                  <p style={{ margin: '10px 0 0', fontSize: 11.5, color: 'rgba(255,255,255,0.25)', lineHeight: 1.6, textAlign: 'center' }}>
+                    Hover a dimension to see details. Outperforms on 4 of 5 — one shortfall.
                   </p>
-                  <p style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 700, color: TEXT, letterSpacing: '-0.01em', lineHeight: 1.25 }}>
-                    {strengthDim.label} vs. {tensionDim.label}
-                  </p>
-                  <p style={{ margin: 0, fontSize: 14, color: 'rgba(255,255,255,0.55)', lineHeight: 1.5 }}>
-                    Marcus decides before the room is ready.
-                  </p>
+
+                  {/* Operating style */}
+                  <div style={{ marginTop: 26, paddingTop: 22, borderTop: `1px solid rgba(255,255,255,0.06)` }}>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
+                      <span style={{
+                        fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.2)',
+                        letterSpacing: '0.14em', textTransform: 'uppercase',
+                      }}>Operating Style</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'baseline', marginBottom: 8 }}>
+                      <span style={{ fontSize: 20, fontWeight: 900, color: TEXT, letterSpacing: '-0.03em', fontFamily: CONDENSED }}>Pioneer</span>
+                      <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.22)', fontStyle: 'italic' }}>
+                        Moves first. Asks forgiveness, not permission.
+                      </span>
+                    </div>
+                    <p style={{ margin: '0 0 14px', fontSize: 13, lineHeight: 1.72, color: 'rgba(238,236,230,0.44)' }}>
+                      Drives outcomes without waiting for alignment. In fast-moving environments this is an asset — in consensus-driven ones, it creates friction. Most effective when scope is clear and authority belongs to one person.
+                    </p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                      {[
+                        'Begins execution before alignment is complete',
+                        'Absorbs ambiguity without stalling',
+                        'Holds accountability personally, not collectively',
+                        'Deprioritizes process when momentum is available',
+                      ].map(trait => (
+                        <div key={trait} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                          <span style={{ width: 3, height: 3, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', flexShrink: 0, marginTop: 6 }}/>
+                          <span style={{ fontSize: 12, color: 'rgba(238,236,230,0.38)', lineHeight: 1.55 }}>{trait}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
 
-                {/* 1C — Recommendation Rationale */}
-                <div>
-                  <Label text="Recommendation Rationale" />
-                  <p style={{ margin: '12px 0 0', fontSize: 15, lineHeight: 1.7, color: SUB, fontWeight: 300 }}>
-                    Marcus fits this role. The Pioneer pattern — decisive under pressure, high execution drive, ownership without prompting — matches what field leadership demands. The one flag is collaboration. It&apos;s below benchmark and it&apos;s worth probing, not ignoring.
+                {/* Dimension bars */}
+                <div style={{ borderLeft: `1px solid ${DIV}`, paddingLeft: 'clamp(18px, 3vw, 32px)' }}>
+                  <div style={{ marginBottom: 18 }}>
+                    <Label text="Dimension Breakdown" />
+                    <p style={{ margin: '5px 0 0', fontSize: 11, color: 'rgba(255,255,255,0.2)', lineHeight: 1.5 }}>
+                      Bar = candidate · Tick = {compMode === 'role' ? 'role target' : compMode === 'shortlist' ? 'shortlist avg' : 'team avg'} · Δ = delta
+                    </p>
+                  </div>
+                  {DIMENSIONS.map(dim => (
+                    <DimBar
+                      key={dim.key}
+                      dim={dim}
+                      compMode={compMode}
+                      isHovered={effectiveDim === dim.key}
+                      isPulse={pulseDim === dim.key}
+                      anyHovered={anyHov}
+                      onHover={setHoveredDim}
+                    />
+                  ))}
+                  <p style={{ margin: '18px 0 0', fontSize: 11, color: 'rgba(255,255,255,0.16)', lineHeight: 1.55, fontStyle: 'italic' }}>
+                    Hover any dimension above to connect it to the radar.
                   </p>
                 </div>
 
@@ -389,43 +1014,65 @@ export default function SampleReportPage() {
             </div>
           </section>
 
-          <LayerDivider />
+          <ActBreak />
 
-          {/* ══════════════════════════════════════════════
-              LAYER 2 — THE RISK
-          ══════════════════════════════════════════════ */}
-          <section>
-            <div className="rpt-two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 20 }}>
+          {/* ══════════════════════════════════════════════════════════════════
+              ACT 3 — WHERE IT WORKS / BREAKS
+          ══════════════════════════════════════════════════════════════════ */}
+          <section
+            ref={el => setActRef(el, 2)}
+            className="act-section"
+            style={{ ...p3(60) }}
+            aria-label="Act 3: Where it works / breaks"
+          >
+            <ActTag n={3} title="Fit Conditions" />
 
-              {/* 2A — When This Works */}
-              <div style={surf}>
-                <Label text="When This Works" />
-                <div style={{ marginTop: 20, display: 'grid', gap: 14 }}>
+            <p style={{ margin: '0 0 28px', fontSize: 22, fontWeight: 800, color: TEXT, letterSpacing: '-0.03em', lineHeight: 1.1, fontFamily: CONDENSED }}>
+              Where he wins — and where the risk lives
+            </p>
+
+            {/* Hire If / Pass If */}
+            <div className="rpt-two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+
+              <div style={{
+                background: SURFACE, border: '1px solid rgba(58,168,104,0.12)',
+                borderRadius: 12, padding: 'clamp(20px, 3vw, 28px)',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: GREEN, flexShrink: 0 }}/>
+                  <Label text="Hire If" />
+                </div>
+                <div style={{ display: 'grid', gap: 14 }}>
                   {[
-                    'The operating environment rewards pace over consensus.',
+                    'The environment rewards pace over consensus.',
                     'Scope is clear and accountability belongs to one person.',
                     'The client wants forward motion, not deliberation.',
                   ].map((item, i) => (
                     <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: GREEN, flexShrink: 0, marginTop: 8 }}/>
-                      <p style={{ margin: 0, fontSize: 15, lineHeight: 1.6, color: TEXT }}>{item}</p>
+                      <span style={{ width: 4, height: 4, borderRadius: '50%', background: GREEN, flexShrink: 0, marginTop: 9 }}/>
+                      <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: TEXT }}>{item}</p>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* 2B — When It Breaks */}
-              <div style={surf}>
-                <Label text="When It Breaks" />
-                <div style={{ marginTop: 20, display: 'grid', gap: 14 }}>
+              <div style={{
+                background: SURFACE, border: '1px solid rgba(224,90,58,0.10)',
+                borderRadius: 12, padding: 'clamp(20px, 3vw, 28px)',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: RED, flexShrink: 0 }}/>
+                  <Label text="Pass If" />
+                </div>
+                <div style={{ display: 'grid', gap: 14 }}>
                   {[
-                    'Success requires broad stakeholder buy-in before decisions.',
-                    'The hiring manager expects to be consulted before direction changes.',
-                    'The team runs on shared authority — no one person holds the call.',
+                    'Success requires stakeholder buy-in before decisions.',
+                    'The hiring manager expects consultation before direction changes.',
+                    'The team runs on shared authority — no one holds the call.',
                   ].map((item, i) => (
                     <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: RED, flexShrink: 0, marginTop: 8 }}/>
-                      <p style={{ margin: 0, fontSize: 15, lineHeight: 1.6, color: TEXT }}>{item}</p>
+                      <span style={{ width: 4, height: 4, borderRadius: '50%', background: RED, flexShrink: 0, marginTop: 9 }}/>
+                      <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: TEXT }}>{item}</p>
                     </div>
                   ))}
                 </div>
@@ -433,256 +1080,251 @@ export default function SampleReportPage() {
 
             </div>
 
-            {/* 2C — The One Thing to Verify */}
+            {/* Team Dynamics */}
             <div style={{
-              borderLeft: `3px solid ${AMBER}`,
-              background: 'rgba(234,179,8,0.04)',
-              borderRadius: '0 10px 10px 0',
-              padding: '20px 24px',
+              background: SURFACE2, border: '1px solid rgba(255,255,255,0.05)',
+              borderRadius: 12, padding: 'clamp(20px, 3vw, 28px)',
             }}>
-              <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 700, color: 'rgba(234,179,8,0.7)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                The One Thing to Verify
-              </p>
-              <p style={{ margin: 0, fontSize: 17, fontWeight: 700, color: TEXT, lineHeight: 1.5 }}>
-                Does Marcus know when to slow down — or does he only know how to go fast?
-              </p>
-            </div>
-          </section>
-
-          <LayerDivider />
-
-          {/* ══════════════════════════════════════════════
-              LAYER 3 — THE PROOF
-          ══════════════════════════════════════════════ */}
-          <section>
-
-            {/* 3A — Pentagon Radar with Benchmark */}
-            <div className="rpt-proof-grid" style={{ ...surf, display: 'grid', gridTemplateColumns: 'minmax(0,1.2fr) minmax(260px,0.8fr)', gap: 40, marginBottom: 24 }}>
-              <div>
-                <Label text="Signal Profile vs. Benchmark" />
-                <p style={{ margin: '8px 0 24px', fontSize: 14, lineHeight: 1.6, color: SUB }}>
-                  Candidate signal pattern against the active role benchmark.
+              <div style={{ marginBottom: 22 }}>
+                <Label text="Team Dynamics" />
+                <p style={{ margin: '7px 0 0', fontSize: 13, color: 'rgba(255,255,255,0.24)', lineHeight: 1.5 }}>
+                  Behavioral alignment with key stakeholders. Hover a row — the pentagon will highlight the relevant dimensions.
                 </p>
-                <div style={{ display: 'flex', justifyContent: 'center' }}>
-                  <PentagonRadar candidate={CANDIDATE} benchmark={BENCHMARK} animated size={300} />
-                </div>
-                <div style={{ display: 'flex', gap: 20, justifyContent: 'center', marginTop: 12 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <div style={{ width: 16, height: 2, background: BLUE, borderRadius: 1 }}/>
-                    <span style={{ fontSize: 11, color: SUB }}>Marcus Thompson</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <div style={{ width: 16, height: 2, background: 'rgba(255,255,255,0.4)', borderRadius: 1, backgroundImage: 'repeating-linear-gradient(90deg, rgba(255,255,255,0.4) 0 5px, transparent 5px 9px)' }}/>
-                    <span style={{ fontSize: 11, color: SUB }}>Role Benchmark</span>
-                  </div>
-                </div>
               </div>
 
-              {/* 3B — Dimension Breakdown */}
-              <div style={{ borderLeft: `1px solid ${DIV}`, paddingLeft: 32 }}>
-                <Label text="Dimension Breakdown" />
-                <p style={{ margin: '8px 0 20px', fontSize: 12, color: 'rgba(255,255,255,0.25)' }}>
-                  Bar = candidate · Tick = benchmark · Delta vs. role
-                </p>
-                {DIMENSIONS.map(dim => (
-                  <DimBar
-                    key={dim.key}
-                    label={dim.label}
-                    score={dim.score}
-                    target={dim.target}
-                    delta={dim.delta}
-                    isTension={dim.key === tensionDim.key}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* 3C — Archetype Context */}
-            <div style={{ ...surf, borderTop: `2px solid rgba(255,255,255,0.06)` }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, marginBottom: 12 }}>
-                <span style={{ fontSize: 20, fontWeight: 800, color: TEXT, letterSpacing: '-0.03em', textTransform: 'uppercase' }}>
-                  Pioneer
-                </span>
-                <Label text="Archetype" />
-              </div>
-              <p style={{ margin: 0, fontSize: 14, lineHeight: 1.7, color: SUB, maxWidth: 640 }}>
-                Pioneers move first and decide fast — they drive outcomes without waiting for alignment. The trade-off is process: documentation, follow-through systems, and consensus-building get deprioritized when momentum is available.
-              </p>
-            </div>
-
-          </section>
-
-          <LayerDivider />
-
-          {/* ══════════════════════════════════════════════
-              LAYER 4 — THE DETAIL
-          ══════════════════════════════════════════════ */}
-
-          {/* 4.1 — ROI Identification */}
-          <section style={{ ...surf, marginBottom: 24 }}>
-            <Label text="ROI Identification" />
-            <p style={{ margin: '12px 0 0', fontSize: 15, lineHeight: 1.7, color: SUB, maxWidth: 720 }}>
-              Best fit: a hiring manager who runs a tight operation, gives clear mandates, and is comfortable with a direct report who pushes back on process overhead. Autonomous scope, visible accountability, decisions that belong to one person. Highest-risk environment: a consensus-driven leadership team or a manager who expects to be consulted before direction changes.
-            </p>
-          </section>
-
-          {/* 4.2 — Team Compatibility */}
-          <section style={{ ...surf, background: '#0f1520', border: '1px solid rgba(37,99,235,0.18)', marginBottom: 24 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-              <Label text="Team Compatibility" />
-              <span style={{
-                display: 'inline-flex', alignItems: 'center', padding: '2px 8px',
-                background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.25)',
-                borderRadius: 4, fontSize: 10, color: BLUE, fontWeight: 600, letterSpacing: '0.06em',
-              }}>MODE B</span>
-            </div>
-            <p style={{ margin: '0 0 32px', fontSize: 14, lineHeight: 1.6, color: SUB, maxWidth: 560 }}>
-              Three key people on the hiring side completed the same assessment. This shows where Marcus fits and where friction lives.
-            </p>
-
-            {/* Full-width overlay radar */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 32 }}>
-              <PentagonRadar
-                candidate={CANDIDATE}
-                benchmark={null}
-                overlays={[
-                  { scores: TEAM[0].scores, color: AMBER },
-                  { scores: TEAM[1].scores, color: RED },
-                  { scores: TEAM[2].scores, color: GREEN },
-                ]}
-                size={380}
-              />
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20, justifyContent: 'center', marginTop: 14 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <div style={{ width: 14, height: 2, background: BLUE, borderRadius: 1 }}/>
-                  <span style={{ fontSize: 11, color: SUB }}>Marcus Thompson</span>
-                </div>
-                {TEAM.map(person => (
-                  <div key={person.name} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <div style={{ width: 14, height: 2, background: person.statusColor, opacity: 0.6, borderRadius: 1 }}/>
-                    <span style={{ fontSize: 11, color: SUB }}>{person.name}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Three person rows */}
-            <div style={{ display: 'grid', gap: 12 }}>
-              {TEAM.map(person => (
-                <div key={person.name} style={{
-                  display: 'flex', gap: 16, alignItems: 'flex-start',
-                  padding: '16px 20px',
-                  background: 'rgba(255,255,255,0.03)',
-                  border: `1px solid rgba(255,255,255,0.07)`,
-                  borderRadius: 10,
-                }}>
-                  <div style={{ flexShrink: 0, width: 40, textAlign: 'center' }}>
-                    <p style={{ margin: 0, fontSize: 20, fontWeight: 800, color: person.statusColor, lineHeight: 1 }}>{person.compat}</p>
-                    <p style={{ margin: '2px 0 0', fontSize: 10, color: 'rgba(255,255,255,0.25)', letterSpacing: '0.04em' }}>compat</p>
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'baseline', marginBottom: 4 }}>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: TEXT }}>{person.name}</span>
-                      <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>{person.role}</span>
-                    </div>
-                    {/* Dimension contrast bars */}
-                    <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
-                      {RADAR_DIMS.map(d => {
-                        const cand = CANDIDATE[d.key]
-                        const them = person.scores[d.key]
-                        const diff = Math.abs(cand - them)
-                        const isLarge = diff > 20
-                        return (
-                          <div key={d.key} style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                            <div style={{ height: 4, background: BLUE, borderRadius: 2, opacity: 0.65, width: `${cand}%`, maxWidth: '100%' }}/>
-                            <div style={{
-                              height: 4, borderRadius: 2, opacity: 0.55,
-                              background: isLarge ? RED : GREEN,
-                              width: `${them}%`, maxWidth: '100%',
-                            }}/>
-                          </div>
-                        )
-                      })}
-                    </div>
-                    <p style={{ margin: 0, fontSize: 13, color: SUB, lineHeight: 1.5 }}>{person.note}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* 4.3 — Dimensional Impact */}
-          <section style={{ ...surf, marginBottom: 24 }}>
-            <Label text="Dimensional Impact" />
-            <div style={{ marginTop: 20, display: 'grid', gap: 0 }}>
-              {[
-                { label: 'Decision Speed +21', note: 'Largest positive delta. Marcus moves significantly faster than this role requires. An asset in field environments. A friction point anywhere that runs on consensus.' },
-                { label: 'Adaptability +15', note: 'Well above benchmark. Handles shifting priorities and ambiguity without losing execution edge.' },
-                { label: 'Execution +8', note: 'Above benchmark. The pattern matches what field leadership demands — moves forward, doesn\'t wait.' },
-                { label: 'Ownership +1', note: 'Narrow delta. Marcus meets the bar but doesn\'t meaningfully exceed it on this dimension. Worth watching.' },
-                { label: 'Collaboration −3', note: 'Only dimension below benchmark. Within tolerance. Probe it in roles with high cross-functional dependency. This is the tension.' },
-              ].map((item, i) => {
-                const isTension = item.label.startsWith('Collaboration')
+              {TEAM_DYNAMICS.map((person, i) => {
+                const isTeamHov = hoveredTeam === person.role
                 return (
-                  <div key={item.label} style={{
-                    paddingTop: i > 0 ? 18 : 0, paddingBottom: 18,
-                    borderBottom: `1px solid ${DIV}`,
-                    borderLeft: isTension ? `3px solid ${AMBER}` : 'none',
-                    paddingLeft: isTension ? 16 : 0,
-                  }}>
-                    <p style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 700, color: isTension ? AMBER : TEXT }}>{item.label}</p>
-                    <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: SUB }}>{item.note}</p>
+                  <div
+                    key={person.role}
+                    className="team-row"
+                    onMouseEnter={() => setHoveredTeam(person.role)}
+                    onMouseLeave={() => setHoveredTeam(null)}
+                    style={{
+                      display: 'grid', gridTemplateColumns: '148px 1fr',
+                      gap: 20, alignItems: 'start',
+                      padding: '15px 10px',
+                      borderTop: i > 0 ? '1px solid rgba(255,255,255,0.045)' : 'none',
+                    }}>
+                    <div>
+                      <p style={{ margin: '0 0 2px', fontSize: 13, fontWeight: 700, color: TEXT, lineHeight: 1.2, letterSpacing: '-0.01em' }}>{person.role}</p>
+                      {person.subtitle
+                        ? <p style={{ margin: '0 0 9px', fontSize: 11, color: 'rgba(255,255,255,0.2)' }}>{person.subtitle}</p>
+                        : <div style={{ marginBottom: 9 }} />
+                      }
+                      <DotRow filled={person.dots} color={person.dotColor} />
+                      {isTeamHov && (
+                        <p style={{ margin: '8px 0 0', fontSize: 10, color: FAINT, letterSpacing: '0.07em', textTransform: 'uppercase', animation: 'fadeSlideUp 140ms ease forwards' }}>
+                          {person.alignedDims.map(k => DIMENSIONS.find(d => d.key === k)?.label).join(' · ')}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <p style={{ margin: '0 0 5px', fontSize: 13, fontWeight: 700, color: person.dotColor as string, lineHeight: 1.3, letterSpacing: '-0.01em' }}>
+                        {person.alignment}
+                      </p>
+                      <p style={{ margin: 0, fontSize: 13, color: SUB, lineHeight: 1.6 }}>
+                        {person.implication}
+                      </p>
+                    </div>
                   </div>
                 )
               })}
+
+              <div style={{ marginTop: 18, paddingTop: 18, borderTop: '1px solid rgba(255,255,255,0.055)' }}>
+                <p style={{ margin: 0, fontSize: 13, color: 'rgba(238,236,230,0.36)', lineHeight: 1.7, fontStyle: 'italic' }}>
+                  Strong alignment with CEO. Structural friction with Operating Partner on pace. Primary risk is process-level, not relationship-level.
+                </p>
+              </div>
             </div>
+
           </section>
 
-          {/* 4.4 — Interview Probes */}
-          <section style={{ ...surf, marginBottom: 24 }}>
-            <Label text="Interview Probes" />
-            <p style={{ margin: '8px 0 28px', fontSize: 14, color: SUB, lineHeight: 1.6 }}>
-              These surface the Primary Tension directly. Ask them in order.
+          <ActBreak />
+
+          {/* ══════════════════════════════════════════════════════════════════
+              ACT 4 — HOW TO VALIDATE
+          ══════════════════════════════════════════════════════════════════ */}
+          <section
+            ref={el => setActRef(el, 3)}
+            className="act-section"
+            aria-label="Act 4: How to validate"
+          >
+            <ActTag n={4} title="Pressure-Test" />
+
+            <p style={{ margin: '0 0 28px', fontSize: 22, fontWeight: 800, color: TEXT, letterSpacing: '-0.03em', lineHeight: 1.1, fontFamily: CONDENSED }}>
+              What to confirm before the final round
             </p>
-            <div style={{ display: 'grid', gap: 0 }}>
-              {INTERVIEW_PROBES.map((q, i) => (
-                <div key={i} style={{
-                  display: 'flex', gap: 24, alignItems: 'flex-start',
-                  paddingTop: i > 0 ? 28 : 0, paddingBottom: 28,
-                  borderBottom: i < INTERVIEW_PROBES.length - 1 ? `1px solid ${DIV}` : 'none',
-                }}>
-                  <span style={{
-                    fontSize: 40, fontWeight: 800, color: 'rgba(255,255,255,0.06)',
-                    lineHeight: 1, flexShrink: 0, letterSpacing: '-0.04em', fontVariantNumeric: 'tabular-nums',
-                    minWidth: 48,
+
+            {/* Dimension signal summary */}
+            <div style={{
+              background: SURFACE2, border: '1px solid rgba(255,255,255,0.05)',
+              borderRadius: 12, padding: 'clamp(20px, 3vw, 28px)', marginBottom: 14,
+            }}>
+              <Label text="Signal Summary" />
+              <div style={{ marginTop: 18, display: 'grid', gap: 0 }}>
+                {[
+                  { label: 'Decision Speed +21', note: 'Largest delta. Moves significantly faster than the role requires. Asset in field environments — friction anywhere that runs on consensus.', tension: false, strong: true },
+                  { label: 'Adaptability +15',   note: 'Well above benchmark. Handles shifting scope and ambiguity without losing execution edge.', tension: false, strong: true },
+                  { label: 'Execution +8',        note: 'Above benchmark. Pattern-matches field leadership demands — moves forward, does not wait.', tension: false, strong: false },
+                  { label: 'Ownership +1',        note: 'Meets the bar but does not exceed it. Watch in roles with high accountability stakes.', tension: false, strong: false },
+                  { label: 'Collaboration −3',    note: 'Only dimension below benchmark. Within tolerance. Probe it in roles with cross-functional dependency. This is the tension.', tension: true, strong: false },
+                ].map((item, i) => (
+                  <div key={item.label} style={{
+                    paddingTop: i > 0 ? 16 : 0, paddingBottom: 16,
+                    borderBottom: i < 4 ? '1px solid rgba(255,255,255,0.045)' : 'none',
+                    display: 'flex', gap: 16, alignItems: 'flex-start',
                   }}>
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
-                  <p style={{ margin: 0, fontSize: 16, lineHeight: 1.7, color: TEXT, fontStyle: 'italic' }}>
-                    &ldquo;{q}&rdquo;
-                  </p>
-                </div>
-              ))}
+                    <div style={{
+                      width: 2, flexShrink: 0, alignSelf: 'stretch', minHeight: 24, borderRadius: 2,
+                      background: item.tension ? AMBER : item.strong ? GREEN : 'rgba(255,255,255,0.1)',
+                      marginTop: 2,
+                    }}/>
+                    <div>
+                      <p style={{ margin: '0 0 4px', fontSize: 12, fontWeight: 700, color: item.tension ? AMBER : TEXT, letterSpacing: '-0.01em', fontFamily: CONDENSED }}>{item.label}</p>
+                      <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: SUB }}>{item.note}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
+
+            {/* Interview probes */}
+            <div style={{
+              background: SURFACE, border: '1px solid rgba(255,255,255,0.06)',
+              borderRadius: 12, padding: 'clamp(20px, 3vw, 28px)',
+            }}>
+              <div style={{ marginBottom: 24 }}>
+                <Label text="Interview Probes" />
+                <p style={{ margin: '8px 0 0', fontSize: 13, color: SUB, lineHeight: 1.65, maxWidth: 540 }}>
+                  Three questions derived directly from the signal profile. Each targets a specific dimension and risk. Ask them in order.
+                </p>
+              </div>
+              <div style={{ display: 'grid', gap: 0 }}>
+                {INTERVIEW_PROBES.map((probe, i) => {
+                  const isHov = hoveredQ === i
+                  return (
+                    <div
+                      key={i}
+                      className="q-row"
+                      onMouseEnter={() => { setHoveredQ(i); setHoveredDim(probe.dim) }}
+                      onMouseLeave={() => { setHoveredQ(null); setHoveredDim(null) }}
+                      style={{
+                        display: 'flex', gap: 20, alignItems: 'flex-start',
+                        padding: `${i > 0 ? 22 : 10}px 10px 22px`,
+                        borderBottom: i < INTERVIEW_PROBES.length - 1 ? '1px solid rgba(255,255,255,0.045)' : 'none',
+                        borderLeft: isHov ? `2px solid ${probe.critical ? AMBER : BLUE}50` : '2px solid transparent',
+                        borderRadius: 8,
+                        background: isHov ? 'rgba(255,255,255,0.018)' : 'transparent',
+                        transition: 'background 150ms ease, border-color 150ms ease',
+                        cursor: 'default',
+                      }}>
+                      <span style={{
+                        fontSize: 'clamp(24px, 3.5vw, 34px)', fontWeight: 900,
+                        color: isHov ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)',
+                        lineHeight: 1, flexShrink: 0, letterSpacing: '-0.04em',
+                        fontVariantNumeric: 'tabular-nums', minWidth: 36, fontFamily: CONDENSED,
+                        transition: 'color 150ms ease',
+                      }}>
+                        {String(i + 1).padStart(2, '0')}
+                      </span>
+                      <div style={{ flex: 1 }}>
+                        <p style={{ margin: '0 0 12px', fontSize: 15, lineHeight: 1.72, color: isHov ? TEXT : 'rgba(238,236,230,0.85)', fontStyle: 'italic', transition: 'color 150ms ease' }}>
+                          &ldquo;{probe.question}&rdquo;
+                        </p>
+                        <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', marginBottom: 8 }}>
+                          <span style={{ fontSize: 11, color: FAINT }}>
+                            Tests: <span style={{ color: isHov ? 'rgba(238,236,230,0.7)' : 'rgba(238,236,230,0.42)', fontWeight: 600, transition: 'color 150ms ease' }}>{probe.tests}</span>
+                          </span>
+                          <span style={{ fontSize: 11, color: FAINT }}>
+                            Risk: <span style={{ color: isHov ? AMBER : 'rgba(200,168,50,0.45)', fontWeight: 600, transition: 'color 150ms ease' }}>{probe.risk}</span>
+                          </span>
+                          {probe.critical && (
+                            <span style={{ fontSize: 11, fontWeight: 700, color: isHov ? 'rgba(224,90,58,0.9)' : 'rgba(224,90,58,0.38)', letterSpacing: '0.05em', textTransform: 'uppercase', transition: 'color 150ms ease' }}>
+                              Would change rec if weak
+                            </span>
+                          )}
+                        </div>
+                        {isHov && (
+                          <p style={{ margin: 0, fontSize: 12, color: 'rgba(238,236,230,0.38)', lineHeight: 1.6, animation: 'fadeSlideUp 150ms ease forwards' }}
+                            dangerouslySetInnerHTML={{ __html: probe.rationale }}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
           </section>
 
-          {/* ── Report footer metadata ── */}
-          <section style={{ ...surf, marginBottom: 24, padding: '20px 24px' }}>
-            <div className="rpt-two-col" style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 12 }}>
-              {[
-                'Based on 94 behavioral signals',
-                'Recommendation generated from calibrated signal analysis',
-                'Benchmark confidence: High',
-                'Use alongside structured interviews and reference checks',
-              ].map(item => (
-                <p key={item} style={{ margin: 0, fontSize: 12, color: SUB }}>{item}</p>
-              ))}
+          <ActBreak />
+
+          {/* ══════════════════════════════════════════════════════════════════
+              ACT 5 — DECISION SUPPORT
+          ══════════════════════════════════════════════════════════════════ */}
+          <section
+            ref={el => setActRef(el, 4)}
+            className="act-section"
+            aria-label="Act 5: Decision support"
+          >
+            <ActTag n={5} title="Decision Support" />
+
+            {/* Metadata rail */}
+            <div style={{
+              background: SURFACE2, border: '1px solid rgba(255,255,255,0.05)',
+              borderRadius: 10, marginBottom: 14, padding: '14px 22px',
+            }}>
+              <div className="rpt-two-col" style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: '6px 24px' }}>
+                {[
+                  '94 behavioral signals · 6-minute assessment',
+                  'Benchmark confidence: High — calibrated shortlist',
+                  'Recommendation from structured signal analysis',
+                  'Use alongside structured interviews and references',
+                ].map(item => (
+                  <p key={item} style={{ margin: 0, fontSize: 11, color: 'rgba(238,236,230,0.22)', lineHeight: 1.6 }}>{item}</p>
+                ))}
+              </div>
             </div>
+
+            {/* CTA block */}
+            <div style={{
+              border: '1px solid rgba(37,99,235,0.14)',
+              borderRadius: 14, padding: 'clamp(36px, 5vw, 56px) clamp(24px, 4vw, 44px)',
+              textAlign: 'center',
+              background: `linear-gradient(135deg, rgba(37,99,235,0.06) 0%, ${SURFACE} 55%)`,
+            }}>
+              <p style={{ margin: '0 0 10px', fontSize: 10, color: FAINT, letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 700 }}>
+                Every candidate. Every search.
+              </p>
+              <h2 style={{ margin: '0 0 14px', fontSize: 'clamp(24px, 3.5vw, 34px)', fontWeight: 900, color: TEXT, letterSpacing: '-0.035em', lineHeight: 1.1, fontFamily: CONDENSED }}>
+                One additional step. A defensible recommendation.
+              </h2>
+              <p style={{ fontSize: 14, color: 'rgba(238,236,230,0.44)', lineHeight: 1.7, maxWidth: 460, margin: '0 auto 32px' }}>
+                Six minutes of structured assessment per candidate. A precise instrument your client can hold. Delivered at shortlist.
+              </p>
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
+                <a href="mailto:team@veltro.ai?subject=Veltro%20Walkthrough%20Request" style={{
+                  height: 46, padding: '0 28px', borderRadius: 10,
+                  background: '#FFF', color: BG,
+                  fontSize: 14, fontWeight: 800, display: 'inline-flex', alignItems: 'center', textDecoration: 'none',
+                  letterSpacing: '-0.02em',
+                }}>Request a walkthrough</a>
+                <Link href="/" style={{
+                  height: 46, padding: '0 24px', borderRadius: 10,
+                  border: `1px solid rgba(255,255,255,0.1)`, color: 'rgba(238,236,230,0.45)',
+                  fontSize: 14, fontWeight: 500, display: 'inline-flex', alignItems: 'center', textDecoration: 'none',
+                }}>Back to Veltro</Link>
+              </div>
+            </div>
+
           </section>
 
-          {/* ── Footer ── */}
-          <footer style={{ paddingTop: 24, borderTop: `1px solid ${DIV}` }}>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 0, marginBottom: 12, alignItems: 'center' }}>
+          {/* ── Footer ───────────────────────────────────────────────────────── */}
+          <footer style={{ paddingTop: 40, marginTop: 10 }}>
+            <div style={{ height: 1, background: 'rgba(255,255,255,0.045)', marginBottom: 20 }}/>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 0, marginBottom: 8, alignItems: 'center' }}>
               {['Report ID: a4f2c8d1', 'Assessment completed Mar 14, 2026'].map((item, i) => (
                 <span key={item} style={{ fontSize: 11, color: SUB }}>
                   {i > 0 && <span style={{ margin: '0 8px', opacity: 0.4 }}>·</span>}
@@ -690,36 +1332,11 @@ export default function SampleReportPage() {
                 </span>
               ))}
             </div>
-            <p style={{ margin: 0, fontSize: 11, lineHeight: 1.6, color: FAINT, maxWidth: 720 }}>
-              Prepared by Veltro · veltro.ai. Recommendation generated from calibrated signal analysis and intended for use alongside structured interviews and reference checks. Assessment results are one input, not a hiring decision.
+            <p style={{ margin: 0, fontSize: 11, lineHeight: 1.65, color: FAINT, maxWidth: 640 }}>
+              Prepared by Veltro · veltro.ai. Recommendation generated from calibrated signal analysis. Intended for use alongside structured interviews and reference checks. Not a substitute for professional judgment.
             </p>
           </footer>
 
-        </div>
-
-        {/* ── CTA bar ── */}
-        <div className="sr-cta" style={{
-          borderTop: `1px solid ${DIV}`, padding: '40px 24px',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16,
-          background: '#080E1A',
-        }}>
-          <p style={{ margin: 0, fontSize: 20, fontWeight: 700, color: TEXT, letterSpacing: '-0.02em', textAlign: 'center' }}>
-            Every candidate you place can have a report like this.
-          </p>
-          <p style={{ margin: 0, fontSize: 14, color: SUB, textAlign: 'center', maxWidth: 480 }}>
-            One additional step at shortlist. A deliverable your client can hold. Takes six minutes per candidate.
-          </p>
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <a href="mailto:team@veltro.ai?subject=Veltro%20Walkthrough%20Request" style={{
-              height: 44, padding: '0 24px', borderRadius: 10, background: '#FFF', color: BG,
-              fontSize: 14, fontWeight: 600, display: 'inline-flex', alignItems: 'center', textDecoration: 'none',
-            }}>Request a walkthrough</a>
-            <Link href="/" style={{
-              height: 44, padding: '0 24px', borderRadius: 10,
-              border: `1px solid ${DIV}`, color: SUB,
-              fontSize: 14, fontWeight: 500, display: 'inline-flex', alignItems: 'center', textDecoration: 'none',
-            }}>Back to Veltro</Link>
-          </div>
         </div>
       </main>
     </>

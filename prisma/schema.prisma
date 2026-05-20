@@ -58,6 +58,9 @@ model CandidateInvite {
   name        String?
   email       String?
   phone       String?
+  // "candidate" | "team_member"
+  // team_member invites profile existing team for compatibility analysis
+  inviteType  String            @default("candidate")
   sentAt      DateTime?
   completedAt DateTime?
   result      AssessmentResult?

@@ -3,7 +3,7 @@ import Link from 'next/link'
 export default function NotFound() {
   return (
     <div style={{
-      minHeight: '100vh',
+      minHeight: '100svh',
       display: 'grid',
       placeItems: 'center',
       background: '#F9FAFB',
@@ -17,7 +17,7 @@ export default function NotFound() {
         }}>
           404
         </p>
-        <h1 style={{ margin: '0 0 8px', fontSize: 28, fontWeight: 700, color: '#111827', letterSpacing: '-0.02em' }}>
+        <h1 style={{ margin: '0 0 8px', fontSize: 'clamp(22px, 3vw, 28px)', fontWeight: 700, color: '#111827', letterSpacing: '-0.02em' }}>
           Page not found
         </h1>
         <p style={{ margin: '0 0 24px', fontSize: 15, color: '#6B7280', lineHeight: 1.6 }}>

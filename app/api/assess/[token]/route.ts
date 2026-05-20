@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { scoreAssessment, SCORING_VERSION, fitLabel, getModelConfidence, getPercentileLabel } from '@/lib/scoring'
 import { ADJECTIVES } from '@/lib/data/adjectives'
-import { ROLE_PRESETS } from '@/lib/data/norms'
+import { COMPOSITE_ROLE_PRESETS } from '@/lib/data/norms'
 import { REFERENCE_PROFILES } from '@/lib/data/profiles'
 import { sendCandidateProfileEmail, sendRecruiterNotificationEmail } from '@/lib/email'
 import { generateCandidateProfilePdf } from '@/lib/pdf'
@@ -86,12 +86,11 @@ export async function POST(req: NextRequest, { params }: Params) {
     const body = await req.json()
     const {
       list1Checked, list2Checked, list1Order, list2Order,
-      timeOnPage1Ms, timeOnPage2Ms, scoringVariant: clientVariant,
+      timeOnPage1Ms, timeOnPage2Ms,
     } = body as {
       list1Checked: string[]; list2Checked: string[]
       list1Order: string[]; list2Order: string[]
       timeOnPage1Ms: number; timeOnPage2Ms: number
-      scoringVariant?: string
     }
 
     if (!Array.isArray(list1Checked) || !Array.isArray(list2Checked) ||
@@ -101,8 +100,6 @@ export async function POST(req: NextRequest, { params }: Params) {
     if (list1Checked.some(w => typeof w !== 'string') || list2Checked.some(w => typeof w !== 'string')) {
       return NextResponse.json({ error: 'Invalid selection data' }, { status: 400 })
     }
-
-    const variant = (clientVariant === 'v1_stepped' ? 'v1_stepped' : 'v2_quadratic') as 'v1_stepped' | 'v2_quadratic'
 
     // Check CandidateInvite first
     const invite = await prisma.candidateInvite.findUnique({
@@ -115,20 +112,20 @@ export async function POST(req: NextRequest, { params }: Params) {
         return NextResponse.json({ error: 'Assessment already completed' }, { status: 400 })
       }
 
+      const DEFAULT_COMPOSITE_WEIGHTS = { execution: 0.20, ownership: 0.20, adaptability: 0.20, collaboration: 0.20, decisionSpeed: 0.20 }
+
       // Build job target for fit scoring
       let jobTarget = null
       if (invite.job.target) {
         const t = invite.job.target
-        const roleWeights = ROLE_PRESETS[invite.job.roleType as keyof typeof ROLE_PRESETS]
-        if (roleWeights) {
-          jobTarget = {
-            target: { dominance: t.dominance, extraversion: t.extraversion, patience: t.patience, formality: t.formality },
-            weights: { ...roleWeights },
-          }
+        const compositeWeights = COMPOSITE_ROLE_PRESETS[invite.job.roleType as keyof typeof COMPOSITE_ROLE_PRESETS] ?? DEFAULT_COMPOSITE_WEIGHTS
+        jobTarget = {
+          target: { dominance: t.dominance, extraversion: t.extraversion, patience: t.patience, formality: t.formality },
+          compositeWeights,
         }
       }
 
-      const result = scoreAssessment(list1Checked, list2Checked, ADJECTIVES, jobTarget, variant)
+      const result = scoreAssessment(list1Checked, list2Checked, ADJECTIVES, jobTarget)
       const rushed = (timeOnPage1Ms != null && timeOnPage1Ms < 45000) || (timeOnPage2Ms != null && timeOnPage2Ms < 45000)
 
       const savedResult = await prisma.assessmentResult.create({
@@ -155,13 +152,13 @@ export async function POST(req: NextRequest, { params }: Params) {
           list2Count: list2Checked.length,
           timeOnPage1Ms, timeOnPage2Ms,
           scoringVersion: SCORING_VERSION,
-          scoringVariant: variant,
+          scoringVariant: 'v2_quadratic',
           rushed,
         },
       })
 
       await prisma.candidateInvite.update({ where: { id: invite.id }, data: { completedAt: new Date() } })
-      await prisma.eventLog.create({ data: { event: 'assessment.scored', entityId: invite.id, meta: JSON.stringify({ profileName: result.profile.name, variant }) } })
+      await prisma.eventLog.create({ data: { event: 'assessment.scored', entityId: invite.id, meta: JSON.stringify({ profileName: result.profile.name }) } })
 
       // Fire both emails in parallel without blocking the response
       const candidateEmail = invite.email

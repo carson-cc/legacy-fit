@@ -14,7 +14,7 @@ export default function DimensionBars({ coords, size = 'sm' }: Props) {
   const barH = size === 'lg' ? 'h-1.5' : 'h-1'
   const labelSize = size === 'lg' ? 'text-[13px]' : 'text-[11px]'
   const gap = size === 'lg' ? 'space-y-3' : 'space-y-2'
-  const trackW = size === 'lg' ? 'w-[200px]' : 'w-[120px]'
+  const trackW = 'flex-1'
 
   return (
     <div className={gap}>

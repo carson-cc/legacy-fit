@@ -29,7 +29,7 @@ export default function ProfileFingerprint({ d, e, p, f, color, size }: Props) {
   const sw = isSm ? 0.75 : 1.5
 
   return (
-    <svg width={dim} height={dim} viewBox={`0 0 ${dim} ${dim}`} fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width={dim} height={dim} viewBox={`0 0 ${dim} ${dim}`} fill="none" xmlns="http://www.w3.org/2000/svg" style={{ maxWidth: '100%', height: 'auto' }}>
       {/* Grid circles */}
       {rings.map((r, i) => (
         <circle key={i} cx={cx} cy={cy} r={r} stroke="rgba(255,255,255,0.05)" strokeWidth={0.5} />

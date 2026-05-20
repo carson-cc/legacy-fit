@@ -153,6 +153,15 @@ export const ROLE_PRESETS = {
 
 export type RolePresetKey = keyof typeof ROLE_PRESETS
 
+export const COMPOSITE_ROLE_PRESETS: Record<RolePresetKey, { execution: number; ownership: number; adaptability: number; collaboration: number; decisionSpeed: number }> = {
+  superintendent:  { execution: 0.30, ownership: 0.25, decisionSpeed: 0.20, adaptability: 0.15, collaboration: 0.10 },
+  project_manager: { execution: 0.25, collaboration: 0.25, adaptability: 0.20, ownership: 0.20, decisionSpeed: 0.10 },
+  cfo:             { execution: 0.35, ownership: 0.25, decisionSpeed: 0.20, collaboration: 0.10, adaptability: 0.10 },
+  foreman:         { execution: 0.30, ownership: 0.25, decisionSpeed: 0.20, adaptability: 0.15, collaboration: 0.10 },
+  estimator:       { execution: 0.35, ownership: 0.20, decisionSpeed: 0.25, adaptability: 0.10, collaboration: 0.10 },
+  sales_rep:       { collaboration: 0.30, ownership: 0.25, decisionSpeed: 0.20, adaptability: 0.15, execution: 0.10 },
+} as const
+
 export const ROLE_PRESET_LABELS: Record<RolePresetKey, string> = {
   superintendent: "Superintendent",
   project_manager: "Project Manager",

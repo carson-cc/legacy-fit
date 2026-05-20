@@ -240,7 +240,7 @@ export default function SignalTrace({
       height={totalHeight}
       viewBox={`0 0 ${width} ${totalHeight}`}
       fill="none"
-      style={{ display: 'block', fontFamily: font }}
+      style={{ display: 'block', fontFamily: font, maxWidth: '100%', height: 'auto' }}
     >
       {lanes.map((lane, i) => {
         const dashOffset = lane.pathLength * (1 - animProgress[i])

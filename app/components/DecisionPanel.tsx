@@ -72,14 +72,15 @@ export default function DecisionPanel({
 
   return (
     <section
+      className="decision-panel-grid"
       style={{
         background: bg,
         border: `1px solid ${border}`,
         borderRadius: 12,
-        padding: 32,
+        padding: 'clamp(20px, 4vw, 32px)',
         display: 'grid',
         gridTemplateColumns: '240px 1px 1fr',
-        gap: 32,
+        gap: 'clamp(16px, 3vw, 32px)',
         fontFamily: font,
       }}
     >

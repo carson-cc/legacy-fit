@@ -3,6 +3,8 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { FitModel } from '@/app/components/FitModel'
 import type { FitModelScores } from '@/app/components/FitModel'
 import Nav from '@/app/components/Nav'
+import { HowItWorksSection } from '@/app/components/HowItWorks'
+import { FiveDimensionsSection } from '@/app/components/FiveDimensionsSection'
 
 // ─── Brand tokens ────────────────────────────────────────────────────
 const BG    = '#000'
@@ -16,6 +18,7 @@ const GREEN = '#22C55E'
 const AMBER = '#EAB308'
 const RED   = '#EF4444'
 const FONT  = '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif'
+const COND  = '"Barlow Condensed", "Arial Narrow", sans-serif'
 
 // ─── Profile data ────────────────────────────────────────────────────
 // Scores are raw (dominance / extraversion / patience / formality).
@@ -50,6 +53,31 @@ const PROFILES = [
 const BENCHMARK: FitModelScores = { dominance: 0.72, extraversion: 0.52, patience: 0.50, formality: 0.66 }
 const HIRING_MANAGER: FitModelScores = { dominance: 0.78, extraversion: 0.48, patience: 0.42, formality: 0.72 }
 
+// Team Layer people — FitModelScores chosen so polygons are visually distinct from Marcus (candidate)
+const TEAM_PEOPLE = [
+  {
+    name: 'David Mercer', role: 'Hiring Manager', pct: 91, color: '#16A34A',
+    scores: { dominance: 0.82, extraversion: 0.45, patience: 0.22, formality: 0.78 } as FitModelScores,
+    sub: 'Strong alignment across execution and ownership.',
+  },
+  {
+    name: 'Sarah Chen', role: 'Project Lead', pct: 54, color: '#CA8A04',
+    scores: { dominance: 0.52, extraversion: 0.65, patience: 0.58, formality: 0.48 } as FitModelScores,
+    sub: 'Communication style divergence — pace and collaboration gap.',
+  },
+  {
+    name: 'Tom Ricci', role: 'Board Observer', pct: 38, color: '#DC2626',
+    scores: { dominance: 0.38, extraversion: 0.72, patience: 0.82, formality: 0.35 } as FitModelScores,
+    sub: 'High friction — pace and risk tolerance misaligned.',
+  },
+]
+
+const SHORTLIST_PEOPLE = [
+  { label: 'Cand. A', pct: 78, color: '#16A34A' },
+  { label: 'Cand. B', pct: 71, color: '#CA8A04' },
+  { label: 'Cand. C', pct: 65, color: '#CA8A04' },
+]
+
 // ─── deriveAxes (mirrors FitModel.tsx exactly) ───────────────────────
 function clamp01(v: number) { return Math.max(0, Math.min(1, v)) }
 function deriveAxes(s: FitModelScores) {
@@ -60,6 +88,19 @@ function deriveAxes(s: FitModelScores) {
     collaboration: clamp01(s.extraversion * 0.68 + s.patience * 0.32),
     decisionSpeed: clamp01(s.dominance * 0.54 + (1 - s.patience) * 0.46),
   }
+}
+
+// ─── Geometry helper for person overlay paths ────────────────────────
+const TEAM_AXIS_KEYS = ['execution', 'ownership', 'adaptability', 'collaboration', 'decisionSpeed'] as const
+function computePersonPath(scores: FitModelScores, size: number): string {
+  const cx = size / 2, cy = size / 2, maxR = size * 0.31
+  const axes = deriveAxes(scores)
+  const pts = TEAM_AXIS_KEYS.map((k, i) => {
+    const angle = (Math.PI * 2 * i) / 5 - Math.PI / 2
+    const r = maxR * axes[k]
+    return { x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) }
+  })
+  return pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ') + ' Z'
 }
 
 const AXIS_LABELS = ['Execution', 'Ownership', 'Adaptability', 'Collaboration', 'Decision Speed']
@@ -388,7 +429,7 @@ function SimCard() {
                   strokeLinecap="round" strokeDasharray={circum} strokeDashoffset={offset} />
               </svg>
               <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontFamily: FONT, fontSize: 38, fontWeight: 700, color: TEXT, lineHeight: 1, letterSpacing: '-0.04em' }}>{score}</span>
+                <span style={{ fontFamily: FONT, fontSize: 'clamp(26px, 3.5vw, 38px)', fontWeight: 700, color: TEXT, lineHeight: 1, letterSpacing: '-0.04em' }}>{score}</span>
               </div>
             </div>
             <div style={{ textAlign: 'center' }}>
@@ -407,7 +448,7 @@ function SimCard() {
               transition: 'opacity 400ms ease, transform 400ms ease',
             }}>
               <p style={{ fontSize: 8, fontFamily: FONT, fontWeight: 600, color: 'rgba(255,255,255,0.25)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 4 }}>Closest archetype</p>
-              <p style={{ fontFamily: FONT, fontSize: 30, fontWeight: 700, color: TEXT, letterSpacing: '-0.03em', lineHeight: 1.05, marginBottom: 4 }}>The Operator</p>
+              <p style={{ fontFamily: FONT, fontSize: 'clamp(22px, 3vw, 30px)', fontWeight: 700, color: TEXT, letterSpacing: '-0.03em', lineHeight: 1.05, marginBottom: 4 }}>The Operator</p>
               <p style={{ fontSize: 12, fontFamily: FONT, color: 'rgba(255,255,255,0.36)', letterSpacing: '-0.01em' }}>Deliberate · Output-focused</p>
             </div>
             <div style={{
@@ -466,25 +507,240 @@ function SimCard() {
   )
 }
 
+// ─── Team Layer widget ────────────────────────────────────────────────
+type TeamView = 'benchmark' | 'team' | 'shortlist'
+
+function TeamPersonRow({ person, isHovered, onHover, onLeave }: {
+  person: typeof TEAM_PEOPLE[0]
+  isHovered: boolean
+  onHover: () => void
+  onLeave: () => void
+}) {
+  return (
+    <div
+      onMouseEnter={onHover}
+      onMouseLeave={onLeave}
+      style={{
+        position: 'relative',
+        padding: '10px 0 10px 12px',
+        borderBottom: `0.5px solid rgba(255,255,255,0.06)`,
+        cursor: 'default',
+        background: isHovered ? 'rgba(255,255,255,0.03)' : 'transparent',
+        transition: 'background 180ms ease',
+      }}
+    >
+      <div style={{
+        position: 'absolute', left: 0, top: 0, bottom: 0, width: 2,
+        background: person.color,
+        opacity: isHovered ? 1 : 0,
+        transition: 'opacity 180ms ease',
+        borderRadius: 1,
+      }} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+        <div style={{ flex: 1 }}>
+          <span style={{ fontSize: 12, fontFamily: FONT, fontWeight: 500, color: TEXT, marginRight: 6 }}>{person.name}</span>
+          <span style={{ fontSize: 10, fontFamily: FONT, fontWeight: 300, color: MUTED }}>{person.role}</span>
+        </div>
+        <span style={{ fontSize: 18, fontFamily: COND, fontWeight: 700, color: person.color, flexShrink: 0, lineHeight: 1 }}>{person.pct}%</span>
+      </div>
+      <div style={{ height: 3, background: BORD, borderRadius: 2, overflow: 'hidden', marginBottom: 4 }}>
+        <div style={{ height: '100%', width: `${person.pct}%`, background: person.color, borderRadius: 2 }} />
+      </div>
+      <p style={{ fontSize: 10, fontFamily: FONT, fontWeight: 300, color: DIM, fontStyle: 'italic', margin: 0 }}>{person.sub}</p>
+    </div>
+  )
+}
+
+function TeamLayerWidget({ inView, isMobile, candidateScores, benchmarkScores }: {
+  inView: boolean
+  isMobile: boolean
+  candidateScores: FitModelScores
+  benchmarkScores: FitModelScores
+}) {
+  const [view, setView] = useState<TeamView>('team')
+  const [hoveredPerson, setHoveredPerson] = useState<number | null>(null)
+  const radarSize = isMobile ? 200 : 240
+
+  const candAxes = deriveAxes(candidateScores)
+  const benchAxes = deriveAxes(benchmarkScores)
+
+  const overlayPerson = view === 'team' && hoveredPerson !== null ? TEAM_PEOPLE[hoveredPerson] : null
+  const overlayPath   = overlayPerson ? computePersonPath(overlayPerson.scores, radarSize) : null
+
+  const VIEW_LABELS: Record<TeamView, string> = { benchmark: 'BENCHMARK', team: 'TEAM', shortlist: 'SHORTLIST' }
+
+  // Dynamic legend items
+  const legendItems: Array<{ label: string; stroke: string; dasharray?: string }> = [
+    { label: 'Candidate', stroke: BLUE },
+  ]
+  if (view === 'benchmark') {
+    legendItems.push({ label: 'Benchmark', stroke: 'rgba(255,255,255,0.35)', dasharray: '2 3' })
+  } else if (view === 'team') {
+    if (hoveredPerson !== null) {
+      legendItems.push({ label: TEAM_PEOPLE[hoveredPerson].name.split(' ')[0], stroke: TEAM_PEOPLE[hoveredPerson].color, dasharray: '4 3' })
+    } else {
+      legendItems.push({ label: 'Hover to compare', stroke: 'rgba(255,255,255,0.2)', dasharray: '4 3' })
+    }
+  }
+
+  return (
+    <div style={{ background: CARD, border: `1px solid ${BORD}`, borderRadius: 16, padding: '20px 22px 16px' }}>
+      {/* Header row */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <span style={{ fontSize: 9, fontFamily: FONT, fontWeight: 300, color: DIM, letterSpacing: '0.12em', textTransform: 'uppercase' }}>Behavioral Alignment</span>
+        {/* Toggle */}
+        <div style={{ display: 'flex', background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: 3, gap: 2 }}>
+          {(['benchmark', 'team', 'shortlist'] as TeamView[]).map(v => (
+            <button key={v} onClick={() => { setView(v); setHoveredPerson(null) }} style={{
+              fontSize: 9, fontFamily: FONT, fontWeight: view === v ? 500 : 300,
+              color: view === v ? TEXT : MUTED,
+              background: view === v ? 'rgba(255,255,255,0.1)' : 'transparent',
+              border: 'none', borderRadius: 5, cursor: 'pointer',
+              padding: '4px 8px', letterSpacing: '0.05em',
+              transition: 'all 180ms ease',
+            }}>
+              {VIEW_LABELS[v]}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Legend */}
+      <div style={{ display: 'flex', gap: 16, marginBottom: 14 }}>
+        {legendItems.map((item, i) => (
+          <div key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <svg width="16" height="2" viewBox="0 0 16 2" style={{ flexShrink: 0, overflow: 'visible' }}>
+              <line x1="0" y1="1" x2="16" y2="1" stroke={item.stroke} strokeWidth="2" strokeLinecap="round" strokeDasharray={item.dasharray} />
+            </svg>
+            <span style={{ fontSize: 10, fontFamily: FONT, fontWeight: 300, color: 'rgba(238,236,230,0.45)' }}>{item.label}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Radar + overlay */}
+      <div style={{ display: 'flex', justifyContent: 'center', position: 'relative' }}>
+        <FitModel
+          scores={candidateScores}
+          benchmarkScores={view === 'benchmark' ? benchmarkScores : null}
+          size={radarSize}
+          variant="dark"
+          animated={inView}
+        />
+        {view === 'team' && overlayPath && overlayPerson && (
+          <svg
+            width={radarSize} height={radarSize}
+            viewBox={`0 0 ${radarSize} ${radarSize}`}
+            fill="none"
+            style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', pointerEvents: 'none', display: 'block' }}
+          >
+            <path
+              d={overlayPath}
+              stroke={overlayPerson.color}
+              strokeWidth="1.5"
+              strokeDasharray="4 3"
+              strokeLinejoin="round"
+              strokeLinecap="round"
+              fill="none"
+              opacity={0.85}
+            />
+          </svg>
+        )}
+      </div>
+
+      {/* Bottom panel */}
+      <div style={{ paddingTop: 14, borderTop: `1px solid ${BORD}` }}>
+
+        {/* VS. BENCHMARK — dimension table */}
+        {view === 'benchmark' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+            {AXIS_LABELS.map((label, i) => {
+              const key = TEAM_AXIS_KEYS[i]
+              const cVal = Math.round(candAxes[key] * 100)
+              const bVal = Math.round(benchAxes[key] * 100)
+              const delta = cVal - bVal
+              const deltaColor = delta > 3 ? GREEN : delta < -3 ? RED : MUTED
+              return (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 10, fontFamily: FONT, fontWeight: 300, color: MUTED, width: 86, flexShrink: 0 }}>{label}</span>
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <div style={{ height: 3, background: BLUE, borderRadius: 1, width: `${cVal}%`, transition: 'width 300ms ease' }} />
+                    <div style={{ height: 3, background: 'rgba(255,255,255,0.05)', borderRadius: 1, flex: 1 }} />
+                  </div>
+                  <span style={{ fontSize: 10, fontFamily: FONT, fontWeight: 500, color: TEXT, width: 22, textAlign: 'right', flexShrink: 0 }}>{cVal}</span>
+                  <span style={{ fontSize: 10, fontFamily: FONT, fontWeight: 300, color: MUTED, width: 22, textAlign: 'right', flexShrink: 0 }}>{bVal}</span>
+                  <span style={{ fontSize: 10, fontFamily: COND, fontWeight: 700, color: deltaColor, width: 28, textAlign: 'right', flexShrink: 0 }}>{delta > 0 ? '+' : ''}{delta}</span>
+                </div>
+              )
+            })}
+            <div style={{ display: 'flex', gap: 8, marginTop: 4, justifyContent: 'flex-end' }}>
+              {[{ label: 'Candidate', color: TEXT }, { label: 'Benchmark', color: MUTED }, { label: 'Δ', color: MUTED }].map((x, i) => (
+                <span key={i} style={{ fontSize: 9, fontFamily: FONT, fontWeight: 300, color: x.color, width: i < 2 ? 22 : 28, textAlign: 'right' }}>{x.label}</span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* VS. TEAM — interactive person rows */}
+        {view === 'team' && (
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {TEAM_PEOPLE.map((p, i) => (
+              <TeamPersonRow
+                key={i}
+                person={p}
+                isHovered={hoveredPerson === i}
+                onHover={() => setHoveredPerson(i)}
+                onLeave={() => setHoveredPerson(null)}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* VS. SHORTLIST */}
+        {view === 'shortlist' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <p style={{ fontSize: 10, fontFamily: FONT, fontWeight: 300, color: DIM, marginBottom: 2 }}>
+              Fit score against same role benchmark
+            </p>
+            {SHORTLIST_PEOPLE.map((c, i) => (
+              <div key={i}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                  <span style={{ fontSize: 12, fontFamily: FONT, fontWeight: 500, color: TEXT, flex: 1 }}>{c.label}</span>
+                  <span style={{ fontSize: 18, fontFamily: COND, fontWeight: 700, color: c.color, lineHeight: 1 }}>{c.pct}%</span>
+                </div>
+                <div style={{ height: 3, background: BORD, borderRadius: 2, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${c.pct}%`, background: c.color, borderRadius: 2 }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+      </div>
+    </div>
+  )
+}
+
 // ─── Main page ────────────────────────────────────────────────────────
 export default function MethodPage() {
   const s1 = useInView(0.2)
-  const s2 = useInView(0.2)
   const s3 = useInView(0.2)
   const s4 = useInView(0.2)
   const s5 = useInView(0.2)
-
-  const v80  = useCountUp(80,  900, s2.inView)
-  const v94  = useCountUp(94,  900, s2.inView)
-  const v5   = useCountUp(5,   700, s2.inView)
-  const v1   = useCountUp(1,   500, s2.inView)
 
   const [activeProfile, setActiveProfile] = useState(0)
   const [fading, setFading] = useState(false)
   const [tooltip, setTooltip] = useState<number | null>(null)
   const [activeSection, setActiveSection] = useState(0)
+  const [isMobile, setIsMobile] = useState(false)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const snapContainerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
 
   // Profile rotation
@@ -520,8 +776,8 @@ export default function MethodPage() {
 
   const profile = PROFILES[activeProfile]
 
-  // Hero card vertex tooltips — compute axis hit positions for size=280
-  const HERO_SIZE = 280
+  // Hero card vertex tooltips — compute axis hit positions
+  const HERO_SIZE = isMobile ? 220 : 280
   const cx = HERO_SIZE / 2
   const cy = HERO_SIZE / 2
   const hitR = HERO_SIZE * 0.36
@@ -531,9 +787,9 @@ export default function MethodPage() {
   })
 
   const SECTION_STYLE: React.CSSProperties = {
-    height: '100vh', flexShrink: 0, scrollSnapAlign: 'start',
+    minHeight: '100svh', flexShrink: 0, scrollSnapAlign: 'start',
     display: 'flex', alignItems: 'center', overflowY: 'auto',
-    justifyContent: 'center', padding: '100px 64px', position: 'relative',
+    justifyContent: 'center', padding: 'clamp(60px, 8vh, 100px) clamp(20px, 5vw, 64px)', position: 'relative',
     background: BG,
   }
 
@@ -544,7 +800,16 @@ export default function MethodPage() {
 
   return (
     <div className="snap-page" ref={snapContainerRef} style={{ background: BG, color: TEXT, fontFamily: FONT }}>
-      <style>{`.snap-page::-webkit-scrollbar{display:none}`}</style>
+      <style>{`
+        .snap-page::-webkit-scrollbar{display:none}
+        @media (max-width: 767px) {
+          .hero-grid { grid-template-columns: 1fr !important; gap: 40px !important; }
+          .signal-grid { grid-template-columns: 1fr !important; gap: 40px !important; }
+          .dimensions-five-col { grid-template-columns: 1fr !important; }
+          .profiles-hero-ctas { flex-direction: column !important; align-items: stretch !important; }
+          .profiles-hero-ctas > * { justify-content: center !important; text-align: center !important; }
+        }
+      `}</style>
 
       {/* ── NAV ─────────────────────────────────────────────────────── */}
       <Nav activePage="profiles" />
@@ -554,7 +819,7 @@ export default function MethodPage() {
       ══════════════════════════════════════════════════════════════ */}
       <section ref={s1.ref as React.RefObject<HTMLElement>} style={{ ...SECTION_STYLE, gap: 80 }}>
         <div style={{
-          width: '100%', maxWidth: 1120,
+          width: '100%', maxWidth: 'min(1120px, calc(100vw - clamp(40px, 8vw, 160px)))',
           display: 'grid', gridTemplateColumns: '1fr 420px',
           gap: 80, alignItems: 'center',
         }} className="hero-grid">
@@ -567,17 +832,16 @@ export default function MethodPage() {
               fontWeight: 700, color: TEXT, letterSpacing: '-0.03em',
               lineHeight: 1.05, marginBottom: 24,
             }}>
-              Why the recommendation<br />holds up.
+              Measure fit. Not personality.
             </h1>
             <p style={{
               fontSize: 17, fontFamily: FONT, fontWeight: 300, color: MUTED,
               lineHeight: 1.75, marginBottom: 10, maxWidth: 400,
             }}>
-              The score isn&apos;t a personality label.
-              It&apos;s a distance from a role-specific benchmark.
+              Distance from a role- and environment-specific benchmark.
             </p>
             <p style={{ fontSize: 11, fontFamily: FONT, fontWeight: 300, color: DIM, marginBottom: 44, letterSpacing: '0.02em' }}>
-              Model v2.0 · Calibrated Mar 2026 · 2,245,096 respondents
+              Calibrated on 2.2M+ respondents · Model v2.0
             </p>
             <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
               <a href="/sample-report" style={{
@@ -585,7 +849,7 @@ export default function MethodPage() {
                 background: '#FFFFFF', color: '#000000',
                 fontSize: 16, fontWeight: 700,
                 padding: '15px 36px', borderRadius: 9, textDecoration: 'none',
-              }}>See a full recommendation</a>
+              }}>View full report →</a>
             </div>
           </div>
 
@@ -671,7 +935,7 @@ export default function MethodPage() {
                     <p style={{ fontSize: 11, fontFamily: FONT, fontWeight: 300, color: MUTED }}>{profile.role}</p>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <p style={{ fontFamily: FONT, fontSize: 36, fontWeight: 900, color: TEXT, letterSpacing: '-0.04em', lineHeight: 1, marginBottom: 2 }}>
+                    <p style={{ fontFamily: FONT, fontSize: 'clamp(28px, 4vw, 36px)', fontWeight: 900, color: TEXT, letterSpacing: '-0.04em', lineHeight: 1, marginBottom: 2 }}>
                       {profile.score}
                     </p>
                     <p style={{ fontSize: 10, fontFamily: FONT, fontWeight: 500, color: profile.verdictColor }}>{profile.verdict}</p>
@@ -709,70 +973,14 @@ export default function MethodPage() {
       {/* ══════════════════════════════════════════════════════════════
           SECTION 2 — HOW IT WORKS
       ══════════════════════════════════════════════════════════════ */}
-      <section ref={s2.ref as React.RefObject<HTMLElement>} style={{ ...SECTION_STYLE, borderTop: `1px solid ${BORD}` }}>
-        <div style={{
-          width: '100%', maxWidth: 1120,
-          display: 'grid', gridTemplateColumns: '1fr 1fr',
-          gap: 80, alignItems: 'center',
-        }} className="score-build-grid">
-
-          {/* Left — stats + copy */}
-          <div style={fi(s2.inView)}>
-            <p style={eyebrow('How it works')}>How it works</p>
-            <h2 style={{
-              fontSize: 'clamp(32px,4.5vw,56px)',
-              fontWeight: 700, color: TEXT, letterSpacing: '-0.03em',
-              lineHeight: 1.05, marginBottom: 20,
-            }}>
-              Six minutes.<br />Ninety-four signals.
-            </h2>
-            <p style={{
-              fontSize: 14, fontFamily: FONT, fontWeight: 300, color: MUTED,
-              lineHeight: 1.8, marginBottom: 40, maxWidth: 380,
-            }}>
-              A candidate sees two word lists. What they need to be in this role.
-              And who they naturally are. The gap between those two answers is
-              where the signal lives.
-            </p>
-
-            {/* 2×2 stat grid */}
-            <div style={{
-              display: 'grid', gridTemplateColumns: '1fr 1fr',
-              border: `1px solid ${BORD}`, borderRadius: 12, overflow: 'hidden',
-            }}>
-              {[
-                { n: v80,  label: 'Adjective choices' },
-                { n: v94,  label: 'Behavioral signals' },
-                { n: v5,   label: 'Dimensions scored' },
-                { n: v1,   label: 'Fit score vs benchmark' },
-              ].map((stat, i) => (
-                <div key={i} style={{
-                  padding: '24px 22px',
-                  borderRight: i % 2 === 0 ? `1px solid ${BORD}` : 'none',
-                  borderBottom: i < 2 ? `1px solid ${BORD}` : 'none',
-                }}>
-                  <p style={{ fontSize: 64, fontWeight: 700, color: TEXT, letterSpacing: '-0.04em', lineHeight: 1, marginBottom: 6 }}>
-                    {stat.n}
-                  </p>
-                  <p style={{ fontSize: 11, fontFamily: FONT, fontWeight: 300, color: MUTED }}>{stat.label}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Right — assessment simulation */}
-          <div style={fi(s2.inView, 150)}>
-            <SimCard />
-          </div>
-        </div>
-      </section>
+      <HowItWorksSection />
 
       {/* ══════════════════════════════════════════════════════════════
           SECTION 3 — TEAM LAYER
       ══════════════════════════════════════════════════════════════ */}
       <section ref={s3.ref as React.RefObject<HTMLElement>} style={{ ...SECTION_STYLE, borderTop: `1px solid ${BORD}` }}>
         <div style={{
-          width: '100%', maxWidth: 1120,
+          width: '100%', maxWidth: 'min(1120px, calc(100vw - clamp(40px, 8vw, 160px)))',
           display: 'grid', gridTemplateColumns: '1fr 1fr',
           gap: 80, alignItems: 'center',
         }} className="signal-grid">
@@ -787,93 +995,29 @@ export default function MethodPage() {
             }}>
               Fit for the role.<br />Fit for the room.
             </h2>
-            <p style={{ fontSize: 14, fontFamily: FONT, fontWeight: 300, color: MUTED, lineHeight: 1.8, marginBottom: 14 }}>
-              The benchmark answers whether the candidate can do the job.
-              The team layer answers whether they&apos;ll do it here — with
-              this manager, these peers, in this environment.
+            <p style={{ fontSize: 15, fontFamily: FONT, fontWeight: 400, color: '#eeece6', lineHeight: 1.65, marginBottom: 20 }}>
+              The benchmark tells you if they can do the job.
+              The team layer tells you if they&apos;ll do it here.
             </p>
-            <p style={{ fontSize: 14, fontFamily: FONT, fontWeight: 300, color: MUTED, lineHeight: 1.8, marginBottom: 36 }}>
-              Profile the hiring manager and key stakeholders once.
-              Every candidate is automatically scored against every stored
-              profile — showing alignment and friction before the client meeting.
+            <p style={{ fontSize: 15, fontFamily: FONT, fontWeight: 300, color: 'rgba(238,236,230,0.62)', lineHeight: 1.75 }}>
+              Profile the people they&apos;ll work with once.
+              Every candidate scores against those profiles automatically.
+              You walk into the client meeting knowing where alignment
+              lives — and where friction will show up first.
             </p>
-
-            {/* Icon list */}
-            {[
-              { icon: 'M4 12h16M4 6h16M4 18h10', text: 'Hiring manager profiled once. Active on every future candidate.' },
-              { icon: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75', text: 'Peer, board, and stakeholder profiles stack automatically.' },
-              { icon: 'M22 11.08V12a10 10 0 1 1-5.93-9.14M22 4L12 14.01l-3-3', text: 'Friction surfaces before onboarding, not after.' },
-            ].map((item, i) => (
-              <div key={i} style={{ display: 'flex', gap: 14, alignItems: 'flex-start', marginBottom: 16 }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={BLUE} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}>
-                  <path d={item.icon} />
-                </svg>
-                <p style={{ fontSize: 13, fontFamily: FONT, fontWeight: 300, color: MUTED, lineHeight: 1.65 }}>{item.text}</p>
-              </div>
-            ))}
+            <p style={{ fontSize: 13, fontFamily: FONT, fontWeight: 400, color: 'rgba(238,236,230,0.42)', marginTop: 28 }}>
+              One setup. Active on every search.
+            </p>
           </div>
 
           {/* Right */}
           <div style={{ ...fi(s3.inView, 150), display: 'flex', flexDirection: 'column', gap: 0 }}>
-            <div style={{ background: CARD, border: `1px solid ${BORD}`, borderRadius: 16, padding: '20px 22px 16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <span style={{ fontSize: 9, fontFamily: FONT, fontWeight: 300, color: DIM, letterSpacing: '0.12em', textTransform: 'uppercase' }}>Candidate vs. Hiring Manager</span>
-              </div>
-
-              {/* Legend */}
-              <div style={{ display: 'flex', gap: 16, marginBottom: 14 }}>
-                {[
-                  { color: BLUE, label: 'Candidate', dashed: false },
-                  { color: 'rgba(255,255,255,0.5)', label: 'Hiring Manager', dashed: true },
-                  { color: 'rgba(255,255,255,0.2)', label: 'Benchmark', dashed: true },
-                ].map((item, i) => (
-                  <div key={i} style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
-                    <div style={{
-                      width: 14, height: 2,
-                      background: item.dashed
-                        ? `repeating-linear-gradient(90deg,${item.color} 0,${item.color} 3px,transparent 3px,transparent 6px)`
-                        : item.color,
-                    }} />
-                    <span style={{ fontSize: 9, fontFamily: FONT, fontWeight: 300, color: MUTED }}>{item.label}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'center' }}>
-                <FitModel
-                  scores={PROFILES[0].scores}
-                  target={HIRING_MANAGER}
-                  benchmarkScores={BENCHMARK}
-                  size={240}
-                  variant="dark"
-                  animated={s3.inView}
-                />
-              </div>
-
-              {/* Compat rows */}
-              <div style={{ paddingTop: 14, borderTop: `1px solid ${BORD}`, display: 'flex', flexDirection: 'column', gap: 14 }}>
-                {[
-                  { name: 'David Mercer', role: 'Hiring Manager',  pct: 91, color: GREEN, sub: 'Strong behavioral alignment across all five dimensions.' },
-                  { name: 'Sarah Chen',   role: 'Project Lead',    pct: 54, color: AMBER, sub: 'Communication style divergence — pace and collaboration gap.' },
-                  { name: 'Tom Ricci',    role: 'Board Observer',  pct: 38, color: RED,   sub: 'High friction — pace and risk tolerance misaligned.' },
-                ].map((p, i) => (
-                  <div key={i}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                      <div style={{ width: 5, height: 5, borderRadius: '50%', background: p.color, flexShrink: 0 }} />
-                      <div style={{ flex: 1 }}>
-                        <span style={{ fontSize: 12, fontFamily: FONT, fontWeight: 500, color: TEXT, marginRight: 6 }}>{p.name}</span>
-                        <span style={{ fontSize: 10, fontFamily: FONT, fontWeight: 300, color: MUTED }}>{p.role}</span>
-                      </div>
-                      <span style={{ fontSize: 12, fontFamily: FONT, fontWeight: 500, color: p.color, flexShrink: 0 }}>{p.pct}%</span>
-                    </div>
-                    <div style={{ height: 4, background: BORD, borderRadius: 2, overflow: 'hidden', marginBottom: 4 }}>
-                      <div style={{ height: '100%', width: `${p.pct}%`, background: p.color, borderRadius: 2 }} />
-                    </div>
-                    <p style={{ fontSize: 10, fontFamily: FONT, fontWeight: 300, color: DIM, paddingLeft: 13 }}>{p.sub}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <TeamLayerWidget
+              inView={s3.inView}
+              isMobile={isMobile}
+              candidateScores={PROFILES[0].scores}
+              benchmarkScores={BENCHMARK}
+            />
           </div>
         </div>
       </section>
@@ -882,79 +1026,7 @@ export default function MethodPage() {
           SECTION 4 — WHAT WE MEASURE
       ══════════════════════════════════════════════════════════════ */}
       <section ref={s4.ref as React.RefObject<HTMLElement>} style={{ ...SECTION_STYLE, borderTop: `1px solid ${BORD}` }}>
-        <div style={{ width: '100%', maxWidth: 1120 }}>
-          <div style={{ ...fi(s4.inView), textAlign: 'center', marginBottom: 64 }}>
-            <p style={{ ...eyebrow('What we measure'), display: 'block' }}>What we measure</p>
-            <h2 style={{
-              fontSize: 'clamp(36px,5vw,64px)',
-              fontWeight: 700, color: TEXT, letterSpacing: '-0.03em',
-              lineHeight: 1.05, marginBottom: 16,
-            }}>
-              Five dimensions.<br />Infinite signal.
-            </h2>
-            <p style={{ fontSize: 15, fontFamily: FONT, fontWeight: 300, color: MUTED, maxWidth: 480, margin: '0 auto' }}>
-              Not personality labels. Behavioral distance from a benchmark.
-            </p>
-          </div>
-
-          {/* 5-column grid */}
-          <div style={{
-            display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1,
-            border: `1px solid ${BORD}`, borderRadius: 12, overflow: 'hidden',
-          }}>
-            {[
-              {
-                dim: 'Execution',
-                desc: 'How quickly and precisely they act under pressure. High scorers move without needing consensus.',
-                hi: 85, lo: 30,
-              },
-              {
-                dim: 'Ownership',
-                desc: 'Degree of personal accountability. High: takes full responsibility for outcomes and decisions.',
-                hi: 78, lo: 42,
-              },
-              {
-                dim: 'Adaptability',
-                desc: 'Comfort with ambiguity and change. High: thrives in shifting environments and unclear mandates.',
-                hi: 70, lo: 55,
-              },
-              {
-                dim: 'Collaboration',
-                desc: 'Orientation toward working through others. High: builds consensus, energized by the team.',
-                hi: 90, lo: 25,
-              },
-              {
-                dim: 'Decision Speed',
-                desc: 'Urgency in making and acting on decisions. High: fast and instinctive. Low: thorough, deliberate.',
-                hi: 80, lo: 35,
-              },
-            ].map((col, i) => (
-              <div key={col.dim} style={{
-                ...fi(s4.inView, i * 80),
-                padding: '28px 22px 24px',
-                background: CARD,
-                borderLeft: i > 0 ? `1px solid ${BORD}` : 'none',
-                display: 'flex', flexDirection: 'column', gap: 14,
-              }}>
-                <DimIcon dim={col.dim} />
-                <p style={{ fontFamily: FONT, fontSize: 15, fontWeight: 800, color: TEXT, textTransform: 'uppercase', letterSpacing: '0.04em', lineHeight: 1.1 }}>
-                  {col.dim}
-                </p>
-                <p style={{ fontSize: 11, fontFamily: FONT, fontWeight: 300, color: MUTED, lineHeight: 1.65, flex: 1 }}>
-                  {col.desc}
-                </p>
-                {/* Sparkline — 4 bars showing high vs low */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  {[col.hi, (col.hi + col.lo) / 2, col.lo, col.hi * 0.6].map((w, j) => (
-                    <div key={j} style={{ height: 2, borderRadius: 1, background: DIM, overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: `${w}%`, background: j === 0 ? MUTED : DIM, borderRadius: 1 }} />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <FiveDimensionsSection inView={s4.inView} />
       </section>
 
       {/* ══════════════════════════════════════════════════════════════
@@ -962,10 +1034,10 @@ export default function MethodPage() {
       ══════════════════════════════════════════════════════════════ */}
       <section ref={s5.ref as React.RefObject<HTMLElement>} style={{ ...SECTION_STYLE, borderTop: `1px solid ${BORD}` }}>
         <div style={{
-          width: '100%', maxWidth: 1120,
+          width: '100%', maxWidth: 'min(1120px, calc(100vw - clamp(40px, 8vw, 160px)))',
           display: 'grid', gridTemplateColumns: '1fr 1fr',
           gap: 80, alignItems: 'center',
-        }} className="howit-grid">
+        }} className="signal-grid howit-grid">
 
           {/* Left */}
           <div style={fi(s5.inView)}>

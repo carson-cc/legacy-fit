@@ -8,25 +8,80 @@ import Nav from '@/app/components/Nav'
 
 // ─── CATEGORY CONFIG ──────────────────────────────────────────────────────────
 const CATS = [
-  { key: 'field_command',     label: 'Drivers',     descriptor: 'Urgent · Output-focused',        axisNote: 'High Pace · Low People',  color: '#B84848' },
-  { key: 'people_influence',  label: 'Catalysts',   descriptor: 'Variable Pace · People-focused', axisNote: 'Mixed Pace · High People', color: '#9A7420' },
-  { key: 'process_structure', label: 'Operators',   descriptor: 'Deliberate · Output-focused',    axisNote: 'Low Pace · Low People',   color: '#2D7248' },
-  { key: 'strategic_drive',   label: 'Stabilizers', descriptor: 'Deliberate · Mixed People',      axisNote: 'Low Pace · Mid People',   color: '#2458B8' },
+  { key: 'field_command',     label: 'Drivers',     descriptor: 'Push things forward',             axisNote: 'Pace-first · Output-driven',  color: '#c45030' },
+  { key: 'people_influence',  label: 'Catalysts',   descriptor: 'Move people and energy',          axisNote: 'Energy-first · People-driven', color: '#c8873a' },
+  { key: 'process_structure', label: 'Operators',   descriptor: 'Execute and manage complexity',   axisNote: 'Process over pace',            color: '#3a6ecc' },
+  { key: 'strategic_drive',   label: 'Stabilizers', descriptor: 'Deepen, scale, and sustain',      axisNote: 'Trust over speed',             color: '#3aa868' },
 ] as const
 
 function getCat(key: string) {
   return CATS.find(c => c.key === key) ?? CATS[0]
 }
 
+const DOMINANT_ARCHETYPES = new Set([
+  'Pioneer', 'Renegade',     // Drivers
+  'Igniter', 'Unifier',      // Catalysts
+  'Sentinel', 'Anchor',      // Operators
+  'Trailblazer', 'Veteran',  // Stabilizers
+])
+
 const TAGS: Record<string, string> = {
   Pioneer: 'Independent · Owner', Renegade: 'Bold · Disruptive',
   Purist: 'Standards · Exacting', Conductor: 'Authority · Range',
-  Catalyst: 'Launch · Ignite',    Diplomat: 'Alignment · Trust',
+  Igniter: 'Launch · Ignite',     Diplomat: 'Alignment · Trust',
   Rainmaker: 'Influence · Warmth', Unifier: 'Team · Cohesion',
   Anchor: 'Reliable · Warm',      Navigator: 'Systematic · Precise',
-  Sentinel: 'Compliance · Detail', Standard: 'Consistent · Steady',
-  Agent: 'Expert · Deep',          Executor: 'Drive · Discipline',
+  Sentinel: 'Compliance · Detail', Steward: 'Consistent · Steady',
+  Expert: 'Expert · Deep',         Executor: 'Drive · Discipline',
   Trailblazer: 'Pace · Excellence', Veteran: 'Integrity · Steady',
+}
+
+// ─── CARD PENTAGON DATA ───────────────────────────────────────────────────────
+const PENT_VALUES: Record<string, number[]> = {
+  Conductor:   [82, 75, 70, 78, 72],
+  Pioneer:     [78, 72, 80, 52, 88],
+  Purist:      [90, 88, 42, 45, 62],
+  Renegade:    [72, 65, 88, 55, 92],
+  Igniter:     [62, 58, 85, 94, 78],
+  Diplomat:    [52, 55, 88, 92, 50],
+  Rainmaker:   [70, 62, 80, 88, 82],
+  Unifier:     [55, 60, 72, 98, 48],
+  Anchor:      [88, 90, 40, 52, 58],
+  Navigator:   [82, 84, 55, 60, 70],
+  Sentinel:    [92, 88, 36, 45, 55],
+  Steward:     [85, 80, 48, 62, 65],
+  Expert:      [68, 78, 70, 65, 52],
+  Executor:    [84, 82, 55, 60, 70],
+  Trailblazer: [75, 68, 88, 72, 82],
+  Veteran:     [70, 85, 60, 72, 52],
+}
+
+// ─── CATEGORY COMPOSITE PENTAGON VALS (0–1, Execution/Ownership/Adaptability/Collaboration/DecisionSpeed) ──
+const CATEGORY_COMPOSITE_VALS: Record<string, number[]> = {
+  field_command:     [0.80, 0.75, 0.69, 0.53, 0.79],
+  people_influence:  [0.62, 0.59, 0.84, 0.91, 0.67],
+  process_structure: [0.86, 0.85, 0.47, 0.54, 0.62],
+  strategic_drive:   [0.71, 0.80, 0.69, 0.68, 0.60],
+}
+
+// ─── ARCH DATA ────────────────────────────────────────────────────────────────
+const ARCH_DATA: Record<string, { oneLine: string; strength: string; failureMode: string; bestIn: string; watchFor: string }> = {
+  Conductor:   { oneLine: 'Takes control before anyone else does.',         strength: 'Establishes direction where no one else has claimed it.',               failureMode: 'Overrides others before they had a chance to act.',             bestIn: 'Early-stage or restructuring roles with no clear owner.',               watchFor: 'Crowding out the development of people beneath them.' },
+  Pioneer:     { oneLine: 'Starts before anyone else is ready.',            strength: 'Builds from scratch without needing a complete picture first.',          failureMode: 'Moves on before the foundation holds.',                        bestIn: 'Roles that require starting without a roadmap or precedent.',           watchFor: 'Leaving work half-done when the next challenge appears.' },
+  Purist:      { oneLine: 'Holds the line on quality without compromise.',  strength: 'Catches what would embarrass the organization later.',                   failureMode: 'Slows progress past where quality still compounds.',            bestIn: 'Roles where the standard literally is the job.',                        watchFor: 'Protecting quality that no longer matters at current speed.' },
+  Renegade:    { oneLine: 'Pushes for a fundamentally different direction.',strength: 'Surfaces options the group has stopped considering.',                    failureMode: 'Breaks alignment to prove they were right.',                   bestIn: 'Roles needing a new direction, not a better version of the current.',   watchFor: 'Creating disruption as a default rather than a tool.' },
+  Igniter:     { oneLine: 'Creates momentum in rooms that have gone quiet.',strength: 'Gets people moving when everyone else is waiting for permission.',        failureMode: 'Leaves before momentum turns into sustained output.',           bestIn: 'Stalled or early-stage environments that need energy fast.',            watchFor: 'Confusing activity with progress.' },
+  Diplomat:    { oneLine: 'Keeps people working together under pressure.',  strength: 'Finds agreement where others create conflict.',                          failureMode: 'Avoids decisions that would disrupt the current balance.',     bestIn: 'Cross-functional roles that live between competing interests.',         watchFor: 'Preserving harmony when a hard call is what the situation needs.' },
+  Rainmaker:   { oneLine: 'Wins through relationships.',                    strength: 'Builds trust fast and converts it into real results.',                   failureMode: 'Focus disappears after the initial win.',                      bestIn: 'Roles where the relationship itself is the product.',                   watchFor: 'Leaving execution to someone else after they\'ve closed.' },
+  Unifier:     { oneLine: 'Rebuilds trust inside fractured teams.',         strength: 'Sees where alignment has broken before it shows up in output.',          failureMode: 'Holds the group together past when it should change.',         bestIn: 'Teams that need cohesion rebuilt before they can perform again.',       watchFor: 'Protecting harmony when the team actually needs restructuring.' },
+  Anchor:      { oneLine: 'Stays reliable when everything else is not.',   strength: 'Keeps output consistent under pressure that breaks others.',             failureMode: 'Holds firm when the situation requires movement.',             bestIn: 'Roles that need someone steady and dependable, not someone fast.',      watchFor: 'Resisting change because the current approach still technically works.' },
+  Navigator:   { oneLine: 'Thinks it through before anyone else moves.',   strength: 'Builds plans that account for what others miss.',                        failureMode: 'Prepares longer than the window actually allows.',             bestIn: 'Complex situations where the plan itself is half the work.',            watchFor: 'Over-engineering the approach when speed matters more.' },
+  Sentinel:    { oneLine: 'Catches what everyone else walks past.',         strength: 'Identifies risk before it becomes a problem the organization regrets.',  failureMode: 'Slows the whole system to prevent one miss.',                  bestIn: 'Roles where missing something is worse than moving slowly.',            watchFor: 'Creating bottlenecks that cost more than the errors they prevent.' },
+  Steward:     { oneLine: 'Runs what works, consistently.',                 strength: 'Maintains performance where others would let it slip.',                  failureMode: 'Keeps running the same play after the game has changed.',      bestIn: 'Roles where consistency compounds over time.',                          watchFor: 'Optimizing a process that should be replaced, not refined.' },
+  Expert:      { oneLine: 'Operates from depth others don\'t have.',        strength: 'Solves problems that require real expertise, not pattern-matching.',     failureMode: 'Hard to access for people who don\'t share the same depth.',   bestIn: 'Roles where knowledge itself is the primary differentiator.',           watchFor: 'Being right in a way that doesn\'t land with the people who need to act.' },
+  Executor:    { oneLine: 'Turns decisions into action without delay.',     strength: 'Closes the gap between strategy and visible results.',                   failureMode: 'Executes before the direction is fully validated.',            bestIn: 'Roles that need strategy turned into action without losing momentum.',   watchFor: 'Moving confidently in the wrong direction.' },
+  Trailblazer: { oneLine: 'Raises what the team thinks is possible.',       strength: 'Shows the group what they\'re actually capable of.',                    failureMode: 'Gets restless the moment things begin to stabilize.',          bestIn: 'Environments that need someone to push beyond current ceilings.',       watchFor: 'Needing the next challenge before the current one is secure.' },
+  Veteran:     { oneLine: 'Reads situations through experience others lack.',strength: 'Catches what first-timers miss because they\'ve seen this before.',     failureMode: 'Maps a new situation onto an old pattern that no longer fits.',bestIn: 'Roles where judgment built over time is the actual asset.',             watchFor: 'Assuming the playbook from ten years ago still applies.' },
 }
 
 // ─── ICONS ────────────────────────────────────────────────────────────────────
@@ -42,18 +97,88 @@ const ARCH_ICONS: Record<string, string[]> = {
   Renegade:    ['M11,3 L7,11 L10,11 L9,17 L13,9 L10,9 Z'],
   Purist:      ['M10,3 L17,10 L10,17 L3,10 Z', 'M7,10 L9,12 L13,8'],
   Conductor:   ['M5,6 L5,16', 'M9,9 L9,16', 'M13,5 L13,16', 'M17,11 L17,16'],
-  Catalyst:    ['M10,10 L10,4', 'M10,10 L15.2,7', 'M10,10 L15.2,13', 'M10,10 L10,16', 'M10,10 L4.8,13', 'M10,10 L4.8,7'],
+  Igniter:     ['M10,10 L10,4', 'M10,10 L15.2,7', 'M10,10 L15.2,13', 'M10,10 L10,16', 'M10,10 L4.8,13', 'M10,10 L4.8,7'],
   Diplomat:    ['M3,4 L11,4 L11,9 L8,9 L6,12 L6,9 L3,9 Z', 'M9,7 L17,7 L17,12 L15,12 L15,14 L13,12 L9,12 Z'],
   Rainmaker:   ['M10,3 Q10,9 7.5,11 a2.5,2.5 0 0,0 5,0 Q10,9 10,3 Z', 'M4,17 Q6.5,14 9,17 Q11.5,20 14,17 Q16.5,14 19,17'],
   Unifier:     ['M6,10 a4,4 0 1,0 8,0', 'M6,10 a4,4 0 1,1 8,0'],
   Anchor:      ['M10,4 m-2,0 a2,2 0 1,0 4,0 a2,2 0 1,0 -4,0', 'M10,6 L10,16', 'M6,9 L14,9', 'M6,16 Q10,14 14,16'],
   Navigator:   ['M10,10 m-6.5,0 a6.5,6.5 0 1,0 13,0 a6.5,6.5 0 1,0 -13,0', 'M10,3.5 L10,5.5', 'M10,14.5 L10,16.5', 'M3.5,10 L5.5,10', 'M14.5,10 L16.5,10', 'M10,10 L12.5,6.5'],
   Sentinel:    ['M10,2 L17,5 L17,12 Q17,16 10,19 Q3,16 3,12 L3,5 Z'],
-  Standard:    ['M3,17 L17,3', 'M7,13 L9,11', 'M10,10 L12,8', 'M13,7 L15,5'],
-  Agent:       ['M9,9 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0', 'M13,13 L17,17'],
+  Steward:     ['M3,17 L17,3', 'M7,13 L9,11', 'M10,10 L12,8', 'M13,7 L15,5'],
+  Expert:      ['M9,9 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0', 'M13,13 L17,17'],
   Executor:    ['M10,10 m-3.5,0 a3.5,3.5 0 1,0 7,0 a3.5,3.5 0 1,0 -7,0', 'M10,3 L10,5', 'M10,15 L10,17', 'M3,10 L5,10', 'M15,10 L17,10', 'M5.5,5.5 L7,7', 'M13,13 L14.5,14.5', 'M14.5,5.5 L13,7', 'M7,13 L5.5,14.5'],
   Trailblazer: ['M2,17 L10,4 L18,17 Z', 'M7,11 L13,11'],
   Veteran:     ['M10,2 L12,7.5 L18,7.5 L13.5,11 L15.5,17 L10,13.5 L4.5,17 L6.5,11 L2,7.5 L8,7.5 Z'],
+}
+
+// ─── NAME REMAP (data file → display name) ────────────────────────────────────
+const NAME_REMAP: Record<string, string> = {
+  Catalyst: 'Igniter',
+  Agent:    'Expert',
+  Standard: 'Steward',
+}
+function displayName(name: string): string {
+  return NAME_REMAP[name] ?? name
+}
+
+// ─── DOT COORDS OVERRIDE (px=0 left/1 right, py=0 top/1 bottom) ──────────────
+const DOT_COORDS: Record<string, { px: number; py: number }> = {
+  // Drivers — right side, upper half
+  Conductor:   { px: 0.78, py: 0.28 },
+  Pioneer:     { px: 0.88, py: 0.20 },
+  Purist:      { px: 0.72, py: 0.32 },
+  Renegade:    { px: 0.90, py: 0.38 },
+  // Catalysts — right side, lower half
+  Igniter:     { px: 0.82, py: 0.72 },
+  Diplomat:    { px: 0.65, py: 0.85 },
+  Rainmaker:   { px: 0.75, py: 0.72 },
+  Unifier:     { px: 0.68, py: 0.90 },
+  // Operators — left side, upper half
+  Anchor:      { px: 0.25, py: 0.28 },
+  Navigator:   { px: 0.32, py: 0.20 },
+  Sentinel:    { px: 0.18, py: 0.24 },
+  Steward:     { px: 0.38, py: 0.34 },
+  // Stabilizers — left side, lower half
+  Expert:      { px: 0.28, py: 0.72 },
+  Executor:    { px: 0.38, py: 0.65 },
+  Trailblazer: { px: 0.32, py: 0.82 },
+  Veteran:     { px: 0.22, py: 0.68 },
+}
+
+function getDotXY(p: typeof REFERENCE_PROFILES[0], w: number, h: number, M: number): { x: number; y: number } {
+  const side  = Math.min(w, h)
+  const ox    = (w - side) / 2
+  const oy    = (h - side) / 2
+  const inner = side - M * 2
+  const dn    = displayName(p.name)
+  const coords = DOT_COORDS[dn] ?? DOT_COORDS[p.name]
+  if (coords) {
+    return {
+      x: ox + M + coords.px * inner,
+      y: oy + M + coords.py * inner,
+    }
+  }
+  return dotXY(p.coords.patience, p.coords.extraversion, w, h, M)
+}
+
+// ─── ARCH ESSENCE (group label shown on card) ─────────────────────────────────
+const ARCH_ESSENCE: Record<string, string> = {
+  Conductor:   'DRIVERS',
+  Pioneer:     'DRIVERS',
+  Purist:      'DRIVERS',
+  Renegade:    'DRIVERS',
+  Igniter:     'CATALYSTS',
+  Diplomat:    'CATALYSTS',
+  Rainmaker:   'CATALYSTS',
+  Unifier:     'CATALYSTS',
+  Anchor:      'OPERATORS',
+  Navigator:   'OPERATORS',
+  Sentinel:    'OPERATORS',
+  Steward:     'OPERATORS',
+  Expert:      'STABILIZERS',
+  Executor:    'STABILIZERS',
+  Trailblazer: 'STABILIZERS',
+  Veteran:     'STABILIZERS',
 }
 
 function Icon({ paths, size = 20, stroke = 'currentColor' }: { paths: string[]; size?: number; stroke?: string }) {
@@ -137,22 +262,30 @@ function drawCanvasPentagon(
   profile: typeof REFERENCE_PROFILES[0],
   dx: number, dy: number, color: string, progress: number, side = RADAR_SIZE,
 ) {
-  drawPentagonRaw(ctx, pentagonVals(profile), dx, dy, color, progress, 1.5, 0.09, 0.75, 1.0, side)
+  // Outer reference ring — scales with canvas size
+  const targetR   = side * 0.08
+  const scaleFor  = targetR / (side / 16)   // ensures max r = targetR
+  ctx.beginPath()
+  ctx.arc(dx, dy, targetR, 0, Math.PI * 2)
+  ctx.strokeStyle = 'rgba(255,255,255,0.09)'
+  ctx.lineWidth = 0.5
+  ctx.stroke()
+  drawPentagonRaw(ctx, pentagonVals(profile), dx, dy, color, progress, 1.5, 0.14, 0.90, scaleFor, side)
 }
 
-// Compute average pentagon vals + dot centroid for a group
+// Compute average pentagon vals + dot centroid for a group (uses DOT_COORDS overrides)
 function groupAverage(groupKey: string, w: number, h: number, M: number) {
   const ps = REFERENCE_PROFILES.filter(p => p.group === groupKey)
   if (!ps.length) return null
   const avgVals = [0, 0, 0, 0, 0]
-  let ap = 0, ae = 0
+  let ax = 0, ay = 0
   ps.forEach(p => {
     pentagonVals(p).forEach((v, i) => { avgVals[i] += v / ps.length })
-    ap += p.coords.patience / ps.length
-    ae += p.coords.extraversion / ps.length
+    const { x, y } = getDotXY(p, w, h, M)
+    ax += x / ps.length
+    ay += y / ps.length
   })
-  const { x, y } = dotXY(ap, ae, w, h, M)
-  return { vals: avgVals, x, y }
+  return { vals: avgVals, x: ax, y: ay }
 }
 
 function MiniPentagon({ vals, color, size = 20 }: { vals: number[]; color: string; size?: number }) {
@@ -169,6 +302,52 @@ function MiniPentagon({ vals, color, size = 20 }: { vals: number[]; color: strin
   )
 }
 
+// ─── CARD PENTAGON ────────────────────────────────────────────────────────────
+function CardPentagon({ name, color, hovered, sectionVisible, cardIndex }: { name: string; color: string; hovered: boolean; sectionVisible: boolean; cardIndex: number }) {
+  const [drawn, setDrawn] = useState(false)
+  const animatedRef = useRef(false)
+
+  useEffect(() => {
+    if ((sectionVisible || hovered) && !drawn) setDrawn(true)
+  }, [sectionVisible, hovered, drawn])
+
+  const vals    = PENT_VALUES[name] ?? [60, 60, 60, 60, 60]
+  const size    = 72, cx = 36, cy = 36, maxR = 28
+  const angles  = [0, 1, 2, 3, 4].map(i => (i * 2 * Math.PI / 5) - Math.PI / 2)
+
+  function ring(r: number) {
+    return angles.map(a => `${cx + r * Math.cos(a)},${cy + r * Math.sin(a)}`).join(' ')
+  }
+
+  const dataPoints = vals.map((v, i) => {
+    const r = (v / 100) * maxR
+    return `${cx + r * Math.cos(angles[i])},${cy + r * Math.sin(angles[i])}`
+  }).join(' ')
+
+  const shouldAnimate = drawn && !animatedRef.current
+  if (drawn) animatedRef.current = true
+
+  return (
+    <svg
+      width={size} height={size}
+      viewBox={`0 0 ${size} ${size}`}
+      style={{ display: 'block', pointerEvents: 'none', transition: 'opacity 200ms ease', flexShrink: 0 }}
+    >
+      <polygon points={ring(maxR)} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="0.5" />
+      <polygon points={ring(maxR * 0.5)} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="0.5" />
+      <polygon
+        points={dataPoints}
+        fill={`${color}${hovered ? '30' : '1a'}`}
+        stroke={color}
+        strokeWidth="1.2"
+        opacity={hovered ? 1 : 0.65}
+        className={shouldAnimate ? 'pent-first-draw' : undefined}
+        style={{ transition: 'opacity 200ms ease, fill 200ms ease', animationDelay: shouldAnimate ? `${cardIndex * 100}ms` : '0ms' }}
+      />
+    </svg>
+  )
+}
+
 // ─── RADAR CANVAS ─────────────────────────────────────────────────────────────
 const RADAR_SIZE   = 720
 const RADAR_MARGIN = 72
@@ -176,12 +355,14 @@ const RADAR_MARGIN = 72
 type TooltipState = { name: string; tagline: string; color: string; cssX: number; cssY: number }
 
 function RadarCanvas({
-  activeCat, hoveredProfileName, onHoverCat, onHoverProfile,
+  activeCat, hoveredProfileName, onHoverCat, onHoverProfile, onDotClick, selectedProfile,
 }: {
   activeCat: string | null
   hoveredProfileName: string | null
   onHoverCat: (k: string | null) => void
   onHoverProfile: (name: string | null) => void
+  onDotClick?: (name: string) => void
+  selectedProfile?: string | null
 }) {
   const canvasRef          = useRef<HTMLCanvasElement>(null)
   const rafRef             = useRef(0)
@@ -190,6 +371,8 @@ function RadarCanvas({
   const hoveredProfRef     = useRef<string | null>(null)
   const hoverStartRef      = useRef<number>(0)
   const groupFocusStartRef = useRef<number>(0)
+  const groupLeaveTimeRef  = useRef<number>(0)
+  const lastActiveCatRef   = useRef<string | null>(null)
   const ambientRef         = useRef<{
     cat: string | null; startT: number; endT: number; nextT: number; idx: number
   }>({ cat: null, startT: 0, endT: 0, nextT: 2200, idx: -1 })
@@ -212,7 +395,12 @@ function RadarCanvas({
 
   useEffect(() => {
     activeCatRef.current = activeCat
-    if (activeCat !== null) groupFocusStartRef.current = performance.now()
+    if (activeCat !== null) {
+      groupFocusStartRef.current = performance.now()
+      lastActiveCatRef.current = activeCat
+    } else {
+      groupLeaveTimeRef.current = performance.now()
+    }
   }, [activeCat])
   useEffect(() => {
     hoveredProfRef.current = hoveredProfileName
@@ -223,6 +411,14 @@ function RadarCanvas({
     REFERENCE_PROFILES.map(p => ({
       phase: seeded(p.name) * Math.PI * 2,
       speed: 0.35 + seeded(p.name + 's') * 0.45,
+    }))
+  )
+
+  const driftParams = useRef(
+    REFERENCE_PROFILES.map(p => ({
+      radius: 2 + seeded(p.name + 'd') * 1.5,
+      period: (8 + seeded(p.name + 'p') * 6) * 1000,
+      phase:  seeded(p.name + 'ph') * Math.PI * 2,
     }))
   )
 
@@ -284,10 +480,10 @@ function RadarCanvas({
       const c        = getCat(ww.cat)
       const isActive  = activeCat === ww.cat
       const isAmbient = ambCat === ww.cat
-      const opacity   = isActive ? 0.14
-        : activeCat !== null ? 0.018
-        : isAmbient ? 0.07 + ambAlpha * 0.07
-        : 0.045
+      const opacity   = isActive ? 0.10
+        : activeCat !== null ? 0.014
+        : isAmbient ? 0.05 + ambAlpha * 0.05
+        : 0.032
       const grad = ctx.createRadialGradient(ww.qx, ww.qy, 0, ww.qx, ww.qy, R * 1.1)
       grad.addColorStop(0, hexAlpha(c.color, opacity))
       grad.addColorStop(1, 'transparent')
@@ -295,52 +491,61 @@ function RadarCanvas({
       ctx.fillRect(0, 0, w, h)
     })
 
-    // ── Rings: inner brighter, outer fading ──
+    // ── Rings: uniform low opacity ──
     for (let i = 1; i <= 4; i++) {
-      const op = (0.11 - (i - 1) * 0.024).toFixed(3)
       ctx.beginPath()
       ctx.arc(cx, cy, R * i / 4, 0, Math.PI * 2)
-      ctx.strokeStyle = `rgba(255,255,255,${op})`
+      ctx.strokeStyle = 'rgba(255,255,255,0.07)'
       ctx.lineWidth = 1; ctx.stroke()
     }
 
-    // ── Axes: hairlines from plot edge to plot edge ──
-    const px0 = ox + M, px1 = ox + side - M
-    const py0 = oy + M, py1 = oy + side - M
-    ctx.setLineDash([2, 8])
-    ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 1
-    ctx.beginPath(); ctx.moveTo(px0, cy); ctx.lineTo(px1, cy); ctx.stroke()
-    ctx.beginPath(); ctx.moveTo(cx, py0); ctx.lineTo(cx, py1); ctx.stroke()
-    ctx.setLineDash([])
-    // Directional labels at axis ends
-    ctx.font = '500 9px system-ui, -apple-system'
-    ctx.fillStyle = 'rgba(255,255,255,0.11)'
-    ctx.textAlign = 'center'
-    ctx.fillText('PEOPLE', cx, py0 - 14)
-    ctx.fillText('OUTPUT', cx, py1 + 21)
-    ctx.textAlign = 'left'
-    ctx.fillText('FAST →', px1 + 8, cy - 4)
-    ctx.textAlign = 'right'
-    ctx.fillText('← DELIBERATE', px0 - 8, cy - 4)
-    ctx.textAlign = 'left'
+    // ── Axes: full-canvas crosshair lines ──
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)'
+    ctx.lineWidth = 0.5
+    ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(w, cy); ctx.stroke()
+    ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, h); ctx.stroke()
 
     // ── Group pentagon layer (drawn before dots) ──
     const groupProgress = activeCat ? Math.min(1, (t - groupFocusStartRef.current) / 300) : 0
+    const timeSinceLeave = activeCat === null ? t - groupLeaveTimeRef.current : 0
+    const centerFadeOut = activeCat === null ? Math.max(0, 1 - timeSinceLeave / 250) : 1
+    const centerCat = activeCat ?? (centerFadeOut > 0.005 ? lastActiveCatRef.current : null)
+    const centerDrawProg = activeCat !== null ? Math.min(1, (t - groupFocusStartRef.current) / 450) : 1
 
+    // Four individual archetype pentagons near their dot positions
     if (activeCat !== null && groupProgress > 0.01) {
       const gc = getCat(activeCat)
       REFERENCE_PROFILES
         .filter(p => p.group === activeCat)
         .forEach(p => {
-          const { x, y } = dotXY(p.coords.patience, p.coords.extraversion, w, h, M)
+          const { x, y } = getDotXY(p, w, h, M)
           drawPentagonRaw(ctx, pentagonVals(p), x, y, gc.color,
             groupProgress, 1.2, 0.06, 0.28, 1.0, side)
         })
-      const avg = groupAverage(activeCat, w, h, M)
-      if (avg) {
-        drawPentagonRaw(ctx, avg.vals, avg.x, avg.y, gc.color,
-          groupProgress, 2.2, 0.04, 0.50, 1.15, side)
-      }
+    }
+
+    // Center composite pentagon — draws in on hover, fades out on leave
+    if (centerCat !== null && (centerDrawProg > 0.005 || centerFadeOut > 0.005)) {
+      const gc = getCat(centerCat)
+      const compositeVals = CATEGORY_COMPOSITE_VALS[centerCat] ?? [0.7, 0.7, 0.7, 0.7, 0.7]
+      const maxR = side * 0.22
+      // radiusScale: at v=1.0, r = (side/16) * radiusScale = side*0.22 → scale = 3.52
+      const radiusScale = 3.52
+      ctx.save()
+      ctx.globalAlpha = centerFadeOut
+      // Reference rings at 100% and 50% radius
+      ;[1.0, 0.5].forEach(frac => {
+        const pts = PENT_ANGLES.map(a => [cx + Math.cos(a) * maxR * frac, cy + Math.sin(a) * maxR * frac] as [number, number])
+        ctx.beginPath()
+        pts.forEach(([px, py], i) => i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py))
+        ctx.closePath()
+        ctx.strokeStyle = 'rgba(255,255,255,0.06)'
+        ctx.lineWidth = 0.5
+        ctx.stroke()
+      })
+      // Pentagon with draw-in animation via stroke-dashoffset
+      drawPentagonRaw(ctx, compositeVals, cx, cy, gc.color, centerDrawProg, 2, 0.07, 0.8, radiusScale, side)
+      ctx.restore()
     }
 
     // Ambient: faint member pentagons
@@ -349,7 +554,7 @@ function RadarCanvas({
       REFERENCE_PROFILES
         .filter(p => p.group === ambCat)
         .forEach(p => {
-          const { x, y } = dotXY(p.coords.patience, p.coords.extraversion, w, h, M)
+          const { x, y } = getDotXY(p, w, h, M)
           drawPentagonRaw(ctx, pentagonVals(p), x, y, ac.color,
             ambAlpha * 0.5, 1.0, 0.03, 0.14, 1.0, side)
         })
@@ -359,18 +564,21 @@ function RadarCanvas({
     const hoverProg = hovProf ? Math.min(1, (t - hoverStartRef.current) / 200) : 0
 
     REFERENCE_PROFILES.forEach((p, i) => {
-      const { x, y } = dotXY(p.coords.patience, p.coords.extraversion, w, h, M)
+      const base = getDotXY(p, w, h, M)
+      const dp   = driftParams.current[i]
+      const x    = base.x + dp.radius * Math.cos(t / dp.period + dp.phase)
+      const y    = base.y + dp.radius * Math.sin(t / dp.period + dp.phase)
       const c          = getCat(p.group)
-      const isHovProf  = p.name === hovProf
+      const isHovProf  = displayName(p.name) === hovProf || p.name === hovProf
       const isAmbGroup = p.group === ambCat
 
       const alpha = hovProf
-        ? (isHovProf ? 0.96 : 0.07)
+        ? (isHovProf ? 1.0 : 0.06)
         : activeCat !== null
-          ? (activeCat === p.group ? 0.94 : 0.07)
+          ? (activeCat === p.group ? 1.0 : 0.06)
           : isAmbGroup
-            ? 0.50 + ambAlpha * 0.32
-            : 0.44 - ambAlpha * 0.12
+            ? 0.65 + ambAlpha * 0.25
+            : 0.62 - ambAlpha * 0.14
 
       const isFocused = (activeCat !== null && activeCat === p.group) || isHovProf
 
@@ -380,30 +588,42 @@ function RadarCanvas({
 
       const pp    = pulseParams.current[i]
       const pulse = (Math.sin(t * 0.001 * pp.speed + pp.phase) + 1) / 2
+      // Glow circle — radius 22 (scaled), category color with depth
       if (alpha > 0.08) {
-        const pr = 4.5 + pulse * 13
-        const pa = (1 - pulse) * 0.22 * (isFocused ? 1.8 : isAmbGroup ? 1.3 : 0.7)
+        const glowR = 22 * (side / RADAR_SIZE)
+        const glowGrad = ctx.createRadialGradient(x, y, 0, x, y, glowR)
+        glowGrad.addColorStop(0, hexAlpha(c.color, 0.18 * alpha))
+        glowGrad.addColorStop(1, 'transparent')
+        ctx.beginPath()
+        ctx.arc(x, y, glowR, 0, Math.PI * 2)
+        ctx.fillStyle = glowGrad
+        ctx.fill()
+
+        const pr = 4.5 + pulse * 14
+        const pa = (1 - pulse) * 0.26 * (isFocused ? 2.0 : isAmbGroup ? 1.4 : 0.8)
         ctx.beginPath()
         ctx.arc(x, y, pr, 0, Math.PI * 2)
-        ctx.strokeStyle = hexAlpha(c.color, Math.min(pa * Math.max(alpha, 0.5), 0.42))
+        ctx.strokeStyle = hexAlpha(c.color, Math.min(pa * Math.max(alpha, 0.55), 0.48))
         ctx.lineWidth = 1; ctx.stroke()
       }
 
-      const distFromCenter = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2) / R
-      const depthScale = 1 - distFromCenter * 0.18
-      const baseR = isHovProf ? 6 : isAmbGroup && !isInteracting ? 4 + ambAlpha * 0.8 : 3.8
-      const dotR  = baseR * depthScale + (isHovProf ? 0 : (1 - depthScale) * 0.5)
+      // Main dot — radius 11 (scaled) with inner glow gradient
+      const dotR = 11 * (side / RADAR_SIZE)
+      const dotGrad = ctx.createRadialGradient(x, y, 0, x, y, dotR)
+      dotGrad.addColorStop(0,   hexAlpha(c.color, Math.min(alpha * 1.15, 1.0)))
+      dotGrad.addColorStop(0.5, hexAlpha(c.color, alpha * 0.92))
+      dotGrad.addColorStop(1,   hexAlpha(c.color, alpha * 0.55))
 
       ctx.beginPath()
       ctx.arc(x, y, dotR, 0, Math.PI * 2)
-      ctx.fillStyle = hexAlpha(c.color, alpha)
+      ctx.fillStyle = dotGrad
       ctx.fill()
 
       if (!isHovProf && activeCat !== null && activeCat === p.group && groupProgress > 0.5) {
         ctx.font = '500 9px system-ui, -apple-system'
         ctx.fillStyle = hexAlpha(c.color, groupProgress * 0.65)
         ctx.textAlign = 'center'
-        ctx.fillText(p.name.toUpperCase(), x, y + 14)
+        ctx.fillText(displayName(p.name).toUpperCase(), x, y + 16)
         ctx.textAlign = 'left'
       }
     })
@@ -431,20 +651,20 @@ function RadarCanvas({
     let minD = 26  // hit radius in canvas px
 
     REFERENCE_PROFILES.forEach(p => {
-      const { x, y } = dotXY(p.coords.patience, p.coords.extraversion, w, h, M)
+      const { x, y } = getDotXY(p, w, h, M)
       const d = Math.sqrt((mx - x) ** 2 + (my - y) ** 2)
-      if (d < minD) { minD = d; foundProf = p.name; foundCat = p.group }
+      if (d < minD) { minD = d; foundProf = displayName(p.name); foundCat = p.group }
     })
 
     if (foundProf) {
       onHoverProfile(foundProf)
-      const prof = REFERENCE_PROFILES.find(p => p.name === foundProf)!
-      const { x: dotX, y: dotY } = dotXY(prof.coords.patience, prof.coords.extraversion, w, h, M)
+      const prof = REFERENCE_PROFILES.find(p => displayName(p.name) === foundProf || p.name === foundProf)!
+      const { x: dotX, y: dotY } = getDotXY(prof, w, h, M)
       // Convert back to CSS px for tooltip positioning
       const cssX = dotX * (rect.width  / w)
       const cssY = dotY * (rect.height / h)
       const c = getCat(prof.group)
-      setTooltip({ name: prof.name, tagline: prof.essence, color: c.color, cssX, cssY })
+      setTooltip({ name: displayName(prof.name), tagline: prof.essence, color: c.color, cssX, cssY })
     } else {
       onHoverProfile(null)
       onHoverCat(foundCat)
@@ -456,6 +676,24 @@ function RadarCanvas({
     onHoverProfile(null); onHoverCat(null); setTooltip(null)
   }, [onHoverProfile, onHoverCat])
 
+  const handleClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!onDotClick) return
+    const canvas = canvasRef.current; if (!canvas) return
+    const rect   = canvas.getBoundingClientRect()
+    const { w, h } = dimsRef.current
+    const mx = (e.clientX - rect.left) * (w / rect.width)
+    const my = (e.clientY - rect.top)  * (h / rect.height)
+    const M  = Math.round(Math.min(w, h) * 0.095)
+    let foundProf: string | null = null
+    let minD = 26
+    REFERENCE_PROFILES.forEach(p => {
+      const { x, y } = getDotXY(p, w, h, M)
+      const d = Math.sqrt((mx - x) ** 2 + (my - y) ** 2)
+      if (d < minD) { minD = d; foundProf = displayName(p.name) }
+    })
+    if (foundProf) onDotClick(foundProf)
+  }, [onDotClick])
+
   return (
     // Full-bleed: canvas fills its parent section absolutely
     <div style={{ position: 'absolute', inset: 0 }}>
@@ -463,21 +701,34 @@ function RadarCanvas({
         ref={canvasRef}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
+        onClick={handleClick}
         style={{ width: '100%', height: '100%', cursor: 'crosshair', display: 'block' }}
       />
       {tooltip && (
         <div style={{
           position: 'absolute',
-          left:  tooltip.cssX < window.innerWidth * 0.6 ? tooltip.cssX + 14 : undefined,
-          right: tooltip.cssX >= window.innerWidth * 0.6 ? `calc(100% - ${tooltip.cssX}px + 14px)` : undefined,
-          top: Math.max(8, tooltip.cssY - 22),
-          background: 'rgba(10,10,10,0.96)',
-          border: `1px solid ${hexAlpha(tooltip.color, 0.28)}`,
-          borderRadius: 7, padding: '8px 12px',
-          pointerEvents: 'none', zIndex: 10, minWidth: 130,
+          left:  tooltip.cssX < window.innerWidth * 0.6 ? tooltip.cssX + 16 : undefined,
+          right: tooltip.cssX >= window.innerWidth * 0.6 ? `calc(100% - ${tooltip.cssX}px + 16px)` : undefined,
+          top: Math.max(72, tooltip.cssY - 18),
+          background: '#111',
+          border: `1px solid rgba(255,255,255,0.10)`,
+          borderTop: `2px solid ${tooltip.color}`,
+          borderRadius: 8, padding: '10px 14px',
+          pointerEvents: 'none', zIndex: 20,
+          maxWidth: 220,
         }}>
-          <div style={{ fontFamily: '"Barlow Condensed", system-ui', fontSize: 15, fontWeight: 800, textTransform: 'uppercase', color: tooltip.color, letterSpacing: '0.04em' }}>{tooltip.name}</div>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.40)', marginTop: 2, lineHeight: 1.4 }}>{tooltip.tagline.slice(0, 58)}</div>
+          <div style={{ fontFamily: '"Barlow Condensed", system-ui', fontSize: 14, fontWeight: 800, textTransform: 'uppercase', color: '#eeece6', letterSpacing: '0.05em', marginBottom: 4 }}>{tooltip.name}</div>
+          <div style={{ fontSize: 11.5, fontWeight: 300, color: 'rgba(238,236,230,0.65)', lineHeight: 1.45, fontFamily: '"DM Sans", sans-serif', marginBottom: 6 }}>
+            {ARCH_DATA[tooltip.name]?.oneLine ?? tooltip.tagline}
+          </div>
+          {ARCH_DATA[tooltip.name] && (
+            <div style={{ fontSize: 10.5, fontWeight: 300, fontStyle: 'italic', color: 'rgba(238,236,230,0.35)', lineHeight: 1.4, fontFamily: '"DM Sans", sans-serif', borderTop: '1px solid rgba(255,255,255,0.07)', paddingTop: 6 }}>
+              {ARCH_DATA[tooltip.name].failureMode}
+            </div>
+          )}
+          <div style={{ fontSize: 9, color: tooltip.color, textTransform: 'uppercase', letterSpacing: '0.12em', marginTop: 6, fontFamily: '"DM Sans", sans-serif', fontWeight: 500 }}>
+            {getCat(REFERENCE_PROFILES.find(p => displayName(p.name) === tooltip.name || p.name === tooltip.name)?.group ?? '')?.label}
+          </div>
         </div>
       )}
     </div>
@@ -507,13 +758,16 @@ function useFadeInUp(ref: { current: HTMLElement | null }, delay = 0) {
 function HScrollRow({ children }: { children: React.ReactNode }) {
   const rowRef = useRef<HTMLDivElement>(null)
   const [pct, setPct] = useState(0)
+  const [showFade, setShowFade] = useState(true)
   const onScroll = useCallback(() => {
     const el = rowRef.current; if (!el) return
     const max = el.scrollWidth - el.clientWidth
     setPct(max > 0 ? el.scrollLeft / max : 0)
+    const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 10
+    setShowFade(!atEnd)
   }, [])
   return (
-    <div>
+    <div style={{ position: 'relative' }}>
       <div ref={rowRef} onScroll={onScroll} style={{
         display: 'flex', gap: 12,
         overflowX: 'auto', scrollSnapType: 'x mandatory',
@@ -522,6 +776,16 @@ function HScrollRow({ children }: { children: React.ReactNode }) {
       }}>
         {children}
       </div>
+      <div style={{
+        position: 'absolute',
+        top: 0, right: 0,
+        width: 80, height: 'calc(100% - 14px)',
+        background: 'linear-gradient(to right, transparent, #080808)',
+        pointerEvents: 'none',
+        zIndex: 2,
+        opacity: showFade ? 1 : 0,
+        transition: 'opacity 200ms ease',
+      }} />
       <div style={{ marginTop: 10, height: 1, background: 'rgba(255,255,255,0.07)', borderRadius: 1, position: 'relative', overflow: 'hidden' }}>
         <div style={{
           position: 'absolute', top: 0, left: `${pct * 60}%`, width: '40%', height: '100%',
@@ -533,58 +797,143 @@ function HScrollRow({ children }: { children: React.ReactNode }) {
 }
 
 // ─── ARCH CARD ────────────────────────────────────────────────────────────────
-function ArchCard({ profile, catColor, catKey, onHover }: {
+function ArchCard({ profile, catColor, catKey, onHover, sectionVisible, cardIndex }: {
   profile: typeof REFERENCE_PROFILES[0]
   catColor: string; catKey: string
   onHover: (k: string | null) => void
+  sectionVisible: boolean
+  cardIndex: number
 }) {
   const [hov, setHov] = useState(false)
+  const dn = displayName(profile.name)
+  const d = ARCH_DATA[dn]
   return (
     <div
+      className="arch-card"
       onMouseEnter={() => { setHov(true); onHover(catKey) }}
       onMouseLeave={() => { setHov(false); onHover(null) }}
       style={{
         background: '#131313',
-        border: `1px solid ${hov ? hexAlpha(catColor, 0.20) : 'rgba(255,255,255,0.06)'}`,
-        borderTop: `2px solid ${hov ? catColor : 'rgba(255,255,255,0.06)'}`,
-        borderRadius: 11, padding: '20px 18px 18px',
+        border: `1px solid ${hov ? hexAlpha(catColor, 0.22) : 'rgba(255,255,255,0.06)'}`,
+        borderTop: `2px solid ${hov ? catColor : hexAlpha(catColor, 0.28)}`,
+        borderRadius: 11,
         cursor: 'default',
-        transform: hov ? 'translateY(-2px)' : 'translateY(0)',
-        transition: 'transform 150ms ease, border-color 150ms ease',
-        display: 'flex', flexDirection: 'column', gap: 10,
+        transform: hov ? 'translateY(-3px)' : 'translateY(0)',
+        transition: 'transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease',
         width: 240, flexShrink: 0,
         scrollSnapAlign: 'start', touchAction: 'pan-x',
+        position: 'relative',
+        boxShadow: hov
+          ? `0 8px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)`
+          : 'inset 0 1px 0 rgba(255,255,255,0.04)',
+        minHeight: 240,
+        overflow: 'hidden',
       }}
     >
-      <div style={{
-        opacity: hov ? 1 : 0.62,
-        transition: 'opacity 150ms ease, filter 150ms ease',
-        filter: hov ? `drop-shadow(0 0 5px ${hexAlpha(catColor, 0.65)})` : 'none',
-      }}>
-        <Icon paths={ARCH_ICONS[profile.name] ?? []} size={20} stroke={catColor} />
+      <div style={{ padding: '14px 14px 0 14px', display: 'flex', flexDirection: 'column' }}>
+        {/* Top row: icon+name LEFT, pentagon RIGHT — flex, no absolute positioning */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+          {/* Left: icon stacked above name */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5, flex: 1, paddingRight: 10 }}>
+            <div style={{
+              opacity: hov ? 1 : 0.55,
+              transition: 'opacity 150ms ease, filter 150ms ease',
+              filter: hov ? `drop-shadow(0 0 6px ${hexAlpha(catColor, 0.7)})` : 'none',
+            }}>
+              <Icon paths={ARCH_ICONS[dn] ?? []} size={18} stroke={catColor} />
+            </div>
+            <div style={{
+              fontFamily: '"Barlow Condensed", system-ui, sans-serif',
+              fontSize: 19, fontWeight: 800, textTransform: 'uppercase',
+              letterSpacing: '0.03em', color: hov ? catColor : '#eeece6',
+              lineHeight: 1, transition: 'color 150ms ease',
+            }}>{dn}</div>
+          </div>
+          {/* Right: pentagon — in flow, never overlapping text */}
+          <CardPentagon name={dn} color={catColor} hovered={hov} sectionVisible={sectionVisible} cardIndex={cardIndex} />
+        </div>
+
+        {/* One-liner */}
+        {d && (
+          <p style={{
+            fontSize: 11.5, fontWeight: 300, color: 'rgba(238,236,230,0.60)',
+            lineHeight: 1.5, margin: '0 0 10px 0',
+            fontFamily: '"DM Sans", -apple-system, sans-serif',
+            opacity: hov ? 0.3 : 1, transition: 'opacity 200ms ease',
+          }}>
+            {d.oneLine}
+          </p>
+        )}
+
+        {/* Separator */}
+        <div style={{ height: 1, background: `rgba(255,255,255,0.06)`, marginBottom: 10 }} />
+
+        {/* Strength */}
+        {d && (
+          <div style={{ display: 'flex', gap: 7, alignItems: 'flex-start', marginBottom: 7, opacity: hov ? 0.25 : 1, transition: 'opacity 200ms ease' }}>
+            <span style={{
+              fontFamily: '"Barlow Condensed", system-ui', fontSize: 13, fontWeight: 700,
+              color: catColor, lineHeight: 1.3, flexShrink: 0, marginTop: 1,
+            }}>+</span>
+            <span style={{
+              fontSize: 11, fontWeight: 400, color: 'rgba(238,236,230,0.72)',
+              lineHeight: 1.45, fontFamily: '"DM Sans", -apple-system, sans-serif',
+            }}>{d.strength}</span>
+          </div>
+        )}
+
+        {/* Failure mode */}
+        {d && (
+          <div style={{ display: 'flex', gap: 7, alignItems: 'flex-start', opacity: hov ? 0.25 : 1, transition: 'opacity 200ms ease' }}>
+            <span style={{
+              fontFamily: '"Barlow Condensed", system-ui', fontSize: 13, fontWeight: 700,
+              color: 'rgba(200,140,60,0.75)', lineHeight: 1.3, flexShrink: 0, marginTop: 1,
+            }}>−</span>
+            <span style={{
+              fontSize: 11, fontWeight: 300, fontStyle: 'italic',
+              color: 'rgba(238,236,230,0.42)',
+              lineHeight: 1.45, fontFamily: '"DM Sans", -apple-system, sans-serif',
+            }}>{d.failureMode}</span>
+          </div>
+        )}
       </div>
-      <div>
+
+      {/* Hover panel — BEST IN + WATCH FOR, slides up from bottom */}
+      {d && (
         <div style={{
-          fontFamily: '"Barlow Condensed", system-ui',
-          fontSize: 20, fontWeight: 800, textTransform: 'uppercase',
-          letterSpacing: '0.02em',
-          color: hov ? catColor : 'rgba(255,255,255,0.88)',
-          lineHeight: 1.1, marginBottom: 8, transition: 'color 150ms ease',
-        }}>{profile.name}</div>
-        <p style={{ fontSize: 12, fontWeight: 300, color: 'rgba(255,255,255,0.42)', lineHeight: 1.65, margin: 0, fontFamily: '"DM Sans", sans-serif' }}>
-          {profile.essence}
-        </p>
-      </div>
-      <div style={{
-        display: 'inline-block', alignSelf: 'flex-start', marginTop: 'auto',
-        fontSize: 10, fontWeight: 500,
-        color: hexAlpha(catColor, 0.75), background: hexAlpha(catColor, 0.08),
-        border: `1px solid ${hexAlpha(catColor, 0.14)}`,
-        borderRadius: 5, padding: '3px 8px',
-        fontFamily: '"DM Sans", sans-serif', letterSpacing: '0.04em',
-      }}>
-        {TAGS[profile.name] ?? profile.tagline.split(',')[0]}
-      </div>
+          position: 'absolute',
+          bottom: 0, left: 0, right: 0,
+          padding: '28px 16px 14px',
+          background: `linear-gradient(to bottom, transparent, ${hexAlpha('#131313', 0.96)} 28%)`,
+          opacity: hov ? 1 : 0,
+          transform: hov ? 'translateY(0)' : 'translateY(6px)',
+          transition: 'opacity 180ms ease, transform 180ms ease',
+          pointerEvents: hov ? 'auto' : 'none',
+        }}>
+          <div style={{ display: 'flex', gap: 7, alignItems: 'flex-start', marginBottom: 6 }}>
+            <span style={{
+              fontSize: 8, fontWeight: 500, color: '#3aa868', textTransform: 'uppercase',
+              letterSpacing: '0.14em', fontFamily: '"DM Sans", -apple-system, sans-serif',
+              flexShrink: 0, paddingTop: 1,
+            }}>BEST IN</span>
+            <span style={{
+              fontSize: 10.5, fontWeight: 300, color: 'rgba(238,236,230,0.65)',
+              lineHeight: 1.4, fontFamily: '"DM Sans", -apple-system, sans-serif',
+            }}>{d.bestIn}</span>
+          </div>
+          <div style={{ display: 'flex', gap: 7, alignItems: 'flex-start' }}>
+            <span style={{
+              fontSize: 8, fontWeight: 500, color: '#c8a832', textTransform: 'uppercase',
+              letterSpacing: '0.14em', fontFamily: '"DM Sans", -apple-system, sans-serif',
+              flexShrink: 0, paddingTop: 1,
+            }}>RISK</span>
+            <span style={{
+              fontSize: 10.5, fontWeight: 300, color: 'rgba(238,236,230,0.65)',
+              lineHeight: 1.4, fontFamily: '"DM Sans", -apple-system, sans-serif',
+            }}>{d.watchFor}</span>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -642,7 +991,7 @@ function RadarColumn({ groups, activeCat, hoveredProfile, setActive, setHovProf 
                     textTransform: 'uppercase', letterSpacing: '0.04em',
                     color: (isHovProf || isHot) ? '#FFF' : 'rgba(255,255,255,0.60)',
                     transition: 'color 150ms ease',
-                  }}>{p.name}</span>
+                  }}>{displayName(p.name)}</span>
                 </div>
                 {/* Description slide-in */}
                 <div style={{
@@ -663,33 +1012,190 @@ function RadarColumn({ groups, activeCat, hoveredProfile, setActive, setHovProf 
   )
 }
 
+// ─── WHAT CHANGES ─────────────────────────────────────────────────────────────
+const WHAT_CHANGES: { text: string; note: string }[] = [
+  { text: "Know who will outperform in this role before the first interview.", note: "Not after a failed 90-day ramp." },
+  { text: "Identify where friction will surface before onboarding starts.", note: "Not during the exit conversation." },
+  { text: "Know whether this person fits this manager, this team, and this moment.", note: "Not just the job description." },
+  { text: "Surface what a reference check takes three weeks to find.", note: "In six minutes. If it finds it at all." },
+]
+
+function WhatChanges() {
+  const ref = useRef<HTMLDivElement>(null)
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setVisible(true); obs.disconnect() } },
+      { threshold: 0.12 }
+    )
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
+
+  return (
+    <div ref={ref} style={{
+      padding: 'clamp(56px, 7vh, 88px) clamp(20px, 5vw, 44px) clamp(40px, 5vh, 64px)',
+      maxWidth: 860,
+      margin: '0 auto',
+      width: '100%',
+      boxSizing: 'border-box',
+    }}>
+      <p style={{ fontSize: 10, fontWeight: 300, color: 'rgba(238,236,230,0.25)', letterSpacing: '0.22em', textTransform: 'uppercase', margin: '0 0 16px 0', fontFamily: '"DM Sans", sans-serif' }}>
+        WHAT THIS CHANGES
+      </p>
+      <h2 style={{
+        fontFamily: '"Barlow Condensed", system-ui',
+        fontWeight: 900,
+        fontSize: 'clamp(28px, 3.4vw, 44px)',
+        color: '#eeece6',
+        textTransform: 'uppercase',
+        letterSpacing: '-0.01em',
+        lineHeight: 0.95,
+        margin: '0 0 36px 0',
+      }}>
+        The difference between<br />a good hire and a costly one.
+      </h2>
+      {WHAT_CHANGES.map(({ text, note }, i) => (
+        <div key={i} style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 22,
+          padding: '18px 0',
+          borderBottom: i < WHAT_CHANGES.length - 1 ? '1px solid rgba(255,255,255,0.055)' : 'none',
+          opacity: visible ? 1 : 0,
+          transform: visible ? 'translateY(0)' : 'translateY(16px)',
+          transition: `opacity 420ms ease ${i * 90}ms, transform 420ms ease ${i * 90}ms`,
+        }}>
+          <span style={{
+            fontFamily: '"Barlow Condensed", system-ui',
+            fontWeight: 800,
+            fontSize: 18,
+            color: 'rgba(255,255,255,0.10)',
+            width: 28,
+            flexShrink: 0,
+            paddingTop: 3,
+            letterSpacing: '0.02em',
+          }}>0{i + 1}</span>
+          <div>
+            <p style={{
+              fontSize: 15,
+              fontWeight: 500,
+              color: 'rgba(238,236,230,0.88)',
+              lineHeight: 1.5,
+              margin: '0 0 4px 0',
+              fontFamily: '"DM Sans", -apple-system, sans-serif',
+            }}>{text}</p>
+            <p style={{
+              fontSize: 13,
+              fontWeight: 300,
+              fontStyle: 'italic',
+              color: 'rgba(238,236,230,0.32)',
+              lineHeight: 1.5,
+              margin: 0,
+              fontFamily: '"DM Sans", -apple-system, sans-serif',
+            }}>{note}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ─── AXIS LIGHTING ────────────────────────────────────────────────────────────
+// dimension index → axis key
+// 0=Execution→right, 1=Ownership→bottom, 2=Adaptability→top, 3=Collaboration→top, 4=DecisionSpeed→right
+const DIM_TO_AXIS: Record<number, 'left' | 'right' | 'top' | 'bottom'> = {
+  0: 'right',   // Execution → URGENT
+  1: 'bottom',  // Ownership → RESULTS
+  2: 'top',     // Adaptability → PEOPLE
+  3: 'top',     // Collaboration → PEOPLE
+  4: 'right',   // Decision Speed → URGENT
+}
+
+type AxisKey = 'top' | 'bottom' | 'left' | 'right'
+type AxisColors = Record<AxisKey, string>
+type AxisShadows = Record<AxisKey, string>
+
+const DEFAULT_AXIS_COLORS: AxisColors = {
+  top: 'rgba(255,255,255,0.45)', bottom: 'rgba(255,255,255,0.45)',
+  left: 'rgba(255,255,255,0.45)', right: 'rgba(255,255,255,0.45)',
+}
+const DEFAULT_AXIS_SHADOWS: AxisShadows = {
+  top: 'none', bottom: 'none', left: 'none', right: 'none',
+}
+
 // ─── PAGE ─────────────────────────────────────────────────────────────────────
 const BG  = '#080808'
 const MAX = 1240
-const HERO_WORDS = ["YOU'VE", 'MET', 'THESE', 'PEOPLE.']
-
 export default function ArchetypesPage() {
   const [activeCat,      setActiveCat]      = useState<string | null>(null)
   const [hoveredProfile, setHoveredProfile] = useState<string | null>(null)
-  const [heroWords,      setHeroWords]      = useState(0)
-  const [heroGhost,      setHeroGhost]      = useState(false)
   const [activeSection,  setActiveSection]  = useState(0)
+  const [hoveredCat,     setHoveredCat]     = useState<string | null>(null)
+  const [axisColors,     setAxisColors]     = useState<AxisColors>(DEFAULT_AXIS_COLORS)
+  const [axisShadows,    setAxisShadows]    = useState<AxisShadows>(DEFAULT_AXIS_SHADOWS)
+  const [selectedProfile, setSelectedProfile] = useState<string | null>(null)
+  const [cardsDrawn,     setCardsDrawn]     = useState(false)
+  const [canvasWrapperSize, setCanvasWrapperSize] = useState(0)
 
-  const ctaBandRef = useRef<HTMLDivElement>(null)
-  const cat0Ref    = useRef<HTMLDivElement>(null)
-  const cat1Ref    = useRef<HTMLDivElement>(null)
-  const cat2Ref    = useRef<HTMLDivElement>(null)
-  const cat3Ref    = useRef<HTMLDivElement>(null)
-  const mainRef    = useRef<HTMLElement>(null)
+  const ctaBandRef         = useRef<HTMLDivElement>(null)
+  const cat0Ref            = useRef<HTMLDivElement>(null)
+  const cat1Ref            = useRef<HTMLDivElement>(null)
+  const cat2Ref            = useRef<HTMLDivElement>(null)
+  const cat3Ref            = useRef<HTMLDivElement>(null)
+  const mainRef            = useRef<HTMLElement>(null)
+  const archetypeBlocksRef = useRef<HTMLDivElement>(null)
 
   const setActive  = useCallback((k: string | null) => setActiveCat(k), [])
   const setHovProf = useCallback((n: string | null) => setHoveredProfile(n), [])
+
+  const handleDotClick = useCallback((profileName: string) => {
+    if (selectedProfile === profileName) {
+      setSelectedProfile(null)
+      setAxisColors(DEFAULT_AXIS_COLORS)
+      setAxisShadows(DEFAULT_AXIS_SHADOWS)
+      return
+    }
+    setSelectedProfile(profileName)
+    const vals = PENT_VALUES[profileName] ?? [60, 60, 60, 60, 60]
+    const sorted = vals.map((v, i) => ({ v, i })).sort((a, b) => b.v - a.v)
+    const dom1 = DIM_TO_AXIS[sorted[0].i]
+    const dom2 = DIM_TO_AXIS[sorted[1].i]
+    const newColors: AxisColors = {
+      top:    'rgba(255,255,255,0.14)',
+      bottom: 'rgba(255,255,255,0.14)',
+      left:   'rgba(255,255,255,0.14)',
+      right:  'rgba(255,255,255,0.14)',
+    }
+    const newShadows: AxisShadows = { top: 'none', bottom: 'none', left: 'none', right: 'none' }
+    newColors[dom1] = 'rgba(255,255,255,0.90)'
+    newShadows[dom1] = '0 0 12px rgba(255,255,255,0.3)'
+    if (dom2 !== dom1) {
+      newColors[dom2] = 'rgba(255,255,255,0.60)'
+    }
+    setAxisColors(newColors)
+    setAxisShadows(newShadows)
+  }, [selectedProfile])
 
   useFadeInUp(ctaBandRef, 0)
   useFadeInUp(cat0Ref, 0)
   useFadeInUp(cat1Ref, 60)
   useFadeInUp(cat2Ref, 120)
   useFadeInUp(cat3Ref, 180)
+
+  useEffect(() => {
+    const calc = () => {
+      const availableW = window.innerWidth - 400
+      const availableH = window.innerHeight - 160
+      setCanvasWrapperSize(Math.min(availableW, availableH))
+    }
+    calc()
+    window.addEventListener('resize', calc)
+    return () => window.removeEventListener('resize', calc)
+  }, [])
 
   useEffect(() => {
     const link = document.createElement('link')
@@ -699,11 +1205,17 @@ export default function ArchetypesPage() {
     return () => { try { document.head.removeChild(link) } catch {} }
   }, [])
 
-
   useEffect(() => {
-    HERO_WORDS.forEach((_, i) => setTimeout(() => setHeroWords(i + 1), 80 + i * 60))
-    setTimeout(() => setHeroGhost(true), 80 + HERO_WORDS.length * 60 + 220)
+    const el = archetypeBlocksRef.current
+    if (!el) return
+    const obs = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) { setCardsDrawn(true); obs.disconnect() }
+    }, { threshold: 0.15 })
+    obs.observe(el)
+    return () => obs.disconnect()
   }, [])
+
+
 
   useEffect(() => {
     const main = mainRef.current
@@ -730,10 +1242,6 @@ export default function ArchetypesPage() {
 
   const catRefs = [cat0Ref, cat1Ref, cat2Ref, cat3Ref]
 
-  const tickerNames = [...REFERENCE_PROFILES]
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .map(p => p.name.toUpperCase())
-
   return (
     <main ref={mainRef} style={{ background: BG, color: '#FFF', fontFamily: '"DM Sans", -apple-system, sans-serif', overflowX: 'hidden' }}>
 
@@ -742,67 +1250,65 @@ export default function ArchetypesPage() {
 
       {/* ── HERO ── */}
       <section style={{
-        height: '100vh', display: 'flex', flexDirection: 'column',
+        minHeight: '100svh', display: 'flex', flexDirection: 'column',
         justifyContent: 'center',
         position: 'relative',
-        padding: '80px 48px', overflow: 'hidden',
+        padding: 'clamp(40px, 6vh, 80px) clamp(20px, 5vw, 48px)', overflow: 'hidden',
       }}>
         {/* Ambient pulse */}
         <div style={{ position: 'absolute', top: '50%', left: '50%', width: 640, height: 640, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.022) 0%, transparent 70%)', animation: 'heroPulse 4s ease-out infinite', pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', top: '50%', left: '50%', width: 640, height: 640, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.022) 0%, transparent 70%)', animation: 'heroPulse 4s ease-out 2s infinite', pointerEvents: 'none' }} />
 
-        <div style={{ position: 'relative', maxWidth: 900, width: '100%', margin: '0 auto', marginTop: '-10vh' }}>
-          <p style={{ fontSize: 10, fontWeight: 300, color: 'rgba(238,236,230,0.32)', letterSpacing: '0.22em', textTransform: 'uppercase', margin: '0 0 20px 0' }}>
-            Behavioral Archetypes
+        <div style={{ position: 'relative', maxWidth: 'min(900px, calc(100vw - clamp(40px, 8vw, 160px)))', width: '100%', margin: '0 auto', marginTop: '-10vh' }}>
+          <p style={{ fontSize: 10, fontWeight: 300, color: 'rgba(238,236,230,0.28)', letterSpacing: '0.22em', textTransform: 'uppercase', margin: '0 0 22px 0', fontFamily: '"DM Sans", sans-serif' }}>
+            BEHAVIORAL ARCHETYPES
           </p>
           <h1 style={{
             fontFamily: '"Barlow Condensed", system-ui',
             fontWeight: 900, textTransform: 'uppercase',
-            letterSpacing: '-0.01em', lineHeight: 0.9, margin: 0,
+            letterSpacing: '-0.01em', lineHeight: 0.88, margin: 0,
+            fontSize: 'clamp(52px, 7vw, 88px)',
+            color: '#eeece6',
           }}>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0 0.22em', marginBottom: 4 }}>
-              {HERO_WORDS.map((word, i) => (
-                <span key={i} style={{
-                  display: 'inline-block',
-                  fontSize: 'clamp(52px, 7vw, 88px)',
-                  color: '#eeece6',
-                  opacity: heroWords > i ? 1 : 0,
-                  transform: heroWords > i ? 'translateY(0)' : 'translateY(8px)',
-                  transition: 'opacity 320ms ease, transform 320ms ease',
-                }}>{word}</span>
-              ))}
-            </div>
-            <span style={{
-              display: 'block',
-              fontSize: 'clamp(52px, 7vw, 88px)',
-              color: 'rgba(238,236,230,0.09)',
-              opacity: heroGhost ? 1 : 0,
-              transform: heroGhost ? 'translateY(0)' : 'translateY(8px)',
-              transition: 'opacity 320ms ease, transform 320ms ease',
-            }}>Now you have words for them.</span>
+            You already know<br />these people.
           </h1>
-          <p style={{ fontSize: 16, fontWeight: 300, color: 'rgba(238,236,230,0.5)', maxWidth: 420, marginTop: 28, lineHeight: 1.65 }}>
-            Browse the patterns recruiters recognize instantly — or find your own in six minutes.
+          <p style={{
+            fontSize: 16, fontWeight: 300, color: 'rgba(238,236,230,0.55)',
+            maxWidth: 480, lineHeight: 1.65,
+            margin: '24px 0 0 0', fontFamily: '"DM Sans", sans-serif',
+          }}>
+            You&#39;ve hired them, managed them, and watched where they broke.<br />
+            We made the pattern systematic.
+          </p>
+          <p style={{
+            fontSize: 13, fontWeight: 300, fontStyle: 'italic',
+            color: 'rgba(238,236,230,0.28)',
+            maxWidth: 400, lineHeight: 1.65,
+            margin: '12px 0 0 0', fontFamily: '"DM Sans", sans-serif',
+          }}>
+            16 archetypes. Every strength has a cost. Every pattern is predictable.
           </p>
           <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 36, flexWrap: 'wrap' }}>
             <a href="/invite-self" style={{
-              padding: '11px 24px', borderRadius: 100,
-              background: '#eeece6', color: '#080808', fontSize: 13, fontWeight: 500,
+              padding: '13px 30px', borderRadius: 100,
+              background: '#eeece6', color: '#080808', fontSize: 14, fontWeight: 500,
               display: 'inline-flex', alignItems: 'center', textDecoration: 'none', transition: 'opacity 150ms ease',
+              fontFamily: '"DM Sans", sans-serif',
             }}
               onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
               onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
-            >Find your archetype</a>
+            >Start the assessment</a>
             <a href="#archetypes" style={{
-              padding: '11px 24px', borderRadius: 100,
-              background: 'transparent', color: 'rgba(238,236,230,0.6)',
-              border: '1px solid rgba(255,255,255,0.14)',
-              fontSize: 13, fontWeight: 400, display: 'inline-flex', alignItems: 'center',
+              padding: '13px 30px', borderRadius: 100,
+              background: 'transparent', color: 'rgba(238,236,230,0.50)',
+              border: '1px solid rgba(255,255,255,0.12)',
+              fontSize: 14, fontWeight: 400, display: 'inline-flex', alignItems: 'center',
               textDecoration: 'none', transition: 'border-color 150ms ease, color 150ms ease',
+              fontFamily: '"DM Sans", sans-serif',
             }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.28)'; e.currentTarget.style.color = 'rgba(238,236,230,1)' }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.14)'; e.currentTarget.style.color = 'rgba(238,236,230,0.6)' }}
-            >Browse all {REFERENCE_PROFILES.length}</a>
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'; e.currentTarget.style.color = 'rgba(238,236,230,0.50)' }}
+            >Browse all {REFERENCE_PROFILES.length} archetypes</a>
           </div>
         </div>
 
@@ -816,59 +1322,152 @@ export default function ArchetypesPage() {
 
       </section>
 
-      {/* ── TICKER ── */}
-      <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: '#0f0f0f', height: 36, overflow: 'hidden', display: 'flex', alignItems: 'center' }}>
-        <div style={{ display: 'flex', animation: 'ticker 42s linear infinite', whiteSpace: 'nowrap' }}>
-          {[0, 1].map(rep => (
-            <span key={rep} style={{ display: 'inline-flex', alignItems: 'center' }}>
-              {tickerNames.map(name => (
-                <span key={name + rep} style={{ display: 'inline-flex', alignItems: 'center' }}>
-                  <span style={{ fontSize: 11, fontWeight: 500, color: 'rgba(255,255,255,0.22)', letterSpacing: '0.12em', padding: '0 16px', fontFamily: '"Barlow Condensed", system-ui' }}>{name}</span>
-                  <span style={{ color: 'rgba(255,255,255,0.10)', fontSize: 10 }}>·</span>
+      {/* ── ARCHETYPES — cards, before map ── */}
+      <section id="archetypes" style={{ padding: 0, background: BG }}>
+        {/* Section header */}
+        <div style={{ padding: 'clamp(52px, 7vh, 80px) clamp(20px, 5vw, 40px) 0', maxWidth: 'min(1320px, calc(100vw - clamp(40px, 8vw, 160px)))', margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+          <p style={{ fontSize: 10, fontWeight: 300, color: 'rgba(238,236,230,0.25)', letterSpacing: '0.22em', textTransform: 'uppercase', margin: '0 0 14px 0', fontFamily: '"DM Sans", sans-serif' }}>
+            16 ARCHETYPES
+          </p>
+          <h2 style={{
+            fontFamily: '"Barlow Condensed", system-ui', fontWeight: 900, textTransform: 'uppercase',
+            fontSize: 'clamp(32px, 4vw, 52px)', letterSpacing: '-0.01em', lineHeight: 0.92,
+            color: '#eeece6', margin: '0 0 12px 0',
+          }}>Every hire follows one of these patterns.</h2>
+          <p style={{ fontSize: 13, fontWeight: 300, color: 'rgba(238,236,230,0.38)', margin: 0, fontFamily: '"DM Sans", sans-serif', lineHeight: 1.6, maxWidth: 480 }}>
+            Each has a predictable strength. Each has a predictable cost. Hover any card to see where they break.
+          </p>
+        </div>
+        {/* Archetype blocks */}
+        <div ref={archetypeBlocksRef} style={{ padding: 'clamp(32px, 5vh, 56px) clamp(20px, 5vw, 40px) clamp(52px, 7vh, 80px)', maxWidth: 'min(1320px, calc(100vw - clamp(40px, 8vw, 160px)))', margin: '0 auto', width: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 48 }}>
+          {grouped.map((g, idx) => (
+            <div key={g.key}>
+              <div ref={catRefs[idx]} style={{
+                display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
+                paddingBottom: 14, borderBottom: `1px solid ${hexAlpha(g.color, 0.18)}`,
+                marginBottom: 16, flexWrap: 'wrap', gap: 12,
+              }}>
+                <div>
+                  <span style={{ fontFamily: '"Barlow Condensed", system-ui, sans-serif', fontWeight: 800, fontSize: 22, textTransform: 'uppercase', letterSpacing: '0.06em', color: g.color }}>
+                    {g.label}
+                  </span>
+                  <span style={{ fontFamily: '"DM Sans", -apple-system, sans-serif', fontWeight: 300, fontSize: 12, color: 'rgba(238,236,230,0.38)', marginLeft: 10 }}>
+                    {g.descriptor}
+                  </span>
+                </div>
+                <span style={{ fontFamily: '"DM Sans", -apple-system, sans-serif', fontWeight: 300, fontSize: 10, color: 'rgba(238,236,230,0.22)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                  {g.axisNote}
                 </span>
-              ))}
-            </span>
+              </div>
+              <HScrollRow>
+                {g.profiles.map((p, i) => (
+                  <ArchCard key={p.name} profile={p} catColor={g.color} catKey={g.key} onHover={setActive} sectionVisible={cardsDrawn} cardIndex={idx * 4 + i} />
+                ))}
+              </HScrollRow>
+            </div>
           ))}
         </div>
-      </div>
+      </section>
 
       {/* ── BEHAVIORAL MAP — full-bleed surface ── */}
-      <section style={{ width: '100%', height: '100vh', position: 'relative', overflow: 'hidden' }}>
+      <section style={{ position: 'relative', width: '100%', height: '100svh', overflow: 'hidden' }}>
 
-        {/* Full-bleed canvas layer */}
-        <RadarCanvas
-          activeCat={activeCat}
-          hoveredProfileName={hoveredProfile}
-          onHoverCat={setActive}
-          onHoverProfile={setHovProf}
-        />
-
-        {/* Eyebrow */}
-        <p style={{
-          position: 'absolute', top: 72, left: 0, right: 0, margin: 0,
-          textAlign: 'center', zIndex: 2, pointerEvents: 'none',
-          fontSize: 9, fontWeight: 500, letterSpacing: '0.22em',
-          textTransform: 'uppercase', color: 'rgba(255,255,255,0.14)',
+        {/* Canvas wrapper — centered square with corner label zones */}
+        <div style={{
+          position: 'absolute',
+          left: '50%', top: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: canvasWrapperSize > 0 ? canvasWrapperSize : '100%',
+          height: canvasWrapperSize > 0 ? canvasWrapperSize : '100%',
+          zIndex: 0,
         }}>
-          Behavioral Map · Pace × People-orientation
-        </p>
+          <RadarCanvas
+            activeCat={activeCat}
+            hoveredProfileName={hoveredProfile}
+            onHoverCat={setActive}
+            onHoverProfile={setHovProf}
+            onDotClick={handleDotClick}
+            selectedProfile={selectedProfile}
+          />
+        </div>
 
-        {/* Corner category labels — at actual section corners, floating over canvas */}
+        {/* Framing text — centered, below nav */}
+        <div style={{
+          position: 'absolute', top: 72, left: '50%', transform: 'translateX(-50%)',
+          textAlign: 'center', pointerEvents: 'none', zIndex: 2, whiteSpace: 'nowrap',
+          display: 'flex', flexDirection: 'column', gap: 5,
+        }}>
+          <p style={{
+            margin: 0, fontSize: 10, fontWeight: 300, letterSpacing: '0.22em',
+            textTransform: 'uppercase', color: 'rgba(238,236,230,0.28)',
+            fontFamily: '"DM Sans", -apple-system, sans-serif',
+          }}>
+            BEHAVIORAL MAP
+          </p>
+          <p style={{
+            margin: 0, fontSize: 14, fontWeight: 300,
+            color: 'rgba(238,236,230,0.55)', fontFamily: '"DM Sans", -apple-system, sans-serif',
+          }}>
+            Hover any dot — see where they sit and how they behave.
+          </p>
+        </div>
+
+        {/* Axis labels */}
+        <span style={{
+          position: 'absolute', left: '50%', top: 112, transform: 'translateX(-50%)',
+          fontSize: 13, fontWeight: 500, color: axisColors.top,
+          textTransform: 'uppercase', letterSpacing: '0.14em',
+          pointerEvents: 'none', zIndex: 2,
+          transition: 'color 250ms ease, text-shadow 250ms ease',
+          textShadow: axisShadows.top,
+          fontFamily: '"DM Sans", sans-serif',
+        }}>PEOPLE</span>
+
+        <span style={{
+          position: 'absolute', left: '50%', bottom: 20, transform: 'translateX(-50%)',
+          fontSize: 13, fontWeight: 500, color: axisColors.bottom,
+          textTransform: 'uppercase', letterSpacing: '0.14em',
+          pointerEvents: 'none', zIndex: 2,
+          transition: 'color 250ms ease, text-shadow 250ms ease',
+          textShadow: axisShadows.bottom,
+          fontFamily: '"DM Sans", sans-serif',
+        }}>RESULTS</span>
+
+        <span style={{
+          position: 'absolute', left: 20, top: '50%', transform: 'translateY(-50%)',
+          fontSize: 13, fontWeight: 500, color: axisColors.left,
+          textTransform: 'uppercase', letterSpacing: '0.14em',
+          pointerEvents: 'none', zIndex: 2,
+          transition: 'color 250ms ease',
+          fontFamily: '"DM Sans", sans-serif',
+        }}>← DELIBERATE</span>
+
+        <span style={{
+          position: 'absolute', right: 20, top: '50%', transform: 'translateY(-50%)',
+          fontSize: 13, fontWeight: 500, color: axisColors.right,
+          textTransform: 'uppercase', letterSpacing: '0.14em',
+          pointerEvents: 'none', zIndex: 2,
+          transition: 'color 250ms ease',
+          fontFamily: '"DM Sans", sans-serif',
+        }}>URGENT →</span>
+
+        {/* Corner category labels */}
         {([
-          { key: 'strategic_drive',   pos: { top: 88, left: 32 },    align: 'left'  },
-          { key: 'people_influence',  pos: { top: 88, right: 32 },   align: 'right' },
-          { key: 'process_structure', pos: { bottom: 36, left: 32 },   align: 'left'  },
-          { key: 'field_command',     pos: { bottom: 36, right: 32 },  align: 'right' },
+          { key: 'strategic_drive',   pos: { top: 16, left: 20 },    align: 'left'  },
+          { key: 'people_influence',  pos: { top: 16, right: 20 },   align: 'right' },
+          { key: 'process_structure', pos: { bottom: 16, left: 20 },  align: 'left'  },
+          { key: 'field_command',     pos: { bottom: 16, right: 20 }, align: 'right' },
         ] as const).map(({ key, pos, align }) => {
           const cat = getCat(key)
+          const isDimmed  = hoveredCat !== null && hoveredCat !== key
           const isOn = activeCat === null || activeCat === key
           const profiles = REFERENCE_PROFILES
             .filter(p => p.group === key)
             .sort((a, b) => a.name.localeCompare(b.name))
           return (
             <div key={key}
-              onMouseEnter={() => setActive(key)}
-              onMouseLeave={() => setActive(null)}
+              onMouseEnter={() => { setActive(key); setHoveredCat(key) }}
+              onMouseLeave={() => { setActive(null); setHoveredCat(null) }}
               style={{
                 position: 'absolute', ...pos,
                 textAlign: align as 'left' | 'right',
@@ -877,114 +1476,120 @@ export default function ArchetypesPage() {
                 zIndex: 4, cursor: 'default',
               }}
             >
-              <div style={{
-                fontFamily: '"Barlow Condensed", system-ui',
-                fontSize: 10, fontWeight: 700,
-                textTransform: 'uppercase', letterSpacing: '0.13em',
-                color: cat.color, marginBottom: 5, lineHeight: 1,
-              }}>{cat.label}</div>
-              {profiles.map(p => (
-                <div key={p.name} style={{
-                  fontSize: 9.5, fontWeight: 300, lineHeight: 1.7,
-                  color: 'rgba(255,255,255,0.24)',
+              <div style={{ marginBottom: 6 }}>
+                <div style={{
+                  fontFamily: '"Barlow Condensed", system-ui',
+                  fontSize: 13, fontWeight: 700,
+                  textTransform: 'uppercase', letterSpacing: '0.08em',
+                  color: isDimmed ? 'rgba(238,236,230,0.18)' : cat.color,
+                  lineHeight: 1,
+                  transition: 'color 200ms ease',
+                }}>{cat.label}</div>
+                <div style={{
+                  fontSize: 9, fontWeight: 300,
+                  color: isDimmed ? 'rgba(238,236,230,0.10)' : 'rgba(238,236,230,0.32)',
+                  letterSpacing: '0.06em', marginTop: 3, lineHeight: 1,
                   fontFamily: '"DM Sans", sans-serif',
-                  letterSpacing: '0.01em',
-                }}>{p.name}</div>
-              ))}
+                  transition: 'color 200ms ease',
+                }}>{cat.axisNote}</div>
+              </div>
+              {profiles.map(p => {
+                const dn = displayName(p.name)
+                return (
+                  <div key={p.name}
+                    onMouseEnter={e => { e.stopPropagation(); setHovProf(dn) }}
+                    onMouseLeave={e => { e.stopPropagation(); setHovProf(null) }}
+                    style={{
+                      display: 'flex', alignItems: 'center',
+                      gap: 6, lineHeight: 1.7,
+                      flexDirection: align === 'right' ? 'row-reverse' : 'row',
+                      cursor: 'default',
+                    }}
+                  >
+                    <span style={{
+                      display: 'inline-block', width: 5, height: 5,
+                      borderRadius: '50%',
+                      background: cat.color,
+                      opacity: 0.55,
+                      flexShrink: 0,
+                    }} />
+                    <span style={{
+                      fontSize: 13, fontWeight: 400,
+                      color: 'rgba(238,236,230,0.72)',
+                      fontFamily: '"DM Sans", -apple-system, sans-serif',
+                      letterSpacing: '0.01em',
+                    }}>{dn}</span>
+                  </div>
+                )
+              })}
             </div>
           )
         })}
 
-        {/* Interpretation line */}
-        <p style={{
-          position: 'absolute', bottom: 20, left: 0, right: 0, margin: 0,
-          textAlign: 'center', zIndex: 2, pointerEvents: 'none',
-          fontSize: 11, fontWeight: 300, letterSpacing: '0.01em',
-          color: 'rgba(255,255,255,0.15)', fontFamily: '"DM Sans", sans-serif',
-        }}>
-          Position reflects speed of execution and orientation toward people vs. output.
-        </p>
-
       </section>
 
-      {/* ── CTA + ARCHETYPE BLOCKS ── */}
-      <section id="archetypes" style={{ padding: 0 }}>
+      {/* ── WHAT CHANGES + CTA ── */}
+      <section style={{ padding: 0, background: BG }}>
+        <WhatChanges />
+
         {/* CTA band */}
-        <div ref={ctaBandRef} style={{ borderTop: '1px solid rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.06)', background: '#0f0f0f', padding: '52px 40px' }}>
-          <div style={{ maxWidth: MAX, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 40, flexWrap: 'wrap' }}>
+        <div ref={ctaBandRef} style={{
+          borderTop: '1px solid rgba(255,255,255,0.07)',
+          borderBottom: '1px solid rgba(255,255,255,0.07)',
+          background: '#0c0c0c',
+          padding: 'clamp(48px, 6vh, 72px) clamp(20px, 5vw, 40px)',
+        }}>
+          <div style={{ maxWidth: 'min(1240px, calc(100vw - clamp(40px, 8vw, 160px)))', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 40, flexWrap: 'wrap' }}>
             <div>
-              <h2 style={{ fontFamily: '"Barlow Condensed", system-ui', fontSize: 'clamp(36px, 5vw, 56px)', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.01em', lineHeight: 1.0, color: '#FFF', marginBottom: 10 }}>
-                Find yours in six minutes.
+              <h2 style={{
+                fontFamily: '"Barlow Condensed", system-ui, sans-serif',
+                fontSize: 'clamp(28px, 3.5vw, 44px)', fontWeight: 900, textTransform: 'uppercase',
+                letterSpacing: '-0.01em', lineHeight: 0.95, color: '#eeece6', margin: '0 0 12px 0',
+              }}>
+                FIND YOUR PATTERN<br />IN SIX MINUTES.
               </h2>
-              <p style={{ fontSize: 14, fontWeight: 300, color: 'rgba(255,255,255,0.32)' }}>
-                {REFERENCE_PROFILES.length} archetypes. 94 signals. One honest answer.
+              <p style={{
+                fontSize: 13, fontWeight: 300, color: 'rgba(238,236,230,0.40)', margin: 0,
+                fontFamily: '"DM Sans", -apple-system, sans-serif', lineHeight: 1.6,
+              }}>
+                {REFERENCE_PROFILES.length} archetypes. 94 signals. One honest result.
               </p>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flexShrink: 0 }}>
               <a href="/invite-self" style={{
-                height: 44, padding: '0 24px', borderRadius: 8,
-                background: '#FFF', color: BG, fontSize: 14, fontWeight: 600,
+                padding: '13px 32px', borderRadius: 100,
+                background: '#eeece6', color: '#080808', fontSize: 14, fontWeight: 500,
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                 textDecoration: 'none', transition: 'opacity 150ms ease',
+                fontFamily: '"DM Sans", -apple-system, sans-serif',
               }}
                 onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
                 onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
               >Start the assessment</a>
               <a href="/sample-report" style={{
-                height: 44, padding: '0 24px', borderRadius: 8,
-                background: 'transparent', color: 'rgba(255,255,255,0.48)',
+                padding: '13px 32px', borderRadius: 100,
+                background: 'transparent', color: 'rgba(238,236,230,0.50)',
                 border: '1px solid rgba(255,255,255,0.12)',
                 fontSize: 14, fontWeight: 400, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                 textDecoration: 'none', transition: 'border-color 150ms ease, color 150ms ease',
+                fontFamily: '"DM Sans", -apple-system, sans-serif',
               }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.26)'; e.currentTarget.style.color = '#FFF' }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'; e.currentTarget.style.color = 'rgba(255,255,255,0.48)' }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.28)'; e.currentTarget.style.color = 'rgba(238,236,230,1)' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'; e.currentTarget.style.color = 'rgba(238,236,230,0.50)' }}
               >View sample report →</a>
             </div>
           </div>
         </div>
-
-        {/* Archetype blocks */}
-        <div style={{ padding: '72px 40px 100px', maxWidth: MAX + 80, margin: '0 auto', width: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 64 }}>
-          {grouped.map((g, idx) => (
-            <div key={g.key}>
-              <div ref={catRefs[idx]} style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                paddingBottom: 18, borderBottom: `1px solid ${hexAlpha(g.color, 0.14)}`,
-                marginBottom: 20, flexWrap: 'wrap', gap: 12,
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <Icon paths={CAT_ICONS[g.key] ?? []} size={22} stroke={g.color} />
-                  <span style={{ fontFamily: '"Barlow Condensed", system-ui', fontSize: 28, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.02em', color: g.color }}>
-                    {g.label}
-                  </span>
-                  <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.28)', fontWeight: 300 }}>{g.descriptor}</span>
-                </div>
-                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.18)', letterSpacing: '0.06em' }}>{g.axisNote}</span>
-              </div>
-              <HScrollRow>
-                {g.profiles.map(p => (
-                  <ArchCard key={p.name} profile={p} catColor={g.color} catKey={g.key} onHover={setActive} />
-                ))}
-              </HScrollRow>
-            </div>
-          ))}
-        </div>
-
-        {/* Footer */}
-        <footer style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '20px 40px' }}>
-          <div style={{ maxWidth: MAX, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.14)' }}>{PRODUCT_NAME} by Legacy Workforce · © 2026</span>
-            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.14)' }}>{COMPANY_EMAIL}</span>
-          </div>
-        </footer>
       </section>
 
+      <footer style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '20px clamp(20px, 5vw, 40px)', background: BG }}>
+        <div style={{ maxWidth: 'min(1240px, calc(100vw - clamp(40px, 8vw, 160px)))', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.14)' }}>{PRODUCT_NAME} by Legacy Workforce · © 2026</span>
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.14)' }}>{COMPANY_EMAIL}</span>
+        </div>
+      </footer>
+
       <style>{`
-        @keyframes ticker {
-          from { transform: translateX(0); }
-          to   { transform: translateX(-50%); }
-        }
         @keyframes heroPulse {
           0%   { opacity: 0.035; transform: translate(-50%,-50%) scale(0.3); }
           100% { opacity: 0;     transform: translate(-50%,-50%) scale(1.9); }
@@ -992,6 +1597,14 @@ export default function ArchetypesPage() {
         @keyframes scrollLine {
           0%   { transform: translateY(-100%); opacity: 1; }
           100% { transform: translateY(100%);  opacity: 0; }
+        }
+        @keyframes pentDraw {
+          from { stroke-dashoffset: 200; opacity: 0; }
+          to   { stroke-dashoffset: 0;   opacity: 1; }
+        }
+        .pent-first-draw {
+          stroke-dasharray: 200;
+          animation: pentDraw 450ms ease-out forwards;
         }
         html, body { scrollbar-width: none; -ms-overflow-style: none; }
         html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; }
@@ -1003,7 +1616,7 @@ export default function ArchetypesPage() {
         }
       `}</style>
 
-      {/* DOT NAV */}
+      {/* DOT NAV — 4 sections */}
       <div style={{
         position: 'fixed',
         right: 24,
@@ -1013,18 +1626,39 @@ export default function ArchetypesPage() {
         display: 'flex',
         flexDirection: 'column',
         gap: 10,
-        pointerEvents: 'none',
+        pointerEvents: 'auto',
       }}>
-        {[0, 1, 2].map(i => (
-          <div key={i} style={{
-            width: 5,
-            height: 5,
-            borderRadius: '50%',
-            background: activeSection === i
-              ? 'rgba(255,255,255,0.75)'
-              : 'rgba(255,255,255,0.2)',
-            transition: 'all 300ms ease',
-          }} />
+        {(['Hero', 'Archetypes', 'Map', 'What Changes'] as const).map((label, i) => (
+          <div key={i} style={{ position: 'relative', display: 'flex', alignItems: 'center' }}
+            onClick={() => {
+              const main = mainRef.current
+              if (!main) return
+              const sections = main.querySelectorAll(':scope > section')
+              sections[i]?.scrollIntoView({ behavior: 'smooth' })
+            }}
+          >
+            {/* Label tooltip */}
+            <span style={{
+              position: 'absolute', right: 16,
+              fontSize: 9, fontWeight: 300, color: 'rgba(238,236,230,0.45)',
+              fontFamily: '"DM Sans", -apple-system, sans-serif',
+              textTransform: 'uppercase', letterSpacing: '0.12em',
+              whiteSpace: 'nowrap',
+              opacity: activeSection === i ? 1 : 0,
+              transition: 'opacity 250ms ease',
+              pointerEvents: 'none',
+            }}>{label}</span>
+            <div style={{
+              width: activeSection === i ? 6 : 5,
+              height: activeSection === i ? 6 : 5,
+              borderRadius: '50%',
+              background: activeSection === i
+                ? 'rgba(255,255,255,0.75)'
+                : 'rgba(255,255,255,0.2)',
+              transition: 'all 300ms ease',
+              cursor: 'pointer',
+            }} />
+          </div>
         ))}
       </div>
 

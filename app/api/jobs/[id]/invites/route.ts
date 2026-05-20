@@ -11,10 +11,10 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   const { id } = await params
   try {
-    const { name, email, phone, roleTitle } = await req.json()
+    const { name, email, phone, roleTitle, inviteType = 'candidate' } = await req.json()
 
     const invite = await prisma.candidateInvite.create({
-      data: { jobId: id, name, email, phone },
+      data: { jobId: id, name, email, phone, inviteType },
     })
 
     await prisma.eventLog.create({
