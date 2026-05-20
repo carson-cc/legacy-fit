@@ -49,6 +49,10 @@ export async function GET(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
+  if (result.invite.offLimits || !result.invite.approvedForClient) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
+
   const { org } = result.invite.job
 
   return NextResponse.json({

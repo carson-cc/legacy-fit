@@ -465,7 +465,7 @@ export default function JobDetailPage() {
     .sort((a, b) => {
       switch (sortBy) {
         case 'fit':
-          return b.result!.fitPct - a.result!.fitPct
+          return (b.result?.fitPct ?? -1) - (a.result?.fitPct ?? -1)
         case 'name':
           return a.name.localeCompare(b.name)
         case 'date':
