@@ -115,16 +115,15 @@ export async function POST(req: NextRequest, { params }: Params) {
         return NextResponse.json({ error: 'Assessment already completed' }, { status: 400 })
       }
 
-      // Build job target for fit scoring
+      // Build job target for fit scoring — fall back to equal weights for unknown role types
+      const DEFAULT_WEIGHTS = { dominance: 0.25, extraversion: 0.25, patience: 0.25, formality: 0.25 }
       let jobTarget = null
       if (invite.job.target) {
         const t = invite.job.target
-        const roleWeights = ROLE_PRESETS[invite.job.roleType as keyof typeof ROLE_PRESETS]
-        if (roleWeights) {
-          jobTarget = {
-            target: { dominance: t.dominance, extraversion: t.extraversion, patience: t.patience, formality: t.formality },
-            weights: { ...roleWeights },
-          }
+        const roleWeights = ROLE_PRESETS[invite.job.roleType as keyof typeof ROLE_PRESETS] ?? DEFAULT_WEIGHTS
+        jobTarget = {
+          target: { dominance: t.dominance, extraversion: t.extraversion, patience: t.patience, formality: t.formality },
+          weights: { ...roleWeights },
         }
       }
 

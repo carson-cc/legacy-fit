@@ -31,9 +31,9 @@ export async function GET() {
         : 'Low Fit'
       const conf = !hasBenchmark ? null
         : fitPct! >= 80 ? 'High' : fitPct! >= 60 ? 'Medium' : 'Low'
-      const benchmarkTag = !invite.job.target ? 'No benchmark'
-        : fitPct! >= 85 ? 'Above benchmark'
-        : fitPct! >= 70 ? 'At benchmark'
+      const benchmarkTag = (!invite.job.target || fitPct === null) ? 'No benchmark'
+        : fitPct >= 85 ? 'Above benchmark'
+        : fitPct >= 70 ? 'At benchmark'
         : 'Below benchmark'
 
       return {
