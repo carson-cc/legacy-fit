@@ -162,6 +162,17 @@ export const ROLE_PRESET_LABELS: Record<RolePresetKey, string> = {
   sales_rep: "Sales Rep",
 }
 
+// Composite role preset weights — scored in composite space (must sum to 1.0 per role)
+// Grounded in O*NET task importance ratings + meta-analytic validity coefficients
+export const COMPOSITE_ROLE_PRESETS: Record<RolePresetKey, { execution: number; ownership: number; adaptability: number; collaboration: number; decisionSpeed: number }> = {
+  superintendent:  { execution: 0.30, ownership: 0.25, decisionSpeed: 0.20, adaptability: 0.15, collaboration: 0.10 },
+  project_manager: { execution: 0.25, collaboration: 0.25, adaptability: 0.20, ownership: 0.20, decisionSpeed: 0.10 },
+  cfo:             { execution: 0.35, ownership: 0.25, decisionSpeed: 0.20, collaboration: 0.10, adaptability: 0.10 },
+  foreman:         { execution: 0.30, ownership: 0.25, decisionSpeed: 0.20, adaptability: 0.15, collaboration: 0.10 },
+  estimator:       { execution: 0.35, ownership: 0.20, decisionSpeed: 0.25, adaptability: 0.10, collaboration: 0.10 },
+  sales_rep:       { collaboration: 0.30, ownership: 0.25, decisionSpeed: 0.20, adaptability: 0.15, execution: 0.10 },
+} as const
+
 // Empirical inter-dimension correlations
 // Sources: Soto & John (2017) BFI-2 n=1,000,000+; Johnson (2014) IPIP-NEO n=307,313;
 //          Costa & McCrae (1992) NEO-PI-R normative sample
