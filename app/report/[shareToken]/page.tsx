@@ -11,7 +11,7 @@ interface Target {
 }
 
 interface ApiScores {
-  execution: number; collaboration: number; adaptability: number; ownership: number
+  dominance: number; extraversion: number; patience: number; formality: number
 }
 
 interface Profile {

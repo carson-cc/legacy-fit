@@ -17,10 +17,17 @@ interface Scores {
   formality: number
 }
 interface ApiScores {
+  dominance: number
+  extraversion: number
+  patience: number
+  formality: number
+}
+interface CompositeScores {
   execution: number
-  collaboration: number
-  adaptability: number
   ownership: number
+  adaptability: number
+  collaboration: number
+  decisionSpeed: number
 }
 interface Target {
   dominance: number
@@ -69,6 +76,8 @@ interface Candidate {
   approvedAt: string | null
   job: Job
   scores: ApiScores
+  composite: CompositeScores
+  compositeBenchmark: CompositeScores | null
   list1Scores: ApiScores
   percentiles: Record<string, number>
   profileName: string
@@ -106,6 +115,14 @@ const DIMENSION_MAP = [
   { key: 'formality' as const,    label: 'Ownership' },
   { key: 'patience' as const,     label: 'Adaptability' },
   { key: 'extraversion' as const, label: 'Collaboration' },
+]
+
+const COMPOSITE_DIM_MAP = [
+  { key: 'execution' as const,     label: 'Execution' },
+  { key: 'ownership' as const,     label: 'Ownership' },
+  { key: 'adaptability' as const,  label: 'Adaptability' },
+  { key: 'collaboration' as const, label: 'Collaboration' },
+  { key: 'decisionSpeed' as const, label: 'Decision Speed' },
 ]
 
 function fmtDate(iso: string): string {
@@ -361,26 +378,19 @@ export default function CandidateDetailPage() {
     )
   }
 
-  const safeScores = {
-    dominance:   Number(candidate.scores.execution),
-    extraversion: Number(candidate.scores.collaboration),
-    patience:    Number(candidate.scores.adaptability),
-    formality:   Number(candidate.scores.ownership),
-  }
-
   const fitScore = Math.round(candidate.fitPct ?? 0)
   const recommendation = recommendationLabel(fitScore)
   const recColor = recommendationColor(recommendation)
   const confidence = confidenceLevel(fitScore, candidate.adaptationStress)
   const percentile = percentileLabel(fitScore)
   const benchmark = benchmarkComparison(fitScore, candidate.job.roleType || candidate.job.title)
-  const rationale = getRecommendationRationale(fitScore, safeScores.dominance, safeScores.extraversion, safeScores.patience, safeScores.formality)
-  const strengths = getStrengths(candidate, safeScores)
+  const rationale = getRecommendationRationale(fitScore, candidate.scores.dominance, candidate.scores.extraversion, candidate.scores.patience, candidate.scores.formality)
+  const strengths = getStrengths(candidate, candidate.scores)
   const risks = getRisks(candidate)
   const totalSignals = 94
 
   let summary = ''
-  try { summary = generateBehavioralSummary(safeScores, candidate.name || 'This candidate') } catch { summary = '' }
+  try { summary = generateBehavioralSummary(candidate.scores, candidate.name || 'This candidate') } catch { summary = '' }
 
   const W = 1200
   const card: React.CSSProperties = { background: '#FFF', border: '1px solid #E5E7EB', borderRadius: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.04)', padding: 24 }
@@ -564,7 +574,7 @@ export default function CandidateDetailPage() {
             <p style={{ fontSize: 14, color: '#6B7280', lineHeight: 1.6, marginBottom: 24 }}>Observed signal pattern against the active role benchmark.</p>
             <div style={{ display: 'flex', justifyContent: 'center' }}>
               <FitModelLight
-                scores={safeScores}
+                scores={candidate.scores}
                 target={candidate.job.target ? {
                   dominance:   Number(candidate.job.target.dominance),
                   extraversion: Number(candidate.job.target.extraversion),
@@ -578,23 +588,25 @@ export default function CandidateDetailPage() {
           <div style={card}>
             <span style={label}>Benchmark Summary</span>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 0, marginTop: 8 }}>
-              {DIMENSION_MAP.map(({ key, label: dimLabel }) => {
-                const value = Math.round(safeScores[key] * 100)
-                const target = candidate.job.target ? Math.round(Number(candidate.job.target[key]) * 100) : null
-                const delta = target == null ? null : value - target
-                return (
-                  <div key={key} style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 16, alignItems: 'center', padding: '14px 0', borderBottom: '1px solid #F3F4F6' }}>
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: '#111827' }}>{dimLabel}</div>
-                      <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>{target == null ? 'No benchmark set' : `Target ${target}`}</div>
+              {(() => {
+                return COMPOSITE_DIM_MAP.map(({ key, label: dimLabel }) => {
+                  const value = candidate.composite[key]
+                  const target = candidate.compositeBenchmark ? candidate.compositeBenchmark[key] : null
+                  const delta = target == null ? null : value - target
+                  return (
+                    <div key={key} style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 16, alignItems: 'center', padding: '14px 0', borderBottom: '1px solid #F3F4F6' }}>
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: '#111827' }}>{dimLabel}</div>
+                        <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>{target == null ? 'No benchmark set' : `Target ${target}`}</div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>{value}</div>
+                        {delta != null && <div style={{ fontSize: 11, color: delta >= 0 ? '#22C55E' : '#EF4444', fontWeight: 600 }}>{delta >= 0 ? '+' : ''}{delta} vs benchmark</div>}
+                      </div>
                     </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>{value}</div>
-                      {delta != null && <div style={{ fontSize: 11, color: delta >= 0 ? '#22C55E' : '#EF4444', fontWeight: 600 }}>{delta >= 0 ? '+' : ''}{delta} vs benchmark</div>}
-                    </div>
-                  </div>
-                )
-              })}
+                  )
+                })
+              })()}
             </div>
           </div>
         </div>
