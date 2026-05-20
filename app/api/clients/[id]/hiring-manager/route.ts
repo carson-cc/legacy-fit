@@ -35,6 +35,9 @@ export async function POST(req: NextRequest, { params }: Params) {
   try {
     const { name, email } = await req.json()
     if (!name) return NextResponse.json({ error: 'Name is required' }, { status: 400 })
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json({ error: 'Invalid email format' }, { status: 400 })
+    }
 
     const hm = await prisma.hiringManagerAssessment.create({
       data: { clientId: id, name, email: email || null, orgId: ctx.orgId },

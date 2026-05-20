@@ -156,6 +156,7 @@ export async function POST(req: NextRequest, { params }: Params) {
           scoringVersion: SCORING_VERSION,
           scoringVariant: variant,
           rushed,
+          shareTokenExpiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
         },
       })
 
@@ -193,7 +194,12 @@ export async function POST(req: NextRequest, { params }: Params) {
               reportUrl,
             })
           }),
-        ]).catch(err => console.error('Post-assessment email error:', err))
+        ]).catch(err => {
+          console.error('Post-assessment email error:', err)
+          prisma.eventLog.create({
+            data: { event: 'assessment.email_error', entityId: invite.id, meta: JSON.stringify({ error: String(err) }) },
+          }).catch(() => {})
+        })
       }
 
       return NextResponse.json({

@@ -206,6 +206,16 @@ function dimsToBase(d: DisplayDims): BaseDims {
   return { dominance, extraversion, patience, formality }
 }
 
+function inferRoleType(title: string): string {
+  if (/superintendent/i.test(title)) return 'superintendent'
+  if (/project.?manager|\bpm\b/i.test(title)) return 'project_manager'
+  if (/\bcfo\b|chief.?financial/i.test(title)) return 'cfo'
+  if (/foreman/i.test(title)) return 'foreman'
+  if (/estimat/i.test(title)) return 'estimator'
+  if (/\bsales\b|account.?exec|business.?dev/i.test(title)) return 'sales_rep'
+  return title.trim()
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function NewJobPage() {
@@ -377,7 +387,7 @@ export default function NewJobPage() {
       const jobRes = await fetch('/api/jobs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: roleTitle.trim(), roleType: roleTitle.trim(), clientId }),
+        body: JSON.stringify({ title: roleTitle.trim(), roleType: inferRoleType(roleTitle), clientId }),
       })
       const jobData = await jobRes.json()
       if (jobData.error) throw new Error(jobData.error)

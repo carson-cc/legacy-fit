@@ -22,8 +22,17 @@ export async function POST(req: NextRequest, { params }: Params) {
 
     const { placed, retainedAt90, retainedAt180, performanceRating, notes } = await req.json()
 
-    if (placed == null) {
-      return NextResponse.json({ error: 'placed field is required' }, { status: 400 })
+    if (typeof placed !== 'boolean') {
+      return NextResponse.json({ error: 'placed is required and must be a boolean' }, { status: 400 })
+    }
+    if (retainedAt90 != null && typeof retainedAt90 !== 'boolean') {
+      return NextResponse.json({ error: 'retainedAt90 must be a boolean' }, { status: 400 })
+    }
+    if (retainedAt180 != null && typeof retainedAt180 !== 'boolean') {
+      return NextResponse.json({ error: 'retainedAt180 must be a boolean' }, { status: 400 })
+    }
+    if (performanceRating != null && (!Number.isInteger(performanceRating) || performanceRating < 1 || performanceRating > 5)) {
+      return NextResponse.json({ error: 'performanceRating must be an integer between 1 and 5' }, { status: 400 })
     }
 
     const outcome = await prisma.placementOutcome.upsert({
