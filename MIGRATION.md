@@ -245,6 +245,40 @@ No schema changes. No migration needed. Add `FOUNDER_EMAIL` to your environment.
 npm run build
 ```
 
+## Session 6: Hardening (2026-05-19)
+
+### What was built
+
+No schema changes. No migration needed.
+
+**Bug fixes (PR #28)**
+- `inferRoleType` free-text: function was not being called on job create; fixed in `app/dashboard/jobs/new/page.tsx`. Function extracted to `lib/role-inference.ts` for testability.
+- `fitPct` NaN sort on job detail page: null `fitPct` values now sort last rather than propagating NaN.
+- `AssessmentResult.shareTokenExpiresAt`: was being set to `null` on assessment submission; now set to 90 days from completion.
+- Assess email errors: SendGrid failures were silently swallowed; now logged to `EventLog` as `email.error`.
+- Portal access: `GET /api/portal/shortlist` was not checking `offLimits` or `approvedForClient`; guard added.
+- HM email format validation: `POST /api/clients/[id]/hiring-manager` now validates email format before sending.
+- Outcome route type checks: `POST /api/candidates/[id]/outcome` now validates `placed` type and `performanceRating` range; returns 400 on invalid input.
+
+**Build fix (PR #29)**
+- `npm run build` now runs `prisma generate && prisma migrate deploy` before `next build` so Vercel deployments apply pending migrations automatically.
+
+**Hardening (this session — PR #30)**
+- `GET /api/portal/report/[shareToken]`: added `shareTokenExpiresAt` expiry check; returns **410 Gone** (previously unchecked).
+- `GET /api/report/[shareToken]`: changed from 404 to **410 Gone** for expired tokens so callers can distinguish.
+- **PlacementOutcome UI**: `app/dashboard/candidates/[id]/page.tsx` now renders a "Placement Outcome" card at the bottom of the candidate detail page. Form: placed (Yes/No), retained at 90/180 days, performance rating (1–5 stars), notes. Existing outcome shown in read-only view with an Edit button. Submits to the existing `POST /api/candidates/[id]/outcome`.
+
+**New tests**
+- `lib/__tests__/role-inference.test.ts` — unit tests for `inferRoleType` keyword matching (8 cases, no DB).
+- `lib/__tests__/outcome-validation.test.ts` — unit tests for `validateOutcomeInput` (13 cases, no DB).
+- `lib/__tests__/portal-guard.test.ts` — DB-seeded tests confirming `offLimits`, `approvedForClient`, and `stage` guard conditions are correctly stored and returned.
+- `lib/validate-outcome.ts` extracted from the outcome route so the validation logic is testable.
+- `package.json` test script updated to include all three new suites.
+
+### NEXTAUTH_SECRET reminder
+
+The `.env` in this repo still contains a dev placeholder. Verify that **Vercel project settings → Environment Variables** has a strong `NEXTAUTH_SECRET` (generate: `openssl rand -base64 32`). Without this, prod session tokens are forgeable.
+
 ---
 
 ## What was deliberately deferred to a future session
@@ -254,7 +288,7 @@ These are real gaps that the audit identified. Each is a separate, bounded chunk
 **Engineering / security**
 - MFA / TOTP on user accounts.
 - SSO (SAML / OIDC) for enterprise customers.
-- Audit log UI — `EventLog` now captures `userId` and `orgId` but there is no admin view that surfaces it.
+- ~~Audit log UI — `EventLog` now captures `userId` and `orgId` but there is no admin view that surfaces it.~~ *(shipped 8688999)*
 - Impersonation tool for platform admins to debug customer issues.
 - Sentry / error tracking wiring.
 - `/healthz` endpoint and a public status page.
@@ -263,7 +297,7 @@ These are real gaps that the audit identified. Each is a separate, bounded chunk
 - Portal rate-limiting (currently the portal shortlist/report have no rate limit; add IP-based limiting like the public report route).
 
 **Process / UX inside the dashboard**
-- Shortlist staging view — kanban or list view grouping candidates by stage across a job (currently stage is set per-candidate on the detail page, no aggregate pipeline view).
+- ~~Shortlist staging view — kanban or list view grouping candidates by stage across a job~~ *(shipped f183256: filter tabs + stage pills on job detail)*
 - Bulk-invite email preview before send (currently emails fire immediately on commit).
 - Interview guide export to PDF / Word per candidate.
 
@@ -274,7 +308,7 @@ These are real gaps that the audit identified. Each is a separate, bounded chunk
 - Client portal mobile pass at 375px (basic layout works but not optimized).
 
 **Candidate experience**
-- Real consent screen on `/assess/[token]` with what-is-collected / how-long-retained / right-to-delete language.
+- ~~Real consent screen on `/assess/[token]` with what-is-collected / how-long-retained / right-to-delete language.~~ *(shipped 9516e10)*
 - Mobile pass at 375px.
 - Optional demographic capture for adverse-impact monitoring (this is a sales feature for the firms, not a UX detail).
 
