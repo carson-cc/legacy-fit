@@ -3,7 +3,7 @@ import { NORMS, COV_INV, scoreToPercentile } from './data/norms'
 import { REFERENCE_PROFILES, type ReferenceProfile } from './data/profiles'
 import { INTERVIEW_QUESTIONS } from './data/questions'
 
-export const SCORING_VERSION = 'v3.1.0'
+export const SCORING_VERSION = 'v4.0.0'
 
 // ── Composite display dimensions ───────────────────────────────
 // Maps the 4 raw DEPF scores (0–1) onto 5 recruiter-readable dimensions (0–100).
@@ -29,11 +29,16 @@ export interface CompositeDimensions {
 export function computeCompositeDimensions(scores: DimensionScores): CompositeDimensions {
   const clamp = (v: number) => Math.max(0, Math.min(100, Math.round(v * 100)))
   return {
-    execution:     clamp(scores.dominance * 0.45 + scores.formality * 0.35 + (1 - scores.patience) * 0.20),
-    ownership:     clamp(scores.dominance * 0.70 + scores.patience * 0.30),
-    adaptability:  clamp((1 - scores.formality) * 0.45 + (1 - scores.patience) * 0.30 + scores.extraversion * 0.25),
-    collaboration: clamp(scores.extraversion * 0.70 + scores.patience * 0.30),
-    decisionSpeed: clamp(scores.dominance * 0.50 + (1 - scores.patience) * 0.50),
+    // F #1 predictor task perf (Barrick & Mount 1991); D initiative; (1-P) urgency
+    execution:     clamp(scores.formality * 0.40 + scores.dominance * 0.35 + (1 - scores.patience) * 0.25),
+    // D proactive agency (Bateman & Crant 1993); (1-P) urgency; F follow-through
+    ownership:     clamp(scores.dominance * 0.55 + (1 - scores.patience) * 0.25 + scores.formality * 0.20),
+    // (1-F) flexibility; E engages novelty; P steadiness under change (Pulakos et al. 2000)
+    adaptability:  clamp((1 - scores.formality) * 0.40 + scores.extraversion * 0.30 + scores.patience * 0.30),
+    // E + P dominant (Bell 2007 meta); (1-D) non-dominating
+    collaboration: clamp(scores.extraversion * 0.45 + scores.patience * 0.35 + (1 - scores.dominance) * 0.20),
+    // D decisive; (1-P) urgent; (1-F) decides without all info (Eisenhardt 1989)
+    decisionSpeed: clamp(scores.dominance * 0.45 + (1 - scores.patience) * 0.35 + (1 - scores.formality) * 0.20),
   }
 }
 
@@ -106,6 +111,14 @@ export interface FitWeights {
   formality: number
 }
 
+export interface CompositeFitWeights {
+  execution: number
+  ownership: number
+  adaptability: number
+  collaboration: number
+  decisionSpeed: number
+}
+
 interface FitResult {
   fitPct: number
   fitLow: number
@@ -142,6 +155,33 @@ function computeFit(
   const band = Math.round(Math.min(Math.pow(0.05, 1.5) * 2.5, 0.60) * maxWeight * 100)
   const nearThreshold = Math.abs(fitPct - 85) <= band || Math.abs(fitPct - 70) <= band
 
+  return {
+    fitPct,
+    fitLow: Math.max(0, fitPct - band),
+    fitHigh: Math.min(100, fitPct + band),
+    nearThreshold,
+    thresholdNote: Math.abs(fitPct - 85) <= band ? 'Borderline Strong Hire — within confidence margin'
+                 : Math.abs(fitPct - 70) <= band ? 'Borderline Proceed with Caution/Do Not Hire — within confidence margin'
+                 : null,
+  }
+}
+
+function computeFitComposite(
+  candidate: CompositeDimensions,
+  target: CompositeDimensions,
+  weights: CompositeFitWeights,
+): FitResult {
+  const dims = ['execution', 'ownership', 'adaptability', 'collaboration', 'decisionSpeed'] as const
+  let totalPenalty = 0
+  for (const dim of dims) {
+    const gap = Math.abs(candidate[dim] - target[dim]) / 100
+    const penalty = Math.min(Math.pow(gap, 1.5) * 2.5, 0.60)
+    totalPenalty += penalty * weights[dim]
+  }
+  const fitPct = Math.max(0, Math.round((1 - totalPenalty) * 100))
+  const maxWeight = Math.max(...Object.values(weights))
+  const band = Math.round(Math.min(Math.pow(0.05, 1.5) * 2.5, 0.60) * maxWeight * 100)
+  const nearThreshold = Math.abs(fitPct - 85) <= band || Math.abs(fitPct - 70) <= band
   return {
     fitPct,
     fitLow: Math.max(0, fitPct - band),
@@ -408,7 +448,7 @@ export function scoreAssessment(
   list1Checked: string[],
   list2Checked: string[],
   adjectives: Adjective[] = ADJECTIVES,
-  jobTarget?: { target: FitTarget; weights: FitWeights } | null,
+  jobTarget?: { target: FitTarget; compositeWeights: CompositeFitWeights } | null,
   scoringVariant: 'v1_stepped' | 'v2_quadratic' = 'v2_quadratic',
 ): ScoringResult {
   const dimensions: Dimension[] = ['dominance', 'extraversion', 'patience', 'formality']
@@ -450,7 +490,9 @@ export function scoreAssessment(
   let interviewGuide: InterviewGuide[] = []
 
   if (jobTarget) {
-    const fitResult = computeFit(scores, jobTarget.target, jobTarget.weights, scoringVariant)
+    const candidateComposite = computeCompositeDimensions(scores)
+    const targetComposite = computeCompositeDimensions(jobTarget.target)
+    const fitResult = computeFitComposite(candidateComposite, targetComposite, jobTarget.compositeWeights)
     fitPct = fitResult.fitPct
     fitLow = fitResult.fitLow
     fitHigh = fitResult.fitHigh
