@@ -5,7 +5,7 @@ import { REFERENCE_PROFILES } from '@/lib/data/profiles'
 import { INTERVIEW_QUESTIONS } from '@/lib/data/questions'
 import { ADJECTIVES } from '@/lib/data/adjectives'
 import type { Dimension } from '@/lib/data/adjectives'
-import { scoreAssessment, fitLabel, getModelConfidence, getPercentileLabel, getBenchmarkComparison, getRecommendationRationale, SCORING_VERSION } from '@/lib/scoring'
+import { scoreAssessment, fitLabel, getModelConfidence, getPercentileLabel, getBenchmarkComparison, getRecommendationRationale, computeCompositeDimensions, SCORING_VERSION } from '@/lib/scoring'
 import { getTeamFit } from '@/lib/data/teamfit'
 
 type Params = { params: Promise<{ id: string }> }
@@ -33,16 +33,16 @@ export async function GET(_req: NextRequest, { params }: Params) {
     const secondaryProfile = REFERENCE_PROFILES.find(p => p.name === result.secondaryProfile)
 
     // Re-derive list1 scores from stored raw responses for self-concept overlay
-    let list1Scores = { execution: 0, collaboration: 0, adaptability: 0, ownership: 0 }
+    let list1Scores = { dominance: 0, extraversion: 0, patience: 0, formality: 0 }
     try {
       const list1Checked: string[] = JSON.parse(result.list1Responses)
       const list2Checked: string[] = JSON.parse(result.list2Responses)
       const rescored = scoreAssessment(list1Checked, list2Checked, ADJECTIVES)
       list1Scores = {
-        execution: rescored.list1Scores.dominance,
-        collaboration: rescored.list1Scores.extraversion,
-        adaptability: rescored.list1Scores.patience,
-        ownership: rescored.list1Scores.formality,
+        dominance: rescored.list1Scores.dominance,
+        extraversion: rescored.list1Scores.extraversion,
+        patience: rescored.list1Scores.patience,
+        formality: rescored.list1Scores.formality,
       }
     } catch { /* fallback to zeros */ }
 
@@ -115,16 +115,28 @@ export async function GET(_req: NextRequest, { params }: Params) {
           target: invite.job.target,
         },
         scores: {
-          execution: result.dominance,
-          collaboration: result.extraversion,
-          adaptability: result.patience,
-          ownership: result.formality,
+          dominance:   result.dominance,
+          extraversion: result.extraversion,
+          patience:    result.patience,
+          formality:   result.formality,
         },
+        composite: computeCompositeDimensions({
+          dominance:   result.dominance,
+          extraversion: result.extraversion,
+          patience:    result.patience,
+          formality:   result.formality,
+        }),
+        compositeBenchmark: invite.job.target ? computeCompositeDimensions({
+          dominance:   invite.job.target.dominance,
+          extraversion: invite.job.target.extraversion,
+          patience:    invite.job.target.patience,
+          formality:   invite.job.target.formality,
+        }) : null,
         percentiles: {
-          execution: result.domPercentile,
-          collaboration: result.extPercentile,
-          adaptability: result.patPercentile,
-          ownership: result.forPercentile,
+          dominance:   result.domPercentile,
+          extraversion: result.extPercentile,
+          patience:    result.patPercentile,
+          formality:   result.forPercentile,
         },
         profileName: result.profileName,
         profileGroup: result.profileGroup,
