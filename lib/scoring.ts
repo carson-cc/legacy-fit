@@ -3,7 +3,7 @@ import { NORMS, COV_INV, scoreToPercentile } from './data/norms'
 import { REFERENCE_PROFILES, type ReferenceProfile } from './data/profiles'
 import { INTERVIEW_QUESTIONS } from './data/questions'
 
-export const SCORING_VERSION = 'v4.0.0'
+export const SCORING_VERSION = 'v4.1.0'
 
 // ── Composite display dimensions ───────────────────────────────
 // Maps the 4 raw DEPF scores (0–1) onto 5 recruiter-readable dimensions (0–100).
@@ -145,12 +145,12 @@ export function computeFitComposite(
     const delta = candidate[dim] - target[dim]          // +ve = above, −ve = below
     const gap   = Math.abs(delta) / 100                 // normalise to 0–1
     const dir   = delta >= 0 ? DIRECTION_MULTIPLIERS[dim].above : DIRECTION_MULTIPLIERS[dim].below
-    const penalty = Math.min(Math.pow(gap, 1.5) * 2.5, 0.60) * dir
+    const penalty = Math.min(Math.pow(gap, 1.5) * 5.0, 0.60) * dir
     totalPenalty += penalty * weights[dim]
   }
   const fitPct = Math.max(0, Math.round((1 - totalPenalty) * 100))
   const maxWeight = Math.max(...Object.values(weights))
-  const band = Math.round(Math.min(Math.pow(0.05, 1.5) * 2.5, 0.60) * maxWeight * 100)
+  const band = Math.round(Math.min(Math.pow(0.05, 1.5) * 5.0, 0.60) * maxWeight * 100)
   const nearThreshold = Math.abs(fitPct - 85) <= band || Math.abs(fitPct - 70) <= band
   return {
     fitPct,
