@@ -288,7 +288,11 @@ export default function JobDetailPage() {
       setInviteLink(`${window.location.origin}/assess/${d.data.token}`)
       setInviteEmailSent(!!d.emailSent)
       setCopied(false)
-      showToast(d.emailSent ? 'Evaluation sent' : 'Invite created')
+      if (d.emailSent) {
+        showToast('Evaluation sent')
+      } else {
+        showToast(d.emailError ? `Email failed: ${d.emailError}` : 'Invite created — email not sent', 'error')
+      }
       fetchJob()
     } catch {
       showToast('Could not send evaluation', 'error')

@@ -28,6 +28,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     })
 
     let emailSent = false
+    let emailError = ''
 
     if (email) {
       try {
@@ -52,12 +53,14 @@ export async function POST(req: NextRequest, { params }: Params) {
         emailSent = true
       } catch (emailErr) {
         console.error('Failed to send invite email:', emailErr)
+        emailError = emailErr instanceof Error ? emailErr.message : String(emailErr)
       }
     }
 
     return NextResponse.json({
       data: { ...invite, assessUrl: `/assess/${invite.token}` },
       emailSent,
+      emailError: emailError || undefined,
     })
   } catch {
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
