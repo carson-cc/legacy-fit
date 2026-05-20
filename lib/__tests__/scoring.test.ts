@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { scoreAssessment, normCDF, fitLabel } from '../scoring'
+import { scoreAssessment, normCDF, fitLabel, computeCompositeDimensions, CompositeFitWeights } from '../scoring'
 import { ADJECTIVES } from '../data/adjectives'
 import { REFERENCE_PROFILES } from '../data/profiles'
 
@@ -150,23 +150,52 @@ describe('scoreAssessment', () => {
   })
 
   it('Test 8: fit scoring with exact match target = 100%', () => {
+    // When candidate DEPF == target DEPF, composites are identical, all gaps = 0, fitPct = 100
     const allPositives = ADJECTIVES.filter(a => a.polarity === 'positive').map(a => a.word)
     const result = scoreAssessment(allPositives, allPositives, ADJECTIVES, {
       target: { dominance: 1.0, extraversion: 1.0, patience: 1.0, formality: 1.0 },
-      weights: { dominance: 0.25, extraversion: 0.25, patience: 0.25, formality: 0.25 },
+      compositeWeights: { execution: 0.20, ownership: 0.20, adaptability: 0.20, collaboration: 0.20, decisionSpeed: 0.20 },
     })
     assert.ok(result.fitPct === 100, `Fit should be 100%, got ${result.fitPct}%`)
   })
 
-  it('Test 9: v2 quadratic — max gap (1.0) with equal weights = 40%', () => {
-    // gap=1.0, penalty = min(1.0^1.5 * 2.5, 0.60) = 0.60
-    // total = 0.60 * 0.25 * 4 = 0.60, fit = 40%
+  it('Test 9: directional — being above target on execution is penalised less than being below by same gap', () => {
+    // Isolate execution direction using execution-only weights.
+    //
+    // Candidate A (all-positives, DEPF 1/1/1/1):
+    //   exec = clamp(1*0.40 + 1*0.35 + (1-1)*0.25) = 75
+    // Target A (DEPF 0/0/1/0 → patience=1 so (1-P)=0):
+    //   exec = clamp(0*0.40 + 0*0.35 + 0*0.25) = 0
+    //   → candidate 75pts ABOVE → dir multiplier 0.5
+    //   gap=0.75, penalty = min(0.75^1.5*2.5, 0.60)*0.5 = 0.60*0.5 = 0.30 → fitPct=70
+    //
+    // Candidate B (all-negatives, DEPF 0/0/0/0):
+    //   exec = clamp(0*0.40 + 0*0.35 + (1-0)*0.25) = 25
+    // Target B (DEPF 1/1/1/1):
+    //   exec = 75 → candidate 50pts BELOW → dir multiplier 1.0
+    //   gap=0.50, penalty = min(0.50^1.5*2.5, 0.60)*1.0 = min(0.884, 0.60) = 0.60 → fitPct=40
+    //
+    // fitPct_A(70) > fitPct_B(40) demonstrates the directional penalty.
+    const execOnlyWeights: CompositeFitWeights = { execution: 1.0, ownership: 0.0, adaptability: 0.0, collaboration: 0.0, decisionSpeed: 0.0 }
     const allPositives = ADJECTIVES.filter(a => a.polarity === 'positive').map(a => a.word)
-    const result = scoreAssessment(allPositives, allPositives, ADJECTIVES, {
-      target: { dominance: 0.0, extraversion: 0.0, patience: 0.0, formality: 0.0 },
-      weights: { dominance: 0.25, extraversion: 0.25, patience: 0.25, formality: 0.25 },
+    const allNegatives = ADJECTIVES.filter(a => a.polarity === 'negative').map(a => a.word)
+
+    // Candidate exec=75 ABOVE target exec=0 → gap=75pts, above × 0.5 → fitPct ~70
+    const aboveResult = scoreAssessment(allPositives, allPositives, ADJECTIVES, {
+      target: { dominance: 0.0, extraversion: 0.0, patience: 1.0, formality: 0.0 },
+      compositeWeights: execOnlyWeights,
     })
-    assert.ok(result.fitPct === 40, `Fit should be 40%, got ${result.fitPct}%`)
+
+    // Candidate exec=25 BELOW target exec=75 → gap=50pts, below × 1.0 → fitPct ~40
+    const belowResult = scoreAssessment(allNegatives, allNegatives, ADJECTIVES, {
+      target: { dominance: 1.0, extraversion: 1.0, patience: 1.0, formality: 1.0 },
+      compositeWeights: execOnlyWeights,
+    })
+
+    assert.ok(
+      aboveResult.fitPct! > belowResult.fitPct!,
+      `Above target (${aboveResult.fitPct}%) should score higher than below target (${belowResult.fitPct}%)`,
+    )
   })
 
   it('Test 10: 16 unique profiles exist', () => {
@@ -210,37 +239,71 @@ describe('scoreAssessment', () => {
     }
   })
 
-  it('Test 14: v2 quadratic — gap=0.20 equal weights → ~93%', () => {
-    // gap=0.20, penalty = min(0.20^1.5 * 2.5, 0.60) = min(0.0894*2.5, 0.60) = 0.2236
-    // total = 0.2236 * 0.25 * 4 = 0.2236, fit = round((1-0.2236)*100) = 78
-    // Candidate score = 0.5, target = 0.7 → gap = 0.2 per dim
+  it('Test 14: small composite gap gives high fit score (≥ 85)', () => {
+    // Candidate DEPF 0.5 (midrange), target DEPF 0.55 — tiny gap on all composites
+    // Candidate below target, so full below-multiplier (1.0), but gap is tiny → high fitPct
     const result = scoreAssessment([], [], ADJECTIVES, {
-      target: { dominance: 0.7, extraversion: 0.7, patience: 0.7, formality: 0.7 },
-      weights: { dominance: 0.25, extraversion: 0.25, patience: 0.25, formality: 0.25 },
+      target: { dominance: 0.55, extraversion: 0.55, patience: 0.55, formality: 0.55 },
+      compositeWeights: { execution: 0.20, ownership: 0.20, adaptability: 0.20, collaboration: 0.20, decisionSpeed: 0.20 },
     })
-    assert.ok(result.fitPct! >= 75 && result.fitPct! <= 82,
-      `Fit for gap=0.20 should be ~78%, got ${result.fitPct}%`)
+    assert.ok(result.fitPct! >= 85,
+      `Small composite gap should give fitPct ≥ 85, got ${result.fitPct}%`)
   })
 
-  it('Test 15: v2 quadratic — gap=0.30 equal weights → ~59%', () => {
-    // gap=0.30, penalty = min(0.30^1.5 * 2.5, 0.60) = min(0.1643*2.5, 0.60) = 0.4108
-    // total = 0.4108 * 0.25 * 4 = 0.4108, fit = round((1-0.4108)*100) = 59
-    const result = scoreAssessment([], [], ADJECTIVES, {
-      target: { dominance: 0.8, extraversion: 0.8, patience: 0.8, formality: 0.8 },
-      weights: { dominance: 0.25, extraversion: 0.25, patience: 0.25, formality: 0.25 },
+  it('Test 15: larger composite gap gives lower fit score than smaller gap', () => {
+    const weights: CompositeFitWeights = { execution: 0.20, ownership: 0.20, adaptability: 0.20, collaboration: 0.20, decisionSpeed: 0.20 }
+    // Small gap: candidate 0.5, target 0.55
+    const smallGap = scoreAssessment([], [], ADJECTIVES, {
+      target: { dominance: 0.55, extraversion: 0.55, patience: 0.55, formality: 0.55 },
+      compositeWeights: weights,
     })
-    assert.ok(result.fitPct! >= 55 && result.fitPct! <= 62,
-      `Fit for gap=0.30 should be ~59%, got ${result.fitPct}%`)
+    // Large gap: candidate 0.5, target 0.9
+    const largeGap = scoreAssessment([], [], ADJECTIVES, {
+      target: { dominance: 0.90, extraversion: 0.90, patience: 0.90, formality: 0.90 },
+      compositeWeights: weights,
+    })
+    assert.ok(
+      smallGap.fitPct! > largeGap.fitPct!,
+      `Small gap (${smallGap.fitPct}%) should score higher than large gap (${largeGap.fitPct}%)`,
+    )
   })
 
-  it('Test 16: v1_stepped variant still works when specified', () => {
+  it('Test 16: equal weights, zero gap on 4 dims, 50-point gap on 1 dim above target', () => {
+    // Candidate DEPF all 1.0 (all-positives); target DEPF = 1.0 for D/E/P but F = 0.0
+    // Composite execution = clamp(F*0.40 + D*0.35 + (1-P)*0.25)
+    // Candidate: F=1,D=1,P=1 → exec = clamp(0.40+0.35+0) = 75
+    // Target:    F=0,D=1,P=1 → exec = clamp(0+0.35+0) = 35
+    // Candidate is 40 pts ABOVE target on execution → above multiplier 0.5
+    // Other dims: compute manually to verify ordering — just assert fitPct is within ±10 of expected
+    // Expected: penalty only on execution (above), gap=40/100=0.40,
+    //           penalty = min(0.40^1.5 * 2.5, 0.60) * 0.5 = min(0.6325*0.5, 0.30) = 0.3163 * 0.20 weight
+    //           = 0.0633 → fitPct ≈ round((1 - 0.0633) * 100) = 94 (plus small gaps on other dims)
     const allPositives = ADJECTIVES.filter(a => a.polarity === 'positive').map(a => a.word)
     const result = scoreAssessment(allPositives, allPositives, ADJECTIVES, {
-      target: { dominance: 0.0, extraversion: 0.0, patience: 0.0, formality: 0.0 },
-      weights: { dominance: 0.25, extraversion: 0.25, patience: 0.25, formality: 0.25 },
-    }, 'v1_stepped')
-    // v1: penalty = 0.30 per dim, total = 0.30, fit = 70%
-    assert.ok(result.fitPct === 70, `v1_stepped fit should be 70%, got ${result.fitPct}%`)
+      target: { dominance: 1.0, extraversion: 1.0, patience: 1.0, formality: 0.0 },
+      compositeWeights: { execution: 0.20, ownership: 0.20, adaptability: 0.20, collaboration: 0.20, decisionSpeed: 0.20 },
+    })
+    // Manually: candidate composite vs target composite
+    // Candidate: F=1,D=1,E=1,P=1
+    //   exec=75, own=80, adapt=0, collab=35, dspd=5 (all clamped)
+    // Wait — adapt=clamp((1-1)*0.40 + 1*0.30 + 1*0.30) = clamp(0+0.30+0.30) = 60
+    // collab=clamp(1*0.45+1*0.35+(1-1)*0.20) = clamp(0.45+0.35+0) = 80
+    // dspd=clamp(1*0.45+(1-1)*0.35+(1-1)*0.20) = clamp(0.45) = 45
+    // exec=clamp(1*0.40+1*0.35+(1-1)*0.25) = clamp(0.40+0.35+0) = 75
+    // own=clamp(1*0.55+(1-1)*0.25+1*0.20) = clamp(0.55+0+0.20) = 75
+    // Target: F=0,D=1,E=1,P=1
+    //   exec=clamp(0*0.40+1*0.35+0*0.25)=35, own=clamp(1*0.55+0*0.25+0*0.20)=55
+    //   adapt=clamp(1*0.40+1*0.30+1*0.30)=100, collab=80, dspd=clamp(1*0.45+0+1*0.20)=65
+    // Gaps (cand - target): exec=40↑, own=20↑, adapt=-40↓, collab=0, dspd=-20↓
+    // Penalties: exec: gap=0.40,dir=0.5 → min(0.40^1.5*2.5,0.60)*0.5=min(0.6325,0.60)*0.5=0.30, w=0.20 → 0.06
+    //            own:  gap=0.20,dir=0.5 → min(0.20^1.5*2.5,0.60)*0.5=min(0.2236,0.60)*0.5=0.1118, w=0.20 → 0.02236
+    //            adapt:gap=0.40,dir=1.0 → 0.60*1.0=0.60, w=0.20 → 0.12
+    //            collab:gap=0,dir=0.65 → 0, w=0.20 → 0
+    //            dspd: gap=0.20,dir=1.0 → 0.2236, w=0.20 → 0.04472
+    // total = 0.06+0.02236+0.12+0+0.04472 = 0.24708
+    // fitPct = round((1-0.24708)*100) = round(75.292) = 75
+    assert.ok(result.fitPct! >= 73 && result.fitPct! <= 77,
+      `Expected fitPct ~75 (±2), got ${result.fitPct}%`)
   })
 
   it('Test 17: fitLabel boundary at 55 (new Needs Discussion floor)', () => {

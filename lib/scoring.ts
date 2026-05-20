@@ -3,7 +3,7 @@ import { NORMS, COV_INV, scoreToPercentile } from './data/norms'
 import { REFERENCE_PROFILES, type ReferenceProfile } from './data/profiles'
 import { INTERVIEW_QUESTIONS } from './data/questions'
 
-export const SCORING_VERSION = 'v3.1.0'
+export const SCORING_VERSION = 'v4.0.0'
 
 // ── Composite display dimensions ───────────────────────────────
 // Maps the 4 raw DEPF scores (0–1) onto 5 recruiter-readable dimensions (0–100).
@@ -29,11 +29,11 @@ export interface CompositeDimensions {
 export function computeCompositeDimensions(scores: DimensionScores): CompositeDimensions {
   const clamp = (v: number) => Math.max(0, Math.min(100, Math.round(v * 100)))
   return {
-    execution:     clamp(scores.dominance * 0.45 + scores.formality * 0.35 + (1 - scores.patience) * 0.20),
-    ownership:     clamp(scores.dominance * 0.70 + scores.patience * 0.30),
-    adaptability:  clamp((1 - scores.formality) * 0.45 + (1 - scores.patience) * 0.30 + scores.extraversion * 0.25),
-    collaboration: clamp(scores.extraversion * 0.70 + scores.patience * 0.30),
-    decisionSpeed: clamp(scores.dominance * 0.50 + (1 - scores.patience) * 0.50),
+    execution:     clamp(scores.formality * 0.40 + scores.dominance * 0.35 + (1 - scores.patience) * 0.25),
+    ownership:     clamp(scores.dominance * 0.55 + (1 - scores.patience) * 0.25 + scores.formality * 0.20),
+    adaptability:  clamp((1 - scores.formality) * 0.40 + scores.extraversion * 0.30 + scores.patience * 0.30),
+    collaboration: clamp(scores.extraversion * 0.45 + scores.patience * 0.35 + (1 - scores.dominance) * 0.20),
+    decisionSpeed: clamp(scores.dominance * 0.45 + (1 - scores.patience) * 0.35 + (1 - scores.formality) * 0.20),
   }
 }
 
@@ -106,6 +106,14 @@ export interface FitWeights {
   formality: number
 }
 
+export interface CompositeFitWeights {
+  execution: number
+  ownership: number
+  adaptability: number
+  collaboration: number
+  decisionSpeed: number
+}
+
 interface FitResult {
   fitPct: number
   fitLow: number
@@ -114,41 +122,43 @@ interface FitResult {
   thresholdNote: string | null
 }
 
-function computeFit(
-  scores: DimensionScores,
-  target: FitTarget,
-  weights: FitWeights,
-  variant: 'v1_stepped' | 'v2_quadratic' = 'v2_quadratic',
-): FitResult {
-  const dimensions: Dimension[] = ['dominance', 'extraversion', 'patience', 'formality']
-  let totalPenalty = 0
+// Directional multipliers: < 1.0 means being above target is penalised less.
+// Science: overperforming execution/ownership is almost never a problem;
+// overperforming collaboration/adaptability carries mild risk of slowing decisions;
+// decision speed is genuinely bidirectional (too fast = impulsive, too slow = bottleneck).
+const DIRECTION_MULTIPLIERS: Record<keyof CompositeDimensions, { above: number; below: number }> = {
+  execution:     { above: 0.5,  below: 1.0 },
+  ownership:     { above: 0.5,  below: 1.0 },
+  adaptability:  { above: 0.65, below: 1.0 },
+  collaboration: { above: 0.65, below: 1.0 },
+  decisionSpeed: { above: 1.0,  below: 1.0 },
+}
 
-  for (const dim of dimensions) {
-    const gap = Math.abs(scores[dim] - target[dim])
-    let penalty: number
-    if (variant === 'v1_stepped') {
-      if (gap <= 0.10) penalty = 0
-      else if (gap <= 0.20) penalty = 0.05
-      else if (gap <= 0.30) penalty = 0.15
-      else penalty = 0.30
-    } else {
-      penalty = Math.min(Math.pow(gap, 1.5) * 2.5, 0.60)
-    }
+export function computeFitComposite(
+  candidate: CompositeDimensions,
+  target: CompositeDimensions,
+  weights: CompositeFitWeights,
+): FitResult {
+  const dims = ['execution', 'ownership', 'adaptability', 'collaboration', 'decisionSpeed'] as const
+  let totalPenalty = 0
+  for (const dim of dims) {
+    const delta = candidate[dim] - target[dim]          // +ve = above, −ve = below
+    const gap   = Math.abs(delta) / 100                 // normalise to 0–1
+    const dir   = delta >= 0 ? DIRECTION_MULTIPLIERS[dim].above : DIRECTION_MULTIPLIERS[dim].below
+    const penalty = Math.min(Math.pow(gap, 1.5) * 2.5, 0.60) * dir
     totalPenalty += penalty * weights[dim]
   }
-
   const fitPct = Math.max(0, Math.round((1 - totalPenalty) * 100))
   const maxWeight = Math.max(...Object.values(weights))
   const band = Math.round(Math.min(Math.pow(0.05, 1.5) * 2.5, 0.60) * maxWeight * 100)
   const nearThreshold = Math.abs(fitPct - 85) <= band || Math.abs(fitPct - 70) <= band
-
   return {
     fitPct,
-    fitLow: Math.max(0, fitPct - band),
+    fitLow:  Math.max(0,   fitPct - band),
     fitHigh: Math.min(100, fitPct + band),
     nearThreshold,
-    thresholdNote: Math.abs(fitPct - 85) <= band ? 'Borderline Strong Hire — within confidence margin'
-                 : Math.abs(fitPct - 70) <= band ? 'Borderline Proceed with Caution/Do Not Hire — within confidence margin'
+    thresholdNote: Math.abs(fitPct - 85) <= band ? 'Borderline Strong Fit — within confidence margin'
+                 : Math.abs(fitPct - 70) <= band ? 'Borderline Explore Further — within confidence margin'
                  : null,
   }
 }
@@ -408,8 +418,7 @@ export function scoreAssessment(
   list1Checked: string[],
   list2Checked: string[],
   adjectives: Adjective[] = ADJECTIVES,
-  jobTarget?: { target: FitTarget; weights: FitWeights } | null,
-  scoringVariant: 'v1_stepped' | 'v2_quadratic' = 'v2_quadratic',
+  jobTarget?: { target: FitTarget; compositeWeights: CompositeFitWeights } | null,
 ): ScoringResult {
   const dimensions: Dimension[] = ['dominance', 'extraversion', 'patience', 'formality']
 
@@ -450,7 +459,11 @@ export function scoreAssessment(
   let interviewGuide: InterviewGuide[] = []
 
   if (jobTarget) {
-    const fitResult = computeFit(scores, jobTarget.target, jobTarget.weights, scoringVariant)
+    const fitResult = computeFitComposite(
+      computeCompositeDimensions(scores),
+      computeCompositeDimensions(jobTarget.target),
+      jobTarget.compositeWeights,
+    )
     fitPct = fitResult.fitPct
     fitLow = fitResult.fitLow
     fitHigh = fitResult.fitHigh

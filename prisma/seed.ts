@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import { scoreAssessment, SCORING_VERSION } from '../lib/scoring'
 import { ADJECTIVES } from '../lib/data/adjectives'
-import { ROLE_PRESETS } from '../lib/data/norms'
+import { COMPOSITE_ROLE_PRESETS } from '../lib/data/norms'
 
 const prisma = new PrismaClient()
 
@@ -159,7 +159,7 @@ async function main() {
   const marcusList1 = pickWords({ dominance: 0.80, extraversion: 0.65, patience: 0.30, formality: 0.55 })
   const marcusResult = scoreAssessment(marcusList1, marcusList2, ADJECTIVES, {
     target: { dominance: 0.75, extraversion: 0.55, patience: 0.35, formality: 0.60 },
-    weights: ROLE_PRESETS.superintendent,
+    compositeWeights: COMPOSITE_ROLE_PRESETS.superintendent,
   })
 
   const marcusInvite = await prisma.candidateInvite.upsert({
@@ -211,7 +211,7 @@ async function main() {
   const keishaList1 = pickWords({ dominance: 0.55, extraversion: 0.40, patience: 0.65, formality: 0.80 })
   const keishaResult = scoreAssessment(keishaList1, keishaList2, ADJECTIVES, {
     target: { dominance: 0.75, extraversion: 0.55, patience: 0.35, formality: 0.60 },
-    weights: ROLE_PRESETS.superintendent,
+    compositeWeights: COMPOSITE_ROLE_PRESETS.superintendent,
   })
 
   const keishaInvite = await prisma.candidateInvite.upsert({
@@ -263,7 +263,7 @@ async function main() {
   const andreList1 = pickWords({ dominance: 0.60, extraversion: 0.85, patience: 0.40, formality: 0.30 })
   const andreResult = scoreAssessment(andreList1, andreList2, ADJECTIVES, {
     target: { dominance: 0.75, extraversion: 0.55, patience: 0.35, formality: 0.60 },
-    weights: ROLE_PRESETS.superintendent,
+    compositeWeights: COMPOSITE_ROLE_PRESETS.superintendent,
   })
 
   const andreInvite = await prisma.candidateInvite.upsert({
@@ -315,7 +315,7 @@ async function main() {
   const sarahList1 = pickWords({ dominance: 0.55, extraversion: 0.50, patience: 0.60, formality: 0.70 })
   const sarahResult = scoreAssessment(sarahList1, sarahList2, ADJECTIVES, {
     target: { dominance: 0.55, extraversion: 0.40, patience: 0.65, formality: 0.75 },
-    weights: ROLE_PRESETS.foreman,
+    compositeWeights: COMPOSITE_ROLE_PRESETS.foreman,
   })
 
   const sarahInvite = await prisma.candidateInvite.upsert({
