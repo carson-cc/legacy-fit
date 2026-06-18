@@ -28,9 +28,15 @@ export async function POST(req: NextRequest, { params }: Params) {
   }
 
   try {
+    const isClientReady = stage === 'client_ready'
     const invite = await prisma.candidateInvite.update({
       where: { id },
-      data: { stage },
+      data: {
+        stage,
+        approvedForClient: isClientReady,
+        approvedAt: isClientReady ? new Date() : null,
+        approvedByUserId: isClientReady ? ctx.userId : null,
+      },
     })
 
     await prisma.eventLog.create({

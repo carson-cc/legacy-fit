@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireOrg } from '@/lib/auth-helpers'
 import Anthropic from '@anthropic-ai/sdk'
+import { findOccupation, formatWorkStyleContext } from '@/lib/onet'
 
 export async function POST(req: NextRequest) {
   const ctx = await requireOrg()
@@ -10,7 +11,7 @@ export async function POST(req: NextRequest) {
   if (!apiKey) return NextResponse.json({ error: 'AI not configured.' }, { status: 503 })
 
   try {
-    const { roleTitle, clientName, brief, roleScope, environmentSignals } = await req.json()
+    const { roleTitle, clientName, brief, environmentSignals } = await req.json()
 
     if (!roleTitle || typeof roleTitle !== 'string' || roleTitle.trim().length < 1) {
       return NextResponse.json({ error: 'Provide a role title.' }, { status: 400 })
@@ -26,14 +27,17 @@ export async function POST(req: NextRequest) {
       .map(([k, v]) => `  - ${k}: ${v}`)
       .join('\n')
 
+    const onetMatch = findOccupation(roleTitle.trim())
+    const onetContext = onetMatch ? formatWorkStyleContext(onetMatch) : null
+
     const userMessage = [
       `Role title: ${roleTitle.trim()}`,
       clientName ? `Client: ${clientName}` : null,
-      roleScope ? `Role scope: ${roleScope}` : null,
       envLines ? `Environment signals:\n${envLines}` : null,
       '',
       `Role brief:`,
       brief.trim(),
+      onetContext ? `\n${onetContext}` : null,
     ].filter(Boolean).join('\n')
 
     const response = await client.messages.create({
@@ -54,9 +58,8 @@ Also provide a one-sentence summary of the kind of operator this role favors.
 
 Guidelines:
 - Set values based on what strong performers in this role actually need, not generic ideals
-- 50 is average
-- 75+ means this dimension is meaningfully important
-- 85+ should be reserved for roles where that dimension is truly critical
+- 50 is average; 75+ means meaningfully important; 85+ reserved for truly critical dimensions
+- If O*NET Work Importance scores are provided, use them as an empirical anchor — high-scoring O*NET traits should generally push related dimensions up, low-scoring traits should pull them down
 - Collaboration and execution may trade off
 - Autonomous environments should generally increase execution and lower collaboration
 - Consensus-heavy environments should generally increase collaboration and moderate decision speed

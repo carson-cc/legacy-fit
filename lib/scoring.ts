@@ -8,15 +8,33 @@ export const SCORING_VERSION = 'v4.0.0'
 // ── Composite display dimensions ───────────────────────────────
 // Maps the 4 raw DEPF scores (0–1) onto 5 recruiter-readable dimensions (0–100).
 //
-// Formulas are theory-driven composites rooted in NEO-PI-R facet research:
-//   Execution     ← Drive (D) + Conscientiousness (F) + urgency (1–P)
-//                   Costa & McCrae (1992): C+E facets predict task initiation & follow-through
-//   Ownership     ← Drive (D) moderates agency; Patience (P) moderates sustained accountability
-//                   Barrick & Mount (1991): C+N predict ownership & proactivity
-//   Adaptability  ← Low Conscientiousness + low Neuroticism-inversion (1–P) + social flexibility (E)
-//                   Hough (1992): O facets not captured; E proxies social adaptability
-//   Collaboration ← Extraversion (E) + Agreeableness proxy (P); Witt et al. (2002) meta-analysis
-//   Decision Speed← Drive (D) + urgency (1–P); DeYoung (2006) bandwidth model
+// Weights are grounded in meta-analytic personality–performance research:
+//
+//   Execution     ← F(0.40) + D(0.35) + (1–P)(0.25)
+//     Conscientiousness is the single strongest predictor of task performance across
+//     occupations (Barrick & Mount 1991, k=117; Schmidt & Hunter 1998, k=515).
+//     Dominance adds initiative; low Patience adds pace urgency.
+//
+//   Ownership     ← D(0.55) + (1–P)(0.25) + F(0.20)
+//     Proactive personality (proxied by D) predicts initiative, ownership, and
+//     counterproductive-work-behavior avoidance (Bateman & Crant 1993; Crant 2000
+//     meta-analysis r=.38). Low P adds urgency and self-direction; F adds follow-through.
+//     Prior formula used P positively — directionally incorrect.
+//
+//   Adaptability  ← (1–F)(0.40) + E(0.30) + P(0.30)
+//     Pulakos et al. (2000) eight-factor adaptability taxonomy: flexibility under
+//     uncertainty loads on low Conscientiousness rigidity + interpersonal flexibility (E)
+//     + emotional stability under change (P as steadiness proxy). Prior (1–P) term
+//     was directionally incorrect — patience aids, not hinders, change tolerance.
+//
+//   Collaboration ← E(0.45) + P(0.35) + (1–D)(0.20)
+//     Bell (2007) meta-analysis (k=55, n=11,080): Agreeableness and Extraversion are
+//     the two strongest Big Five predictors of team performance. Low D reduces
+//     dominance behaviour that suppresses collaborative exchange.
+//
+//   Decision Speed← D(0.45) + (1–P)(0.35) + (1–F)(0.20)
+//     Eisenhardt (1989) fast-decision model: decisive confidence (D), urgency (1–P),
+//     and tolerance for incomplete information (1–F, i.e. less need for exhaustive data).
 
 export interface CompositeDimensions {
   execution:     number // 0–100
@@ -40,6 +58,17 @@ export function computeCompositeDimensions(scores: DimensionScores): CompositeDi
     // D decisive; (1-P) urgent; (1-F) decides without all info (Eisenhardt 1989)
     decisionSpeed: clamp(scores.dominance * 0.45 + (1 - scores.patience) * 0.35 + (1 - scores.formality) * 0.20),
   }
+}
+
+// ── Composite fit weights ──────────────────────────────────────
+// Weights for scoring in composite space. Must sum to 1.0.
+// Defined here; role presets live in lib/data/norms.ts.
+export interface CompositeFitWeights {
+  execution:     number
+  ownership:     number
+  adaptability:  number
+  collaboration: number
+  decisionSpeed: number
 }
 
 // --- normCDF via erf approximation ---
@@ -127,34 +156,27 @@ interface FitResult {
   thresholdNote: string | null
 }
 
-function computeFit(
-  scores: DimensionScores,
-  target: FitTarget,
-  weights: FitWeights,
-  variant: 'v1_stepped' | 'v2_quadratic' = 'v2_quadratic',
+// Scoring in composite space.
+// Gaps are normalised to 0–1 before the v2_quadratic penalty so the same
+// penalty curve applies regardless of whether inputs are raw (0–1) or
+// composite (0–100). Both candidate and target pass through
+// computeCompositeDimensions first, so the displayed delta IS the scored gap.
+function computeFitComposite(
+  candidate: CompositeDimensions,
+  target: CompositeDimensions,
+  weights: CompositeFitWeights,
 ): FitResult {
-  const dimensions: Dimension[] = ['dominance', 'extraversion', 'patience', 'formality']
+  const dims = ['execution', 'ownership', 'adaptability', 'collaboration', 'decisionSpeed'] as const
   let totalPenalty = 0
-
-  for (const dim of dimensions) {
-    const gap = Math.abs(scores[dim] - target[dim])
-    let penalty: number
-    if (variant === 'v1_stepped') {
-      if (gap <= 0.10) penalty = 0
-      else if (gap <= 0.20) penalty = 0.05
-      else if (gap <= 0.30) penalty = 0.15
-      else penalty = 0.30
-    } else {
-      penalty = Math.min(Math.pow(gap, 1.5) * 2.5, 0.60)
-    }
+  for (const dim of dims) {
+    const gap = Math.abs(candidate[dim] - target[dim]) / 100
+    const penalty = Math.min(Math.pow(gap, 1.5) * 2.5, 0.60)
     totalPenalty += penalty * weights[dim]
   }
-
   const fitPct = Math.max(0, Math.round((1 - totalPenalty) * 100))
   const maxWeight = Math.max(...Object.values(weights))
   const band = Math.round(Math.min(Math.pow(0.05, 1.5) * 2.5, 0.60) * maxWeight * 100)
   const nearThreshold = Math.abs(fitPct - 85) <= band || Math.abs(fitPct - 70) <= band
-
   return {
     fitPct,
     fitLow: Math.max(0, fitPct - band),

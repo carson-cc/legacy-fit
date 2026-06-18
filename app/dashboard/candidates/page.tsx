@@ -29,14 +29,16 @@ function fmtDate(iso: string): string {
 }
 
 function recColor(rec: string): string {
-  if (rec === 'Strong Hire') return '#22C55E'
-  if (rec === 'Proceed with Caution') return '#EAB308'
+  if (rec === 'Strong Fit') return '#22C55E'
+  if (rec === 'Explore Further') return '#EAB308'
+  if (rec === 'Needs Discussion') return '#F97316'
   return '#EF4444'
 }
 
 function recBg(rec: string): string {
-  if (rec === 'Strong Hire') return '#F0FDF4'
-  if (rec === 'Proceed with Caution') return '#FEFCE8'
+  if (rec === 'Strong Fit') return '#F0FDF4'
+  if (rec === 'Explore Further') return '#FEFCE8'
+  if (rec === 'Needs Discussion') return '#FFF7ED'
   return '#FEF2F2'
 }
 
@@ -113,7 +115,7 @@ export default function CandidatesPage() {
               fontSize: 13, color: '#374151', cursor: 'pointer', outline: 'none',
             }}
           >
-            {['All', 'Strong Hire', 'Proceed with Caution', 'Do Not Hire'].map(o => (
+            {['All', 'Strong Fit', 'Explore Further', 'Needs Discussion', 'Low Fit'].map(o => (
               <option key={o}>{o}</option>
             ))}
           </select>

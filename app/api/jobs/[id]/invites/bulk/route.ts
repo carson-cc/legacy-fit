@@ -82,6 +82,12 @@ export async function POST(req: NextRequest, { params }: Params) {
   const appUrl = process.env.APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000'
   const results: RowResult[] = []
 
+  const existing = await prisma.candidateInvite.findMany({
+    where: { jobId: id },
+    select: { email: true },
+  })
+  const existingEmails = new Set(existing.map(e => e.email?.toLowerCase()).filter(Boolean))
+
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i]
 
@@ -93,6 +99,11 @@ export async function POST(req: NextRequest, { params }: Params) {
     const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email.trim())
     if (!emailOk) {
       results.push({ row: i + 1, name: row.name, email: row.email, status: 'error', error: 'invalid email' })
+      continue
+    }
+
+    if (existingEmails.has(row.email.trim().toLowerCase())) {
+      results.push({ row: i + 1, name: row.name, email: row.email, status: 'error', error: 'already invited' })
       continue
     }
 
@@ -127,6 +138,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         emailSent = true
       } catch { /* best-effort */ }
 
+      existingEmails.add(row.email.trim().toLowerCase())
       results.push({ row: i + 1, name: row.name, email: row.email, status: 'created', inviteId: invite.id, assessUrl, emailSent })
     } catch {
       results.push({ row: i + 1, name: row.name, email: row.email, status: 'error', error: 'database error' })

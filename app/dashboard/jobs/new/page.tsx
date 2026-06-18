@@ -29,10 +29,9 @@ interface EnvSignals {
   decisionEnv: 'autonomous' | 'consensus' | null
   pace: 'fast' | 'methodical' | null
   roleStage: 'building' | 'running' | null
-  stakeholders: 'single' | 'multiple' | null
+  peopleScope: 'team' | 'ic' | null
 }
 
-type RoleScope = 'functional_leader' | 'cross_functional' | 'builder' | 'steady_state' | null
 type Stage = 'brief' | 'generating' | 'review' | 'success'
 type Confidence = 'High' | 'Medium' | 'Low'
 
@@ -61,14 +60,7 @@ const ENV_ROWS: Array<{ key: keyof EnvSignals; label: string; options: Array<{ v
   { key: 'decisionEnv',  label: 'Decision environment', options: [{ value: 'autonomous', label: 'Autonomous scope' }, { value: 'consensus', label: 'Consensus-driven org' }] },
   { key: 'pace',         label: 'Operating pace',       options: [{ value: 'fast', label: 'Fast-moving' }, { value: 'methodical', label: 'Methodical' }] },
   { key: 'roleStage',    label: 'Role stage',           options: [{ value: 'building', label: 'Building from scratch' }, { value: 'running', label: 'Running established op' }] },
-  { key: 'stakeholders', label: 'Stakeholders',         options: [{ value: 'single', label: 'Single decision-maker' }, { value: 'multiple', label: 'Multiple stakeholders' }] },
-]
-
-const SCOPE_OPTIONS: Array<{ value: Exclude<RoleScope, null>; label: string }> = [
-  { value: 'functional_leader', label: 'Functional leader' },
-  { value: 'cross_functional',  label: 'Cross-functional operator' },
-  { value: 'builder',           label: 'Builder / turnaround' },
-  { value: 'steady_state',      label: 'Steady-state leader' },
+  { key: 'peopleScope',  label: 'People scope',         options: [{ value: 'team', label: 'Manages a team' }, { value: 'ic', label: 'Individual contributor' }] },
 ]
 
 // ─── Signal detection rules ───────────────────────────────────────────────────
@@ -90,10 +82,10 @@ const SIGNAL_RULES: SignalRule[] = [
   { patterns: [/\bscale\b/i, /\bgrowth\b/i, /\bexpand\b/i], text: 'Growth or scale environment', category: 'Environment' },
   { patterns: [/\bmethodical\b/i, /\bsystematic\b/i, /\bdeliberate\b/i], text: 'Process-oriented environment', category: 'Environment', pillKey: 'pace', pillValue: 'methodical' },
   { patterns: [/\breports (directly )?to\b/i, /\bdirect (report|line)\b/i, /\breporting (line|to)\b/i], text: 'Direct reporting line identified', category: 'Structure' },
-  { patterns: [/\bstakeholder[s]?\b/i, /\bcross.functional\b/i], text: 'Stakeholder complexity present', category: 'Structure', pillKey: 'stakeholders', pillValue: 'multiple' },
+  { patterns: [/\bstakeholder[s]?\b/i, /\bcross.functional\b/i], text: 'Stakeholder complexity present', category: 'Structure' },
   { patterns: [/\balignment\b/i, /\bconsensus\b/i, /\bbuy.?in\b/i, /\bconsult\b/i], text: 'Consensus or alignment dynamic', category: 'Structure', pillKey: 'decisionEnv', pillValue: 'consensus' },
   { patterns: [/\bclear mandate\b/i, /\bautonomous\b/i, /\bbriefed not consulted\b/i, /\blow tolerance\b/i, /\bno tolerance\b/i], text: 'Autonomous decision environment', category: 'Structure', pillKey: 'decisionEnv', pillValue: 'autonomous' },
-  { patterns: [/\bdirectly to.{3,30}(CEO|COO|President|partner|founder)/i], text: 'Single direct decision-maker', category: 'Structure', pillKey: 'stakeholders', pillValue: 'single' },
+  { patterns: [/\bdirectly to.{3,30}(CEO|COO|President|partner|founder)/i], text: 'Single direct decision-maker', category: 'Structure' },
   { patterns: [/\bownership\b/i, /\baccountabl\b/i, /\bowns\b/i], text: 'High ownership expectations', category: 'Role expectations' },
   { patterns: [/\bambiguit\b/i, /\buncertain\b/i], text: 'Low tolerance for ambiguity', category: 'Role expectations' },
   { patterns: [/\bfailure\b/i, /\bwould fail\b/i, /\bstruggle\b/i, /\bwouldn.t work\b/i], text: 'Failure condition defined', category: 'Role expectations' },
@@ -226,8 +218,7 @@ export default function NewJobPage() {
   const [clientId, setClientId] = useState('')
   const [roleTitle, setRoleTitle] = useState('')
   const [brief, setBrief]     = useState('')
-  const [envSignals, setEnvSignals] = useState<EnvSignals>({ decisionEnv: null, pace: null, roleStage: null, stakeholders: null })
-  const [roleScope, setRoleScope]   = useState<RoleScope>(null)
+  const [envSignals, setEnvSignals] = useState<EnvSignals>({ decisionEnv: null, pace: null, roleStage: null, peopleScope: null })
 
   const [exampleActive, setExampleActive] = useState(false)
   const [exampleHighlight, setExampleHighlight] = useState(false)
@@ -354,7 +345,7 @@ export default function NewJobPage() {
       const res = await fetch('/api/generate-benchmark', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ roleTitle: roleTitle.trim(), clientName, brief: brief.trim(), roleScope, environmentSignals: envSignals }),
+        body: JSON.stringify({ roleTitle: roleTitle.trim(), clientName, brief: brief.trim(), environmentSignals: envSignals }),
       })
       const data = await res.json()
       if (data.error) throw new Error(data.error)
@@ -376,7 +367,7 @@ export default function NewJobPage() {
       setError(err instanceof Error ? err.message : 'Generation failed. Try again.')
       setStage('brief')
     }
-  }, [canGenerate, clients, clientId, roleTitle, brief, roleScope, envSignals])
+  }, [canGenerate, clients, clientId, roleTitle, brief, envSignals])
 
   // Save
   async function handleSubmit() {
@@ -603,23 +594,6 @@ export default function NewJobPage() {
             opacity: showEnvSection ? 1 : 0,
             transition: 'max-height 400ms ease, opacity 400ms ease',
           }}>
-            {/* Primary scope */}
-            <div style={{ marginBottom: 28 }}>
-              <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#C4C9D4', margin: '0 0 10px' }}>Primary scope</p>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
-                {SCOPE_OPTIONS.map(opt => {
-                  const active = roleScope === opt.value
-                  return (
-                    <button key={opt.value} type="button" onClick={() => setRoleScope(prev => prev === opt.value ? null : opt.value)}
-                      style={{ padding: '6px 13px', borderRadius: 20, border: `1.5px solid ${active ? '#2563EB' : '#EAEAEC'}`, background: active ? 'rgba(37,99,235,0.05)' : '#FFF', fontSize: 13, color: active ? '#1D4ED8' : '#6B7280', cursor: 'pointer', fontFamily: 'inherit', fontWeight: active ? 500 : 400, transition: 'all 120ms' }}
-                    >
-                      {opt.label}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-
             {/* Context signals */}
             <div>
               <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#C4C9D4', margin: '0 0 14px' }}>Context signals</p>

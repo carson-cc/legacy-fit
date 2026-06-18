@@ -153,6 +153,27 @@ export const ROLE_PRESETS = {
 
 export type RolePresetKey = keyof typeof ROLE_PRESETS
 
+// Composite-space scoring weights per role (5 dimensions, must sum to 1.0).
+// Grounded in O*NET competency importance ratings and meta-analytic evidence:
+//   Superintendent / Foreman  — O*NET 47-1011: management of material resources,
+//     monitoring, decisiveness weighted highest (Barrick et al. 2001 leadership meta)
+//   Project Manager           — O*NET 11-9021: coordination + stakeholder adaptability
+//     equally critical (Turner & Müller 2005 PM competency review)
+//   CFO                       — O*NET 11-3031: precision execution + ownership primary;
+//     Hogan & Holland (2003) conscientiousness → financial role performance r=.36
+//   Estimator                 — O*NET 13-1051: execution (accuracy) dominant;
+//     deliberate decision pace valued over speed
+//   Sales Rep                 — O*NET 41-3099: collaboration + ownership primary;
+//     Barrick et al. (2009) extraversion → sales performance r=.19
+export const COMPOSITE_ROLE_PRESETS: Record<RolePresetKey, { execution: number; ownership: number; adaptability: number; collaboration: number; decisionSpeed: number }> = {
+  superintendent:  { execution: 0.30, ownership: 0.25, decisionSpeed: 0.20, adaptability: 0.15, collaboration: 0.10 },
+  project_manager: { execution: 0.25, collaboration: 0.25, adaptability: 0.20, ownership: 0.20, decisionSpeed: 0.10 },
+  cfo:             { execution: 0.35, ownership: 0.25, decisionSpeed: 0.20, collaboration: 0.10, adaptability: 0.10 },
+  foreman:         { execution: 0.30, ownership: 0.25, decisionSpeed: 0.20, adaptability: 0.15, collaboration: 0.10 },
+  estimator:       { execution: 0.35, ownership: 0.20, decisionSpeed: 0.25, adaptability: 0.10, collaboration: 0.10 },
+  sales_rep:       { collaboration: 0.30, ownership: 0.25, decisionSpeed: 0.20, adaptability: 0.15, execution: 0.10 },
+} as const
+
 export const ROLE_PRESET_LABELS: Record<RolePresetKey, string> = {
   superintendent: "Superintendent",
   project_manager: "Project Manager",

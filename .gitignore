@@ -46,3 +46,6 @@ next-env.d.ts
 /app/generated/prisma
 
 .vercel
+
+# O*NET raw data (large; processed JSON lives in lib/data/onet-lookup.json)
+/data/onet/
