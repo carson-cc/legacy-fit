@@ -65,6 +65,15 @@ interface CandidateNote {
   createdAt: string
   author: { id: string; name: string | null; email: string }
 }
+interface PlacementOutcome {
+  id: string
+  placed: boolean
+  retainedAt90: boolean | null
+  retainedAt180: boolean | null
+  performanceRating: number | null
+  notes: string | null
+  recordedAt: string
+}
 interface Candidate {
   id: string
   name: string
@@ -88,7 +97,7 @@ interface Candidate {
   fitPct: number
   rushed: boolean
   interviewGuide: InterviewQuestion[]
-  outcome: string | null
+  outcome: PlacementOutcome | null
   list1Count: number
   list2Count: number
   resultId: string
@@ -226,6 +235,15 @@ export default function CandidateDetailPage() {
   const [newNote, setNewNote] = useState('')
   const [noteSaving, setNoteSaving] = useState(false)
 
+  // Placement outcome
+  const [outcomeEditing, setOutcomeEditing] = useState(false)
+  const [outcomePlaced, setOutcomePlaced] = useState<boolean | null>(null)
+  const [outcomeRating, setOutcomeRating] = useState<number | null>(null)
+  const [outcomeRetained90, setOutcomeRetained90] = useState<boolean | null>(null)
+  const [outcomeRetained180, setOutcomeRetained180] = useState<boolean | null>(null)
+  const [outcomeNotes, setOutcomeNotes] = useState('')
+  const [outcomeSaving, setOutcomeSaving] = useState(false)
+
   const load = useCallback(() => {
     setLoading(true)
     fetch(`/api/candidates/${id}`)
@@ -253,6 +271,15 @@ export default function CandidateDetailPage() {
   useEffect(() => {
     if (candidate?.name) document.title = `Veltro — ${candidate.name}`
   }, [candidate?.name])
+  useEffect(() => {
+    if (candidate?.outcome) {
+      setOutcomePlaced(candidate.outcome.placed)
+      setOutcomeRating(candidate.outcome.performanceRating)
+      setOutcomeRetained90(candidate.outcome.retainedAt90)
+      setOutcomeRetained180(candidate.outcome.retainedAt180)
+      setOutcomeNotes(candidate.outcome.notes ?? '')
+    }
+  }, [candidate?.outcome])
 
   async function handleStageChange(newStage: string) {
     setStage(newStage)
@@ -346,6 +373,33 @@ export default function CandidateDetailPage() {
       showToast('Could not save note', 'error')
     } finally {
       setNoteSaving(false)
+    }
+  }
+
+  async function handleOutcomeSave(e: React.FormEvent) {
+    e.preventDefault()
+    if (outcomePlaced === null) return
+    setOutcomeSaving(true)
+    try {
+      const res = await fetch(`/api/candidates/${id}/outcome`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          placed: outcomePlaced,
+          retainedAt90: outcomeRetained90,
+          retainedAt180: outcomeRetained180,
+          performanceRating: outcomeRating,
+          notes: outcomeNotes.trim() || null,
+        }),
+      })
+      if (!res.ok) throw new Error()
+      showToast('Outcome recorded')
+      setOutcomeEditing(false)
+      load()
+    } catch {
+      showToast('Could not save outcome', 'error')
+    } finally {
+      setOutcomeSaving(false)
     }
   }
 
@@ -698,6 +752,157 @@ export default function CandidateDetailPage() {
               )}
             </div>
           </div>
+        </div>
+
+        {/* F. PLACEMENT OUTCOME */}
+        <div style={{ ...card, marginBottom: 24 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: outcomeEditing || candidate.outcome ? 20 : 0 }}>
+            <span style={label}>Placement Outcome</span>
+            {!outcomeEditing && (
+              <button
+                onClick={() => setOutcomeEditing(true)}
+                style={{ height: 28, padding: '0 12px', borderRadius: 8, border: '1px solid #E5E7EB', background: '#FFF', color: '#374151', fontSize: 12, fontWeight: 500, cursor: 'pointer' }}
+              >
+                {candidate.outcome ? 'Edit' : 'Record outcome'}
+              </button>
+            )}
+          </div>
+
+          {/* Read-only view */}
+          {!outcomeEditing && candidate.outcome && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24 }}>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: '#9CA3AF', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4 }}>Placed</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: candidate.outcome.placed ? '#059669' : '#DC2626' }}>
+                  {candidate.outcome.placed ? 'Yes' : 'No'}
+                </div>
+              </div>
+              {candidate.outcome.placed && (
+                <>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: '#9CA3AF', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4 }}>Retained 90d</div>
+                    <div style={{ fontSize: 14, color: '#374151' }}>
+                      {candidate.outcome.retainedAt90 == null ? '—' : candidate.outcome.retainedAt90 ? 'Yes' : 'No'}
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: '#9CA3AF', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4 }}>Retained 180d</div>
+                    <div style={{ fontSize: 14, color: '#374151' }}>
+                      {candidate.outcome.retainedAt180 == null ? '—' : candidate.outcome.retainedAt180 ? 'Yes' : 'No'}
+                    </div>
+                  </div>
+                  {candidate.outcome.performanceRating != null && (
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: '#9CA3AF', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4 }}>Performance</div>
+                      <div style={{ display: 'flex', gap: 2 }}>
+                        {[1,2,3,4,5].map(n => (
+                          <span key={n} style={{ fontSize: 16, color: n <= (candidate.outcome?.performanceRating ?? 0) ? '#F59E0B' : '#E5E7EB' }}>★</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+              {candidate.outcome.notes && (
+                <div style={{ width: '100%' }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: '#9CA3AF', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4 }}>Notes</div>
+                  <p style={{ margin: 0, fontSize: 14, color: '#374151', lineHeight: 1.6 }}>{candidate.outcome.notes}</p>
+                </div>
+              )}
+              <div style={{ width: '100%', borderTop: '1px solid #F3F4F6', paddingTop: 8 }}>
+                <span style={{ fontSize: 11, color: '#BFBFBF' }}>Recorded {fmtDate(candidate.outcome.recordedAt)}</span>
+              </div>
+            </div>
+          )}
+
+          {!outcomeEditing && !candidate.outcome && (
+            <p style={{ margin: 0, fontSize: 13, color: '#9CA3AF', fontStyle: 'italic' }}>
+              No outcome recorded yet. Placement data is used to calibrate future assessments.
+            </p>
+          )}
+
+          {/* Edit form */}
+          {outcomeEditing && (
+            <form onSubmit={handleOutcomeSave}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+                {/* Placed */}
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 8 }}>Was this candidate placed? <span style={{ color: '#EF4444' }}>*</span></div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    {([true, false] as const).map(v => (
+                      <button key={String(v)} type="button" onClick={() => setOutcomePlaced(v)}
+                        style={{ height: 32, padding: '0 16px', borderRadius: 8, border: `1px solid ${outcomePlaced === v ? (v ? '#059669' : '#DC2626') : '#E5E7EB'}`, background: outcomePlaced === v ? (v ? '#ECFDF5' : '#FEF2F2') : '#FFF', color: outcomePlaced === v ? (v ? '#059669' : '#DC2626') : '#6B7280', fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 150ms ease' }}>
+                        {v ? 'Yes — Placed' : 'No — Not placed'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Retention + rating — only if placed */}
+                {outcomePlaced === true && (
+                  <>
+                    <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+                      {([
+                        { label: 'Retained at 90 days', value: outcomeRetained90, set: setOutcomeRetained90 },
+                        { label: 'Retained at 180 days', value: outcomeRetained180, set: setOutcomeRetained180 },
+                      ] as const).map(({ label: lbl, value, set }) => (
+                        <div key={lbl}>
+                          <div style={{ fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 8 }}>{lbl}</div>
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            {([true, false, null] as const).map(v => (
+                              <button key={String(v)} type="button" onClick={() => set(v)}
+                                style={{ height: 28, padding: '0 12px', borderRadius: 8, border: `1px solid ${value === v && v !== null ? '#2563EB' : '#E5E7EB'}`, background: value === v && v !== null ? '#EFF6FF' : '#FFF', color: value === v && v !== null ? '#2563EB' : '#6B7280', fontSize: 12, fontWeight: 500, cursor: 'pointer' }}>
+                                {v === null ? 'Unknown' : v ? 'Yes' : 'No'}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 8 }}>Performance rating</div>
+                      <div style={{ display: 'flex', gap: 4 }}>
+                        {[1,2,3,4,5].map(n => (
+                          <button key={n} type="button" onClick={() => setOutcomeRating(outcomeRating === n ? null : n)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 24, color: n <= (outcomeRating ?? 0) ? '#F59E0B' : '#E5E7EB', padding: '0 2px', transition: 'color 100ms ease' }}>
+                            ★
+                          </button>
+                        ))}
+                        {outcomeRating && <button type="button" onClick={() => setOutcomeRating(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: '#9CA3AF', marginLeft: 4, padding: 0 }}>clear</button>}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Notes */}
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 8 }}>Notes</div>
+                  <textarea
+                    value={outcomeNotes}
+                    onChange={e => setOutcomeNotes(e.target.value)}
+                    placeholder="Any context on this placement..."
+                    rows={3}
+                    style={{ width: '100%', border: '1px solid #E5E7EB', borderRadius: 8, padding: '10px 12px', fontSize: 14, color: '#111827', resize: 'vertical', outline: 'none', fontFamily: 'inherit', lineHeight: 1.6, boxSizing: 'border-box' }}
+                    onFocus={e => (e.target.style.borderColor = '#2563EB')}
+                    onBlur={e => (e.target.style.borderColor = '#E5E7EB')}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button type="submit" disabled={outcomeSaving || outcomePlaced === null}
+                    style={{ height: 36, padding: '0 20px', borderRadius: 8, border: 'none', background: '#111827', color: '#FFF', fontSize: 13, fontWeight: 600, cursor: outcomeSaving || outcomePlaced === null ? 'not-allowed' : 'pointer', opacity: outcomeSaving || outcomePlaced === null ? 0.5 : 1, transition: 'opacity 150ms ease' }}>
+                    {outcomeSaving ? 'Saving…' : 'Save outcome'}
+                  </button>
+                  <button type="button" onClick={() => setOutcomeEditing(false)} disabled={outcomeSaving}
+                    style={{ height: 36, padding: '0 16px', borderRadius: 8, border: '1px solid #E5E7EB', background: '#FFF', color: '#374151', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </form>
+          )}
         </div>
 
         {/* Footer metadata */}

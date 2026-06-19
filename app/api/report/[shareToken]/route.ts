@@ -44,10 +44,8 @@ export async function GET(req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: 'Report not found' }, { status: 404 })
     }
 
-    // Expired share tokens look identical to missing ones from the caller's
-    // perspective — no leakage of "this link was real but is now expired."
     if (result.shareTokenExpiresAt && result.shareTokenExpiresAt < new Date()) {
-      return NextResponse.json({ error: 'Report not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Report link has expired' }, { status: 410 })
     }
 
     const invite = result.invite

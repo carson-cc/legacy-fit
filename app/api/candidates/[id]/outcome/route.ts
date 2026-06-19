@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireOrg, assertInviteInOrg } from '@/lib/auth-helpers'
+import { validateOutcomeInput } from '@/lib/validate-outcome'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -20,19 +21,12 @@ export async function POST(req: NextRequest, { params }: Params) {
 
     if (!invite) return NextResponse.json({ error: 'Candidate not found' }, { status: 404 })
 
-    const { placed, retainedAt90, retainedAt180, performanceRating, notes } = await req.json()
+    const body = await req.json()
+    const { placed, retainedAt90, retainedAt180, performanceRating, notes } = body
 
-    if (typeof placed !== 'boolean') {
-      return NextResponse.json({ error: 'placed is required and must be a boolean' }, { status: 400 })
-    }
-    if (retainedAt90 != null && typeof retainedAt90 !== 'boolean') {
-      return NextResponse.json({ error: 'retainedAt90 must be a boolean' }, { status: 400 })
-    }
-    if (retainedAt180 != null && typeof retainedAt180 !== 'boolean') {
-      return NextResponse.json({ error: 'retainedAt180 must be a boolean' }, { status: 400 })
-    }
-    if (performanceRating != null && (!Number.isInteger(performanceRating) || performanceRating < 1 || performanceRating > 5)) {
-      return NextResponse.json({ error: 'performanceRating must be an integer between 1 and 5' }, { status: 400 })
+    const validationError = validateOutcomeInput(body)
+    if (validationError) {
+      return NextResponse.json({ error: validationError.message }, { status: 400 })
     }
 
     const outcome = await prisma.placementOutcome.upsert({

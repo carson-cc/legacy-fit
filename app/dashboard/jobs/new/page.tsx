@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { FitModelLight, deriveFitModelAxes } from '@/app/components/FitModel'
 import { REFERENCE_PROFILES } from '@/lib/data/profiles'
+import { inferRoleType } from '@/lib/role-inference'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -196,16 +197,6 @@ function dimsToBase(d: DisplayDims): BaseDims {
   const formality    = clamp((e - dominance * 0.58) / 0.42)
   const extraversion = clamp((c - patience * 0.32) / 0.68)
   return { dominance, extraversion, patience, formality }
-}
-
-function inferRoleType(title: string): string {
-  if (/superintendent/i.test(title)) return 'superintendent'
-  if (/project.?manager|\bpm\b/i.test(title)) return 'project_manager'
-  if (/\bcfo\b|chief.?financial/i.test(title)) return 'cfo'
-  if (/foreman/i.test(title)) return 'foreman'
-  if (/estimat/i.test(title)) return 'estimator'
-  if (/\bsales\b|account.?exec|business.?dev/i.test(title)) return 'sales_rep'
-  return title.trim()
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────

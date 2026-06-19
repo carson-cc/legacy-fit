@@ -40,6 +40,10 @@ export async function GET(req: NextRequest, { params }: Params) {
 
   if (!result) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
+  if (result.shareTokenExpiresAt && result.shareTokenExpiresAt < new Date()) {
+    return NextResponse.json({ error: 'Report link has expired' }, { status: 410 })
+  }
+
   if (result.invite.job.id !== ctx.jobId) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }

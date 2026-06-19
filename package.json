@@ -8,9 +8,12 @@
     "start": "next start",
     "lint": "eslint",
     "seed": "npx tsx prisma/seed.ts",
-    "test": "npx tsx --test lib/__tests__/scoring.test.ts lib/__tests__/tenant-isolation.test.ts",
+    "test": "npx tsx --test lib/__tests__/scoring.test.ts lib/__tests__/tenant-isolation.test.ts lib/__tests__/role-inference.test.ts lib/__tests__/outcome-validation.test.ts lib/__tests__/portal-guard.test.ts",
     "test:scoring": "npx tsx --test lib/__tests__/scoring.test.ts",
-    "test:tenancy": "npx tsx --test lib/__tests__/tenant-isolation.test.ts"
+    "test:tenancy": "npx tsx --test lib/__tests__/tenant-isolation.test.ts",
+    "test:role-inference": "npx tsx --test lib/__tests__/role-inference.test.ts",
+    "test:outcome": "npx tsx --test lib/__tests__/outcome-validation.test.ts",
+    "test:portal-guard": "npx tsx --test lib/__tests__/portal-guard.test.ts"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
